@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>فروشگاه | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div id="products-table" class="mb-8"></div>
+        <div class="card-bordered p-6 max-w-lg">
+          <h2 class="font-bold mb-4">افزودن محصول</h2>
+          <form id="add-product-form" class="space-y-3">
+            <input type="text" class="form-input" placeholder="نام محصول" id="prod-name" required />
+            <input type="text" class="form-input" placeholder="قیمت" id="prod-price" required />
+            <select class="form-input" id="prod-cat">
+              <option>مصرفی</option>
+              <option>دندانپزشکی</option>
+              <option>پزشکی</option>
+              <option>پرستاری</option>
+            </select>
+            <input type="number" class="form-input" placeholder="موجودی" id="prod-stock" value="10" />
+            <button type="submit" class="btn-primary w-full text-sm">افزودن محصول</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    function renderProducts() {
+      PasteurStorage.initProductsIfNeeded();
+      const products = PasteurStorage.getProducts();
+      const rows = products.map((p, i) => `
+        <tr>
+          <td class="px-4 py-3">${p.name}</td>
+          <td class="px-4 py-3">${p.category}</td>
+          <td class="px-4 py-3">${p.price}</td>
+          <td class="px-4 py-3">${p.stock}</td>
+          <td class="px-4 py-3">
+            <button class="text-red-600 text-xs delete-prod" data-idx="${i}">حذف</button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('products-table').innerHTML = renderDataTable(
+        ['نام', 'دسته', 'قیمت', 'موجودی', 'عملیات'],
+        rows
+      );
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('shop');
+      setAdminTitle('مدیریت فروشگاه');
+      renderProducts();
+
+      document.getElementById('add-product-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const products = PasteurStorage.getProducts();
+        products.push({
+          id: Date.now(),
+          name: document.getElementById('prod-name').value,
+          price: document.getElementById('prod-price').value,
+          category: document.getElementById('prod-cat').value,
+          stock: parseInt(document.getElementById('prod-stock').value, 10),
+          image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop',
+        });
+        PasteurStorage.saveProducts(products);
+        renderProducts();
+        e.target.reset();
+      });
+
+      document.getElementById('products-table').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-prod')) {
+          const products = PasteurStorage.getProducts();
+          products.splice(parseInt(e.target.dataset.idx, 10), 1);
+          PasteurStorage.saveProducts(products);
+          renderProducts();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

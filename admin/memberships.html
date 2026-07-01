@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>عضویت‌ها | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <h2 class="font-bold text-lg mb-4">اعضا و پرداخت‌ها</h2>
+        <div id="members-table" class="mb-8"></div>
+        <h2 class="font-bold text-lg mb-4">طرح‌های عضویت</h2>
+        <div id="plans-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('memberships');
+      setAdminTitle('مدیریت عضویت');
+
+      const members = PasteurStorage.getMembers();
+      const rows = members.map((m) => `
+        <tr>
+          <td class="px-4 py-3">${m.patientName}</td>
+          <td class="px-4 py-3">${m.planName}</td>
+          <td class="px-4 py-3">${(m.amount || 0).toLocaleString('fa-IR')}</td>
+          <td class="px-4 py-3"><span class="badge ${m.status === 'paid' ? 'badge-available' : 'badge-busy'}">${m.status === 'paid' ? 'موفق' : 'در انتظار'}</span></td>
+        </tr>`).join('');
+
+      document.getElementById('members-table').innerHTML = renderDataTable(
+        ['نام', 'طرح', 'مبلغ', 'وضعیت پرداخت'],
+        rows,
+        'هنوز عضوی ثبت نشده است.'
+      );
+
+      document.getElementById('plans-grid').innerHTML = PASTEUR_DATA.memberships.map((m) => `
+        <div class="card-bordered p-4">
+          <h3 class="font-bold">${m.name}</h3>
+          <p class="text-teal-700 font-bold my-2">${m.price} تومان</p>
+          <p class="text-xs text-slate-500">${m.terms}</p>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

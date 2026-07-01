@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ورود ادمین | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased bg-slate-100 min-h-screen flex items-center justify-center p-4">
+  <div class="card-bordered w-full max-w-md p-8 bg-white">
+    <div class="text-center mb-8">
+      <div class="logo-placeholder text-2xl mx-auto mb-4">🏥</div>
+      <h1 class="text-xl font-bold text-slate-900">ورود به پنل مدیریت</h1>
+      <p class="text-sm text-slate-500 mt-1">موسسه پزشکی و سلامت پاستور</p>
+    </div>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="form-label">نام کاربری</label>
+        <input type="text" id="username" class="form-input" value="admin" required />
+      </div>
+      <div>
+        <label class="form-label">رمز عبور</label>
+        <input type="password" id="password" class="form-input" value="pasteur1403" required />
+      </div>
+      <p id="login-error" class="hidden text-sm text-red-600"></p>
+      <button type="submit" class="btn-primary w-full">ورود</button>
+    </form>
+    <p class="text-xs text-slate-400 text-center mt-4">نسخه نمایشی — admin / pasteur1403</p>
+    <a href="../index.html" class="block text-center text-sm text-teal-700 mt-4 hover:underline">بازگشت به سایت</a>
+  </div>
+  <script src="../js/storage.js"></script>
+  <script src="../js/data.js"></script>
+  <script>
+    if (PasteurStorage.isAdminLoggedIn()) window.location.href = 'dashboard.html';
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      const err = document.getElementById('login-error');
+      if (user === 'admin' && pass === 'pasteur1403') {
+        PasteurStorage.adminLogin();
+        window.location.href = 'dashboard.html';
+      } else {
+        err.textContent = 'نام کاربری یا رمز عبور اشتباه است.';
+        err.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>رزروها | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div class="flex flex-wrap gap-2 mb-6">
+          <button data-type="all" class="type-filter badge badge-available cursor-pointer">همه</button>
+          <button data-type="visit" class="type-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">ویزیت</button>
+          <button data-type="treatment" class="type-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">درمان</button>
+        </div>
+        <div id="bookings-table"></div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    function renderBookings(type = 'all') {
+      let bookings = PasteurStorage.getBookings();
+      if (type !== 'all') bookings = bookings.filter((b) => b.type === type);
+
+      const rows = bookings.map((b) => `
+        <tr class="hover:bg-slate-50" data-id="${b.id}">
+          <td class="px-4 py-3 font-mono text-xs">${b.id}</td>
+          <td class="px-4 py-3">${b.patientName}</td>
+          <td class="px-4 py-3">${b.doctorName}</td>
+          <td class="px-4 py-3">${b.typeLabel}</td>
+          <td class="px-4 py-3">${b.day} — ${b.timeLabel}</td>
+          <td class="px-4 py-3">${(b.amount || 0).toLocaleString('fa-IR')}</td>
+          <td class="px-4 py-3">
+            <span class="badge ${b.status === 'confirmed' ? 'badge-available' : b.status === 'cancelled' ? 'badge-inactive' : 'badge-busy'}">
+              ${b.status === 'confirmed' ? 'تأیید' : b.status === 'cancelled' ? 'لغو' : 'در انتظار'}
+            </span>
+          </td>
+          <td class="px-4 py-3">
+            ${b.status !== 'cancelled' ? `<button class="text-red-600 text-xs font-semibold cancel-btn" data-id="${b.id}">لغو</button>` : '—'}
+          </td>
+        </tr>`).join('');
+
+      document.getElementById('bookings-table').innerHTML = renderDataTable(
+        ['کد', 'مراجع', 'پزشک', 'نوع', 'زمان', 'مبلغ', 'وضعیت', 'عملیات'],
+        rows
+      );
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('bookings');
+      setAdminTitle('مدیریت رزروها');
+      renderBookings();
+
+      document.querySelector('.admin-main').addEventListener('click', (e) => {
+        if (e.target.classList.contains('type-filter')) {
+          document.querySelectorAll('.type-filter').forEach((b) => {
+            b.className = 'type-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer';
+          });
+          e.target.className = 'type-filter badge badge-available cursor-pointer';
+          renderBookings(e.target.dataset.type);
+        }
+        if (e.target.classList.contains('cancel-btn')) {
+          if (confirm('آیا از لغو این رزرو مطمئن هستید؟')) {
+            PasteurStorage.updateBooking(e.target.dataset.id, { status: 'cancelled' });
+            renderBookings(document.querySelector('.type-filter.badge-available')?.dataset.type || 'all');
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

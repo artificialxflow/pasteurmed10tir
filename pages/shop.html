@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>فروشگاه | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body data-page="shop" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🛒 فروشگاه تجهیزات</h1>
+      <p class="text-slate-600 mb-6">تجهیزات پزشکی و دندانپزشکی با کیفیت</p>
+
+      <div class="mb-6 flex flex-wrap gap-2" id="category-filters">
+        <button data-cat="all" class="cat-filter badge badge-available cursor-pointer">همه</button>
+        <button data-cat="مصرفی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">مصرفی</button>
+        <button data-cat="دندانپزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">دندانپزشکی</button>
+        <button data-cat="پزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پزشکی</button>
+        <button data-cat="پرستاری" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پرستاری</button>
+      </div>
+
+      <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    function renderProducts(category = 'all') {
+      PasteurStorage.initProductsIfNeeded();
+      const products = PasteurStorage.getProducts();
+      const filtered = category === 'all' ? products : products.filter((p) => p.category === category);
+      const grid = document.getElementById('products-grid');
+
+      grid.innerHTML = filtered.length ? filtered.map((p) => `
+        <article class="card-bordered overflow-hidden">
+          <img src="${p.image}" alt="${p.name}" class="w-full h-40 object-cover" loading="lazy" />
+          <div class="p-4">
+            <span class="text-xs text-slate-500">${p.category}</span>
+            <h3 class="font-bold mt-1">${p.name}</h3>
+            <div class="flex items-center justify-between mt-3">
+              <span class="font-bold text-teal-700">${p.price} تومان</span>
+              <span class="text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-600'}">${p.stock > 0 ? 'موجود' : 'ناموجود'}</span>
+            </div>
+            <button class="btn-primary w-full mt-3 text-sm" ${p.stock <= 0 ? 'disabled style="opacity:0.5"' : ''}
+                    onclick="alert('سفارش ${p.name} ثبت شد. (نسخه نمایشی)')">
+              افزودن به سبد
+            </button>
+          </div>
+        </article>
+      `).join('') : '<p class="col-span-full text-center text-slate-500 py-8">محصولی یافت نشد.</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('shop');
+      renderProducts();
+      document.getElementById('category-filters').addEventListener('click', (e) => {
+        const btn = e.target.closest('.cat-filter');
+        if (!btn) return;
+        document.querySelectorAll('.cat-filter').forEach((b) => {
+          b.className = 'cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer';
+        });
+        btn.className = 'cat-filter badge badge-available cursor-pointer';
+        renderProducts(btn.dataset.cat);
+      });
+    });
+  </script>
+</body>
+</html>

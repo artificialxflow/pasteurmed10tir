@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>رزرو موفق | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body data-page="dental" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-16 flex items-center justify-center">
+    <div class="max-w-md mx-auto px-4 text-center">
+      <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 border-2 border-green-400 flex items-center justify-center text-4xl">✅</div>
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">رزرو با موفقیت ثبت شد!</h1>
+      <p class="text-slate-600 mb-8">پیامک تأیید به شماره موبایل شما ارسال خواهد شد.</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="general.html" class="btn-primary">رزرو جدید</a>
+        <a href="../../index.html" class="px-5 py-2.5 rounded-lg border-2 border-slate-200 font-medium text-slate-700 hover:bg-slate-50">صفحه اصلی</a>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => mountLayout('dental'));</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="سامانه رزرو نوبت موسسه پزشکی و سلامت پاستور — تبریز" />
+  <title>موسسه پزشکی و سلامت پاستور | رزرو آنلاین نوبت</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Vazirmatn', 'Tahoma', 'sans-serif'],
+          },
+          colors: {
+            pasteur: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body data-page="home" class="flex flex-col min-h-screen font-sans antialiased">
+
+  <div id="site-header"></div>
+
+  <main class="flex-1">
+
+    <!-- Hero -->
+    <section class="relative overflow-hidden bg-gradient-to-bl from-teal-50 via-white to-blue-50 border-b-2 border-slate-200">
+      <div class="absolute inset-0 opacity-30 pointer-events-none"
+           style="background-image: radial-gradient(circle at 20% 50%, #99f6e4 0%, transparent 50%), radial-gradient(circle at 80% 20%, #bfdbfe 0%, transparent 40%);">
+      </div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+        <div class="max-w-3xl animate-fade-in">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-sm font-semibold border-2 border-teal-200 mb-4">
+            🏥 موسسه سلامت پاستور — تبریز
+          </span>
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight mb-4">
+            به سامانه هوشمند موسسه پاستور خوش آمدید
+          </h1>
+          <p class="text-lg sm:text-xl text-slate-600 mb-8 leading-relaxed">
+            رزرو سریع نوبت دندانپزشکی و پزشکی — خدمات حرفه‌ای در پاسه، تبریز و حومه
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="pages/dental/general.html" class="btn-primary text-base px-6 py-3">
+              🦷 رزرو نوبت دندانپزشکی
+            </a>
+            <a href="pages/medical.html" class="btn-accent text-base px-6 py-3">
+              🩺 رزرو نوبت پزشکی
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Services -->
+    <section class="py-12 sm:py-16" aria-labelledby="services-heading">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+          <h2 id="services-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+            خدمات موسسه
+          </h2>
+          <p class="text-slate-600 max-w-xl mx-auto">
+            پنج بخش تخصصی برای پاسخگویی به تمام نیازهای سلامت شما
+          </p>
+        </div>
+        <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <!-- injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust / Stats -->
+    <section class="py-12 sm:py-16 bg-white border-y-2 border-slate-200" aria-labelledby="stats-heading">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 id="stats-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
+              چرا موسسه پاستور؟
+            </h2>
+            <p class="text-slate-600 leading-relaxed mb-6">
+              با سال‌ها تجربه در ارائه خدمات پزشکی و دندانپزشکی، موسسه پزشکی و سلامت پاستور
+              در تبریز آماده خدمت‌رسانی به شماست. رزرو آنلاین، پزشکان مجرب و طرح‌های عضویت
+              متنوع، تجربه‌ای روان و حرفه‌ای برای شما فراهم می‌کند.
+            </p>
+            <ul class="space-y-3 text-sm text-slate-700">
+              <li class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold border border-teal-300">✓</span>
+                رزرو آنلاین ۲۴ ساعته
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold border border-teal-300">✓</span>
+                پزشکان و دندانپزشکان مجرب تبریز
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold border border-teal-300">✓</span>
+                ۵ سطح طرح عضویت با تخفیف ویژه
+              </li>
+            </ul>
+          </div>
+          <div id="stats-grid" class="grid grid-cols-2 gap-4">
+            <!-- injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-12 sm:py-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="card-bordered p-8 sm:p-12 text-center bg-gradient-to-bl from-teal-600 to-teal-800 border-teal-700 text-white">
+          <h2 class="text-2xl sm:text-3xl font-bold mb-3">همین حالا نوبت خود را رزرو کنید</h2>
+          <p class="text-teal-100 mb-6 max-w-lg mx-auto">
+            انتخاب نوع خدمت: ویزیت یا شروع درمان — سریع، آسان و آنلاین
+          </p>
+          <a href="pages/dental/booking.html" class="inline-flex items-center gap-2 px-8 py-3 bg-white text-teal-800 font-bold rounded-xl border-2 border-white hover:bg-teal-50 transition-colors">
+            شروع رزرو نوبت
+            <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

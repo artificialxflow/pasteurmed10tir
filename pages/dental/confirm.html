@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تأیید و پرداخت | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body data-page="dental" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-lg mx-auto px-4">
+      <h1 class="text-2xl font-bold text-slate-900 mb-2 text-center">تأیید نهایی</h1>
+      <p class="text-slate-600 text-center mb-8">لطفاً اطلاعات را بررسی و پرداخت را انجام دهید</p>
+
+      <div id="payment-summary" class="card-bordered p-6 mb-6"></div>
+
+      <div class="card-bordered p-4 mb-6 bg-blue-50 border-blue-200 text-sm text-blue-800">
+        🔒 اتصال امن به درگاه پرداخت — این نسخه نمایشی است
+      </div>
+
+      <button id="btn-pay" class="btn-primary w-full text-base py-3 mb-3">
+        تأیید نهایی و اتصال به درگاه پرداخت
+      </button>
+      <button id="btn-cancel" class="w-full py-2.5 text-slate-600 hover:text-slate-900 text-sm">
+        انصراف و بازگشت
+      </button>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/storage.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/payment.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('dental');
+      PaymentFlow.init();
+    });
+  </script>
+</body>
+</html>

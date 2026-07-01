@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دندانپزشکی | موسسه پزشکی و سلامت پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };
+  </script>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body data-page="dental" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="text-sm text-slate-500 mb-6" aria-label="مسیر">
+        <a href="../../index.html" class="hover:text-teal-700">صفحه اصلی</a>
+        <span class="mx-2">/</span>
+        <span class="text-slate-900 font-medium">دندانپزشکی</span>
+      </nav>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🦷 بخش دندانپزشکی</h1>
+      <p class="text-slate-600 mb-8">یکی از بخش‌های زیر را انتخاب کنید</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <a href="general.html" class="card-bordered p-6 block hover:border-teal-500">
+          <span class="text-3xl">👨‍⚕️</span>
+          <h2 class="font-bold text-lg mt-3">عمومی</h2>
+          <p class="text-sm text-slate-600 mt-1">لیست دندانپزشکان و رزرو نوبت</p>
+        </a>
+        <a href="specialty.html" class="card-bordered p-6 block hover:border-teal-500">
+          <span class="text-3xl">🔬</span>
+          <h2 class="font-bold text-lg mt-3">تخصصی</h2>
+          <p class="text-sm text-slate-600 mt-1">خدمات تخصصی دندانپزشکی</p>
+        </a>
+        <a href="education.html" class="card-bordered p-6 block hover:border-teal-500">
+          <span class="text-3xl">📚</span>
+          <h2 class="font-bold text-lg mt-3">تحصیلات</h2>
+          <p class="text-sm text-slate-600 mt-1">دوره‌ها و مدارک آموزشی</p>
+        </a>
+        <a href="membership.html" id="membership" class="card-bordered p-6 block hover:border-teal-500">
+          <span class="text-3xl">💎</span>
+          <h2 class="font-bold text-lg mt-3">طرح‌های عضویتی</h2>
+          <p class="text-sm text-slate-600 mt-1">۵ سطح عضویت با مزایای ویژه</p>
+        </a>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script src="../../js/main.js"></script>
+</body>
+</html>
