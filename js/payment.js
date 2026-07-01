@@ -91,7 +91,7 @@ const PaymentFlow = {
 
   completePayment(pending) {
     if (pending.kind === 'booking') {
-      PasteurStorage.saveBooking({
+      const booking = PasteurStorage.saveBooking({
         id: PasteurStorage.generateId(),
         doctorId: pending.doctorId,
         doctorName: pending.doctorName,
@@ -108,6 +108,10 @@ const PaymentFlow = {
         createdAt: new Date().toISOString(),
         dateLabel: new Date().toLocaleDateString('fa-IR'),
       });
+      const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
+      profile.visits += 1;
+      PasteurStorage.saveClubProfile(pending.patientPhone, profile);
+      sessionStorage.setItem('pasteur_last_booking', JSON.stringify(booking));
     } else if (pending.kind === 'membership') {
       PasteurStorage.saveMember({
         id: PasteurStorage.generateId(),

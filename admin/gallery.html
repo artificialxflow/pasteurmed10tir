@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>گالری | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div id="gallery-admin" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"></div>
+        <div class="card-bordered p-6 max-w-lg">
+          <h2 class="font-bold mb-4">افزودن نمونه‌کار</h2>
+          <form id="add-gallery" class="space-y-3">
+            <input type="text" class="form-input" id="g-title" placeholder="عنوان" required />
+            <select class="form-input" id="g-cat">
+              <option value="dental">دندانپزشکی</option>
+              <option value="laser">لیزر</option>
+              <option value="beauty">زیبایی</option>
+            </select>
+            <input type="url" class="form-input" id="g-before" placeholder="URL تصویر قبل" required />
+            <input type="url" class="form-input" id="g-after" placeholder="URL تصویر بعد" required />
+            <button type="submit" class="btn-primary w-full text-sm">افزودن</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    function render() {
+      PasteurStorage.initGalleryIfNeeded();
+      const items = PasteurStorage.getGallery();
+      document.getElementById('gallery-admin').innerHTML = items.map((g, i) => `
+        <div class="card-bordered overflow-hidden">
+          <div class="grid grid-cols-2 gap-0.5">
+            <img src="${g.before}" class="h-24 object-cover" alt="" />
+            <img src="${g.after}" class="h-24 object-cover" alt="" />
+          </div>
+          <div class="p-3 flex justify-between items-center">
+            <span class="font-bold text-sm">${g.title}</span>
+            <button class="delete-g text-red-600 text-xs" data-idx="${i}">حذف</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('gallery');
+      setAdminTitle('مدیریت گالری نتایج');
+      render();
+      document.getElementById('add-gallery').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const items = PasteurStorage.getGallery();
+        items.push({
+          id: Date.now(),
+          title: document.getElementById('g-title').value,
+          category: document.getElementById('g-cat').value,
+          before: document.getElementById('g-before').value,
+          after: document.getElementById('g-after').value,
+        });
+        PasteurStorage.saveGallery(items);
+        render();
+        e.target.reset();
+      });
+      document.getElementById('gallery-admin').addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-g')) {
+          const items = PasteurStorage.getGallery();
+          items.splice(parseInt(e.target.dataset.idx, 10), 1);
+          PasteurStorage.saveGallery(items);
+          render();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -14,6 +14,10 @@ function getAdminNavItems() {
   return [
     { href: 'dashboard.html', label: 'داشبورد', icon: '📊', id: 'dashboard' },
     { href: 'bookings.html', label: 'رزروها', icon: '📅', id: 'bookings' },
+    { href: 'consultations.html', label: 'مشاوره‌ها', icon: '💬', id: 'consultations' },
+    { href: 'reminders.html', label: 'یادآورها', icon: '🔔', id: 'reminders' },
+    { href: 'club.html', label: 'باشگاه', icon: '🏆', id: 'club' },
+    { href: 'gallery.html', label: 'گالری', icon: '🖼️', id: 'gallery' },
     { href: 'doctors.html', label: 'پزشکان', icon: '👨‍⚕️', id: 'doctors' },
     { href: 'memberships.html', label: 'عضویت‌ها', icon: '💎', id: 'memberships' },
     { href: 'shop.html', label: 'فروشگاه', icon: '🛒', id: 'shop' },

@@ -20,9 +20,11 @@ function renderHeader(activePage = '') {
   const base = getBasePath();
   const navItems = [
     { href: `${base}index.html`, label: 'صفحه اصلی', id: 'home' },
+    { href: `${base}pages/consultation.html`, label: 'مشاوره آنلاین', id: 'consultation' },
+    { href: `${base}pages/gallery.html`, label: 'گالری', id: 'gallery' },
+    { href: `${base}pages/club.html`, label: 'باشگاه', id: 'club' },
     { href: `${base}pages/dental/index.html`, label: 'دندانپزشکی', id: 'dental' },
     { href: `${base}pages/medical.html`, label: 'پزشکی', id: 'medical' },
-    { href: `${base}pages/shop.html`, label: 'فروشگاه', id: 'shop' },
     { href: `${base}admin/login.html`, label: 'پنل ادمین', id: 'admin' },
   ];
 
@@ -105,8 +107,11 @@ function renderFooter() {
           <div>
             <h3 class="font-bold text-slate-900 mb-3 text-sm">دسترسی سریع</h3>
             <ul class="space-y-2 text-sm">
+              <li><a href="${base}pages/consultation.html" class="text-slate-600 hover:text-teal-700 transition-colors">مشاوره آنلاین</a></li>
+              <li><a href="${base}pages/gallery.html" class="text-slate-600 hover:text-teal-700 transition-colors">گالری نتایج</a></li>
+              <li><a href="${base}pages/club.html" class="text-slate-600 hover:text-teal-700 transition-colors">باشگاه مشتریان</a></li>
+              <li><a href="${base}pages/reminders.html" class="text-slate-600 hover:text-teal-700 transition-colors">یادآور هوشمند</a></li>
               <li><a href="${base}pages/dental/index.html" class="text-slate-600 hover:text-teal-700 transition-colors">دندانپزشکی</a></li>
-              <li><a href="${base}pages/medical.html" class="text-slate-600 hover:text-teal-700 transition-colors">پزشکی</a></li>
               <li><a href="${base}pages/dental/membership.html" class="text-slate-600 hover:text-teal-700 transition-colors">طرح‌های عضویت</a></li>
               <li><a href="${base}pages/shop.html" class="text-slate-600 hover:text-teal-700 transition-colors">فروشگاه</a></li>
             </ul>
@@ -118,6 +123,10 @@ function renderFooter() {
               <li class="flex items-center gap-2">
                 <span aria-hidden="true">📞</span>
                 <a href="tel:${institute.phone.replace(/[^\d]/g, '')}" class="hover:text-teal-700">${institute.phone}</a>
+              </li>
+              <li class="flex items-center gap-2">
+                <span aria-hidden="true">💬</span>
+                <a href="https://wa.me/98${institute.whatsapp.replace(/[^\d]/g, '').replace(/^0/, '')}" target="_blank" rel="noopener" class="hover:text-teal-700">واتساپ: ${institute.whatsapp}</a>
               </li>
               <li class="flex items-start gap-2">
                 <span aria-hidden="true">📍</span>

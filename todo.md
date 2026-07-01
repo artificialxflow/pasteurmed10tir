@@ -217,6 +217,42 @@
 
 ---
 
+## فاز ۱۲ — قابلیت‌های تکمیلی (الزامی)
+
+### ۱۲.۱ — مشاوره آنلاین و پیش‌نمایش
+- [x] صفحه مشاوره آنلاین (`pages/consultation.html`)
+- [x] انتخاب نوع مشاوره (متنی / تصویری / ویدیویی)
+- [x] فرم شرح مشکل + آپلود تصویر با پیش‌نمایش
+- [x] نمایش تخمین خدمت و بازه قیمت (پیش‌نمایش هوشمند)
+- [x] ثبت درخواست و نمایش در پنل ادمین
+
+### ۱۲.۲ — گالری نتایج
+- [x] صفحه گالری (`pages/gallery.html`)
+- [x] فیلتر دسته‌بندی (دندانپزشکی / لیزر / زیبایی)
+- [x] کارت before-after با lightbox
+- [x] مدیریت نمونه‌کارها در ادمین
+
+### ۱۲.۳ — باشگاه مشتریان
+- [x] صفحه باشگاه (`pages/club.html`)
+- [x] سیستم امتیاز و سطح وفاداری
+- [x] تاریخچه امتیازات و پاداش‌ها
+- [x] اتصال به طرح‌های عضویت موجود
+- [x] داشبورد باشگاه در ادمین
+
+### ۱۲.۴ — یادآور هوشمند
+- [x] صفحه یادآورها (`pages/reminders.html`)
+- [x] ثبت یادآور پس از رزرو موفق
+- [x] انتخاب زمان (۲۴ ساعت قبل / ۲ ساعت قبل / روز قبل)
+- [x] اعلان مرورگر (Notification API)
+- [x] مدیریت یادآورها در ادمین
+
+### ۱۲.۵ — یکپارچه‌سازی
+- [x] لینک در هدر و لندینگ
+- [x] لینک واتساپ در فوتر
+- [x] به‌روزرسانی منوی ادمین
+
+---
+
 ## فاز ۱۱ — تحویل
 
 - [x] بازبینی نهایی هویت بصری (نام فارسی/انگلیسی یکسان در همه جا)
@@ -244,13 +280,19 @@
 
 ```
 pasteurmed10tir/
-├── index.html                 # لندینگ
+├── index.html
 ├── pages/
+│   ├── consultation.html      # مشاوره آنلاین + پیش‌نمایش
+│   ├── gallery.html           # گالری نتایج
+│   ├── club.html              # باشگاه مشتریان
+│   ├── reminders.html         # یادآور هوشمند
 │   ├── dental/
-│   │   ├── index.html         # ۴ زیربخش
-│   │   ├── general.html       # لیست پزشکان
-│   │   ├── booking.html       # ویزیت vs درمان
-│   │   └── membership.html
+│   │   ├── index.html
+│   │   ├── general.html
+│   │   ├── booking.html
+│   │   ├── confirm.html
+│   │   ├── membership.html
+│   │   └── ...
 │   ├── medical.html
 │   ├── nursing.html
 │   ├── laser.html
@@ -258,11 +300,21 @@ pasteurmed10tir/
 ├── admin/
 │   ├── login.html
 │   ├── dashboard.html
+│   ├── bookings.html
+│   ├── consultations.html
+│   ├── reminders.html
+│   ├── club.html
+│   ├── gallery.html
 │   ├── doctors.html
 │   ├── memberships.html
 │   └── shop.html
 ├── css/
 ├── js/
-└── assets/
-    └── logo/                  # لوگوی موسسه
+│   ├── data.js
+│   ├── storage.js
+│   ├── booking.js
+│   ├── payment.js
+│   ├── reminders.js
+│   └── ...
+└── assets/logo/
 ```

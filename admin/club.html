@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>باشگاه | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div id="club-table"></div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('club');
+      setAdminTitle('باشگاه مشتریان');
+      const all = PasteurStorage.get(PasteurStorage.KEYS.club) || {};
+      const members = Object.values(all);
+      const rows = members.map((m) => {
+        const tier = PasteurStorage.getClubTier(m.points);
+        return `<tr>
+          <td class="px-4 py-3">${m.phone}</td>
+          <td class="px-4 py-3 font-bold text-teal-700">${m.points}</td>
+          <td class="px-4 py-3">${m.visits}</td>
+          <td class="px-4 py-3">${tier.emoji} ${tier.name}</td>
+          <td class="px-4 py-3">${m.redeemed?.length || 0}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('club-table').innerHTML = renderDataTable(
+        ['موبایل', 'امتیاز', 'مراجعه', 'سطح', 'پاداش دریافتی'],
+        rows,
+        'هنوز عضوی در باشگاه ثبت نشده.'
+      );
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مشاوره‌ها | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div id="consultations-table"></div>
+      </main>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    function render() {
+      const rows = PasteurStorage.getConsultations().map((c) => `
+        <tr>
+          <td class="px-4 py-3">${c.name}</td>
+          <td class="px-4 py-3">${c.phone}</td>
+          <td class="px-4 py-3">${c.typeLabel}</td>
+          <td class="px-4 py-3">${c.categoryLabel}</td>
+          <td class="px-4 py-3 text-xs max-w-xs truncate">${c.description}</td>
+          <td class="px-4 py-3">${c.estimate || '—'}</td>
+          <td class="px-4 py-3">
+            <span class="badge ${c.status === 'answered' ? 'badge-available' : 'badge-busy'}">${c.status === 'answered' ? 'پاسخ داده' : 'در انتظار'}</span>
+          </td>
+          <td class="px-4 py-3">
+            ${c.status !== 'answered' ? `<button class="answer-btn text-teal-700 text-xs font-semibold" data-id="${c.id}">علامت پاسخ</button>` : '—'}
+          </td>
+        </tr>`).join('');
+      document.getElementById('consultations-table').innerHTML = renderDataTable(
+        ['نام', 'موبایل', 'نوع', 'دسته', 'شرح', 'تخمین', 'وضعیت', 'عملیات'],
+        rows,
+        'درخواست مشاوره‌ای ثبت نشده.'
+      );
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('consultations');
+      setAdminTitle('درخواست‌های مشاوره آنلاین');
+      render();
+      document.getElementById('consultations-table').addEventListener('click', (e) => {
+        if (e.target.classList.contains('answer-btn')) {
+          PasteurStorage.updateConsultation(e.target.dataset.id, { status: 'answered' });
+          render();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

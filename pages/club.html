@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>باشگاه مشتریان | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body data-page="club" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🏆 باشگاه مشتریان</h1>
+      <p class="text-slate-600 mb-8">امتیاز جمع کنید، سطح خود را ارتقا دهید و از پاداش‌ها بهره‌مند شوید</p>
+
+      <div class="card-bordered p-6 mb-8 bg-gradient-to-bl from-amber-50 to-teal-50 border-amber-200">
+        <label class="form-label" for="club-phone">شماره موبایل عضویت</label>
+        <div class="flex gap-3">
+          <input type="tel" id="club-phone" class="form-input flex-1" placeholder="۰۹۱۲۱۲۳۴۵۶۷" />
+          <button type="button" id="club-load" class="btn-primary shrink-0">مشاهده امتیاز</button>
+        </div>
+      </div>
+
+      <div id="club-dashboard" class="hidden space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="card-bordered p-5 text-center">
+            <p class="text-3xl font-bold text-teal-700" id="club-points">۰</p>
+            <p class="text-sm text-slate-500">امتیاز کل</p>
+          </div>
+          <div class="card-bordered p-5 text-center">
+            <p class="text-3xl font-bold text-blue-700" id="club-visits">۰</p>
+            <p class="text-sm text-slate-500">تعداد مراجعه</p>
+          </div>
+          <div class="card-bordered p-5 text-center">
+            <p class="text-2xl font-bold" id="club-tier">—</p>
+            <p class="text-sm text-slate-500">سطح وفاداری</p>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="font-bold text-lg mb-4">🎁 پاداش‌های قابل دریافت</h2>
+          <div id="rewards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div>
+          <h2 class="font-bold text-lg mb-4">📜 تاریخچه امتیازات</h2>
+          <div id="history-list" class="space-y-2"></div>
+        </div>
+
+        <div class="card-bordered p-5 bg-teal-50 border-teal-200 text-center">
+          <p class="text-slate-700 mb-3">برای تخفیف‌های بیشتر، طرح عضویت ارتقا دهید</p>
+          <a href="dental/membership.html" class="btn-primary">مشاهده طرح‌های عضویت</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    let currentPhone = '';
+
+    function loadClub(phone) {
+      const digits = phone.replace(/[^\d]/g, '');
+      if (digits.length < 10) { alert('شماره موبایل معتبر وارد کنید.'); return; }
+      currentPhone = digits;
+      const profile = PasteurStorage.getClubProfile(digits);
+      const tier = PasteurStorage.getClubTier(profile.points);
+
+      document.getElementById('club-dashboard').classList.remove('hidden');
+      document.getElementById('club-points').textContent = profile.points.toLocaleString('fa-IR');
+      document.getElementById('club-visits').textContent = profile.visits.toLocaleString('fa-IR');
+      document.getElementById('club-tier').textContent = `${tier.emoji} ${tier.name} (${tier.discount}٪ تخفیف)`;
+
+      document.getElementById('rewards-grid').innerHTML = PASTEUR_DATA.clubRewards.map((r) => {
+        const canRedeem = profile.points >= r.points;
+        return `
+          <div class="card-bordered p-4 flex items-center justify-between gap-3">
+            <div>
+              <span class="text-2xl">${r.emoji}</span>
+              <p class="font-bold mt-1">${r.title}</p>
+              <p class="text-sm text-teal-700">${r.points} امتیاز</p>
+            </div>
+            <button type="button" class="redeem-btn text-sm px-3 py-2 rounded-lg font-semibold ${canRedeem ? 'btn-primary' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}"
+                    data-id="${r.id}" data-points="${r.points}" ${canRedeem ? '' : 'disabled'}>
+              دریافت
+            </button>
+          </div>`;
+      }).join('');
+
+      document.getElementById('history-list').innerHTML = profile.history.length
+        ? profile.history.map((h) => `
+          <div class="card-bordered px-4 py-3 flex justify-between text-sm">
+            <span>${h.reason}</span>
+            <span class="font-bold text-teal-700">+${h.points}</span>
+          </div>`).join('')
+        : '<p class="text-slate-500 text-sm text-center py-4">هنوز امتیازی ثبت نشده — با رزرو نوبت یا مشاوره امتیاز بگیرید!</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('club');
+      document.getElementById('club-load').addEventListener('click', () => loadClub(document.getElementById('club-phone').value));
+
+      document.getElementById('rewards-grid')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.redeem-btn');
+        if (!btn || btn.disabled) return;
+        const reward = PASTEUR_DATA.clubRewards.find((r) => r.id === parseInt(btn.dataset.id, 10));
+        const profile = PasteurStorage.getClubProfile(currentPhone);
+        if (profile.points < reward.points) return;
+        profile.points -= reward.points;
+        profile.redeemed.push({ ...reward, date: new Date().toISOString() });
+        profile.history.unshift({ points: -reward.points, reason: `دریافت: ${reward.title}`, date: new Date().toISOString() });
+        PasteurStorage.saveClubProfile(currentPhone, profile);
+        alert(`پاداش «${reward.title}» با موفقیت فعال شد!`);
+        loadClub(currentPhone);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -9,6 +9,10 @@ const PasteurStorage = {
     members: 'pasteur_members',
     products: 'pasteur_products',
     adminSession: 'pasteur_admin_session',
+    consultations: 'pasteur_consultations',
+    reminders: 'pasteur_reminders',
+    club: 'pasteur_club',
+    gallery: 'pasteur_gallery',
   },
 
   get(key) {
@@ -141,5 +145,101 @@ const PasteurStorage = {
       activeMembers: members.length,
       recentBookings: bookings.slice(0, 8),
     };
+  },
+
+  getConsultations() {
+    return this.get(this.KEYS.consultations) || [];
+  },
+
+  saveConsultation(item) {
+    const list = this.getConsultations();
+    list.unshift(item);
+    this.set(this.KEYS.consultations, list);
+    return item;
+  },
+
+  updateConsultation(id, updates) {
+    const list = this.getConsultations();
+    const idx = list.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates };
+    this.set(this.KEYS.consultations, list);
+    return list[idx];
+  },
+
+  getReminders() {
+    return this.get(this.KEYS.reminders) || [];
+  },
+
+  saveReminder(reminder) {
+    const list = this.getReminders();
+    list.unshift(reminder);
+    this.set(this.KEYS.reminders, list);
+    return reminder;
+  },
+
+  updateReminder(id, updates) {
+    const list = this.getReminders();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates };
+    this.set(this.KEYS.reminders, list);
+    return list[idx];
+  },
+
+  deleteReminder(id) {
+    const list = this.getReminders().filter((r) => r.id !== id);
+    this.set(this.KEYS.reminders, list);
+  },
+
+  getClubProfile(phone) {
+    const key = phone?.replace(/[^\d]/g, '') || 'guest';
+    const all = this.get(this.KEYS.club) || {};
+    if (!all[key]) {
+      all[key] = { phone: key, points: 0, visits: 0, redeemed: [], history: [] };
+      this.set(this.KEYS.club, all);
+    }
+    return all[key];
+  },
+
+  saveClubProfile(phone, profile) {
+    const key = phone?.replace(/[^\d]/g, '') || 'guest';
+    const all = this.get(this.KEYS.club) || {};
+    all[key] = profile;
+    this.set(this.KEYS.club, all);
+    return profile;
+  },
+
+  addClubPoints(phone, points, reason) {
+    const profile = this.getClubProfile(phone);
+    profile.points += points;
+    profile.history.unshift({ points, reason, date: new Date().toISOString() });
+    return this.saveClubProfile(phone, profile);
+  },
+
+  getClubTier(points) {
+    const tiers = [...PASTEUR_DATA.clubTiers].sort((a, b) => b.minPoints - a.minPoints);
+    return tiers.find((t) => points >= t.minPoints) || tiers[tiers.length - 1];
+  },
+
+  getGallery() {
+    const stored = this.get(this.KEYS.gallery);
+    if (stored) return stored;
+    return PASTEUR_DATA.galleryItems.map((g) => ({ ...g }));
+  },
+
+  saveGallery(items) {
+    this.set(this.KEYS.gallery, items);
+  },
+
+  initGalleryIfNeeded() {
+    if (!this.get(this.KEYS.gallery)) {
+      this.saveGallery(PASTEUR_DATA.galleryItems.map((g) => ({ ...g })));
+    }
+  },
+
+  getLastBooking() {
+    const bookings = this.getBookings().filter((b) => b.status === 'confirmed');
+    return bookings[0] || null;
   },
 };

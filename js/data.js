@@ -254,6 +254,92 @@ const PASTEUR_DATA = {
       highlighted: true,
     },
   ],
+
+  consultationTypes: [
+    { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی ظرف ۲۴ ساعت' },
+    { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس + بررسی تخصصی' },
+    { id: 'video', label: 'مشاوره ویدیویی', emoji: '🎥', desc: 'تماس ویدیویی با پزشک' },
+  ],
+
+  consultationCategories: [
+    { id: 'dental', label: 'دندانپزشکی', estimate: '۳۵۰,۰۰۰ — ۲,۰۰۰,۰۰۰ تومان', service: 'ویزیت یا درمان دندان' },
+    { id: 'medical', label: 'پزشکی', estimate: '۲۵۰,۰۰۰ — ۸۰۰,۰۰۰ تومان', service: 'ویزیت پزشک عمومی' },
+    { id: 'laser', label: 'لیزر و زیبایی', estimate: '۴۰۰,۰۰۰ — ۳,۰۰۰,۰۰۰ تومان', service: 'جلسه لیزر یا زیبایی' },
+    { id: 'nursing', label: 'پرستاری', estimate: '۱۵۰,۰۰۰ — ۵۰۰,۰۰۰ تومان', service: 'خدمات پرستاری' },
+  ],
+
+  galleryItems: [
+    {
+      id: 1,
+      category: 'dental',
+      title: 'لمینت دندان',
+      before: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop',
+      after: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=400&h=300&fit=crop',
+    },
+    {
+      id: 2,
+      category: 'dental',
+      title: 'ارتودنسی',
+      before: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=400&h=300&fit=crop',
+      after: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop',
+    },
+    {
+      id: 3,
+      category: 'laser',
+      title: 'لیزر موهای زائد',
+      before: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop',
+      after: 'https://images.unsplash.com/photo-1512290883901-0f705dc0ddb0?w=400&h=300&fit=crop',
+    },
+    {
+      id: 4,
+      category: 'beauty',
+      title: 'جوانسازی پوست',
+      before: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop',
+      after: 'https://images.unsplash.com/photo-1515377901643-0a4e3f4f4f4f?w=400&h=300&fit=crop&sat=-50',
+    },
+    {
+      id: 5,
+      category: 'dental',
+      title: 'بلیچینگ دندان',
+      before: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=400&h=300&fit=crop&sat=-30',
+      after: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop',
+    },
+    {
+      id: 6,
+      category: 'beauty',
+      title: 'رفع لک پوست',
+      before: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop&brightness=0.8',
+      after: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop',
+    },
+  ],
+
+  galleryCategories: [
+    { id: 'all', label: 'همه' },
+    { id: 'dental', label: 'دندانپزشکی' },
+    { id: 'laser', label: 'لیزر' },
+    { id: 'beauty', label: 'زیبایی' },
+  ],
+
+  clubTiers: [
+    { minPoints: 0, name: 'تازه‌وارد', emoji: '🌱', discount: 0 },
+    { minPoints: 100, name: 'برنزی', emoji: '🥉', discount: 5 },
+    { minPoints: 300, name: 'نقره‌ای', emoji: '🥈', discount: 10 },
+    { minPoints: 600, name: 'طلایی', emoji: '🥇', discount: 15 },
+    { minPoints: 1000, name: 'VIP', emoji: '💎', discount: 20 },
+  ],
+
+  clubRewards: [
+    { id: 1, title: 'ویزیت رایگان', points: 200, emoji: '🩺' },
+    { id: 2, title: 'تخفیف ۱۰٪ درمان', points: 150, emoji: '🦷' },
+    { id: 3, title: 'مشاوره آنلاین رایگان', points: 80, emoji: '💬' },
+    { id: 4, title: 'محصول هدیه فروشگاه', points: 120, emoji: '🎁' },
+  ],
+
+  reminderOptions: [
+    { id: '24h', label: '۲۴ ساعت قبل', hours: 24 },
+    { id: '2h', label: '۲ ساعت قبل', hours: 2 },
+    { id: '1d', label: 'یک روز قبل (صبح)', hours: 12 },
+  ],
 };
 
 if (typeof module !== 'undefined' && module.exports) {

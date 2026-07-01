@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مشاوره آنلاین | موسسه پاستور</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body data-page="consultation" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">💬 مشاوره آنلاین</h1>
+      <p class="text-slate-600 mb-8">شرح مشکل خود را بنویسید — پیش‌نمایش خدمت و هزینه را دریافت کنید</p>
+
+      <form id="consultation-form" class="space-y-6">
+        <div>
+          <label class="form-label">نوع مشاوره</label>
+          <div id="type-options" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+        </div>
+
+        <div>
+          <label class="form-label">دسته خدمت</label>
+          <select id="category" class="form-input" required></select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label" for="c-name">نام و نام خانوادگی</label>
+            <input type="text" id="c-name" class="form-input" required />
+          </div>
+          <div>
+            <label class="form-label" for="c-phone">موبایل</label>
+            <input type="tel" id="c-phone" class="form-input" required />
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="c-desc">شرح مشکل</label>
+          <textarea id="c-desc" class="form-input min-h-[120px]" placeholder="مشکل خود را شرح دهید..." required></textarea>
+        </div>
+
+        <div>
+          <label class="form-label" for="c-image">آپلود تصویر (اختیاری)</label>
+          <input type="file" id="c-image" accept="image/*" class="form-input" />
+          <div id="image-preview" class="mt-3 hidden">
+            <p class="text-xs text-slate-500 mb-2">پیش‌نمایش تصویر:</p>
+            <img id="preview-img" class="max-h-48 rounded-lg border-2 border-slate-200" alt="پیش‌نمایش" />
+          </div>
+        </div>
+
+        <div id="estimate-preview" class="card-bordered p-5 bg-teal-50 border-teal-200 hidden">
+          <h3 class="font-bold text-teal-800 mb-2">🔮 پیش‌نمایش هوشمند</h3>
+          <p id="estimate-service" class="text-sm text-slate-700"></p>
+          <p id="estimate-price" class="text-lg font-bold text-teal-700 mt-2"></p>
+          <p class="text-xs text-slate-500 mt-2">این تخمین اولیه است — تشخیص نهایی پس از ویزیت</p>
+        </div>
+
+        <button type="submit" class="btn-primary w-full">ثبت درخواست مشاوره</button>
+      </form>
+
+      <div id="success-msg" class="hidden mt-6 card-bordered p-6 bg-green-50 border-green-200 text-center">
+        <p class="text-2xl mb-2">✅</p>
+        <p class="font-bold text-green-800">درخواست شما ثبت شد!</p>
+        <p class="text-sm text-slate-600 mt-2">کارشناسان ما ظرف ۲۴ ساعت پاسخ می‌دهند.</p>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    let selectedType = 'text';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('consultation');
+
+      document.getElementById('type-options').innerHTML = PASTEUR_DATA.consultationTypes.map((t) => `
+        <button type="button" data-type="${t.id}" class="type-btn card-bordered p-4 text-center w-full ${t.id === 'text' ? 'border-teal-500 bg-teal-50' : ''}">
+          <span class="text-2xl">${t.emoji}</span>
+          <p class="font-bold mt-2 text-sm">${t.label}</p>
+          <p class="text-xs text-slate-500 mt-1">${t.desc}</p>
+        </button>
+      `).join('');
+
+      document.getElementById('category').innerHTML = PASTEUR_DATA.consultationCategories.map((c) =>
+        `<option value="${c.id}">${c.label}</option>`
+      ).join('');
+
+      function updateEstimate() {
+        const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);
+        const el = document.getElementById('estimate-preview');
+        if (cat) {
+          document.getElementById('estimate-service').textContent = `خدمت پیشنهادی: ${cat.service}`;
+          document.getElementById('estimate-price').textContent = `بازه هزینه: ${cat.estimate}`;
+          el.classList.remove('hidden');
+        }
+      }
+      updateEstimate();
+      document.getElementById('category').addEventListener('change', updateEstimate);
+
+      document.getElementById('type-options').addEventListener('click', (e) => {
+        const btn = e.target.closest('.type-btn');
+        if (!btn) return;
+        selectedType = btn.dataset.type;
+        document.querySelectorAll('.type-btn').forEach((b) => b.classList.remove('border-teal-500', 'bg-teal-50'));
+        btn.classList.add('border-teal-500', 'bg-teal-50');
+      });
+
+      document.getElementById('c-image').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            document.getElementById('preview-img').src = ev.target.result;
+            document.getElementById('image-preview').classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      document.getElementById('consultation-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);
+        const type = PASTEUR_DATA.consultationTypes.find((t) => t.id === selectedType);
+        PasteurStorage.saveConsultation({
+          id: PasteurStorage.generateId(),
+          type: selectedType,
+          typeLabel: type?.label,
+          category: document.getElementById('category').value,
+          categoryLabel: cat?.label,
+          name: document.getElementById('c-name').value,
+          phone: document.getElementById('c-phone').value,
+          description: document.getElementById('c-desc').value,
+          estimate: cat?.estimate,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        });
+        PasteurStorage.addClubPoints(document.getElementById('c-phone').value, 20, 'مشاوره آنلاین');
+        document.getElementById('consultation-form').classList.add('hidden');
+        document.getElementById('success-msg').classList.remove('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
