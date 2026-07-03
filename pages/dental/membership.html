@@ -27,6 +27,139 @@
       </div>
 
       <div id="membership-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+
+      <section class="mt-10">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">مقایسه خدمات عادی و VIP</h2>
+          <span class="badge bg-amber-100 text-amber-800 border-amber-300">بدون موارد خط‌خورده زیبایی/جراحی</span>
+        </div>
+        <div id="services-comparison" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+      </section>
+
+      <section class="mt-10 card-bordered p-6 bg-cyan-50/70 border-cyan-200">
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4">خدمات عمومی مشترک</h2>
+        <div id="common-services" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">فرم پیشنهاد صدور عضویت</h2>
+        <p class="text-sm text-slate-600 mb-5">بر اساس فرم ارسالی، پوشش عادی یا VIP را برای خانواده/مجموعه انتخاب کنید.</p>
+        <div class="card-bordered p-5 mb-5 overflow-x-auto">
+          <div id="coverage-plans" class="min-w-[680px]"></div>
+        </div>
+
+        <form id="membership-application-form" class="card-bordered p-6 space-y-5 bg-white/95">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="form-label">تاریخ</label>
+              <input type="text" id="app-date" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">کد نمایندگی / معرف</label>
+              <input type="text" id="app-referral" class="form-input" placeholder="PLUS100" />
+            </div>
+            <div>
+              <label class="form-label">نام نماینده</label>
+              <input type="text" id="app-agent-name" class="form-input" placeholder="به‌صورت خودکار در صورت کد معتبر" readonly />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">نام و نام خانوادگی مشتری</label>
+              <input type="text" id="app-name" class="form-input" required />
+            </div>
+            <div>
+              <label class="form-label">کد ملی</label>
+              <input type="text" id="app-national-id" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">سن</label>
+              <input type="number" id="app-age" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">شغل</label>
+              <input type="text" id="app-job" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">کد پستی</label>
+              <input type="text" id="app-postal" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">شماره تماس</label>
+              <input type="tel" id="app-phone" class="form-input" required />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">نشانی دقیق منزل</label>
+              <textarea id="app-home-address" class="form-input min-h-[88px]"></textarea>
+            </div>
+            <div>
+              <label class="form-label">نشانی دقیق محل کار</label>
+              <textarea id="app-work-address" class="form-input min-h-[88px]"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">انتخاب طرح</label>
+              <select id="app-plan" class="form-input" required></select>
+            </div>
+            <div>
+              <label class="form-label">نوع پوشش</label>
+              <select id="app-tier" class="form-input" required>
+                <option value="regular">عادی</option>
+                <option value="vip">VIP</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">تعداد اعضا</label>
+              <input type="number" id="app-member-count" class="form-input" min="1" value="1" required />
+            </div>
+            <div>
+              <label class="form-label">حق عضویت محاسبه‌شده</label>
+              <div id="app-amount-preview" class="form-input bg-cyan-50 font-bold text-cyan-800">—</div>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">در صورت داشتن بیماری یا سابقه بیماری توضیح دهید</label>
+            <textarea id="app-medical-history" class="form-input min-h-[90px]"></textarea>
+          </div>
+
+          <div>
+            <label class="form-label">مشخصات افراد تحت پوشش خانواده</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="text" id="app-dependent-1" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر اول" />
+              <input type="text" id="app-dependent-2" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر دوم" />
+              <input type="text" id="app-dependent-3" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر سوم" />
+              <input type="text" id="app-dependent-4" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر چهارم" />
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            این قرارداد بر اساس شرایط عضویت پاستور پلاس و خدمات تاییدشده دندانپزشکی ثبت می‌شود.
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button type="button" id="preview-contract" class="btn-accent">پیش‌نمایش قرارداد</button>
+            <button type="submit" class="btn-primary">ثبت فرم و ادامه پرداخت</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div id="contract-preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div class="card-bordered w-full max-w-2xl max-h-[88vh] overflow-auto p-6 bg-white animate-fade-in">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <h2 class="font-bold text-xl">پیش‌نمایش قرارداد عضویت</h2>
+          <button type="button" id="contract-preview-close" class="px-3 py-1 rounded-lg border border-slate-200">بستن</button>
+        </div>
+        <div id="contract-preview-content" class="space-y-3 text-sm leading-7"></div>
+        <button type="button" onclick="window.print()" class="btn-primary mt-5 w-full">چاپ فرم</button>
+      </div>
     </div>
 
     <!-- Modal -->
@@ -42,6 +175,11 @@
             <label class="form-label">شماره موبایل</label>
             <input type="tel" id="member-phone" class="form-input" required />
           </div>
+          <div>
+            <label class="form-label">تعداد اعضا</label>
+            <input type="number" id="member-count" class="form-input" min="1" value="1" required />
+          </div>
+          <div id="member-amount-preview" class="rounded-xl border border-cyan-100 bg-cyan-50 p-3 text-sm font-bold text-cyan-800"></div>
           <div>
             <label class="form-label">کد معرف ویزیتور (اختیاری)</label>
             <input type="text" id="member-referral" class="form-input" placeholder="مثلاً PLUS100" />
@@ -68,6 +206,193 @@
 
       const order = ['regular', 'vip'];
       const plans = order.map((id) => PASTEUR_DATA.memberships.find((m) => m.id === id)).filter(Boolean);
+      const toRial = (num) => Number(num || 0).toLocaleString('fa-IR') + ' ریال';
+      const toToman = (num) => Number(num || 0).toLocaleString('fa-IR') + ' تومان';
+      const membershipPricing = PASTEUR_DATA.membershipPricing || {
+        regularPerPerson: 1200000,
+        vipPerPerson: 1800000,
+      };
+
+      function getSelectedCoveragePlan() {
+        return PASTEUR_DATA.membershipCoveragePlans.find((p) => p.id === document.getElementById('app-plan').value);
+      }
+
+      function normalizeMemberCount(value, fallback = 1) {
+        return Math.max(1, parseInt(value, 10) || fallback);
+      }
+
+      function getUnitPriceToman(tier) {
+        return tier === 'vip' ? membershipPricing.vipPerPerson : membershipPricing.regularPerPerson;
+      }
+
+      function updateApplicationAmountPreview() {
+        const tier = document.getElementById('app-tier').value;
+        const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
+        const unitPriceToman = getUnitPriceToman(tier);
+        const totalToman = unitPriceToman * memberCount;
+        document.getElementById('app-amount-preview').textContent =
+          `${toToman(unitPriceToman)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(totalToman)}`;
+      }
+
+      function getSelectedAmountRial() {
+        const plan = getSelectedCoveragePlan();
+        if (!plan) return 0;
+        const tier = document.getElementById('app-tier').value;
+        const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
+        return getUnitPriceToman(tier) * memberCount * 10;
+      }
+
+      function getApplicationData() {
+        const plan = getSelectedCoveragePlan();
+        const tier = document.getElementById('app-tier').value;
+        const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
+        const unitPriceToman = getUnitPriceToman(tier);
+        const amountRial = getSelectedAmountRial();
+        const referralCode = document.getElementById('app-referral').value.trim().toUpperCase();
+        const visitor = PasteurStorage.findVisitorByCode(referralCode);
+        return {
+          id: PasteurStorage.generateId(),
+          date: document.getElementById('app-date').value,
+          referralCode,
+          visitorName: visitor?.name || document.getElementById('app-agent-name').value || '—',
+          patientName: document.getElementById('app-name').value.trim(),
+          nationalId: document.getElementById('app-national-id').value.trim(),
+          age: document.getElementById('app-age').value,
+          job: document.getElementById('app-job').value.trim(),
+          postalCode: document.getElementById('app-postal').value.trim(),
+          phone: document.getElementById('app-phone').value.trim(),
+          homeAddress: document.getElementById('app-home-address').value.trim(),
+          workAddress: document.getElementById('app-work-address').value.trim(),
+          planId: plan?.id,
+          planTitle: plan ? `${plan.title} (${plan.duration})` : '—',
+          tier,
+          tierLabel: tier === 'vip' ? 'VIP' : 'عادی',
+          memberCount,
+          unitPriceToman,
+          amountRial,
+          amountToman: Math.round(amountRial / 10),
+          medicalHistory: document.getElementById('app-medical-history').value.trim(),
+          dependents: [
+            document.getElementById('app-dependent-1').value.trim(),
+            document.getElementById('app-dependent-2').value.trim(),
+            document.getElementById('app-dependent-3').value.trim(),
+            document.getElementById('app-dependent-4').value.trim(),
+          ].filter(Boolean),
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      function renderPreview() {
+        const data = getApplicationData();
+        document.getElementById('contract-preview-content').innerHTML = `
+          <div class="border-2 border-slate-900 p-4 rounded-xl">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <img src="../../assets/logo/logo.png" alt="پاستور پلاس" class="logo-image" />
+              <div class="text-center">
+                <p class="font-extrabold text-lg">فرم پیشنهاد صدور عضویت</p>
+                <p class="text-slate-500">پاستور پلاس</p>
+              </div>
+              <p class="text-xs text-slate-500">تاریخ: ${data.date || '—'}</p>
+            </div>
+            <p><strong>کد نمایندگی:</strong> ${data.referralCode || '—'} | <strong>نام نماینده:</strong> ${data.visitorName}</p>
+            <p><strong>نام مشتری:</strong> ${data.patientName || '—'} | <strong>کد ملی:</strong> ${data.nationalId || '—'} | <strong>تماس:</strong> ${data.phone || '—'}</p>
+            <p><strong>طرح:</strong> ${data.planTitle} | <strong>پوشش:</strong> ${data.tierLabel} | <strong>تعداد اعضا:</strong> ${data.memberCount.toLocaleString('fa-IR')} نفر</p>
+            <p><strong>مبلغ هر نفر:</strong> ${toToman(data.unitPriceToman)} | <strong>مبلغ کل:</strong> ${toRial(data.amountRial)}</p>
+            <p><strong>افراد تحت پوشش:</strong> ${data.dependents.length ? data.dependents.join('، ') : '—'}</p>
+            <p class="mt-4 border-t border-dashed border-slate-300 pt-3">
+              این قرارداد بر اساس شرایط عضویت پاستور پلاس، تعداد ${data.memberCount.toLocaleString('fa-IR')} عضو و به مبلغ ${toRial(data.amountRial)} صادر می‌شود.
+              این فرم فقط بر اساس خدمات تاییدشده دندانپزشکی و شرایط عمومی عضویت صادر می‌شود.
+            </p>
+            <div class="grid grid-cols-3 gap-4 mt-8 text-center text-xs text-slate-500">
+              <span>امضا نماینده فروش</span>
+              <span>امضا و اثر انگشت متقاضی</span>
+              <span>مهر و امضا مجموعه</span>
+            </div>
+          </div>`;
+        document.getElementById('contract-preview-modal').classList.remove('hidden');
+      }
+
+      document.getElementById('services-comparison').innerHTML = plans.map((m) => `
+        <article class="card-bordered p-5 ${m.id === 'vip' ? 'card-vip' : ''}">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl">${m.id === 'vip' ? '💎' : '🧾'}</span>
+            <div>
+              <h3 class="font-extrabold text-lg">خدمات ${m.name}</h3>
+              <p class="text-xs text-slate-500">${m.terms}</p>
+            </div>
+          </div>
+          <ul class="space-y-2 text-sm text-slate-700">
+            ${m.features.map((feature) => `<li class="flex gap-2"><span class="${m.id === 'vip' ? 'text-amber-600' : 'text-cyan-600'}">◄</span><span>${feature}</span></li>`).join('')}
+          </ul>
+        </article>
+      `).join('');
+
+      document.getElementById('common-services').innerHTML = PASTEUR_DATA.membershipCommonServices
+        .map((service) => `<div class="flex gap-2 rounded-xl bg-white/80 border border-cyan-100 p-3 text-sm text-slate-700"><span class="text-cyan-600">✓</span><span>${service}</span></div>`)
+        .join('');
+
+      document.getElementById('coverage-plans').innerHTML = `
+        <table class="w-full text-sm text-right">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="p-3">طرح</th>
+              <th class="p-3">مدت</th>
+              <th class="p-3">عادی / هر نفر</th>
+              <th class="p-3">VIP / هر نفر</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${PASTEUR_DATA.membershipCoveragePlans.map((plan) => `
+              <tr>
+                <td class="p-3 font-bold">${plan.title}</td>
+                <td class="p-3">${plan.duration}</td>
+                <td class="p-3">${toToman(membershipPricing.regularPerPerson)}</td>
+                <td class="p-3 font-bold text-amber-700">${toToman(membershipPricing.vipPerPerson)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+
+      document.getElementById('app-date').value = new Date().toLocaleDateString('fa-IR');
+      document.getElementById('app-plan').innerHTML = PASTEUR_DATA.membershipCoveragePlans
+        .map((plan) => `<option value="${plan.id}">${plan.title} — ${plan.duration}</option>`)
+        .join('');
+      updateApplicationAmountPreview();
+
+      ['app-plan', 'app-tier', 'app-member-count'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', updateApplicationAmountPreview);
+        document.getElementById(id).addEventListener('change', updateApplicationAmountPreview);
+      });
+
+      document.getElementById('app-referral').addEventListener('input', (e) => {
+        const visitor = PasteurStorage.findVisitorByCode(e.target.value);
+        document.getElementById('app-agent-name').value = visitor?.name || '';
+      });
+
+      document.getElementById('preview-contract').addEventListener('click', renderPreview);
+      document.getElementById('contract-preview-close').addEventListener('click', () => {
+        document.getElementById('contract-preview-modal').classList.add('hidden');
+      });
+
+      document.getElementById('membership-application-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = getApplicationData();
+        if (data.patientName.length < 2 || data.phone.replace(/[^\d]/g, '').length < 10) {
+          alert('نام و شماره تماس را کامل وارد کنید.');
+          return;
+        }
+        PasteurStorage.saveMembershipApplication(data);
+        PasteurStorage.setPendingPayment({
+          kind: 'membership',
+          planId: data.tier,
+          planName: `${data.planTitle} — ${data.tierLabel} — ${data.memberCount} نفر`,
+          patientName: data.patientName,
+          patientPhone: data.phone,
+          amount: data.amountToman,
+          referralCode: data.referralCode,
+        });
+        window.location.href = 'confirm.html';
+      });
 
       grid.innerHTML = plans.map((m) => `
         <div class="card-bordered p-6 flex flex-col ${m.highlighted ? 'card-vip ring-2 ring-amber-200 relative' : ''}">
@@ -76,7 +401,9 @@
             <span class="text-4xl">${m.id === 'vip' ? '💎' : '🧾'}</span>
             <h2 class="font-bold text-xl mt-2">${m.name}</h2>
           </div>
-          <p class="text-2xl font-bold ${m.id === 'vip' ? 'text-amber-700' : 'text-teal-700'} text-center my-4">${m.price}${m.priceNum ? ' <span class="text-sm font-normal text-slate-500">تومان</span>' : ''}</p>
+          <p class="text-2xl font-bold ${m.id === 'vip' ? 'text-amber-700' : 'text-teal-700'} text-center my-4">
+            ${m.price} <span class="text-sm font-normal text-slate-500">تومان / هر نفر</span>
+          </p>
           <ul class="text-sm text-slate-600 space-y-2 flex-1 mb-4">
             ${m.features.map((f) => `<li class="flex gap-2"><span class="text-teal-600">✓</span>${f}</li>`).join('')}
           </ul>
@@ -87,10 +414,18 @@
             </div>` : ''}
           <p class="text-xs text-slate-500 mb-4 border-t border-slate-100 pt-3">${m.terms}</p>
           <button type="button" data-plan="${m.id}" class="${m.id === 'vip' ? 'btn-accent' : 'btn-primary'} w-full text-sm plan-select-btn">
-            ${m.priceNum ? 'پرداخت و عضویت' : 'عضویت رایگان'}
+            پرداخت و عضویت
           </button>
         </div>
       `).join('');
+
+      function updateMembershipModalAmount() {
+        if (!selectedPlan) return;
+        const memberCount = normalizeMemberCount(document.getElementById('member-count').value);
+        const total = selectedPlan.priceNum * memberCount;
+        document.getElementById('member-amount-preview').textContent =
+          `${toToman(selectedPlan.priceNum)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(total)}`;
+      }
 
       grid.addEventListener('click', (e) => {
         const btn = e.target.closest('.plan-select-btn');
@@ -98,34 +433,23 @@
         selectedPlan = PASTEUR_DATA.memberships.find((p) => p.id === btn.dataset.plan);
         if (!selectedPlan) return;
 
-        if (selectedPlan.priceNum === 0) {
-          PasteurStorage.saveMember({
-            id: PasteurStorage.generateId(),
-            planId: selectedPlan.id,
-            planName: selectedPlan.name,
-            patientName: 'عضو جدید',
-            patientPhone: '-',
-            amount: 0,
-            status: 'paid',
-            createdAt: new Date().toISOString(),
-          });
-          alert('عضویت رایگان با موفقیت فعال شد!');
-          return;
-        }
-
         document.getElementById('modal-plan-name').textContent = `عضویت ${selectedPlan.name}`;
         document.getElementById('modal-terms').textContent = selectedPlan.terms;
+        document.getElementById('member-count').value = '1';
+        updateMembershipModalAmount();
         document.getElementById('membership-modal').classList.remove('hidden');
       });
 
       document.getElementById('modal-close').addEventListener('click', () => {
         document.getElementById('membership-modal').classList.add('hidden');
       });
+      document.getElementById('member-count').addEventListener('input', updateMembershipModalAmount);
 
       document.getElementById('membership-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const name = document.getElementById('member-name').value.trim();
         const phone = document.getElementById('member-phone').value.trim();
+        const memberCount = normalizeMemberCount(document.getElementById('member-count').value);
         if (name.length < 2 || phone.replace(/[^\d]/g, '').length < 10) {
           alert('اطلاعات را کامل وارد کنید.');
           return;
@@ -133,10 +457,10 @@
         PasteurStorage.setPendingPayment({
           kind: 'membership',
           planId: selectedPlan.id,
-          planName: selectedPlan.name,
+          planName: `${selectedPlan.name} — ${memberCount} نفر`,
           patientName: name,
           patientPhone: phone,
-          amount: selectedPlan.priceNum,
+          amount: selectedPlan.priceNum * memberCount,
           referralCode: document.getElementById('member-referral').value.trim().toUpperCase(),
         });
         window.location.href = 'confirm.html';

@@ -74,13 +74,15 @@
   <script src="../js/storage.js"></script>
   <script src="../js/components.js"></script>
   <script>
-    let selectedType = 'text';
+    const consultationParams = new URLSearchParams(window.location.search);
+    const requestedType = consultationParams.get('type');
+    let selectedType = ['text', 'image', 'video'].includes(requestedType) ? requestedType : 'text';
 
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('consultation');
 
       document.getElementById('type-options').innerHTML = PASTEUR_DATA.consultationTypes.map((t) => `
-        <button type="button" data-type="${t.id}" class="type-btn card-bordered p-4 text-center w-full ${t.id === 'text' ? 'border-teal-500 bg-teal-50' : ''}">
+        <button type="button" data-type="${t.id}" class="type-btn card-bordered p-4 text-center w-full ${t.id === selectedType ? 'border-teal-500 bg-teal-50' : ''}">
           <span class="text-2xl">${t.emoji}</span>
           <p class="font-bold mt-2 text-sm">${t.label}</p>
           <p class="text-xs text-slate-500 mt-1">${t.desc}</p>
@@ -90,6 +92,10 @@
       document.getElementById('category').innerHTML = PASTEUR_DATA.consultationCategories.map((c) =>
         `<option value="${c.id}">${c.label}</option>`
       ).join('');
+      const requestedCategory = consultationParams.get('category');
+      if (PASTEUR_DATA.consultationCategories.some((c) => c.id === requestedCategory)) {
+        document.getElementById('category').value = requestedCategory;
+      }
 
       function updateEstimate() {
         const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);

@@ -34,12 +34,13 @@
           <td class="px-4 py-3">${m.phone}</td>
           <td class="px-4 py-3 font-bold text-teal-700">${m.points}</td>
           <td class="px-4 py-3">${m.visits}</td>
+          <td class="px-4 py-3">${m.referrals || 0}</td>
           <td class="px-4 py-3">${tier.emoji} ${tier.name}</td>
           <td class="px-4 py-3">${m.redeemed?.length || 0}</td>
         </tr>`;
       }).join('');
       document.getElementById('club-table').innerHTML = renderDataTable(
-        ['موبایل', 'امتیاز', 'مراجعه', 'سطح', 'پاداش دریافتی'],
+        ['موبایل', 'امتیاز', 'مراجعه', 'معرفی بیمار', 'سطح', 'پاداش دریافتی'],
         rows,
         'هنوز عضوی در باشگاه ثبت نشده.'
       );

@@ -14,11 +14,20 @@
   <main class="flex-1 py-10">
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
       <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🩺 بخش پزشکی</h1>
-      <p class="text-slate-600 mb-8">ویزیت و مشاوره با پزشکان مجرب پاستور پلاس</p>
-      <div id="physicians-list" class="space-y-4"></div>
-      <div class="mt-8 card-bordered p-6 bg-blue-50 border-blue-200 text-center">
-        <p class="text-slate-700 mb-4">برای رزرو نوبت پزشکی با مرکز تماس بگیرید یا از بخش دندانپزشکی استفاده کنید.</p>
-        <a href="tel:04133334444" class="btn-accent">📞 تماس: ۰۴۱-۳۳۳۳۴۴۴۴</a>
+      <p class="text-slate-600 mb-8">در بخش پزشکی، مشاوره و ویزیت آنلاین را انتخاب و درخواست خود را ثبت کنید.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <a href="consultation.html?category=medical&type=text" class="card-bordered p-6 hover:-translate-y-1 transition-transform">
+          <span class="text-4xl">💬</span>
+          <h2 class="font-bold text-lg mt-3 text-slate-900">مشاوره آنلاین پزشکی</h2>
+          <p class="text-sm text-slate-600 mt-2">شرح مشکل را ثبت کنید تا کارشناسان پاستور پلاس آنلاین پیگیری کنند.</p>
+          <span class="btn-primary mt-5 inline-flex text-sm">ثبت مشاوره آنلاین</span>
+        </a>
+        <a href="consultation.html?category=medical&type=video" class="card-bordered p-6 hover:-translate-y-1 transition-transform">
+          <span class="text-4xl">🎥</span>
+          <h2 class="font-bold text-lg mt-3 text-slate-900">ویزیت آنلاین پزشکی</h2>
+          <p class="text-sm text-slate-600 mt-2">برای ویزیت آنلاین، اطلاعات و شرح وضعیت بیمار را ارسال کنید.</p>
+          <span class="btn-accent mt-5 inline-flex text-sm">ثبت ویزیت آنلاین</span>
+        </a>
       </div>
     </div>
   </main>
@@ -28,21 +37,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('medical');
-      document.getElementById('physicians-list').innerHTML = PASTEUR_DATA.physicians.map((p) => {
-        const st = STATUS_LABELS[p.status];
-        return `
-        <article class="card-bordered p-5 flex items-center gap-4">
-          <img src="${p.image}" class="w-20 h-20 rounded-xl object-cover border-2 border-slate-200" alt="" />
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <h3 class="font-bold">${p.name}</h3>
-              <span class="badge ${st.class}">${st.text}</span>
-            </div>
-            <p class="text-sm text-blue-700">${p.specialty}</p>
-            <p class="text-xs text-slate-500 mt-1">📅 ${p.days.join('، ')}</p>
-          </div>
-        </article>`;
-      }).join('');
     });
   </script>
 </body>

@@ -17,6 +17,8 @@
       <main class="flex-1 p-4 sm:p-6 bg-slate-50">
         <h2 class="font-bold text-lg mb-4">اعضا و پرداخت‌ها</h2>
         <div id="members-table" class="mb-8"></div>
+        <h2 class="font-bold text-lg mb-4">فرم‌های پیشنهاد صدور عضویت</h2>
+        <div id="applications-table" class="mb-8"></div>
         <h2 class="font-bold text-lg mb-4">طرح‌های عضویت</h2>
         <div id="plans-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </main>
@@ -43,6 +45,24 @@
         ['نام', 'طرح', 'مبلغ', 'وضعیت پرداخت'],
         rows,
         'هنوز عضوی ثبت نشده است.'
+      );
+
+      const applications = PasteurStorage.getMembershipApplications();
+      const applicationRows = applications.map((app) => `
+        <tr>
+          <td class="px-4 py-3">${app.patientName || '—'}</td>
+          <td class="px-4 py-3">${app.planTitle || '—'}</td>
+          <td class="px-4 py-3"><span class="badge ${app.tier === 'vip' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'badge-available'}">${app.tierLabel || '—'}</span></td>
+          <td class="px-4 py-3">${(app.amountRial || 0).toLocaleString('fa-IR')} ریال</td>
+          <td class="px-4 py-3 font-mono">${app.referralCode || '—'}</td>
+          <td class="px-4 py-3">${app.visitorName || '—'}</td>
+          <td class="px-4 py-3">${app.phone || '—'}</td>
+        </tr>`).join('');
+
+      document.getElementById('applications-table').innerHTML = renderDataTable(
+        ['مشتری', 'طرح', 'پوشش', 'مبلغ', 'کد معرف', 'نماینده', 'تماس'],
+        applicationRows,
+        'فرم عضویتی ثبت نشده است.'
       );
 
       document.getElementById('plans-grid').innerHTML = PASTEUR_DATA.memberships.map((m) => `

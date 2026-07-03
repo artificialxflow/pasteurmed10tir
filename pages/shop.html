@@ -14,11 +14,29 @@
   <main class="flex-1 py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <section class="card-bordered p-6 sm:p-8 mb-8 bg-gradient-to-bl from-cyan-50 to-amber-50 border-cyan-200">
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-cyan-800 text-xs font-bold border border-cyan-200 mb-3">
-          فروشگاه عادی / VIP
-        </span>
-        <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-950 mb-2">🛒 فروشگاه تجهیزات پاستور پلاس</h1>
-        <p class="text-slate-600 max-w-2xl">ابتدا نوع مشتری را انتخاب کنید؛ مشتریان VIP از ۲٪ تخفیف، اولویت پیگیری و تسهیلات تجهیزات بهره‌مند می‌شوند.</p>
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
+          <div>
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-cyan-800 text-xs font-bold border border-cyan-200 mb-3">
+              فروشگاه عادی / VIP
+            </span>
+            <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-950 mb-2">🛒 فروشگاه تجهیزات پاستور پلاس</h1>
+            <p class="text-slate-600 max-w-2xl leading-7">تجهیزات پزشکی، دندانپزشکی و اقلام مصرفی را با قیمت شفاف، موجودی قابل مشاهده و امکان ثبت سفارش آنلاین بررسی کنید. مشتریان VIP از تخفیف و تسهیلات تجهیزات بهره‌مند می‌شوند.</p>
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="rounded-2xl bg-white/85 border border-cyan-100 p-4">
+              <p class="text-2xl font-extrabold text-cyan-700">۲٪</p>
+              <p class="text-xs text-slate-500 mt-1">تخفیف VIP</p>
+            </div>
+            <div class="rounded-2xl bg-white/85 border border-cyan-100 p-4">
+              <p class="text-2xl font-extrabold text-amber-700">۴</p>
+              <p class="text-xs text-slate-500 mt-1">دسته محصول</p>
+            </div>
+            <div class="rounded-2xl bg-white/85 border border-cyan-100 p-4">
+              <p class="text-2xl font-extrabold text-teal-700">VIP</p>
+              <p class="text-xs text-slate-500 mt-1">تسهیلات</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="customer-type-section" class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8"></section>
@@ -56,16 +74,43 @@
           <button type="button" id="submit-facility" class="btn-accent mt-3">ثبت درخواست تسهیلات</button>
         </div>
 
-        <div class="mb-6 flex flex-wrap gap-2" id="category-filters">
-          <button data-cat="all" class="cat-filter badge badge-available cursor-pointer">همه</button>
-          <button data-cat="مصرفی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">مصرفی</button>
-          <button data-cat="دندانپزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">دندانپزشکی</button>
-          <button data-cat="پزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پزشکی</button>
-          <button data-cat="پرستاری" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پرستاری</button>
+        <div class="card-bordered p-4 mb-6 bg-white">
+          <div class="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3 mb-4">
+            <input type="search" id="product-search" class="form-input" placeholder="جستجوی نام محصول یا دسته..." />
+            <select id="product-sort" class="form-input">
+              <option value="default">مرتب‌سازی پیش‌فرض</option>
+              <option value="price-asc">ارزان‌ترین</option>
+              <option value="price-desc">گران‌ترین</option>
+              <option value="stock-desc">بیشترین موجودی</option>
+            </select>
+          </div>
+          <div class="flex flex-wrap gap-2" id="category-filters">
+            <button data-cat="all" class="cat-filter badge badge-available cursor-pointer">همه</button>
+            <button data-cat="مصرفی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">مصرفی</button>
+            <button data-cat="دندانپزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">دندانپزشکی</button>
+            <button data-cat="پزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پزشکی</button>
+            <button data-cat="پرستاری" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پرستاری</button>
+          </div>
         </div>
 
-        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-      </div>
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start">
+          <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-5"></div>
+          <aside class="card-bordered p-5 bg-white xl:sticky xl:top-24">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <h2 class="font-extrabold text-slate-900">سبد سفارش</h2>
+              <button type="button" id="clear-cart" class="text-xs font-bold text-red-600">پاک کردن</button>
+            </div>
+            <div id="cart-items" class="space-y-3 text-sm"></div>
+            <div id="cart-summary" class="border-t border-slate-100 mt-4 pt-4 space-y-2 text-sm"></div>
+            <form id="checkout-form" class="space-y-3 mt-5">
+              <input type="text" id="order-name" class="form-input" placeholder="نام و نام خانوادگی" required />
+              <input type="tel" id="order-phone" class="form-input" placeholder="شماره موبایل" required />
+              <textarea id="order-address" class="form-input min-h-[80px]" placeholder="آدرس / توضیحات سفارش"></textarea>
+              <button type="submit" class="btn-primary w-full text-sm">ثبت سفارش</button>
+            </form>
+          </aside>
+        </div>
+      </section>
     </div>
   </main>
   <div id="site-footer"></div>
@@ -75,9 +120,22 @@
   <script>
     let currentCustomerType = null;
     let currentVipPhone = '';
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let currentSort = 'default';
+    let cart = [];
 
     function formatPrice(num) {
       return Number(num || 0).toLocaleString('fa-IR');
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     function getProductPrice(product) {
@@ -88,9 +146,28 @@
       return Number(normalized.replace(/[^\d]/g, '')) || 0;
     }
 
+    function getFinalProductPrice(product) {
+      const price = getProductPrice(product);
+      return currentCustomerType === 'vip' ? Math.round(price * 0.98) : price;
+    }
+
+    function getCartTotals() {
+      const products = PasteurStorage.getProducts();
+      return cart.reduce((totals, item) => {
+        const product = products.find((p) => String(p.id) === String(item.id));
+        if (!product) return totals;
+        const price = getProductPrice(product);
+        const finalPrice = getFinalProductPrice(product);
+        totals.subtotal += price * item.qty;
+        totals.total += finalPrice * item.qty;
+        totals.count += item.qty;
+        return totals;
+      }, { subtotal: 0, total: 0, count: 0 });
+    }
+
     function renderCustomerTypes() {
       document.getElementById('customer-type-section').innerHTML = PASTEUR_DATA.shopCustomerTypes.map((type) => `
-        <button type="button" data-type="${type.id}" class="customer-type-card card-bordered p-6 text-right ${type.id === 'vip' ? 'card-vip hover:border-amber-400' : 'hover:border-cyan-500'}">
+        <button type="button" data-type="${type.id}" class="customer-type-card card-bordered p-6 text-right hover:-translate-y-1 transition-transform ${type.id === 'vip' ? 'card-vip hover:border-amber-400' : 'hover:border-cyan-500'}">
           <div class="flex items-start gap-3">
             <span class="text-4xl">${type.emoji}</span>
             <div>
@@ -123,32 +200,48 @@
            </div>`
         : `<div><p class="font-bold text-teal-800">🧾 مشتری عادی</p><p class="text-sm text-slate-600">قیمت عادی محصولات بدون تخفیف VIP</p></div>`;
 
+      if (phone) {
+        document.getElementById('order-phone').value = phone;
+        document.getElementById('facility-phone').value = phone;
+      }
       renderProducts();
+      renderCart();
     }
 
-    function renderProducts(category = 'all') {
+    function renderProducts() {
       PasteurStorage.initProductsIfNeeded();
       const products = PasteurStorage.getProducts();
-      const filtered = category === 'all' ? products : products.filter((p) => p.category === category);
+      const query = currentSearch.trim().toLowerCase();
+      let filtered = currentCategory === 'all' ? products : products.filter((p) => p.category === currentCategory);
+      if (query) {
+        filtered = filtered.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(query));
+      }
+      filtered = [...filtered].sort((a, b) => {
+        if (currentSort === 'price-asc') return getProductPrice(a) - getProductPrice(b);
+        if (currentSort === 'price-desc') return getProductPrice(b) - getProductPrice(a);
+        if (currentSort === 'stock-desc') return Number(b.stock || 0) - Number(a.stock || 0);
+        return 0;
+      });
       const grid = document.getElementById('products-grid');
 
       grid.innerHTML = filtered.length ? filtered.map((p) => `
-        <article class="card-bordered overflow-hidden">
+        <article class="card-bordered overflow-hidden flex flex-col bg-white">
           <div class="relative">
             <img src="${p.image}" alt="${p.name}" class="w-full h-40 object-cover" loading="lazy" />
             ${currentCustomerType === 'vip' ? '<span class="absolute top-3 right-3 badge bg-amber-100 text-amber-800 border-amber-300">VIP ۲٪</span>' : ''}
           </div>
-          <div class="p-4">
-            <span class="text-xs text-slate-500">${p.category}</span>
-            <h3 class="font-bold mt-1">${p.name}</h3>
+          <div class="p-4 flex flex-col flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="badge bg-slate-100 text-slate-700 border-slate-200">${p.category}</span>
+              <span class="text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-600'}">${p.stock > 0 ? `${p.stock.toLocaleString('fa-IR')} موجود` : 'ناموجود'}</span>
+            </div>
+            <h3 class="font-bold mt-3 text-slate-900">${escapeHtml(p.name)}</h3>
             <div class="flex items-center justify-between mt-3">
               ${currentCustomerType === 'vip'
                 ? `<div><span class="text-xs line-through text-slate-400">${p.price} تومان</span><br/><span class="font-bold text-amber-700">${formatPrice(Math.round(getProductPrice(p) * 0.98))} تومان</span></div>`
                 : `<span class="font-bold text-teal-700">${p.price} تومان</span>`}
-              <span class="text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-600'}">${p.stock > 0 ? 'موجود' : 'ناموجود'}</span>
             </div>
-            <button class="btn-primary w-full mt-3 text-sm" ${p.stock <= 0 ? 'disabled style="opacity:0.5"' : ''}
-                    onclick="handleOrder('${p.name.replace(/'/g, '')}', ${getProductPrice(p)})">
+            <button type="button" class="btn-primary w-full mt-auto text-sm add-to-cart" data-id="${p.id}" ${p.stock <= 0 ? 'disabled style="opacity:0.5"' : ''}>
               افزودن به سبد
             </button>
           </div>
@@ -156,14 +249,137 @@
       `).join('') : '<p class="col-span-full text-center text-slate-500 py-8">محصولی یافت نشد.</p>';
     }
 
-    function handleOrder(productName, amount) {
-      const finalAmount = currentCustomerType === 'vip' ? Math.round(amount * 0.98) : amount;
-      alert(`سفارش ${productName} با مبلغ ${formatPrice(finalAmount)} تومان ثبت شد. (نسخه نمایشی)`);
+    function addToCart(productId) {
+      const product = PasteurStorage.getProducts().find((p) => String(p.id) === String(productId));
+      if (!product || product.stock <= 0) return;
+      const existing = cart.find((item) => String(item.id) === String(productId));
+      if (existing) {
+        existing.qty = Math.min(existing.qty + 1, product.stock);
+      } else {
+        cart.push({ id: product.id, qty: 1 });
+      }
+      renderCart();
+    }
+
+    function changeCartQty(productId, delta) {
+      const product = PasteurStorage.getProducts().find((p) => String(p.id) === String(productId));
+      const item = cart.find((cartItem) => String(cartItem.id) === String(productId));
+      if (!item || !product) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter((cartItem) => String(cartItem.id) !== String(productId));
+      } else {
+        item.qty = Math.min(item.qty, product.stock);
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const products = PasteurStorage.getProducts();
+      const totals = getCartTotals();
+      const cartItems = document.getElementById('cart-items');
+      const cartSummary = document.getElementById('cart-summary');
+      const checkoutBtn = document.querySelector('#checkout-form button[type="submit"]');
+
+      if (!cart.length) {
+        cartItems.innerHTML = '<p class="text-slate-500 text-center py-4">سبد سفارش خالی است.</p>';
+        cartSummary.innerHTML = '<p class="text-xs text-slate-500">محصولات را به سبد اضافه کنید تا جمع سفارش نمایش داده شود.</p>';
+        checkoutBtn.disabled = true;
+        checkoutBtn.style.opacity = '0.5';
+        return;
+      }
+
+      checkoutBtn.disabled = false;
+      checkoutBtn.style.opacity = '1';
+      cartItems.innerHTML = cart.map((item) => {
+        const product = products.find((p) => String(p.id) === String(item.id));
+        if (!product) return '';
+        return `
+          <div class="rounded-xl border border-slate-100 p-3">
+            <div class="flex justify-between gap-3">
+              <div>
+                <p class="font-bold text-slate-800">${escapeHtml(product.name)}</p>
+                <p class="text-xs text-slate-500">${formatPrice(getFinalProductPrice(product))} تومان</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="cart-qty px-2 py-1 rounded-lg bg-slate-100" data-id="${product.id}" data-delta="-1">-</button>
+                <span class="font-bold">${item.qty.toLocaleString('fa-IR')}</span>
+                <button type="button" class="cart-qty px-2 py-1 rounded-lg bg-slate-100" data-id="${product.id}" data-delta="1">+</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      const discount = totals.subtotal - totals.total;
+      cartSummary.innerHTML = `
+        <div class="flex justify-between"><span>تعداد اقلام</span><strong>${totals.count.toLocaleString('fa-IR')}</strong></div>
+        <div class="flex justify-between"><span>جمع قبل از تخفیف</span><strong>${formatPrice(totals.subtotal)} تومان</strong></div>
+        <div class="flex justify-between text-amber-700"><span>تخفیف VIP</span><strong>${formatPrice(discount)} تومان</strong></div>
+        <div class="flex justify-between text-base border-t border-slate-100 pt-2"><span>مبلغ نهایی</span><strong class="text-teal-700">${formatPrice(totals.total)} تومان</strong></div>`;
+
+      if (currentCustomerType === 'vip' && totals.total > 0) {
+        document.getElementById('facility-amount').value = formatPrice(totals.total);
+      }
+    }
+
+    function submitOrder(e) {
+      e.preventDefault();
+      if (!cart.length) {
+        alert('سبد سفارش خالی است.');
+        return;
+      }
+      const name = document.getElementById('order-name').value.trim();
+      const phone = document.getElementById('order-phone').value.trim();
+      if (name.length < 2 || phone.replace(/[^\d]/g, '').length < 10) {
+        alert('نام و شماره موبایل را کامل وارد کنید.');
+        return;
+      }
+
+      const products = PasteurStorage.getProducts();
+      const totals = getCartTotals();
+      const orderItems = cart.map((item) => {
+        const product = products.find((p) => String(p.id) === String(item.id));
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          qty: item.qty,
+          unitPrice: getProductPrice(product),
+          finalUnitPrice: getFinalProductPrice(product),
+        };
+      });
+
+      PasteurStorage.saveShopOrder({
+        id: PasteurStorage.generateId(),
+        customerType: currentCustomerType,
+        customerTypeLabel: currentCustomerType === 'vip' ? 'VIP تجهیزات' : 'عادی',
+        customerName: name,
+        customerPhone: phone,
+        address: document.getElementById('order-address').value.trim(),
+        items: orderItems,
+        subtotal: totals.subtotal,
+        discount: totals.subtotal - totals.total,
+        total: totals.total,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      });
+
+      const updatedProducts = products.map((product) => {
+        const item = cart.find((cartItem) => String(cartItem.id) === String(product.id));
+        return item ? { ...product, stock: Math.max(0, Number(product.stock || 0) - item.qty) } : product;
+      });
+      PasteurStorage.saveProducts(updatedProducts);
+      cart = [];
+      e.target.reset();
+      alert('سفارش شما ثبت شد. کارشناس فروش برای هماهنگی تماس می‌گیرد.');
+      renderProducts();
+      renderCart();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('shop');
       renderCustomerTypes();
+      renderCart();
 
       document.getElementById('customer-type-section').addEventListener('click', (e) => {
         const card = e.target.closest('.customer-type-card');
@@ -226,12 +442,42 @@
       document.getElementById('category-filters').addEventListener('click', (e) => {
         const btn = e.target.closest('.cat-filter');
         if (!btn) return;
+        currentCategory = btn.dataset.cat;
         document.querySelectorAll('.cat-filter').forEach((b) => {
           b.className = 'cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer';
         });
         btn.className = 'cat-filter badge badge-available cursor-pointer';
-        renderProducts(btn.dataset.cat);
+        renderProducts();
       });
+
+      document.getElementById('product-search').addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        renderProducts();
+      });
+
+      document.getElementById('product-sort').addEventListener('change', (e) => {
+        currentSort = e.target.value;
+        renderProducts();
+      });
+
+      document.getElementById('products-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.add-to-cart');
+        if (!btn) return;
+        addToCart(btn.dataset.id);
+      });
+
+      document.getElementById('cart-items').addEventListener('click', (e) => {
+        const btn = e.target.closest('.cart-qty');
+        if (!btn) return;
+        changeCartQty(btn.dataset.id, Number(btn.dataset.delta));
+      });
+
+      document.getElementById('clear-cart').addEventListener('click', () => {
+        cart = [];
+        renderCart();
+      });
+
+      document.getElementById('checkout-form').addEventListener('submit', submitOrder);
     });
   </script>
 </body>

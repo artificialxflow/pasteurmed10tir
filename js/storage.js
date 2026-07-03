@@ -8,6 +8,7 @@ const PasteurStorage = {
     pendingPayment: 'pasteur_pending_payment',
     members: 'pasteur_members',
     products: 'pasteur_products',
+    shopOrders: 'pasteur_shop_orders',
     adminSession: 'pasteur_admin_session',
     consultations: 'pasteur_consultations',
     reminders: 'pasteur_reminders',
@@ -17,6 +18,7 @@ const PasteurStorage = {
     commissions: 'pasteur_commissions',
     facilityRequests: 'pasteur_facility_requests',
     shopVipPhones: 'pasteur_shop_vip_phones',
+    membershipApplications: 'pasteur_membership_applications',
   },
 
   get(key) {
@@ -98,6 +100,17 @@ const PasteurStorage = {
     return member;
   },
 
+  getMembershipApplications() {
+    return this.get(this.KEYS.membershipApplications) || [];
+  },
+
+  saveMembershipApplication(application) {
+    const list = this.getMembershipApplications();
+    list.unshift(application);
+    this.set(this.KEYS.membershipApplications, list);
+    return application;
+  },
+
   getProducts() {
     const stored = this.get(this.KEYS.products);
     if (stored) return stored;
@@ -106,6 +119,26 @@ const PasteurStorage = {
 
   saveProducts(products) {
     this.set(this.KEYS.products, products);
+  },
+
+  getShopOrders() {
+    return this.get(this.KEYS.shopOrders) || [];
+  },
+
+  saveShopOrder(order) {
+    const list = this.getShopOrders();
+    list.unshift(order);
+    this.set(this.KEYS.shopOrders, list);
+    return order;
+  },
+
+  updateShopOrder(id, updates) {
+    const list = this.getShopOrders();
+    const idx = list.findIndex((order) => order.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates };
+    this.set(this.KEYS.shopOrders, list);
+    return list[idx];
   },
 
   initProductsIfNeeded() {
@@ -157,7 +190,29 @@ const PasteurStorage = {
     const list = this.getCommissions();
     list.unshift(item);
     this.set(this.KEYS.commissions, list);
+    this.addReferralClubPoints(visitor, data);
     return item;
+  },
+
+  addReferralClubPoints(visitor, data) {
+    const visitorPhone = visitor.phone?.replace(/[^\d]/g, '');
+    const customerPhone = data.customerPhone?.replace(/[^\d]/g, '');
+    if (!visitorPhone || !customerPhone || visitorPhone === customerPhone) return null;
+
+    const profile = this.getClubProfile(visitorPhone);
+    profile.referrals = Number(profile.referrals || 0);
+    profile.referredPhones = Array.isArray(profile.referredPhones) ? profile.referredPhones : [];
+    if (profile.referredPhones.includes(customerPhone)) return profile;
+
+    profile.referrals += 1;
+    profile.referredPhones.unshift(customerPhone);
+    profile.points += 100;
+    profile.history.unshift({
+      points: 100,
+      reason: `معرفی بیمار جدید: ${data.customerName || customerPhone}`,
+      date: new Date().toISOString(),
+    });
+    return this.saveClubProfile(visitorPhone, profile);
   },
 
   updateCommission(id, updates) {
@@ -288,9 +343,13 @@ const PasteurStorage = {
     const key = phone?.replace(/[^\d]/g, '') || 'guest';
     const all = this.get(this.KEYS.club) || {};
     if (!all[key]) {
-      all[key] = { phone: key, points: 0, visits: 0, redeemed: [], history: [] };
+      all[key] = { phone: key, points: 0, visits: 0, referrals: 0, referredPhones: [], redeemed: [], history: [] };
       this.set(this.KEYS.club, all);
     }
+    all[key].referrals = Number(all[key].referrals || 0);
+    all[key].referredPhones = Array.isArray(all[key].referredPhones) ? all[key].referredPhones : [];
+    all[key].redeemed = Array.isArray(all[key].redeemed) ? all[key].redeemed : [];
+    all[key].history = Array.isArray(all[key].history) ? all[key].history : [];
     return all[key];
   },
 

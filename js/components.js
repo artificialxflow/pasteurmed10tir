@@ -60,7 +60,7 @@ function renderHeader(activePage = '') {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
           <a href="${base}index.html" class="flex items-center gap-3 min-w-0">
-            <div class="logo-placeholder" aria-hidden="true">P+</div>
+            <img src="${base}assets/logo/logo.png" alt="پاستور پلاس" class="logo-image" />
             <div class="min-w-0">
               <p class="font-extrabold text-slate-900 text-base sm:text-lg leading-tight truncate">
                 ${PASTEUR_DATA.institute.nameFa}
@@ -94,9 +94,6 @@ function renderHeader(activePage = '') {
 
         <nav id="mobile-menu" class="mobile-menu-panel md:hidden" aria-label="منوی موبایل">
           ${navLinks}
-          <a href="${base}pages/shop.html" class="btn-accent text-sm mt-2 text-center">
-            VIP تجهیزات
-          </a>
         </nav>
       </div>
     </header>
@@ -115,7 +112,7 @@ function renderFooter() {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <div>
             <div class="flex items-center gap-3 mb-4">
-              <div class="logo-placeholder text-lg">P+</div>
+              <img src="${base}assets/logo/logo.png" alt="پاستور پلاس" class="logo-image" />
               <div>
                 <p class="font-bold text-slate-900">${institute.nameFa}</p>
                 <p class="text-xs text-slate-500">${institute.nameEn}</p>
