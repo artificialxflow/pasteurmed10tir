@@ -1,5 +1,5 @@
 /**
- * داده‌های نمونه — موسسه پزشکی و سلامت پاستور
+ * داده‌های نمونه — پاستور پلاس
  */
 
 function buildTreatmentSlots(startHour, endHour, bookedStarts = []) {
@@ -23,16 +23,16 @@ function buildVisitHours(startHour, endHour) {
 
 const PASTEUR_DATA = {
   institute: {
-    nameFa: 'موسسه پزشکی و سلامت پاستور',
-    nameEn: 'Pasteur Medical & Health Institute',
-    shortNameFa: 'موسسه سلامت پاستور',
-    shortNameEn: 'Pasteur Health Institute',
+    nameFa: 'پاستور پلاس',
+    nameEn: 'Pasteur Plus',
+    shortNameFa: 'پاستور پلاس',
+    shortNameEn: 'Pasteur Plus',
     address: 'تبریز، خیابان پاستور جدید، تقاطع شریعتی، مجتمع سلامت پاستور',
     serviceArea: 'پاسه، تبریز و حومه',
     phone: '۰۴۱-۳۳۳۳۴۴۴۴',
     whatsapp: '۰۹۱۴۱۲۳۴۵۶۷',
-    welcome: 'به سامانه هوشمند موسسه پاستور خوش آمدید',
-    subtitle: 'رزرو سریع نوبت دندانپزشکی و پزشکی',
+    welcome: 'به اپلیکیشن هوشمند پاستور پلاس خوش آمدید',
+    subtitle: 'رزرو سریع نوبت دندان، تجهیزات پزشکی، VIP و تسهیلات',
   },
 
   services: [
@@ -199,12 +199,12 @@ const PASTEUR_DATA = {
   ],
 
   products: [
-    { id: 1, name: 'دستکش لاتکس (بسته ۱۰۰ عددی)', category: 'مصرفی', price: '۱۸۰,۰۰۰', stock: 50, image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop' },
-    { id: 2, name: 'ماسک سه‌لایه پزشکی', category: 'مصرفی', price: '۴۵,۰۰۰', stock: 200, image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&h=300&fit=crop' },
-    { id: 3, name: 'آینه دهان دندانپزشکی', category: 'دندانپزشکی', price: '۳۵۰,۰۰۰', stock: 15, image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop' },
-    { id: 4, name: 'فشارسنج دیجیتال', category: 'پزشکی', price: '۱,۲۰۰,۰۰۰', stock: 8, image: 'https://images.unsplash.com/photo-1559757142-0811a9024fe1?w=400&h=300&fit=crop' },
-    { id: 5, name: 'ست سرم‌تراپی', category: 'پرستاری', price: '۲۸۰,۰۰۰', stock: 25, image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=300&fit=crop' },
-    { id: 6, name: 'یونیت دندانپزشکی (مینی)', category: 'دندانپزشکی', price: '۴۵,۰۰۰,۰۰۰', stock: 2, image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=400&h=300&fit=crop' },
+    { id: 1, name: 'دستکش لاتکس (بسته ۱۰۰ عددی)', category: 'مصرفی', price: '۱۸۰,۰۰۰', priceNum: 180000, stock: 50, image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop' },
+    { id: 2, name: 'ماسک سه‌لایه پزشکی', category: 'مصرفی', price: '۴۵,۰۰۰', priceNum: 45000, stock: 200, image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&h=300&fit=crop' },
+    { id: 3, name: 'آینه دهان دندانپزشکی', category: 'دندانپزشکی', price: '۳۵۰,۰۰۰', priceNum: 350000, stock: 15, image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop' },
+    { id: 4, name: 'فشارسنج دیجیتال', category: 'پزشکی', price: '۱,۲۰۰,۰۰۰', priceNum: 1200000, stock: 8, image: 'https://images.unsplash.com/photo-1559757142-0811a9024fe1?w=400&h=300&fit=crop' },
+    { id: 5, name: 'ست سرم‌تراپی', category: 'پرستاری', price: '۲۸۰,۰۰۰', priceNum: 280000, stock: 25, image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=300&fit=crop' },
+    { id: 6, name: 'یونیت دندانپزشکی (مینی)', category: 'دندانپزشکی', price: '۴۵,۰۰۰,۰۰۰', priceNum: 45000000, stock: 2, image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=400&h=300&fit=crop' },
   ],
 
   memberships: [
@@ -213,46 +213,56 @@ const PASTEUR_DATA = {
       name: 'عادی',
       price: 'رایگان',
       priceNum: 0,
-      features: ['دسترسی به رزرو آنلاین', 'اطلاع‌رسانی پیامکی', 'بدون تعهد'],
-      terms: 'بدون هزینه عضویت — مناسب مراجعین جدید',
-      highlighted: false,
-    },
-    {
-      id: 'bronze',
-      name: 'برنزی',
-      price: '۵۰۰,۰۰۰',
-      priceNum: 500000,
-      features: ['تخفیف ۵٪ خدمات', 'اولویت رزرو عادی', 'مشاوره تلفنی'],
-      terms: 'تعهد ۶ ماهه — پرداخت یکجا',
-      highlighted: false,
-    },
-    {
-      id: 'silver',
-      name: 'نقره‌ای',
-      price: '۱,۰۰۰,۰۰۰',
-      priceNum: 1000000,
-      features: ['تخفیف ۱۰٪ خدمات', 'اولویت رزرو متوسط', '۲ ویزیت رایگان سالانه'],
-      terms: 'تعهد ۱ ساله — امکان پرداخت اقساطی',
-      highlighted: false,
-    },
-    {
-      id: 'gold',
-      name: 'طلایی',
-      price: '۲,۰۰۰,۰۰۰',
-      priceNum: 2000000,
-      features: ['تخفیف ۲۰٪ خدمات', 'اولویت رزرو بالا', '۴ ویزیت رایگان سالانه'],
-      terms: 'تعهد ۱ ساله — پرداخت یکجا',
+      features: ['دسترسی به رزرو آنلاین دندان', 'مشاهده محصولات عادی تجهیزات', 'بدون تعهد و هزینه'],
+      terms: 'مناسب مراجعین جدید — بدون تخفیف VIP و بدون تسهیلات تجهیزات',
       highlighted: false,
     },
     {
       id: 'vip',
       name: 'VIP',
-      price: '۵,۰۰۰,۰۰۰',
-      priceNum: 5000000,
-      features: ['تخفیف ۳۰٪ خدمات', 'اولویت رزرو فوری', 'پزشک اختصاصی', 'خدمات در منزل'],
-      terms: 'تعهد ۲ ساله — پشتیبانی ۲۴ ساعته',
+      price: '۱,۵۰۰,۰۰۰',
+      priceNum: 1500000,
+      features: ['اولویت رزرو دندانپزشکی', '۲٪ تخفیف محصولات تجهیزات', 'امکان درخواست تسهیلات تجهیزات پزشکی', 'نمایش شرایط و خدمات VIP قبل از پرداخت'],
+      terms: 'پرداخت هزینه VIP برای فعال‌سازی مزایا — تخفیف محصول و تسهیلات پس از تأیید نهایی',
       highlighted: true,
     },
+  ],
+
+  shopCustomerTypes: [
+    {
+      id: 'regular',
+      title: 'مشتری عادی',
+      emoji: '🧾',
+      description: 'مشاهده و خرید محصولات تجهیزات بدون هزینه عضویت',
+      benefits: ['دسترسی به محصولات عادی', 'ثبت سفارش نمایشی', 'بدون تخفیف VIP'],
+    },
+    {
+      id: 'vip',
+      title: 'مشتری VIP',
+      emoji: '💎',
+      description: 'پرداخت عضویت VIP و دریافت ۲٪ تخفیف + تسهیلات تجهیزات',
+      benefits: ['۲٪ تخفیف همه محصولات تجهیزات', 'امکان درخواست تسهیلات خرید', 'اولویت پیگیری سفارش'],
+    },
+  ],
+
+  shopVip: {
+    planName: 'VIP تجهیزات پاستور پلاس',
+    price: '۱,۵۰۰,۰۰۰',
+    priceNum: 1500000,
+    discountPercent: 2,
+    facilityTitle: 'تسهیلات تجهیزات پزشکی برای مشتریان VIP',
+    facilityTerms: [
+      'بررسی درخواست تسهیلات بر اساس مبلغ خرید و سابقه مشتری',
+      'امکان پرداخت مرحله‌ای برای تجهیزات منتخب',
+      'اولویت تماس کارشناس فروش پس از ثبت درخواست',
+      'فعال شدن ۲٪ تخفیف روی محصولات پس از پرداخت VIP',
+    ],
+  },
+
+  visitors: [
+    { id: 1, name: 'ویزیتور شمال تبریز', code: 'PLUS100', commissionRate: 5, phone: '۰۹۱۴۰۰۰۰۰۰۱', status: 'active' },
+    { id: 2, name: 'ویزیتور مرکز شهر', code: 'PLUS200', commissionRate: 7, phone: '۰۹۱۴۰۰۰۰۰۰۲', status: 'active' },
+    { id: 3, name: 'ویزیتور تجهیزات', code: 'EQUIPVIP', commissionRate: 10, phone: '۰۹۱۴۰۰۰۰۰۰۳', status: 'active' },
   ],
 
   consultationTypes: [

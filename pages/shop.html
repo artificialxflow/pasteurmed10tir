@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>فروشگاه | موسسه پاستور</title>
+  <title>فروشگاه تجهیزات | پاستور پلاس</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
@@ -13,18 +13,59 @@
   <div id="site-header"></div>
   <main class="flex-1 py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🛒 فروشگاه تجهیزات</h1>
-      <p class="text-slate-600 mb-6">تجهیزات پزشکی و دندانپزشکی با کیفیت</p>
+      <section class="card-bordered p-6 sm:p-8 mb-8 bg-gradient-to-bl from-cyan-50 to-amber-50 border-cyan-200">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-cyan-800 text-xs font-bold border border-cyan-200 mb-3">
+          فروشگاه عادی / VIP
+        </span>
+        <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-950 mb-2">🛒 فروشگاه تجهیزات پاستور پلاس</h1>
+        <p class="text-slate-600 max-w-2xl">ابتدا نوع مشتری را انتخاب کنید؛ مشتریان VIP از ۲٪ تخفیف، اولویت پیگیری و تسهیلات تجهیزات بهره‌مند می‌شوند.</p>
+      </section>
 
-      <div class="mb-6 flex flex-wrap gap-2" id="category-filters">
-        <button data-cat="all" class="cat-filter badge badge-available cursor-pointer">همه</button>
-        <button data-cat="مصرفی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">مصرفی</button>
-        <button data-cat="دندانپزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">دندانپزشکی</button>
-        <button data-cat="پزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پزشکی</button>
-        <button data-cat="پرستاری" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پرستاری</button>
+      <section id="customer-type-section" class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8"></section>
+
+      <section id="shop-auth-section" class="hidden card-bordered p-6 mb-8 bg-amber-50 border-amber-200">
+        <h2 class="font-bold text-lg mb-2">ورود / فعال‌سازی مشتری VIP</h2>
+        <p class="text-sm text-slate-600 mb-4">برای مشاهده تجهیزات VIP، شماره موبایل خود را وارد کنید. اگر VIP نیستید، می‌توانید همین‌جا پرداخت کنید.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input type="text" id="vip-name" class="form-input" placeholder="نام و نام خانوادگی" />
+          <input type="tel" id="vip-phone" class="form-input" placeholder="شماره موبایل" />
+        </div>
+        <input type="text" id="vip-referral" class="form-input mb-4" placeholder="کد معرف ویزیتور (اختیاری)" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button type="button" id="check-vip" class="btn-accent">قبلاً VIP هستم</button>
+          <button type="button" id="pay-vip" class="btn-primary">پرداخت VIP تجهیزات</button>
+        </div>
+        <div class="mt-4 p-4 rounded-xl bg-white border-2 border-amber-200 text-sm text-slate-700">
+          <p class="font-bold text-amber-800 mb-2">تسهیلات تجهیزات پزشکی برای مشتریان VIP</p>
+          <ul id="vip-terms" class="space-y-1"></ul>
+        </div>
+      </section>
+
+      <section id="shop-content" class="hidden">
+        <div id="shop-mode-banner" class="card-bordered p-4 mb-6"></div>
+
+        <div id="facility-section" class="hidden card-bordered p-6 mb-6 bg-blue-50 border-blue-200">
+          <h2 class="font-bold text-blue-900 mb-2">درخواست تسهیلات تجهیزات پزشکی</h2>
+          <p class="text-sm text-slate-600 mb-4">مشتریان VIP می‌توانند برای خرید تجهیزات، درخواست تسهیلات ثبت کنند.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="text" id="facility-name" class="form-input" placeholder="نام مشتری" />
+            <input type="tel" id="facility-phone" class="form-input" placeholder="موبایل" />
+            <input type="text" id="facility-amount" class="form-input" placeholder="مبلغ تقریبی خرید" />
+          </div>
+          <textarea id="facility-desc" class="form-input min-h-[90px] mt-3" placeholder="توضیحات درخواست"></textarea>
+          <button type="button" id="submit-facility" class="btn-accent mt-3">ثبت درخواست تسهیلات</button>
+        </div>
+
+        <div class="mb-6 flex flex-wrap gap-2" id="category-filters">
+          <button data-cat="all" class="cat-filter badge badge-available cursor-pointer">همه</button>
+          <button data-cat="مصرفی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">مصرفی</button>
+          <button data-cat="دندانپزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">دندانپزشکی</button>
+          <button data-cat="پزشکی" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پزشکی</button>
+          <button data-cat="پرستاری" class="cat-filter badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">پرستاری</button>
+        </div>
+
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
       </div>
-
-      <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
     </div>
   </main>
   <div id="site-footer"></div>
@@ -32,6 +73,59 @@
   <script src="../js/storage.js"></script>
   <script src="../js/components.js"></script>
   <script>
+    let currentCustomerType = null;
+    let currentVipPhone = '';
+
+    function formatPrice(num) {
+      return Number(num || 0).toLocaleString('fa-IR');
+    }
+
+    function getProductPrice(product) {
+      if (product.priceNum) return product.priceNum;
+      const normalized = String(product.price || '')
+        .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+        .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+      return Number(normalized.replace(/[^\d]/g, '')) || 0;
+    }
+
+    function renderCustomerTypes() {
+      document.getElementById('customer-type-section').innerHTML = PASTEUR_DATA.shopCustomerTypes.map((type) => `
+        <button type="button" data-type="${type.id}" class="customer-type-card card-bordered p-6 text-right ${type.id === 'vip' ? 'card-vip hover:border-amber-400' : 'hover:border-cyan-500'}">
+          <div class="flex items-start gap-3">
+            <span class="text-4xl">${type.emoji}</span>
+            <div>
+              <h2 class="font-bold text-xl">${type.title}</h2>
+              <p class="text-sm text-slate-600 mt-1">${type.description}</p>
+              <ul class="text-sm text-slate-600 mt-3 space-y-1">
+                ${type.benefits.map((b) => `<li>✓ ${b}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        </button>
+      `).join('');
+
+      document.getElementById('vip-terms').innerHTML = PASTEUR_DATA.shopVip.facilityTerms
+        .map((term) => `<li>✓ ${term}</li>`)
+        .join('');
+    }
+
+    function showShop(type, phone = '') {
+      currentCustomerType = type;
+      currentVipPhone = phone;
+      document.getElementById('shop-auth-section').classList.add('hidden');
+      document.getElementById('shop-content').classList.remove('hidden');
+      document.getElementById('facility-section').classList.toggle('hidden', type !== 'vip');
+
+      document.getElementById('shop-mode-banner').innerHTML = type === 'vip'
+        ? `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+             <div><p class="font-bold text-amber-800">💎 مشتری VIP تجهیزات</p><p class="text-sm text-slate-600">۲٪ تخفیف روی محصولات + امکان ثبت درخواست تسهیلات</p></div>
+             <button class="badge badge-available">فعال</button>
+           </div>`
+        : `<div><p class="font-bold text-teal-800">🧾 مشتری عادی</p><p class="text-sm text-slate-600">قیمت عادی محصولات بدون تخفیف VIP</p></div>`;
+
+      renderProducts();
+    }
+
     function renderProducts(category = 'all') {
       PasteurStorage.initProductsIfNeeded();
       const products = PasteurStorage.getProducts();
@@ -40,16 +134,21 @@
 
       grid.innerHTML = filtered.length ? filtered.map((p) => `
         <article class="card-bordered overflow-hidden">
-          <img src="${p.image}" alt="${p.name}" class="w-full h-40 object-cover" loading="lazy" />
+          <div class="relative">
+            <img src="${p.image}" alt="${p.name}" class="w-full h-40 object-cover" loading="lazy" />
+            ${currentCustomerType === 'vip' ? '<span class="absolute top-3 right-3 badge bg-amber-100 text-amber-800 border-amber-300">VIP ۲٪</span>' : ''}
+          </div>
           <div class="p-4">
             <span class="text-xs text-slate-500">${p.category}</span>
             <h3 class="font-bold mt-1">${p.name}</h3>
             <div class="flex items-center justify-between mt-3">
-              <span class="font-bold text-teal-700">${p.price} تومان</span>
+              ${currentCustomerType === 'vip'
+                ? `<div><span class="text-xs line-through text-slate-400">${p.price} تومان</span><br/><span class="font-bold text-amber-700">${formatPrice(Math.round(getProductPrice(p) * 0.98))} تومان</span></div>`
+                : `<span class="font-bold text-teal-700">${p.price} تومان</span>`}
               <span class="text-xs ${p.stock > 0 ? 'text-green-600' : 'text-red-600'}">${p.stock > 0 ? 'موجود' : 'ناموجود'}</span>
             </div>
             <button class="btn-primary w-full mt-3 text-sm" ${p.stock <= 0 ? 'disabled style="opacity:0.5"' : ''}
-                    onclick="alert('سفارش ${p.name} ثبت شد. (نسخه نمایشی)')">
+                    onclick="handleOrder('${p.name.replace(/'/g, '')}', ${getProductPrice(p)})">
               افزودن به سبد
             </button>
           </div>
@@ -57,9 +156,73 @@
       `).join('') : '<p class="col-span-full text-center text-slate-500 py-8">محصولی یافت نشد.</p>';
     }
 
+    function handleOrder(productName, amount) {
+      const finalAmount = currentCustomerType === 'vip' ? Math.round(amount * 0.98) : amount;
+      alert(`سفارش ${productName} با مبلغ ${formatPrice(finalAmount)} تومان ثبت شد. (نسخه نمایشی)`);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('shop');
-      renderProducts();
+      renderCustomerTypes();
+
+      document.getElementById('customer-type-section').addEventListener('click', (e) => {
+        const card = e.target.closest('.customer-type-card');
+        if (!card) return;
+        if (card.dataset.type === 'regular') {
+          showShop('regular');
+        } else {
+          document.getElementById('shop-auth-section').classList.remove('hidden');
+          document.getElementById('shop-content').classList.add('hidden');
+        }
+      });
+
+      document.getElementById('check-vip').addEventListener('click', () => {
+        const phone = document.getElementById('vip-phone').value;
+        if (PasteurStorage.isShopVip(phone)) {
+          showShop('vip', phone);
+        } else {
+          alert('برای این شماره VIP فعال نیست. لطفاً پرداخت VIP را انجام دهید.');
+        }
+      });
+
+      document.getElementById('pay-vip').addEventListener('click', () => {
+        const name = document.getElementById('vip-name').value.trim();
+        const phone = document.getElementById('vip-phone').value.trim();
+        if (name.length < 2 || phone.replace(/[^\d]/g, '').length < 10) {
+          alert('نام و موبایل را کامل وارد کنید.');
+          return;
+        }
+        PasteurStorage.setPendingPayment({
+          kind: 'membership',
+          planId: 'shop-vip',
+          planName: PASTEUR_DATA.shopVip.planName,
+          patientName: name,
+          patientPhone: phone,
+          amount: PASTEUR_DATA.shopVip.priceNum,
+          referralCode: document.getElementById('vip-referral').value.trim().toUpperCase(),
+          returnTo: '../shop.html',
+        });
+        window.location.href = 'dental/confirm.html';
+      });
+
+      document.getElementById('submit-facility').addEventListener('click', () => {
+        const phone = document.getElementById('facility-phone').value.trim() || currentVipPhone;
+        if (!PasteurStorage.isShopVip(phone)) {
+          alert('ثبت تسهیلات فقط برای مشتری VIP فعال است.');
+          return;
+        }
+        PasteurStorage.saveFacilityRequest({
+          id: PasteurStorage.generateId(),
+          name: document.getElementById('facility-name').value.trim(),
+          phone,
+          amount: document.getElementById('facility-amount').value.trim(),
+          description: document.getElementById('facility-desc').value.trim(),
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        });
+        alert('درخواست تسهیلات ثبت شد. کارشناس فروش با شما تماس می‌گیرد.');
+      });
+
       document.getElementById('category-filters').addEventListener('click', (e) => {
         const btn = e.target.closest('.cat-filter');
         if (!btn) return;

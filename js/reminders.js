@@ -1,5 +1,5 @@
 /**
- * یادآور هوشمند — موسسه پاستور
+ * یادآور هوشمند — پاستور پلاس
  */
 const ReminderService = {
   requestPermission() {
@@ -38,7 +38,7 @@ const ReminderService = {
 
     const reminders = PasteurStorage.getReminders().filter((r) => r.status === 'active' && !r.notified);
     reminders.forEach((r) => {
-      new Notification('یادآور نوبت — موسسه پاستور', {
+      new Notification('یادآور نوبت — پاستور پلاس', {
         body: `${r.patientName} عزیز، نوبت ${r.typeLabel} با ${r.doctorName} — ${r.day} ${r.timeLabel}`,
         icon: '/assets/logo/.gitkeep',
         tag: r.id,

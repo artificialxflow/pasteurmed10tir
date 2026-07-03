@@ -1,5 +1,5 @@
 /**
- * پرداخت mock — موسسه پاستور
+ * پرداخت mock — پاستور پلاس
  */
 const PaymentFlow = {
   init() {
@@ -43,6 +43,10 @@ const PaymentFlow = {
           <div class="flex justify-between border-b border-slate-100 pb-2">
             <span class="text-slate-500">زمان:</span><span class="font-semibold">${data.timeLabel}</span>
           </div>
+          ${data.referralCode ? `
+          <div class="flex justify-between border-b border-slate-100 pb-2">
+            <span class="text-slate-500">کد معرف:</span><span class="font-semibold">${data.referralCode}</span>
+          </div>` : ''}
           <div class="flex justify-between pt-2 text-base">
             <span class="font-bold">مبلغ قابل پرداخت:</span>
             <span class="font-bold text-teal-700">${this.formatPrice(data.amount)}</span>
@@ -58,6 +62,10 @@ const PaymentFlow = {
           <div class="flex justify-between border-b border-slate-100 pb-2">
             <span class="text-slate-500">طرح:</span><span class="font-semibold">${data.planName}</span>
           </div>
+          ${data.referralCode ? `
+          <div class="flex justify-between border-b border-slate-100 pb-2">
+            <span class="text-slate-500">کد معرف:</span><span class="font-semibold">${data.referralCode}</span>
+          </div>` : ''}
           <div class="flex justify-between pt-2 text-base">
             <span class="font-bold">مبلغ واریزی:</span>
             <span class="font-bold text-teal-700">${this.formatPrice(data.amount)}</span>
@@ -76,7 +84,7 @@ const PaymentFlow = {
         const success = Math.random() > 0.1;
         if (success) {
           this.completePayment(pending);
-          window.location.href = 'success.html';
+          window.location.href = pending.successTo || (pending.planId === 'shop-vip' ? '../shop.html?vip=paid' : 'success.html');
         } else {
           window.location.href = 'failed.html';
         }
@@ -85,7 +93,7 @@ const PaymentFlow = {
 
     document.getElementById('btn-cancel')?.addEventListener('click', () => {
       PasteurStorage.clearPendingPayment();
-      window.location.href = pending.kind === 'membership' ? 'membership.html' : 'general.html';
+      window.location.href = pending.returnTo || (pending.kind === 'membership' ? 'membership.html' : 'general.html');
     });
   },
 
@@ -111,6 +119,16 @@ const PaymentFlow = {
       const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
       profile.visits += 1;
       PasteurStorage.saveClubProfile(pending.patientPhone, profile);
+      if (pending.referralCode) {
+        PasteurStorage.saveCommission({
+          referralCode: pending.referralCode,
+          sourceType: 'booking',
+          sourceLabel: pending.typeLabel,
+          customerName: pending.patientName,
+          customerPhone: pending.patientPhone,
+          amount: pending.amount,
+        });
+      }
       sessionStorage.setItem('pasteur_last_booking', JSON.stringify(booking));
     } else if (pending.kind === 'membership') {
       PasteurStorage.saveMember({
@@ -123,6 +141,19 @@ const PaymentFlow = {
         status: 'paid',
         createdAt: new Date().toISOString(),
       });
+      if (pending.planId === 'vip' || pending.planId === 'shop-vip') {
+        PasteurStorage.activateShopVip(pending.patientPhone);
+      }
+      if (pending.referralCode) {
+        PasteurStorage.saveCommission({
+          referralCode: pending.referralCode,
+          sourceType: pending.planId === 'shop-vip' ? 'shop-vip' : 'membership',
+          sourceLabel: pending.planName,
+          customerName: pending.patientName,
+          customerPhone: pending.patientPhone,
+          amount: pending.amount,
+        });
+      }
     }
     PasteurStorage.clearPendingPayment();
   },

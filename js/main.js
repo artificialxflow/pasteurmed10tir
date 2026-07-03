@@ -1,5 +1,5 @@
 /**
- * اسکریپت اصلی — موسسه پزشکی و سلامت پاستور
+ * اسکریپت اصلی — پاستور پلاس
  */
 
 document.addEventListener('DOMContentLoaded', () => {

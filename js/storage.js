@@ -1,5 +1,5 @@
 /**
- * مدیریت localStorage — موسسه پاستور
+ * مدیریت localStorage — پاستور پلاس
  */
 const PasteurStorage = {
   KEYS: {
@@ -13,6 +13,10 @@ const PasteurStorage = {
     reminders: 'pasteur_reminders',
     club: 'pasteur_club',
     gallery: 'pasteur_gallery',
+    visitors: 'pasteur_visitors',
+    commissions: 'pasteur_commissions',
+    facilityRequests: 'pasteur_facility_requests',
+    shopVipPhones: 'pasteur_shop_vip_phones',
   },
 
   get(key) {
@@ -110,6 +114,92 @@ const PasteurStorage = {
     }
   },
 
+  getVisitors() {
+    const stored = this.get(this.KEYS.visitors);
+    if (stored) return stored;
+    return PASTEUR_DATA.visitors.map((v) => ({ ...v }));
+  },
+
+  saveVisitors(visitors) {
+    this.set(this.KEYS.visitors, visitors);
+  },
+
+  findVisitorByCode(code) {
+    const normalized = (code || '').trim().toUpperCase();
+    if (!normalized) return null;
+    return this.getVisitors().find((v) => v.code.toUpperCase() === normalized && v.status === 'active') || null;
+  },
+
+  getCommissions() {
+    return this.get(this.KEYS.commissions) || [];
+  },
+
+  saveCommission(data) {
+    const visitor = this.findVisitorByCode(data.referralCode);
+    if (!visitor) return null;
+    const baseAmount = Number(data.amount || 0);
+    const commissionAmount = Math.round((baseAmount * visitor.commissionRate) / 100);
+    const item = {
+      id: this.generateId(),
+      visitorId: visitor.id,
+      visitorName: visitor.name,
+      referralCode: visitor.code,
+      commissionRate: visitor.commissionRate,
+      commissionAmount,
+      sourceType: data.sourceType,
+      sourceLabel: data.sourceLabel,
+      customerName: data.customerName || '—',
+      customerPhone: data.customerPhone || '—',
+      amount: baseAmount,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    const list = this.getCommissions();
+    list.unshift(item);
+    this.set(this.KEYS.commissions, list);
+    return item;
+  },
+
+  updateCommission(id, updates) {
+    const list = this.getCommissions();
+    const idx = list.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates };
+    this.set(this.KEYS.commissions, list);
+    return list[idx];
+  },
+
+  getFacilityRequests() {
+    return this.get(this.KEYS.facilityRequests) || [];
+  },
+
+  saveFacilityRequest(request) {
+    const list = this.getFacilityRequests();
+    list.unshift(request);
+    this.set(this.KEYS.facilityRequests, list);
+    return request;
+  },
+
+  activateShopVip(phone) {
+    const key = phone?.replace(/[^\d]/g, '');
+    if (!key) return;
+    const list = this.get(this.KEYS.shopVipPhones) || [];
+    if (!list.includes(key)) {
+      list.push(key);
+      this.set(this.KEYS.shopVipPhones, list);
+    }
+  },
+
+  isShopVip(phone) {
+    const key = phone?.replace(/[^\d]/g, '');
+    if (!key) return false;
+    const vipPhones = this.get(this.KEYS.shopVipPhones) || [];
+    const memberPhones = this.getMembers()
+      .filter((m) => m.status === 'paid' && ['vip', 'shop-vip'].includes(m.planId))
+      .map((m) => m.patientPhone?.replace(/[^\d]/g, ''));
+    return vipPhones.includes(key) || memberPhones.includes(key);
+  },
+
   isAdminLoggedIn() {
     return sessionStorage.getItem(this.KEYS.adminSession) === 'true';
   },
@@ -137,12 +227,14 @@ const PasteurStorage = {
     const todayBookings = confirmed.filter((b) => b.dateLabel === today || b.createdAt?.startsWith(new Date().toISOString().slice(0, 10)));
     const revenue = confirmed.reduce((sum, b) => sum + (b.amount || 0), 0);
     const members = this.getMembers().filter((m) => m.status === 'paid');
+    const commissions = this.getCommissions();
 
     return {
       totalBookings: confirmed.length,
       todayVisitors: todayBookings.length,
       revenue,
       activeMembers: members.length,
+      commissionsTotal: commissions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0),
       recentBookings: bookings.slice(0, 8),
     };
   },

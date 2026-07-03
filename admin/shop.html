@@ -69,6 +69,7 @@
           id: Date.now(),
           name: document.getElementById('prod-name').value,
           price: document.getElementById('prod-price').value,
+          priceNum: Number(document.getElementById('prod-price').value.replace(/[^\d]/g, '')) || 0,
           category: document.getElementById('prod-cat').value,
           stock: parseInt(document.getElementById('prod-stock').value, 10),
           image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop',

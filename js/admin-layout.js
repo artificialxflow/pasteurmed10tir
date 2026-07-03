@@ -1,5 +1,5 @@
 /**
- * Layout پنل ادمین — موسسه پاستور
+ * Layout پنل ادمین — پاستور پلاس
  */
 
 function requireAdmin() {
@@ -18,6 +18,9 @@ function getAdminNavItems() {
     { href: 'reminders.html', label: 'یادآورها', icon: '🔔', id: 'reminders' },
     { href: 'club.html', label: 'باشگاه', icon: '🏆', id: 'club' },
     { href: 'gallery.html', label: 'گالری', icon: '🖼️', id: 'gallery' },
+    { href: 'visitors.html', label: 'ویزیتورها', icon: '🧑‍💼', id: 'visitors' },
+    { href: 'commissions.html', label: 'پورسانت‌ها', icon: '💰', id: 'commissions' },
+    { href: 'facilities.html', label: 'تسهیلات', icon: '🤝', id: 'facilities' },
     { href: 'doctors.html', label: 'پزشکان', icon: '👨‍⚕️', id: 'doctors' },
     { href: 'memberships.html', label: 'عضویت‌ها', icon: '💎', id: 'memberships' },
     { href: 'shop.html', label: 'فروشگاه', icon: '🛒', id: 'shop' },
@@ -37,7 +40,7 @@ function mountAdminLayout(activeId = 'dashboard') {
           <div class="logo-placeholder text-lg">🏥</div>
           <div>
             <p class="font-bold text-sm">پنل مدیریت</p>
-            <p class="text-xs text-slate-400">موسسه پاستور</p>
+            <p class="text-xs text-slate-400">پاستور پلاس</p>
           </div>
         </div>
       </div>

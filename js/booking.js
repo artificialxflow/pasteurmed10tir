@@ -1,5 +1,5 @@
 /**
- * جریان نوبت‌دهی — موسسه پاستور
+ * جریان نوبت‌دهی — پاستور پلاس
  */
 
 const BookingFlow = {
@@ -11,6 +11,7 @@ const BookingFlow = {
     timeLabel: null,
     patientName: '',
     patientPhone: '',
+    referralCode: '',
   },
 
   currentStepName: 'type',
@@ -242,8 +243,10 @@ const BookingFlow = {
   renderStepInfo() {
     const nameInput = document.getElementById('patient-name');
     const phoneInput = document.getElementById('patient-phone');
+    const referralInput = document.getElementById('referral-code');
     if (nameInput) nameInput.value = this.state.patientName || '';
     if (phoneInput) phoneInput.value = this.state.patientPhone || '';
+    if (referralInput) referralInput.value = this.state.referralCode || '';
     this.renderSummary();
   },
 
@@ -331,6 +334,9 @@ const BookingFlow = {
     document.getElementById('patient-phone')?.addEventListener('input', (e) => {
       this.state.patientPhone = e.target.value.trim();
     });
+    document.getElementById('referral-code')?.addEventListener('input', (e) => {
+      this.state.referralCode = e.target.value.trim().toUpperCase();
+    });
 
     document.getElementById('booking-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -414,6 +420,7 @@ const BookingFlow = {
       patientName: this.state.patientName,
       patientPhone: this.state.patientPhone,
       amount,
+      referralCode: this.state.referralCode,
     });
 
     PasteurStorage.clearPendingBooking();

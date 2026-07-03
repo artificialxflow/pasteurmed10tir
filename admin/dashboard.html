@@ -20,7 +20,7 @@
           <button data-filter="week" class="filter-btn badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">هفته</button>
           <button data-filter="month" class="filter-btn badge bg-slate-100 text-slate-700 border-slate-300 cursor-pointer">ماه</button>
         </div>
-        <div id="kpi-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+        <div id="kpi-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8"></div>
         <h2 class="font-bold text-lg mb-4">رزروهای اخیر</h2>
         <div id="recent-bookings"></div>
       </main>
@@ -40,7 +40,8 @@
           <div class="card-bordered p-5"><p class="text-2xl font-bold text-teal-700">${stats.totalBookings}</p><p class="text-sm text-slate-500">کل رزروها</p></div>
           <div class="card-bordered p-5"><p class="text-2xl font-bold text-blue-700">${stats.todayVisitors}</p><p class="text-sm text-slate-500">مراجعین امروز</p></div>
           <div class="card-bordered p-5"><p class="text-2xl font-bold text-amber-700">${stats.revenue.toLocaleString('fa-IR')}</p><p class="text-sm text-slate-500">درآمد (تومان)</p></div>
-          <div class="card-bordered p-5"><p class="text-2xl font-bold text-purple-700">${stats.activeMembers}</p><p class="text-sm text-slate-500">عضویت فعال</p></div>`;
+          <div class="card-bordered p-5"><p class="text-2xl font-bold text-purple-700">${stats.activeMembers}</p><p class="text-sm text-slate-500">عضویت فعال</p></div>
+          <div class="card-bordered p-5"><p class="text-2xl font-bold text-rose-700">${stats.commissionsTotal.toLocaleString('fa-IR')}</p><p class="text-sm text-slate-500">پورسانت معرف‌ها</p></div>`;
 
         const rows = stats.recentBookings.map((b) => `
           <tr class="hover:bg-slate-50">

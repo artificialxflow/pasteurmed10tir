@@ -1,5 +1,5 @@
 /**
- * کامپوننت‌های UI — موسسه پزشکی و سلامت پاستور
+ * کامپوننت‌های UI — پاستور پلاس
  */
 
 const STATUS_LABELS = {
@@ -20,47 +20,63 @@ function renderHeader(activePage = '') {
   const base = getBasePath();
   const navItems = [
     { href: `${base}index.html`, label: 'صفحه اصلی', id: 'home' },
-    { href: `${base}pages/consultation.html`, label: 'مشاوره آنلاین', id: 'consultation' },
+    { href: `${base}pages/shop.html`, label: 'تجهیزات', id: 'shop' },
     { href: `${base}pages/gallery.html`, label: 'گالری', id: 'gallery' },
     { href: `${base}pages/club.html`, label: 'باشگاه', id: 'club' },
     { href: `${base}pages/dental/index.html`, label: 'دندانپزشکی', id: 'dental' },
-    { href: `${base}pages/medical.html`, label: 'پزشکی', id: 'medical' },
+    { href: `${base}pages/consultation.html`, label: 'مشاوره', id: 'consultation' },
     { href: `${base}admin/login.html`, label: 'پنل ادمین', id: 'admin' },
+  ];
+  const bottomNavItems = [
+    { href: `${base}index.html`, label: 'خانه', icon: '🏠', id: 'home' },
+    { href: `${base}pages/dental/general.html`, label: 'رزرو', icon: '🦷', id: 'dental' },
+    { href: `${base}pages/shop.html`, label: 'تجهیزات', icon: '🛒', id: 'shop' },
+    { href: `${base}pages/club.html`, label: 'باشگاه', icon: '🏆', id: 'club' },
+    { href: `${base}pages/consultation.html`, label: 'مشاوره', icon: '💬', id: 'consultation' },
   ];
 
   const navLinks = navItems
     .map(
       (item) => `
       <a href="${item.href}"
-         class="px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                ${activePage === item.id ? 'bg-teal-100 text-teal-800 border-2 border-teal-300' : 'text-slate-700 hover:bg-slate-100 hover:text-teal-700'}">
+         class="px-3 py-2 rounded-full text-xs lg:text-sm font-bold transition-colors
+                ${activePage === item.id ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' : 'text-slate-600 hover:bg-white hover:text-cyan-700'}">
         ${item.label}
+      </a>`
+    )
+    .join('');
+  const bottomLinks = bottomNavItems
+    .map(
+      (item) => `
+      <a href="${item.href}" class="${activePage === item.id ? 'active' : ''}">
+        <span class="text-lg" aria-hidden="true">${item.icon}</span>
+        <span>${item.label}</span>
       </a>`
     )
     .join('');
 
   return `
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-cyan-100 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16 sm:h-18 gap-4">
+        <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
           <a href="${base}index.html" class="flex items-center gap-3 min-w-0">
-            <div class="logo-placeholder" aria-hidden="true">🏥</div>
+            <div class="logo-placeholder" aria-hidden="true">P+</div>
             <div class="min-w-0">
-              <p class="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">
+              <p class="font-extrabold text-slate-900 text-base sm:text-lg leading-tight truncate">
                 ${PASTEUR_DATA.institute.nameFa}
               </p>
               <p class="text-xs text-slate-500 hidden sm:block truncate">
-                ${PASTEUR_DATA.institute.nameEn}
+                اپلیکیشن بیماران دندان و تجهیزات VIP
               </p>
             </div>
           </a>
 
-          <nav class="hidden md:flex items-center gap-1" aria-label="منوی اصلی">
+          <nav class="hidden md:flex items-center gap-1 rounded-full bg-slate-50/80 border border-slate-100 p-1" aria-label="منوی اصلی">
             ${navLinks}
           </nav>
 
-          <a href="${base}pages/dental/general.html" class="btn-primary text-sm hidden sm:inline-flex shrink-0">
-            رزرو نوبت
+          <a href="${base}pages/shop.html" class="btn-accent text-sm hidden sm:inline-flex shrink-0">
+            💎 VIP تجهیزات
           </a>
 
           <button id="mobile-menu-btn"
@@ -75,12 +91,15 @@ function renderHeader(activePage = '') {
 
         <nav id="mobile-menu" class="hidden md:hidden pb-4 flex flex-col gap-1" aria-label="منوی موبایل">
           ${navLinks}
-          <a href="${base}pages/dental/general.html" class="btn-primary text-sm mt-2 text-center">
-            رزرو نوبت
+          <a href="${base}pages/shop.html" class="btn-accent text-sm mt-2 text-center">
+            VIP تجهیزات
           </a>
         </nav>
       </div>
-    </header>`;
+    </header>
+    <nav class="mobile-bottom-nav" aria-label="ناوبری موبایل">
+      ${bottomLinks}
+    </nav>`;
 }
 
 function renderFooter() {
@@ -93,14 +112,14 @@ function renderFooter() {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <div>
             <div class="flex items-center gap-3 mb-4">
-              <div class="logo-placeholder text-lg">🏥</div>
+              <div class="logo-placeholder text-lg">P+</div>
               <div>
                 <p class="font-bold text-slate-900">${institute.nameFa}</p>
                 <p class="text-xs text-slate-500">${institute.nameEn}</p>
               </div>
             </div>
             <p class="text-sm text-slate-600 leading-relaxed">
-              ارائه‌دهنده خدمات جامع پزشکی، دندانپزشکی و سلامت در تبریز
+              اپلیکیشن بیماران دندان، تجهیزات پزشکی، VIP و تسهیلات در تبریز
             </p>
           </div>
 
@@ -159,9 +178,12 @@ function renderServiceCard(service, index = 0) {
 
   return `
     <a href="${service.href}"
-       class="group card-bordered overflow-hidden block animate-fade-in"
+       class="group card-bordered overflow-hidden block animate-fade-in relative"
        style="animation-delay: ${index * 0.08}s">
-      <div class="relative h-40 sm:h-44 overflow-hidden">
+      <div class="absolute top-3 left-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-700 border border-white shadow-sm">
+        پاستور پلاس
+      </div>
+      <div class="relative h-40 sm:h-48 overflow-hidden">
         <img src="${service.image}"
              alt="${service.title}"
              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -169,10 +191,10 @@ function renderServiceCard(service, index = 0) {
         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         <span class="absolute bottom-3 right-3 text-3xl" aria-hidden="true">${service.emoji}</span>
       </div>
-      <div class="p-4 sm:p-5 border-t-2 ${borderClass} transition-colors">
+      <div class="p-4 sm:p-5 border-t ${borderClass} transition-colors">
         <h3 class="font-bold text-lg text-slate-900 mb-1">${service.title}</h3>
         <p class="text-sm text-slate-600">${service.description}</p>
-        <span class="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-teal-700 group-hover:gap-2 transition-all">
+        <span class="inline-flex items-center gap-1 mt-4 text-sm font-bold text-cyan-700 group-hover:gap-2 transition-all">
           مشاهده و رزرو
           <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -190,7 +212,7 @@ function renderDoctorCard(doctor, basePath = '') {
     <article class="card-bordered p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
       <img src="${doctor.image}"
            alt="${doctor.name}"
-           class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover border-2 border-slate-200 shrink-0"
+           class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-4 border-white shadow-sm shrink-0"
            loading="lazy" />
       <div class="flex-1 min-w-0">
         <div class="flex flex-wrap items-center gap-2 mb-1">

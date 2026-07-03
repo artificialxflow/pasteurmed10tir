@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="سامانه رزرو نوبت موسسه پزشکی و سلامت پاستور — تبریز" />
-  <title>موسسه پزشکی و سلامت پاستور | رزرو آنلاین نوبت</title>
+  <meta name="description" content="پاستور پلاس — اپلیکیشن هوشمند بیماران دندان، تجهیزات پزشکی، VIP و تسهیلات" />
+  <title>پاستور پلاس | رزرو دندان و تجهیزات پزشکی</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,28 +42,84 @@
   <main class="flex-1">
 
     <!-- Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-bl from-teal-50 via-white to-blue-50 border-b-2 border-slate-200">
-      <div class="absolute inset-0 opacity-30 pointer-events-none"
-           style="background-image: radial-gradient(circle at 20% 50%, #99f6e4 0%, transparent 50%), radial-gradient(circle at 80% 20%, #bfdbfe 0%, transparent 40%);">
+    <section class="relative overflow-hidden border-b border-cyan-100">
+      <div class="absolute inset-0 opacity-80 pointer-events-none"
+           style="background-image: radial-gradient(circle at 18% 30%, #a5f3fc 0%, transparent 26rem), radial-gradient(circle at 86% 10%, #fde68a 0%, transparent 22rem), linear-gradient(135deg, #f8fdff 0%, #ecfeff 48%, #fff7ed 100%);">
       </div>
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
-        <div class="max-w-3xl animate-fade-in">
-          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-sm font-semibold border-2 border-teal-200 mb-4">
-            🏥 موسسه سلامت پاستور — تبریز
-          </span>
-          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight mb-4">
-            به سامانه هوشمند موسسه پاستور خوش آمدید
-          </h1>
-          <p class="text-lg sm:text-xl text-slate-600 mb-8 leading-relaxed">
-            رزرو سریع نوبت دندانپزشکی و پزشکی — خدمات حرفه‌ای در پاسه، تبریز و حومه
-          </p>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <a href="pages/dental/general.html" class="btn-primary text-base px-6 py-3">
-              🦷 رزرو نوبت دندانپزشکی
-            </a>
-            <a href="pages/medical.html" class="btn-accent text-base px-6 py-3">
-              🩺 رزرو نوبت پزشکی
-            </a>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+          <div class="animate-fade-in">
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 text-cyan-800 text-sm font-bold border border-cyan-200 shadow-sm mb-4">
+              P+ پاستور پلاس — اپلیکیشن بیماران دندان
+            </span>
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-950 leading-tight mb-4">
+              رزرو دندان، تجهیزات VIP و تسهیلات در یک اپلیکیشن
+            </h1>
+            <p class="text-base sm:text-xl text-slate-600 mb-8 leading-relaxed max-w-2xl">
+              تجربه‌ای سریع و موبایل‌محور برای بیماران: انتخاب پزشک، کد معرف ویزیتور، فروشگاه عادی/VIP، تخفیف ۲٪ تجهیزات و درخواست تسهیلات.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <a href="pages/dental/general.html" class="btn-primary text-base px-6 py-3">
+                🦷 رزرو فوری نوبت دندان
+              </a>
+              <a href="pages/shop.html" class="btn-accent text-base px-6 py-3">
+                💎 ورود به تجهیزات VIP
+              </a>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-8 max-w-xl">
+              <div class="card-bordered p-3 text-center">
+                <p class="text-xl font-extrabold text-cyan-700">۲٪</p>
+                <p class="text-xs text-slate-500">تخفیف VIP</p>
+              </div>
+              <div class="card-bordered p-3 text-center">
+                <p class="text-xl font-extrabold text-amber-700">VIP</p>
+                <p class="text-xs text-slate-500">تجهیزات</p>
+              </div>
+              <div class="card-bordered p-3 text-center">
+                <p class="text-xl font-extrabold text-purple-700">کد</p>
+                <p class="text-xs text-slate-500">معرف</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hidden lg:flex justify-center">
+            <div class="app-shell w-[330px]">
+              <div class="bg-slate-950 h-7 flex items-center justify-center">
+                <span class="w-16 h-1 rounded-full bg-slate-700"></span>
+              </div>
+              <div class="p-5 bg-gradient-to-b from-cyan-50 to-white">
+                <div class="flex items-center justify-between mb-5">
+                  <div>
+                    <p class="text-xs text-slate-500">خوش آمدید</p>
+                    <p class="font-extrabold text-slate-900">پاستور پلاس</p>
+                  </div>
+                  <div class="logo-placeholder w-12 h-12">P+</div>
+                </div>
+                <div class="card-vip p-4 rounded-2xl mb-4">
+                  <p class="text-sm font-bold text-amber-800">VIP تجهیزات</p>
+                  <p class="text-2xl font-extrabold text-slate-900 mt-1">۲٪ تخفیف + تسهیلات</p>
+                  <p class="text-xs text-slate-500 mt-2">برای مشتریان ویژه پاستور پلاس</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="card-bordered p-4 text-center">
+                    <span class="text-2xl">🦷</span>
+                    <p class="text-xs font-bold mt-2">رزرو دندان</p>
+                  </div>
+                  <div class="card-bordered p-4 text-center">
+                    <span class="text-2xl">🛒</span>
+                    <p class="text-xs font-bold mt-2">تجهیزات</p>
+                  </div>
+                  <div class="card-bordered p-4 text-center">
+                    <span class="text-2xl">💬</span>
+                    <p class="text-xs font-bold mt-2">مشاوره</p>
+                  </div>
+                  <div class="card-bordered p-4 text-center">
+                    <span class="text-2xl">🏆</span>
+                    <p class="text-xs font-bold mt-2">باشگاه</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -74,10 +130,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-10">
           <h2 id="services-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-            خدمات موسسه
+            مسیرهای اصلی پاستور پلاس
           </h2>
           <p class="text-slate-600 max-w-xl mx-auto">
-            پنج بخش تخصصی برای پاسخگویی به تمام نیازهای سلامت شما
+            خدمات اصلی با طراحی سریع، شفاف و مناسب موبایل
           </p>
         </div>
         <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
@@ -87,17 +143,16 @@
     </section>
 
     <!-- Trust / Stats -->
-    <section class="py-12 sm:py-16 bg-white border-y-2 border-slate-200" aria-labelledby="stats-heading">
+    <section class="py-12 sm:py-16 bg-white/70 border-y border-cyan-100" aria-labelledby="stats-heading">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div>
             <h2 id="stats-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
-              چرا موسسه پاستور؟
+              چرا پاستور پلاس؟
             </h2>
             <p class="text-slate-600 leading-relaxed mb-6">
-              با سال‌ها تجربه در ارائه خدمات پزشکی و دندانپزشکی، موسسه پزشکی و سلامت پاستور
-              در تبریز آماده خدمت‌رسانی به شماست. رزرو آنلاین، پزشکان مجرب و طرح‌های عضویت
-              متنوع، تجربه‌ای روان و حرفه‌ای برای شما فراهم می‌کند.
+              پاستور پلاس برای بیماران دندان و مشتریان تجهیزات پزشکی طراحی شده است:
+              رزرو آنلاین، فروشگاه عادی/VIP، تخفیف تجهیزات، تسهیلات و کد معرف در یک تجربه موبایل‌محور.
             </p>
             <ul class="space-y-3 text-sm text-slate-700">
               <li class="flex items-center gap-2">
@@ -110,7 +165,7 @@
               </li>
               <li class="flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold border border-teal-300">✓</span>
-                ۵ سطح طرح عضویت با تخفیف ویژه
+                عضویت عادی و VIP با شرایط شفاف
               </li>
             </ul>
           </div>
@@ -122,9 +177,9 @@
     </section>
 
     <!-- Features -->
-    <section class="py-12 sm:py-16 bg-white border-y-2 border-slate-200" aria-labelledby="features-heading">
+    <section class="py-12 sm:py-16 bg-white/70 border-y border-cyan-100" aria-labelledby="features-heading">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 id="features-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 text-center">خدمات هوشمند موسسه</h2>
+        <h2 id="features-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 text-center">خدمات هوشمند پاستور پلاس</h2>
         <p class="text-slate-600 text-center mb-10 max-w-xl mx-auto">مشاوره، گالری، باشگاه وفاداری و یادآور — همه در یک سامانه</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <a href="pages/consultation.html" class="card-bordered p-6 block hover:border-teal-500 text-center">
@@ -154,13 +209,15 @@
     <!-- CTA -->
     <section class="py-12 sm:py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="card-bordered p-8 sm:p-12 text-center bg-gradient-to-bl from-teal-600 to-teal-800 border-teal-700 text-white">
-          <h2 class="text-2xl sm:text-3xl font-bold mb-3">همین حالا نوبت خود را رزرو کنید</h2>
-          <p class="text-teal-100 mb-6 max-w-lg mx-auto">
-            انتخاب نوع خدمت: ویزیت یا شروع درمان — سریع، آسان و آنلاین
+        <div class="card-bordered p-8 sm:p-12 text-center bg-gradient-to-bl from-cyan-700 via-cyan-800 to-slate-900 border-cyan-700 text-white overflow-hidden relative">
+          <div class="absolute -top-16 -right-16 w-44 h-44 bg-amber-300/20 rounded-full blur-2xl"></div>
+          <div class="absolute -bottom-16 -left-16 w-44 h-44 bg-cyan-300/20 rounded-full blur-2xl"></div>
+          <h2 class="relative text-2xl sm:text-3xl font-bold mb-3">عضویت VIP تجهیزات را فعال کنید</h2>
+          <p class="relative text-cyan-100 mb-6 max-w-lg mx-auto">
+            ۲٪ تخفیف محصولات، امکان درخواست تسهیلات و اولویت پیگیری سفارش
           </p>
-          <a href="pages/dental/booking.html" class="inline-flex items-center gap-2 px-8 py-3 bg-white text-teal-800 font-bold rounded-xl border-2 border-white hover:bg-teal-50 transition-colors">
-            شروع رزرو نوبت
+          <a href="pages/shop.html" class="relative inline-flex items-center gap-2 px-8 py-3 bg-white text-cyan-900 font-bold rounded-full border border-white hover:bg-cyan-50 transition-colors">
+            ورود به فروشگاه تجهیزات
             <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
