@@ -230,6 +230,24 @@ body {
   background: linear-gradient(180deg, #ecfeff, #cffafe);
 }
 
+.mobile-menu-panel {
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgb(125 211 252 / 0.4);
+  border-radius: 1.25rem;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 24px 55px -34px rgb(15 23 42 / 0.6);
+  backdrop-filter: blur(16px);
+  animation: fadeInUp 0.18s ease;
+}
+
+.mobile-menu-panel.is-open {
+  display: flex;
+}
+
 @media (max-width: 767px) {
   body {
     padding-bottom: 5.75rem;
@@ -237,6 +255,12 @@ body {
 
   .mobile-bottom-nav {
     display: grid;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-menu-panel {
+    display: none !important;
   }
 }
 

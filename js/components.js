@@ -80,16 +80,19 @@ function renderHeader(activePage = '') {
           </a>
 
           <button id="mobile-menu-btn"
-                  class="md:hidden p-2 rounded-lg border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
+                  class="md:hidden p-2 rounded-xl border border-cyan-200 bg-white/80 text-slate-700 hover:bg-cyan-50 transition-colors"
                   aria-label="باز کردن منو"
                   aria-expanded="false">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="mobile-menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <svg id="mobile-menu-icon-close" class="hidden w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
 
-        <nav id="mobile-menu" class="hidden md:hidden pb-4 flex flex-col gap-1" aria-label="منوی موبایل">
+        <nav id="mobile-menu" class="mobile-menu-panel md:hidden" aria-label="منوی موبایل">
           ${navLinks}
           <a href="${base}pages/shop.html" class="btn-accent text-sm mt-2 text-center">
             VIP تجهیزات
@@ -251,11 +254,34 @@ function mountLayout(activePage = '') {
 
   const menuBtn = document.getElementById('mobile-menu-btn');
   const mobileMenu = document.getElementById('mobile-menu');
+  const openIcon = document.getElementById('mobile-menu-icon-open');
+  const closeIcon = document.getElementById('mobile-menu-icon-close');
 
   if (menuBtn && mobileMenu) {
-    menuBtn.addEventListener('click', () => {
-      const isOpen = mobileMenu.classList.toggle('hidden') === false;
+    const setMenuOpen = (isOpen) => {
+      mobileMenu.classList.toggle('is-open', isOpen);
       menuBtn.setAttribute('aria-expanded', String(isOpen));
+      menuBtn.setAttribute('aria-label', isOpen ? 'بستن منو' : 'باز کردن منو');
+      openIcon?.classList.toggle('hidden', isOpen);
+      closeIcon?.classList.toggle('hidden', !isOpen);
+    };
+
+    menuBtn.addEventListener('click', () => {
+      setMenuOpen(!mobileMenu.classList.contains('is-open'));
+    });
+
+    mobileMenu.addEventListener('click', (event) => {
+      if (event.target.closest('a')) {
+        setMenuOpen(false);
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!mobileMenu.classList.contains('is-open')) return;
+      const clickedInsideHeader = event.target.closest('header');
+      if (!clickedInsideHeader) {
+        setMenuOpen(false);
+      }
     });
   }
 }
