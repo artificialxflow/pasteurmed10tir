@@ -130,14 +130,14 @@ const BookingFlow = {
       <button type="button" data-type="visit"
               class="type-option card-bordered p-6 text-center w-full hover:border-teal-500 transition-all
                      ${this.state.type === 'visit' ? 'border-teal-500 ring-2 ring-teal-200 bg-teal-50' : ''}">
-        <span class="text-4xl block mb-3">🩺</span>
+        <span class="text-4xl block mb-3">🦷</span>
         <h3 class="font-bold text-lg">ویزیت</h3>
         <p class="text-sm text-slate-600 mt-2">انتخاب ساعت کلی — ویزیت هر زمان قابل انتخاب است</p>
       </button>
       <button type="button" data-type="treatment"
               class="type-option card-bordered p-6 text-center w-full hover:border-blue-500 transition-all
                      ${this.state.type === 'treatment' ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' : ''}">
-        <span class="text-4xl block mb-3">💉</span>
+        <span class="text-4xl block mb-3">🪥</span>
         <h3 class="font-bold text-lg">شروع یا ادامه درمان</h3>
         <p class="text-sm text-slate-600 mt-2">بازه‌های یک‌ساعته — هر خدمت دقیقاً یک ساعت</p>
       </button>`;

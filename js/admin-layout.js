@@ -16,7 +16,7 @@ function getAdminNavItems() {
     { href: 'bookings.html', label: 'رزروها', icon: '📅', id: 'bookings' },
     { href: 'consultations.html', label: 'مشاوره‌ها', icon: '💬', id: 'consultations' },
     { href: 'reminders.html', label: 'یادآورها', icon: '🔔', id: 'reminders' },
-    { href: 'club.html', label: 'باشگاه', icon: '🏆', id: 'club' },
+    { href: 'club.html', label: 'باشگاه', icon: '🎁', id: 'club' },
     { href: 'gallery.html', label: 'گالری', icon: '🖼️', id: 'gallery' },
     { href: 'visitors.html', label: 'ویزیتورها', icon: '👤', id: 'visitors' },
     { href: 'commissions.html', label: 'پورسانت‌ها', icon: '💰', id: 'commissions' },
@@ -54,7 +54,7 @@ function getAdminPageInfo(activeId) {
       points: ['زمان نوبت', 'نوع یادآور', 'وضعیت فعال یا غیرفعال'],
     },
     club: {
-      icon: '🏆',
+      icon: '🎁',
       title: 'باشگاه مشتریان',
       description: 'امتیازها، تعداد مراجعه، معرفی بیمار جدید و پاداش‌های دریافت‌شده بیماران در این بخش مدیریت می‌شود.',
       points: ['سطح‌بندی مشتریان', 'امتیاز مراجعات', 'امتیاز معرفی بیمار'],

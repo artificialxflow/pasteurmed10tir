@@ -31,7 +31,7 @@ function renderHeader(activePage = '') {
     { href: `${base}index.html`, label: 'خانه', icon: '🏠', id: 'home' },
     { href: `${base}pages/dental/general.html`, label: 'رزرو', icon: '🦷', id: 'dental' },
     { href: `${base}pages/shop.html`, label: 'تجهیزات', icon: '🛒', id: 'shop' },
-    { href: `${base}pages/club.html`, label: 'باشگاه', icon: '🏆', id: 'club' },
+    { href: `${base}pages/club.html`, label: 'باشگاه', icon: '🎁', id: 'club' },
     { href: `${base}pages/consultation.html`, label: 'مشاوره', icon: '💬', id: 'consultation' },
   ];
 
@@ -66,7 +66,7 @@ function renderHeader(activePage = '') {
                 ${PASTEUR_DATA.institute.nameFa}
               </p>
               <p class="text-xs text-slate-500 hidden sm:block truncate">
-                اپلیکیشن بیماران دندان و تجهیزات VIP
+                سامانه خدمات مرکز پاستور
               </p>
             </div>
           </a>
@@ -119,7 +119,7 @@ function renderFooter() {
               </div>
             </div>
             <p class="text-sm text-slate-600 leading-relaxed">
-              اپلیکیشن بیماران دندان، تجهیزات پزشکی، VIP و تسهیلات در تبریز
+              سامانه خدمات مرکز پاستور برای دندانپزشکی، پزشکی، پرستاری و تجهیزات پزشکی
             </p>
           </div>
 

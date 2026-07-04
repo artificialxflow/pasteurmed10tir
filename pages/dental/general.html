@@ -23,7 +23,7 @@
         <span class="text-slate-900 font-medium">عمومی</span>
       </nav>
       <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">دندانپزشکان مرکز</h1>
-      <p class="text-slate-600 mb-6">پزشک مورد نظر را انتخاب کنید</p>
+      <p class="text-slate-600 mb-6">دندانپزشک مورد نظر را انتخاب کنید</p>
 
       <div class="mb-6">
         <label for="doctor-search" class="form-label">جستجو بر اساس نام</label>
@@ -49,7 +49,7 @@
         );
         list.innerHTML = filtered.length
           ? filtered.map((d) => renderDoctorCard(d, base)).join('')
-          : '<p class="text-slate-500 text-center py-8 card-bordered">پزشکی یافت نشد.</p>';
+          : '<p class="text-slate-500 text-center py-8 card-bordered">دندانپزشکی یافت نشد.</p>';
       }
 
       renderList();
