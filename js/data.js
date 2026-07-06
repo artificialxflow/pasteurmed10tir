@@ -27,10 +27,10 @@ const PASTEUR_DATA = {
     nameEn: 'Pasteur Plus',
     shortNameFa: 'پاستور پلاس',
     shortNameEn: 'Pasteur Plus',
-    address: 'تبریز، خیابان پاستور جدید، تقاطع شریعتی، مجتمع سلامت پاستور',
+    address: 'تبریز: تقاطع خیابان قطران خیام اول خیابان زبردست درمانگاه شبانه روزی پاستور',
     serviceArea: 'پاسه، تبریز و حومه',
-    phone: '۰۴۱-۳۳۳۳۴۴۴۴',
-    whatsapp: '۰۹۱۴۱۲۳۴۵۶۷',
+    phone: '۰۴۱۳۴۴۴۹۳۱۳',
+    whatsapp: '۰۹۳۵۴۳۳۴۴۱۲',
     welcome: 'به سامانه خدمات مرکز پاستور خوش آمدید',
     subtitle: 'دندانپزشکی، پزشکی، پرستاری، مشاوره و تجهیزات پزشکی',
   },
@@ -185,9 +185,9 @@ const PASTEUR_DATA = {
   ],
 
   nursingServices: [
-    { title: 'تزریقات و سرم‌تراپی', emoji: '💉', price: 'از ۱۵۰,۰۰۰ تومان' },
-    { title: 'پانسمان و زخم', emoji: '🩹', price: 'از ۱۰۰,۰۰۰ تومان' },
-    { title: 'اجاره تجهیزات پزشکی', emoji: '🛠️', price: 'استعلام قیمت' },
+    { title: 'تزریقات و سایرامورات پرستاری در منزل', emoji: '💉', price: 'از ۱۵۰,۰۰۰ تومان' },
+    { title: 'زخم و امورات پانسمان در منزل', emoji: '🩹', price: 'از ۱۰۰,۰۰۰ تومان' },
+    { title: 'اجاره تجهیزات پزشکی', emoji: '⚕️', price: 'استعلام قیمت' },
   ],
 
   laserServices: [
@@ -260,10 +260,8 @@ const PASTEUR_DATA = {
   ],
 
   membershipCoveragePlans: [
-    { id: 'group-1y', title: 'طرح ویژه پوشش مجموعه‌ها یا خانواده', duration: '۱ ساله', members: 4, regularRial: 48000000, vipRial: 72000000 },
-    { id: 'group-2y', title: 'طرح ویژه پوشش مجموعه‌ها یا خانواده', duration: '۲ ساله', members: 4, regularRial: 48000000, vipRial: 72000000 },
-    { id: 'family-1y', title: 'طرح پوشش کامل خانواده', duration: '۱ ساله', members: 4, regularRial: 48000000, vipRial: 72000000 },
-    { id: 'family-2y', title: 'طرح پوشش کامل خانواده', duration: '۲ ساله', members: 4, regularRial: 48000000, vipRial: 72000000 },
+    { id: 'group-1y', title: 'طرح ویژه پوشش مجموعه‌ها', duration: '۱ ساله', members: 4, regularRial: 4000000, vipRial: 6400000 },
+    { id: 'group-2y', title: 'طرح ویژه پوشش مجموعه‌ها', duration: '۲ ساله', members: 4, regularRial: 6400000, vipRial: 11200000 },
   ],
 
   shopCustomerTypes: [
@@ -307,6 +305,7 @@ const PASTEUR_DATA = {
     { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی در بستر اپلیکیشن' },
     { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس داخل اپلیکیشن برای بررسی تخصصی' },
     { id: 'video', label: 'ویزیت تصویری / تلفنی', emoji: '🎥', desc: 'اولویت با بستر اپلیکیشن؛ در صورت نیاز از روبیکا هماهنگ می‌شود' },
+    { id: 'home', label: 'ویزیت در منزل', emoji: '🏠', desc: 'اعزام پزشک یا پرستار به منزل شما جهت ویزیت' },
   ],
 
   consultationCategories: [
