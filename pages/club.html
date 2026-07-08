@@ -29,8 +29,8 @@
         </div>
         <div class="card-bordered p-4 bg-white">
           <p class="text-2xl mb-2">💬</p>
-          <h2 class="font-bold text-slate-900">مشاوره آنلاین</h2>
-          <p class="text-sm text-slate-600 mt-2">ثبت هر مشاوره آنلاین، ۲۰ امتیاز به حساب همان موبایل اضافه می‌کند.</p>
+          <h2 class="font-bold text-slate-900">مشاوره و ویزیت</h2>
+          <p class="text-sm text-slate-600 mt-2">ثبت هر مشاوره یا ویزیت، ۲۰ امتیاز به حساب همان موبایل اضافه می‌کند.</p>
         </div>
       </section>
 
@@ -63,22 +63,24 @@
         </div>
 
         <div>
-          <h2 class="font-bold text-lg mb-4">🎯 ماموریت‌ها / چالش‌ها</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="card-bordered p-4 bg-white">
-              <p class="font-bold text-slate-900">اولین رزرو</p>
-              <p class="text-sm text-slate-600 mt-1">اولین نوبت خود را رزرو کنید و ۱۰۰ امتیاز هدیه بگیرید.</p>
-            </div>
-            <div class="card-bordered p-4 bg-white">
-              <p class="font-bold text-slate-900">۵ مراجعه</p>
-              <p class="text-sm text-slate-600 mt-1">با ثبت ۵ مراجعه، ۲۰۰ امتیاز ویژه دریافت کنید.</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
           <h2 class="font-bold text-lg mb-4">🎁 پاداش‌های قابل دریافت</h2>
           <div id="rewards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <section class="card-bordered p-5 bg-white">
+            <h2 class="font-bold text-lg mb-4">🎯 ماموریت‌ها / چالش‌ها</h2>
+            <div id="missions-list" class="space-y-3"></div>
+          </section>
+          <section class="card-bordered p-5 bg-white">
+            <h2 class="font-bold text-lg mb-4">👥 دعوت از دوستان</h2>
+            <p class="text-sm text-slate-600 leading-7">با ثبت کد معرف در رزرو، عضویت یا VIP تجهیزات، برای معرف امتیاز و پورسانت ثبت می‌شود.</p>
+            <p id="invite-code" class="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm font-bold text-amber-800"></p>
+          </section>
+          <section class="card-bordered p-5 bg-white">
+            <h2 class="font-bold text-lg mb-4">⭐ پیشنهادهای ویژه اعضا</h2>
+            <div id="member-offers" class="space-y-2 text-sm text-slate-600"></div>
+          </section>
         </div>
 
         <div>
@@ -86,21 +88,9 @@
           <div id="history-list" class="space-y-2"></div>
         </div>
 
-        <div class="card-bordered p-5 bg-blue-50 border-blue-200">
-          <h2 class="font-bold text-lg mb-3">📣 دعوت از دوستان</h2>
-          <p class="text-sm text-slate-600 mb-3">این کد معرف را به دوستان خود بدهید. با هر ثبت‌نام، ۱۰۰ امتیاز دریافت کنید.</p>
-          <div class="text-center bg-white border-2 border-dashed border-blue-300 rounded-lg p-3 font-mono text-blue-800 font-bold">
-            PLUS-FRIEND-123
-          </div>
-        </div>
-
-        <div class="card-bordered p-5">
-          <h2 class="font-bold text-lg mb-3">⚖️ قوانین باشگاه</h2>
-          <ul class="list-disc list-inside text-sm text-slate-600 space-y-2">
-            <li>امتیازها تاریخ انقضا ندارند.</li>
-            <li>استفاده از پاداش‌ها فقط برای صاحب شماره تلفن امکان‌پذیر است.</li>
-            <li>هرگونه تلاش برای تقلب منجر به حذف حساب کاربری از باشگاه خواهد شد.</li>
-          </ul>
+        <div class="card-bordered p-5 bg-slate-50 border-slate-200">
+          <h2 class="font-bold text-lg mb-4">📌 قوانین باشگاه</h2>
+          <div id="club-rules" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-slate-600"></div>
         </div>
 
         <div class="card-bordered p-5 bg-teal-50 border-teal-200 text-center">
@@ -129,6 +119,22 @@
       document.getElementById('club-visits').textContent = profile.visits.toLocaleString('fa-IR');
       document.getElementById('club-referrals').textContent = (profile.referrals || 0).toLocaleString('fa-IR');
       document.getElementById('club-tier').textContent = `${tier.emoji} ${tier.name} (${tier.discount}٪ تخفیف)`;
+      document.getElementById('invite-code').textContent = `کد دعوت پیشنهادی شما: PLUS-${digits.slice(-4)}`;
+
+      document.getElementById('missions-list').innerHTML = PASTEUR_DATA.clubMissions.map((mission) => `
+        <div class="rounded-xl border border-cyan-100 bg-cyan-50 p-3 text-sm">
+          <p class="font-bold text-slate-800">${mission.title}</p>
+          <p class="text-teal-700 mt-1">${mission.reward}</p>
+        </div>
+      `).join('');
+
+      document.getElementById('member-offers').innerHTML = PASTEUR_DATA.memberOnlyOffers
+        .map((offer) => `<div class="rounded-xl border border-amber-100 bg-amber-50 p-3">✓ ${offer}</div>`)
+        .join('');
+
+      document.getElementById('club-rules').innerHTML = PASTEUR_DATA.clubRules
+        .map((rule) => `<div class="rounded-xl bg-white border border-slate-200 p-3">✓ ${rule}</div>`)
+        .join('');
 
       document.getElementById('rewards-grid').innerHTML = PASTEUR_DATA.clubRewards.map((r) => {
         const canRedeem = profile.points >= r.points;

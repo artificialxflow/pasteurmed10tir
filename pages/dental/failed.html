@@ -15,9 +15,9 @@
     <div class="max-w-md mx-auto px-4 text-center">
       <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 border-2 border-red-400 flex items-center justify-center text-4xl">❌</div>
       <h1 class="text-2xl font-bold text-slate-900 mb-2">پرداخت ناموفق بود</h1>
-      <p class="text-slate-600 mb-8">متأسفانه تراکنش انجام نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.</p>
+      <p id="failed-desc" class="text-slate-600 mb-8">متأسفانه تراکنش انجام نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.</p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="confirm.html" class="btn-primary">تلاش مجدد</a>
+        <a id="retry-link" href="confirm.html" class="btn-primary">تلاش مجدد</a>
         <a href="../../index.html" class="px-5 py-2.5 rounded-lg border-2 border-slate-200 font-medium text-slate-700 hover:bg-slate-50">صفحه اصلی</a>
       </div>
     </div>
@@ -25,6 +25,19 @@
   <div id="site-footer"></div>
   <script src="../../js/data.js"></script>
   <script src="../../js/components.js"></script>
-  <script>document.addEventListener('DOMContentLoaded', () => mountLayout('dental'));</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('dental');
+      const raw = sessionStorage.getItem('pasteur_last_payment');
+      const payment = raw ? JSON.parse(raw) : null;
+      if (payment?.kind === 'membership') {
+        document.getElementById('failed-desc').textContent = 'پرداخت عضویت انجام نشد. می‌توانید دوباره تلاش کنید یا به صفحه عضویت برگردید.';
+        document.getElementById('retry-link').href = 'membership.html';
+        document.getElementById('retry-link').textContent = 'بازگشت به عضویت';
+      } else if (payment?.kind === 'booking') {
+        document.getElementById('failed-desc').textContent = 'پرداخت رزرو انجام نشد. می‌توانید دوباره به مرحله تأیید برگردید یا رزرو جدید ثبت کنید.';
+      }
+    });
+  </script>
 </body>
 </html>

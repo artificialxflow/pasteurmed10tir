@@ -13,11 +13,11 @@
   <div id="site-header"></div>
   <main class="flex-1 py-10">
     <div class="max-w-4xl mx-auto px-4 sm:px-6">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">👩‍⚕️ خدمات پرستاری</h1>
-      <p class="text-slate-600 mb-8">خدمات پرستاری و اجاره تجهیزات پزشکی</p>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">👩‍⚕️ خدمات پرستاری در منزل</h1>
+      <p class="text-slate-600 mb-8">تزریقات، پانسمان زخم و اجاره تجهیزات پزشکی با هماهنگی پاستور پلاس</p>
       <div id="nursing-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-5"></div>
       <div class="mt-8 text-center">
-        <a href="tel:04133334444" class="btn-primary">درخواست خدمات پرستاری</a>
+        <a id="nursing-call" href="#" class="btn-primary">درخواست خدمات پرستاری</a>
       </div>
     </div>
   </main>
@@ -28,12 +28,17 @@
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('nursing');
       document.getElementById('nursing-grid').innerHTML = PASTEUR_DATA.nursingServices.map((s) => `
-        <div class="card-bordered p-6">
-          <span class="text-3xl">${s.emoji}</span>
-          <h2 class="font-bold text-lg mt-3">${s.title}</h2>
-          <p class="text-teal-700 font-semibold mt-2">${s.price}</p>
+        <div class="card-bordered overflow-hidden bg-white">
+          ${s.image ? `<img src="${s.image}" alt="${s.title}" class="w-full h-40 object-cover" loading="lazy" />` : ''}
+          <div class="p-6">
+            <span class="text-3xl">${s.emoji}</span>
+            <h2 class="font-bold text-lg mt-3">${s.title}</h2>
+            <p class="text-sm text-slate-600 leading-7 mt-2">${s.description || ''}</p>
+            <p class="text-teal-700 font-semibold mt-3">${s.price}</p>
+          </div>
         </div>
       `).join('');
+      document.getElementById('nursing-call').href = `tel:${PASTEUR_DATA.institute.phoneDigits}`;
     });
   </script>
 </body>

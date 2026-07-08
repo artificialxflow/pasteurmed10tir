@@ -24,7 +24,9 @@ function renderHeader(activePage = '') {
     { href: `${base}pages/gallery.html`, label: 'گالری', id: 'gallery' },
     { href: `${base}pages/club.html`, label: 'باشگاه', id: 'club' },
     { href: `${base}pages/dental/index.html`, label: 'دندانپزشکی', id: 'dental' },
-    { href: `${base}pages/consultation.html`, label: 'مشاوره', id: 'consultation' },
+    { href: `${base}pages/consultation.html`, label: 'مشاوره و ویزیت', id: 'consultation' },
+    { href: `${base}pages/contact.html`, label: 'تماس با ما', id: 'contact' },
+    { href: `${base}pages/partners.html`, label: 'همکاری', id: 'partners' },
     { href: `${base}admin/login.html`, label: 'پنل ادمین', id: 'admin' },
   ];
   const bottomNavItems = [
@@ -126,13 +128,16 @@ function renderFooter() {
           <div>
             <h3 class="font-bold text-slate-900 mb-3 text-sm">دسترسی سریع</h3>
             <ul class="space-y-2 text-sm">
-              <li><a href="${base}pages/consultation.html" class="text-slate-600 hover:text-teal-700 transition-colors">مشاوره آنلاین</a></li>
+              <li><a href="${base}pages/consultation.html" class="text-slate-600 hover:text-teal-700 transition-colors">مشاوره و ویزیت</a></li>
               <li><a href="${base}pages/gallery.html" class="text-slate-600 hover:text-teal-700 transition-colors">گالری نتایج</a></li>
               <li><a href="${base}pages/club.html" class="text-slate-600 hover:text-teal-700 transition-colors">باشگاه مشتریان</a></li>
               <li><a href="${base}pages/reminders.html" class="text-slate-600 hover:text-teal-700 transition-colors">یادآور هوشمند</a></li>
               <li><a href="${base}pages/dental/index.html" class="text-slate-600 hover:text-teal-700 transition-colors">دندانپزشکی</a></li>
               <li><a href="${base}pages/dental/membership.html" class="text-slate-600 hover:text-teal-700 transition-colors">طرح‌های عضویت</a></li>
               <li><a href="${base}pages/shop.html" class="text-slate-600 hover:text-teal-700 transition-colors">فروشگاه</a></li>
+              <li><a href="${base}pages/contact.html" class="text-slate-600 hover:text-teal-700 transition-colors">تماس با ما</a></li>
+              <li><a href="${base}pages/partners.html" class="text-slate-600 hover:text-teal-700 transition-colors">درخواست همکاری</a></li>
+              <li><a href="${base}pages/privacy.html" class="text-slate-600 hover:text-teal-700 transition-colors">حریم خصوصی</a></li>
             </ul>
           </div>
 
@@ -141,11 +146,15 @@ function renderFooter() {
             <ul class="space-y-2 text-sm text-slate-600">
               <li class="flex items-center gap-2">
                 <span aria-hidden="true">📞</span>
-                <a href="tel:${institute.phone.replace(/[^\d]/g, '')}" class="hover:text-teal-700">${institute.phone}</a>
+                <a href="tel:${institute.phoneDigits}" class="hover:text-teal-700">${institute.phone}</a>
+              </li>
+              <li class="flex items-center gap-2">
+                <span aria-hidden="true">📞</span>
+                <a href="tel:${institute.phoneAltDigits}" class="hover:text-teal-700">${institute.phoneAlt}</a>
               </li>
               <li class="flex items-center gap-2">
                 <span aria-hidden="true">💬</span>
-                <a href="https://wa.me/98${institute.whatsapp.replace(/[^\d]/g, '').replace(/^0/, '')}" target="_blank" rel="noopener" class="hover:text-teal-700">واتساپ: ${institute.whatsapp}</a>
+                <a href="https://wa.me/${institute.whatsappDigits}" target="_blank" rel="noopener" class="hover:text-teal-700">واتساپ: ${institute.whatsapp}</a>
               </li>
               <li class="flex items-start gap-2">
                 <span aria-hidden="true">📍</span>

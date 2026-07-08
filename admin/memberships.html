@@ -53,6 +53,7 @@
           <td class="px-4 py-3">${app.patientName || '—'}</td>
           <td class="px-4 py-3">${app.planTitle || '—'}</td>
           <td class="px-4 py-3"><span class="badge ${app.tier === 'vip' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'badge-available'}">${app.tierLabel || '—'}</span></td>
+          <td class="px-4 py-3">${app.validityLabel || '—'}</td>
           <td class="px-4 py-3">${(app.amountRial || 0).toLocaleString('fa-IR')} ریال</td>
           <td class="px-4 py-3 font-mono">${app.referralCode || '—'}</td>
           <td class="px-4 py-3">${app.visitorName || '—'}</td>
@@ -60,7 +61,7 @@
         </tr>`).join('');
 
       document.getElementById('applications-table').innerHTML = renderDataTable(
-        ['مشتری', 'طرح', 'پوشش', 'مبلغ', 'کد معرف', 'نماینده', 'تماس'],
+        ['مشتری', 'طرح', 'پوشش', 'اعتبار', 'مبلغ', 'کد معرف', 'نماینده', 'تماس'],
         applicationRows,
         'فرم عضویتی ثبت نشده است.'
       );
@@ -69,6 +70,7 @@
         <div class="card-bordered p-4">
           <h3 class="font-bold">${m.name}</h3>
           <p class="text-teal-700 font-bold my-2">${m.price} تومان</p>
+          <p class="text-xs font-bold text-slate-500 mb-2">اعتبار: ${m.validityLabel || '—'}</p>
           <p class="text-xs text-slate-500">${m.terms}</p>
         </div>
       `).join('');

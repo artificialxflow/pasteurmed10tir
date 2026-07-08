@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مشاوره آنلاین | پاستور پلاس</title>
+  <title>مشاوره و ویزیت | پاستور پلاس</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
@@ -13,13 +13,13 @@
   <div id="site-header"></div>
   <main class="flex-1 py-10">
     <div class="max-w-3xl mx-auto px-4 sm:px-6">
-      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">💬 مشاوره آنلاین</h1>
-      <p class="text-slate-600 mb-8">شرح مشکل خود را ثبت کنید؛ مشاوره متنی، تصویری و ویزیت تلفنی/ویدیویی در بستر اپلیکیشن هماهنگ می‌شود و در صورت نیاز از روبیکا استفاده خواهد شد.</p>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">💬 مشاوره و ویزیت</h1>
+      <p class="text-slate-600 mb-8">ابتدا درخواست خود را ثبت کنید؛ در مرحله بعد نوع ارتباط متنی، تصویری، ویدیویی یا تلفنی هماهنگ می‌شود.</p>
 
       <form id="consultation-form" class="space-y-6">
         <div>
-          <label class="form-label">نوع مشاوره</label>
-          <div id="type-options" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+          <label class="form-label">نوع مشاوره یا ویزیت</label>
+          <div id="type-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
         </div>
 
         <div>
@@ -59,13 +59,13 @@
           <p class="text-xs text-slate-500 mt-2">این تخمین اولیه است — تشخیص نهایی پس از بررسی کارشناس و ویزیت آنلاین انجام می‌شود.</p>
         </div>
 
-        <button type="submit" class="btn-primary w-full">ثبت درخواست مشاوره</button>
+        <button type="submit" class="btn-primary w-full">ثبت درخواست مشاوره و ویزیت</button>
       </form>
 
       <div id="success-msg" class="hidden mt-6 card-bordered p-6 bg-green-50 border-green-200 text-center">
         <p class="text-2xl mb-2">✅</p>
         <p class="font-bold text-green-800">درخواست شما ثبت شد!</p>
-        <p class="text-sm text-slate-600 mt-2">کارشناسان ما ظرف ۲۴ ساعت پاسخ می‌دهند.</p>
+        <p class="text-sm text-slate-600 mt-2">کارشناسان ما ظرف ۲۴ ساعت برای هماهنگی مشاوره یا ویزیت پاسخ می‌دهند.</p>
       </div>
     </div>
   </main>
@@ -76,7 +76,7 @@
   <script>
     const consultationParams = new URLSearchParams(window.location.search);
     const requestedType = consultationParams.get('type');
-    let selectedType = ['text', 'image', 'video'].includes(requestedType) ? requestedType : 'text';
+    let selectedType = ['text', 'image', 'video', 'phone'].includes(requestedType) ? requestedType : 'text';
 
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('consultation');
@@ -146,7 +146,7 @@
           status: 'pending',
           createdAt: new Date().toISOString(),
         });
-        PasteurStorage.addClubPoints(document.getElementById('c-phone').value, 20, 'مشاوره آنلاین');
+        PasteurStorage.addClubPoints(document.getElementById('c-phone').value, 20, 'مشاوره و ویزیت');
         document.getElementById('consultation-form').classList.add('hidden');
         document.getElementById('success-msg').classList.remove('hidden');
       });

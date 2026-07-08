@@ -19,6 +19,7 @@ const PasteurStorage = {
     facilityRequests: 'pasteur_facility_requests',
     shopVipPhones: 'pasteur_shop_vip_phones',
     membershipApplications: 'pasteur_membership_applications',
+    partnerRequests: 'pasteur_partner_requests',
   },
 
   get(key) {
@@ -113,8 +114,10 @@ const PasteurStorage = {
 
   getProducts() {
     const stored = this.get(this.KEYS.products);
-    if (stored) return stored;
-    return PASTEUR_DATA.products.map((p) => ({ ...p }));
+    const source = stored || PASTEUR_DATA.products;
+    return source
+      .filter((p) => ['پزشکی', 'دندانپزشکی'].includes(p.category))
+      .map((p) => ({ ...p }));
   },
 
   saveProducts(products) {
@@ -233,6 +236,26 @@ const PasteurStorage = {
     list.unshift(request);
     this.set(this.KEYS.facilityRequests, list);
     return request;
+  },
+
+  getPartnerRequests() {
+    return this.get(this.KEYS.partnerRequests) || [];
+  },
+
+  savePartnerRequest(request) {
+    const list = this.getPartnerRequests();
+    list.unshift(request);
+    this.set(this.KEYS.partnerRequests, list);
+    return request;
+  },
+
+  updatePartnerRequest(id, updates) {
+    const list = this.getPartnerRequests();
+    const idx = list.findIndex((request) => request.id === id);
+    if (idx === -1) return null;
+    list[idx] = { ...list[idx], ...updates };
+    this.set(this.KEYS.partnerRequests, list);
+    return list[idx];
   },
 
   activateShopVip(phone) {

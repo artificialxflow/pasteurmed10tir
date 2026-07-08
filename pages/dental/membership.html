@@ -43,7 +43,7 @@
 
       <section class="mt-10">
         <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">فرم پیشنهاد صدور عضویت</h2>
-        <p class="text-sm text-slate-600 mb-5">بر اساس فرم ارسالی، پوشش عادی یا VIP را برای خانواده/مجموعه انتخاب کنید.</p>
+        <p class="text-sm text-slate-600 mb-5">بر اساس فرم ارسالی، پوشش عادی یا VIP را برای مجموعه انتخاب کنید.</p>
         <div class="card-bordered p-5 mb-5 overflow-x-auto">
           <div id="coverage-plans" class="min-w-[680px]"></div>
         </div>
@@ -129,6 +129,16 @@
             <textarea id="app-medical-history" class="form-input min-h-[90px]"></textarea>
           </div>
 
+          <div>
+            <label class="form-label">مشخصات اعضای تحت پوشش مجموعه</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="text" id="app-dependent-1" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر اول" />
+              <input type="text" id="app-dependent-2" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر دوم" />
+              <input type="text" id="app-dependent-3" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر سوم" />
+              <input type="text" id="app-dependent-4" class="form-input" placeholder="نام و نام خانوادگی / کد ملی نفر چهارم" />
+            </div>
+          </div>
+
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             این قرارداد بر اساس شرایط عضویت پاستور پلاس و خدمات تاییدشده دندانپزشکی ثبت می‌شود.
           </div>
@@ -199,8 +209,10 @@
       const toRial = (num) => Number(num || 0).toLocaleString('fa-IR') + ' ریال';
       const toToman = (num) => Number(num || 0).toLocaleString('fa-IR') + ' تومان';
       const membershipPricing = PASTEUR_DATA.membershipPricing || {
-        regularPerPerson: 1200000,
-        vipPerPerson: 1800000,
+        regularPerPerson: 1000000,
+        regularTwoYearPerPerson: 1600000,
+        vipPerPerson: 1600000,
+        vipTwoYearPerPerson: 2800000,
       };
 
       function getSelectedCoveragePlan() {
@@ -211,17 +223,24 @@
         return Math.max(1, parseInt(value, 10) || fallback);
       }
 
-      function getUnitPriceToman(tier) {
+      function getUnitPriceToman(tier, plan = getSelectedCoveragePlan()) {
+        if (plan) return tier === 'vip' ? plan.vipPerPerson : plan.regularPerPerson;
         return tier === 'vip' ? membershipPricing.vipPerPerson : membershipPricing.regularPerPerson;
+      }
+
+      function getValidityLabel(tier, plan = getSelectedCoveragePlan()) {
+        if (plan) return tier === 'vip' ? plan.vipValidity : plan.regularValidity;
+        return tier === 'vip' ? '۲۴ ماهه' : '۱۵ ماهه';
       }
 
       function updateApplicationAmountPreview() {
         const tier = document.getElementById('app-tier').value;
+        const plan = getSelectedCoveragePlan();
         const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
-        const unitPriceToman = getUnitPriceToman(tier);
+        const unitPriceToman = getUnitPriceToman(tier, plan);
         const totalToman = unitPriceToman * memberCount;
         document.getElementById('app-amount-preview').textContent =
-          `${toToman(unitPriceToman)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(totalToman)}`;
+          `${toToman(unitPriceToman)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(totalToman)} | اعتبار: ${getValidityLabel(tier, plan)}`;
       }
 
       function getSelectedAmountRial() {
@@ -229,14 +248,14 @@
         if (!plan) return 0;
         const tier = document.getElementById('app-tier').value;
         const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
-        return getUnitPriceToman(tier) * memberCount * 10;
+        return getUnitPriceToman(tier, plan) * memberCount * 10;
       }
 
       function getApplicationData() {
         const plan = getSelectedCoveragePlan();
         const tier = document.getElementById('app-tier').value;
         const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
-        const unitPriceToman = getUnitPriceToman(tier);
+        const unitPriceToman = getUnitPriceToman(tier, plan);
         const amountRial = getSelectedAmountRial();
         const referralCode = document.getElementById('app-referral').value.trim().toUpperCase();
         const visitor = PasteurStorage.findVisitorByCode(referralCode);
@@ -255,6 +274,7 @@
           workAddress: document.getElementById('app-work-address').value.trim(),
           planId: plan?.id,
           planTitle: plan ? `${plan.title} (${plan.duration})` : '—',
+          validityLabel: getValidityLabel(tier, plan),
           tier,
           tierLabel: tier === 'vip' ? 'VIP' : 'عادی',
           memberCount,
@@ -287,11 +307,11 @@
             </div>
             <p><strong>کد نمایندگی:</strong> ${data.referralCode || '—'} | <strong>نام نماینده:</strong> ${data.visitorName}</p>
             <p><strong>نام مشتری:</strong> ${data.patientName || '—'} | <strong>کد ملی:</strong> ${data.nationalId || '—'} | <strong>تماس:</strong> ${data.phone || '—'}</p>
-            <p><strong>طرح:</strong> ${data.planTitle} | <strong>پوشش:</strong> ${data.tierLabel} | <strong>تعداد اعضا:</strong> ${data.memberCount.toLocaleString('fa-IR')} نفر</p>
+            <p><strong>طرح:</strong> ${data.planTitle} | <strong>پوشش:</strong> ${data.tierLabel} | <strong>اعتبار:</strong> ${data.validityLabel} | <strong>تعداد اعضا:</strong> ${data.memberCount.toLocaleString('fa-IR')} نفر</p>
             <p><strong>مبلغ هر نفر:</strong> ${toToman(data.unitPriceToman)} | <strong>مبلغ کل:</strong> ${toRial(data.amountRial)}</p>
-            <p><strong>افراد تحت پوشش:</strong> ${data.dependents.length ? data.dependents.join('، ') : '—'}</p>
+            <p><strong>اعضای تحت پوشش مجموعه:</strong> ${data.dependents.length ? data.dependents.join('، ') : '—'}</p>
             <p class="mt-4 border-t border-dashed border-slate-300 pt-3">
-              این قرارداد بر اساس شرایط عضویت پاستور پلاس، تعداد ${data.memberCount.toLocaleString('fa-IR')} عضو و به مبلغ ${toRial(data.amountRial)} صادر می‌شود.
+              این قرارداد بر اساس شرایط عضویت پاستور پلاس، تعداد ${data.memberCount.toLocaleString('fa-IR')} عضو مجموعه، اعتبار ${data.validityLabel} و به مبلغ ${toRial(data.amountRial)} صادر می‌شود.
               این فرم فقط بر اساس خدمات تاییدشده دندانپزشکی و شرایط عمومی عضویت صادر می‌شود.
             </p>
             <div class="grid grid-cols-3 gap-4 mt-8 text-center text-xs text-slate-500">
@@ -337,8 +357,8 @@
               <tr>
                 <td class="p-3 font-bold">${plan.title}</td>
                 <td class="p-3">${plan.duration}</td>
-                <td class="p-3">${toToman(membershipPricing.regularPerPerson)}</td>
-                <td class="p-3 font-bold text-amber-700">${toToman(membershipPricing.vipPerPerson)}</td>
+                <td class="p-3">${toToman(plan.regularPerPerson)}</td>
+                <td class="p-3 font-bold text-amber-700">${toToman(plan.vipPerPerson)}</td>
               </tr>`).join('')}
           </tbody>
         </table>`;
@@ -375,11 +395,12 @@
         PasteurStorage.setPendingPayment({
           kind: 'membership',
           planId: data.tier,
-          planName: `${data.planTitle} — ${data.tierLabel} — ${data.memberCount} نفر`,
+          planName: `${data.planTitle} — ${data.tierLabel} — اعتبار ${data.validityLabel} — ${data.memberCount} نفر`,
           patientName: data.patientName,
           patientPhone: data.phone,
           amount: data.amountToman,
           referralCode: data.referralCode,
+          validityLabel: data.validityLabel,
         });
         window.location.href = 'confirm.html';
       });
@@ -394,6 +415,7 @@
           <p class="text-2xl font-bold ${m.id === 'vip' ? 'text-amber-700' : 'text-teal-700'} text-center my-4">
             ${m.price} <span class="text-sm font-normal text-slate-500">تومان / هر نفر</span>
           </p>
+          <p class="text-center text-xs font-bold text-slate-500 mb-4">اعتبار: ${m.validityLabel}</p>
           <ul class="text-sm text-slate-600 space-y-2 flex-1 mb-4">
             ${m.features.map((f) => `<li class="flex gap-2"><span class="text-teal-600">✓</span>${f}</li>`).join('')}
           </ul>
@@ -409,7 +431,7 @@
         const memberCount = normalizeMemberCount(document.getElementById('member-count').value);
         const total = selectedPlan.priceNum * memberCount;
         document.getElementById('member-amount-preview').textContent =
-          `${toToman(selectedPlan.priceNum)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(total)}`;
+          `${toToman(selectedPlan.priceNum)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(total)} | اعتبار: ${selectedPlan.validityLabel}`;
       }
 
       grid.addEventListener('click', (e) => {
@@ -442,10 +464,11 @@
         PasteurStorage.setPendingPayment({
           kind: 'membership',
           planId: selectedPlan.id,
-          planName: `${selectedPlan.name} — ${memberCount} نفر`,
+          planName: `${selectedPlan.name} — اعتبار ${selectedPlan.validityLabel} — ${memberCount} نفر`,
           patientName: name,
           patientPhone: phone,
           amount: selectedPlan.priceNum * memberCount,
+          validityLabel: selectedPlan.validityLabel,
           referralCode: document.getElementById('member-referral').value.trim().toUpperCase(),
         });
         window.location.href = 'confirm.html';

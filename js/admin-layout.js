@@ -21,6 +21,7 @@ function getAdminNavItems() {
     { href: 'visitors.html', label: 'ویزیتورها', icon: '👤', id: 'visitors' },
     { href: 'commissions.html', label: 'پورسانت‌ها', icon: '💰', id: 'commissions' },
     { href: 'facilities.html', label: 'تسهیلات', icon: '🤝', id: 'facilities' },
+    { href: 'partners.html', label: 'همکاری‌ها', icon: '🧑‍⚕️', id: 'partners' },
     { href: 'doctors.html', label: 'پزشکان', icon: '🩺', id: 'doctors' },
     { href: 'memberships.html', label: 'عضویت‌ها', icon: '💎', id: 'memberships' },
     { href: 'shop.html', label: 'فروشگاه', icon: '🛒', id: 'shop' },
@@ -43,9 +44,9 @@ function getAdminPageInfo(activeId) {
     },
     consultations: {
       icon: '💬',
-      title: 'درخواست‌های مشاوره و ویزیت آنلاین',
-      description: 'درخواست‌های ثبت‌شده از فرم مشاوره آنلاین، شامل دسته خدمت، توضیح بیمار و تخمین هزینه اینجا نمایش داده می‌شود.',
-      points: ['مشاوره متنی، تصویری و ویدیویی', 'وضعیت پاسخ‌گویی', 'ثبت امتیاز باشگاه'],
+      title: 'درخواست‌های مشاوره و ویزیت',
+      description: 'درخواست‌های ثبت‌شده از فرم مشاوره و ویزیت، شامل دسته خدمت، توضیح بیمار و تخمین هزینه اینجا نمایش داده می‌شود.',
+      points: ['متنی، تصویری، ویدیویی یا تلفنی', 'وضعیت پاسخ‌گویی', 'ثبت امتیاز باشگاه'],
     },
     reminders: {
       icon: '🔔',
@@ -82,6 +83,12 @@ function getAdminPageInfo(activeId) {
       title: 'درخواست‌های تسهیلات تجهیزات',
       description: 'درخواست‌های خرید اقساطی یا تسهیلات تجهیزات پزشکی برای مشتریان VIP در این بخش دیده می‌شود.',
       points: ['نام و موبایل مشتری', 'مبلغ تقریبی', 'وضعیت بررسی'],
+    },
+    partners: {
+      icon: '🧑‍⚕️',
+      title: 'درخواست‌های همکاری متخصصان',
+      description: 'درخواست همکاری پرستاران، دندانپزشکان، پزشکان و روانشناسان از این صفحه بررسی و وضعیت‌دهی می‌شود.',
+      points: ['نوع همکاری', 'تخصص و شهر', 'وضعیت بررسی'],
     },
     doctors: {
       icon: '🩺',

@@ -81,14 +81,18 @@ const PaymentFlow = {
       btn.innerHTML = '<span class="inline-block animate-spin">⏳</span> در حال اتصال به درگاه...';
 
       setTimeout(() => {
-        const success = Math.random() > 0.1;
-        if (success) {
-          this.completePayment(pending);
-          window.location.href = pending.successTo || (pending.planId === 'shop-vip' ? '../shop.html?vip=paid' : 'success.html');
-        } else {
-          window.location.href = 'failed.html';
-        }
+        this.completePayment(pending);
+        window.location.href = pending.successTo || (pending.planId === 'shop-vip' ? '../shop.html?vip=paid' : 'success.html');
       }, 1500);
+    });
+
+    document.getElementById('btn-fail')?.addEventListener('click', () => {
+      sessionStorage.setItem('pasteur_last_payment', JSON.stringify({
+        ...pending,
+        status: 'failed',
+        failedAt: new Date().toISOString(),
+      }));
+      window.location.href = 'failed.html';
     });
 
     document.getElementById('btn-cancel')?.addEventListener('click', () => {
@@ -98,6 +102,11 @@ const PaymentFlow = {
   },
 
   completePayment(pending) {
+    const completed = {
+      ...pending,
+      status: 'paid',
+      paidAt: new Date().toISOString(),
+    };
     if (pending.kind === 'booking') {
       const booking = PasteurStorage.saveBooking({
         id: PasteurStorage.generateId(),
@@ -138,6 +147,7 @@ const PaymentFlow = {
         patientName: pending.patientName,
         patientPhone: pending.patientPhone,
         amount: pending.amount,
+        validityLabel: pending.validityLabel,
         status: 'paid',
         createdAt: new Date().toISOString(),
       });
@@ -155,6 +165,7 @@ const PaymentFlow = {
         });
       }
     }
+    sessionStorage.setItem('pasteur_last_payment', JSON.stringify(completed));
     PasteurStorage.clearPendingPayment();
   },
 };

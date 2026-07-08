@@ -27,10 +27,15 @@ const PASTEUR_DATA = {
     nameEn: 'Pasteur Plus',
     shortNameFa: 'پاستور پلاس',
     shortNameEn: 'Pasteur Plus',
-    address: 'تبریز: تقاطع خیابان قطران خیام اول خیابان زبردست درمانگاه شبانه روزی پاستور',
-    serviceArea: 'پاسه، تبریز و حومه',
+    address: 'تبریز، تقاطع خیابان قطران، خیام اول، خیابان زبردست، درمانگاه شبانه‌روزی پاستور',
+    serviceArea: 'تبریز و حومه',
     phone: '۰۴۱۳۴۴۴۹۳۱۳',
+    phoneDigits: '04134449313',
+    phoneAlt: '۰۴۱۳۴۴۱۴۲۳۵',
+    phoneAltDigits: '04134414235',
     whatsapp: '۰۹۳۵۴۳۳۴۴۱۲',
+    whatsappDigits: '989354334412',
+    contactHours: 'پاسخگویی تلفنی و واتساپ در ساعات کاری درمانگاه',
     welcome: 'به سامانه خدمات مرکز پاستور خوش آمدید',
     subtitle: 'دندانپزشکی، پزشکی، پرستاری، مشاوره و تجهیزات پزشکی',
   },
@@ -185,9 +190,25 @@ const PASTEUR_DATA = {
   ],
 
   nursingServices: [
-    { title: 'تزریقات و سایرامورات پرستاری در منزل', emoji: '💉', price: 'از ۱۵۰,۰۰۰ تومان' },
-    { title: 'زخم و امورات پانسمان در منزل', emoji: '🩹', price: 'از ۱۰۰,۰۰۰ تومان' },
-    { title: 'اجاره تجهیزات پزشکی', emoji: '⚕️', price: 'استعلام قیمت' },
+    {
+      title: 'تزریقات و سایر امور پرستاری در منزل',
+      emoji: '💉',
+      price: 'تماس برای هماهنگی',
+      description: 'اعزام نیروی پرستاری برای تزریقات، سرم‌تراپی و امور پایه مراقبتی در منزل.',
+    },
+    {
+      title: 'زخم و امور پانسمان در منزل',
+      emoji: '🩹',
+      price: 'تماس برای هماهنگی',
+      description: 'رسیدگی به زخم، تعویض پانسمان و پیگیری مراقبت‌های مورد نیاز بیمار در منزل.',
+    },
+    {
+      title: 'اجاره تجهیزات پزشکی',
+      emoji: '🏥',
+      price: 'استعلام قیمت',
+      description: 'هماهنگی اجاره تجهیزات پزشکی مورد نیاز بیمار با پیگیری کارشناسان پاستور پلاس.',
+      image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&h=320&fit=crop',
+    },
   ],
 
   laserServices: [
@@ -198,20 +219,21 @@ const PASTEUR_DATA = {
   ],
 
   products: [
-    { id: 1, name: 'دستکش لاتکس (بسته ۱۰۰ عددی)', category: 'مصرفی', price: '۱۸۰,۰۰۰', priceNum: 180000, stock: 50, image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop' },
-    { id: 2, name: 'ماسک سه‌لایه پزشکی', category: 'مصرفی', price: '۴۵,۰۰۰', priceNum: 45000, stock: 200, image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&h=300&fit=crop' },
-    { id: 3, name: 'آینه دهان دندانپزشکی', category: 'دندانپزشکی', price: '۳۵۰,۰۰۰', priceNum: 350000, stock: 15, image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop' },
+    { id: 1, name: 'آینه دهان دندانپزشکی', category: 'دندانپزشکی', price: '۳۵۰,۰۰۰', priceNum: 350000, stock: 15, image: 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop' },
+    { id: 2, name: 'یونیت دندانپزشکی (مینی)', category: 'دندانپزشکی', price: '۴۵,۰۰۰,۰۰۰', priceNum: 45000000, stock: 2, image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=400&h=300&fit=crop' },
+    { id: 3, name: 'اتوکلاو دندانپزشکی رومیزی', category: 'دندانپزشکی', price: '۳۸,۰۰۰,۰۰۰', priceNum: 38000000, stock: 3, image: 'https://images.unsplash.com/photo-1588776814546-daab30f310ce?w=400&h=300&fit=crop' },
     { id: 4, name: 'فشارسنج دیجیتال', category: 'پزشکی', price: '۱,۲۰۰,۰۰۰', priceNum: 1200000, stock: 8, image: 'https://images.unsplash.com/photo-1559757142-0811a9024fe1?w=400&h=300&fit=crop' },
-    { id: 5, name: 'ست سرم‌تراپی', category: 'پرستاری', price: '۲۸۰,۰۰۰', priceNum: 280000, stock: 25, image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=300&fit=crop' },
-    { id: 6, name: 'یونیت دندانپزشکی (مینی)', category: 'دندانپزشکی', price: '۴۵,۰۰۰,۰۰۰', priceNum: 45000000, stock: 2, image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=400&h=300&fit=crop' },
+    { id: 5, name: 'اکسیژن‌ساز خانگی', category: 'پزشکی', price: '۲۶,۰۰۰,۰۰۰', priceNum: 26000000, stock: 4, image: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=400&h=300&fit=crop' },
+    { id: 6, name: 'تخت معاینه پزشکی', category: 'پزشکی', price: '۹,۵۰۰,۰۰۰', priceNum: 9500000, stock: 5, image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=300&fit=crop' },
   ],
 
   memberships: [
     {
       id: 'regular',
       name: 'عادی',
-      price: '۱,۲۰۰,۰۰۰',
-      priceNum: 1200000,
+      price: '۱,۰۰۰,۰۰۰',
+      priceNum: 1000000,
+      validityLabel: '۱۵ ماهه',
       features: [
         'وام درمانی ۱۲٪ تا سقف ۱۵۰ میلیون تومان',
         'پرداخت بخشی از هزینه‌های درمان تا سقف ۵٪',
@@ -219,14 +241,15 @@ const PASTEUR_DATA = {
         'شرایط پرداخت ۳ تا ۶ ماهه برای خدمات دندانپزشکی منتخب',
         'تخفیف ویژه رادیولوژی فک و صورت',
       ],
-      terms: 'مناسب بیماران عادی با خدمات ضروری دندانپزشکی و شرایط پرداخت مشخص',
+      terms: 'مناسب پوشش مجموعه‌ها با اعتبار ۱۵ ماهه و خدمات ضروری دندانپزشکی',
       highlighted: false,
     },
     {
       id: 'vip',
       name: 'VIP',
-      price: '۱,۸۰۰,۰۰۰',
-      priceNum: 1800000,
+      price: '۱,۶۰۰,۰۰۰',
+      priceNum: 1600000,
+      validityLabel: '۲۴ ماهه',
       features: [
         'وام درمانی ۱۲٪ تا سقف ۳۰۰ میلیون تومان',
         'پرداخت بخشی از هزینه‌های درمان تا سقف ۱۰٪',
@@ -236,14 +259,16 @@ const PASTEUR_DATA = {
         'خدمات ایمپلنت، لمینت سرامیکی و کامپوزیت',
         'شرایط پرداخت ۳ تا ۱۲ ماهه برای ایمپلنت، لمینت و کامپوزیت',
       ],
-      terms: 'پرداخت هزینه VIP برای فعال‌سازی مزایای ویژه بیماران دندانپزشکی — مطابق شرایط تایید شده',
+      terms: 'پرداخت هزینه VIP برای فعال‌سازی مزایای ویژه مجموعه‌ها با اعتبار ۲۴ ماهه',
       highlighted: true,
     },
   ],
 
   membershipPricing: {
-    regularPerPerson: 1200000,
-    vipPerPerson: 1800000,
+    regularPerPerson: 1000000,
+    regularTwoYearPerPerson: 1600000,
+    vipPerPerson: 1600000,
+    vipTwoYearPerPerson: 2800000,
   },
 
   membershipCommonServices: [
@@ -253,15 +278,31 @@ const PASTEUR_DATA = {
     'بدون دوره انتظار و امکان استفاده از خدمات پس از ثبت‌نام',
     'لیست قیمت خدمات دندانپزشکی طبق تعرفه‌های سندیکای مصوب دولت',
     'ارائه خدمات به بیماران فاقد بیمه پایه و تکمیلی',
-    'عضویت ۱ و ۲ ساله ویژه خانواده‌ها و مجموعه‌ها',
+    'عضویت ویژه مجموعه‌ها با اعتبار ۱۵ ماهه برای عادی و ۲۴ ماهه برای VIP',
     'حضور متخصصان متعهد و مجرب در خدمات دندانپزشکی',
     'قرعه‌کشی هفتگی و ارائه جوایز به مشترکین تحت درمان',
     'تخفیف فلورایدتراپی تا سقف ۱۰٪',
   ],
 
   membershipCoveragePlans: [
-    { id: 'group-1y', title: 'طرح ویژه پوشش مجموعه‌ها', duration: '۱ ساله', members: 4, regularRial: 4000000, vipRial: 6400000 },
-    { id: 'group-2y', title: 'طرح ویژه پوشش مجموعه‌ها', duration: '۲ ساله', members: 4, regularRial: 6400000, vipRial: 11200000 },
+    {
+      id: 'group-standard',
+      title: 'طرح پوشش مجموعه‌ها',
+      duration: 'عادی ۱۵ ماهه / VIP ۲۴ ماهه',
+      regularPerPerson: 1000000,
+      vipPerPerson: 1600000,
+      regularValidity: '۱۵ ماهه',
+      vipValidity: '۲۴ ماهه',
+    },
+    {
+      id: 'group-2y',
+      title: 'طرح پوشش مجموعه‌ها دو ساله',
+      duration: '۲ ساله',
+      regularPerPerson: 1600000,
+      vipPerPerson: 2800000,
+      regularValidity: '۲ ساله',
+      vipValidity: '۲ ساله',
+    },
   ],
 
   shopCustomerTypes: [
@@ -305,12 +346,16 @@ const PASTEUR_DATA = {
     { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی در بستر اپلیکیشن' },
     { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس داخل اپلیکیشن برای بررسی تخصصی' },
     { id: 'video', label: 'ویزیت تصویری / تلفنی', emoji: '🎥', desc: 'اولویت با بستر اپلیکیشن؛ در صورت نیاز از روبیکا هماهنگ می‌شود' },
-    { id: 'home', label: 'ویزیت در منزل', emoji: '🏠', desc: 'اعزام پزشک یا پرستار به منزل شما جهت ویزیت' },
+    { id: 'phone', label: 'ویزیت تلفنی', emoji: '☎️', desc: 'هماهنگی تماس تلفنی با پزشک یا کارشناس مربوطه' },
   ],
 
   consultationCategories: [
     { id: 'dental', label: 'دندانپزشکی', estimate: '۳۵۰,۰۰۰ — ۲,۰۰۰,۰۰۰ تومان', service: 'ویزیت یا درمان دندان' },
-    { id: 'medical', label: 'پزشکی', estimate: '۲۵۰,۰۰۰ — ۸۰۰,۰۰۰ تومان', service: 'مشاوره یا ویزیت آنلاین پزشکی' },
+    { id: 'medical', label: 'پزشکی عمومی', estimate: '۲۵۰,۰۰۰ — ۸۰۰,۰۰۰ تومان', service: 'مشاوره یا ویزیت آنلاین پزشکی عمومی' },
+    { id: 'medical-specialty', label: 'پزشکی تخصصی', estimate: 'پس از بررسی تخصص مشخص می‌شود', service: 'مشاوره یا ویزیت تخصصی پزشکی' },
+    { id: 'medical-home', label: 'ویزیت پزشک در منزل', estimate: 'پس از هماهنگی کارشناس اعلام می‌شود', service: 'اعزام پزشک یا هماهنگی ویزیت در منزل' },
+    { id: 'dental-home', label: 'اعزام دندانپزشک به منزل', estimate: 'پس از بررسی شرایط بیمار اعلام می‌شود', service: 'اعزام دندانپزشک به منزل' },
+    { id: 'dental-corporate', label: 'اعزام دندانپزشک به مجموعه طرف قرارداد', estimate: 'بر اساس تعداد نفرات و محل مجموعه اعلام می‌شود', service: 'اعزام دندانپزشک به مجموعه‌های طرف قرارداد' },
     { id: 'laser', label: 'لیزر و زیبایی', estimate: '۴۰۰,۰۰۰ — ۳,۰۰۰,۰۰۰ تومان', service: 'جلسه لیزر یا زیبایی' },
     { id: 'nursing', label: 'پرستاری', estimate: '۱۵۰,۰۰۰ — ۵۰۰,۰۰۰ تومان', service: 'خدمات پرستاری' },
   ],
@@ -376,10 +421,29 @@ const PASTEUR_DATA = {
   ],
 
   clubRewards: [
-    { id: 1, title: 'ویزیت رایگان', points: 200, emoji: '🩺' },
-    { id: 2, title: 'تخفیف ۱۰٪ درمان', points: 150, emoji: '🦷' },
-    { id: 3, title: 'مشاوره آنلاین رایگان', points: 80, emoji: '💬' },
-    { id: 4, title: 'محصول هدیه فروشگاه', points: 120, emoji: '🎁' },
+    { id: 1, title: '۵٪ تخفیف خدمات لیزر یا دندانپزشکی', points: 500, emoji: '🎟️' },
+    { id: 2, title: '۱۰٪ تخفیف خدمات لیزر یا دندانپزشکی', points: 1000, emoji: '🦷' },
+    { id: 3, title: '۱۵٪ تخفیف دندانپزشکی یا یک جلسه لیزر رایگان', points: 1500, emoji: '✨' },
+    { id: 4, title: '۲۰٪ تخفیف دندانپزشکی، جرم‌گیری رایگان یا ۵۰٪ لیزر', points: 2000, emoji: '💎' },
+    { id: 5, title: '۵۰٪ تخفیف دندانپزشکی یا ۵۰٪ خدمات زیبایی', points: 3000, emoji: '🏆' },
+  ],
+
+  clubMissions: [
+    { title: 'ثبت رزرو یا پرداخت موفق', reward: '۵۰ امتیاز' },
+    { title: 'ثبت مشاوره و ویزیت', reward: '۲۰ امتیاز' },
+    { title: 'دعوت از دوست با کد معرف', reward: '۱۰۰ امتیاز' },
+  ],
+
+  clubRules: [
+    'امتیازها بر اساس شماره موبایل کاربر نگهداری می‌شوند.',
+    'دریافت پاداش باعث کسر امتیاز همان پاداش از موجودی می‌شود.',
+    'استفاده از تخفیف‌ها نیازمند هماهنگی و تایید کارشناس پاستور پلاس است.',
+  ],
+
+  memberOnlyOffers: [
+    'اولویت هماهنگی نوبت برای اعضای باشگاه',
+    'اطلاع‌رسانی تخفیف‌های دوره‌ای دندانپزشکی و لیزر',
+    'پیشنهادهای ویژه عضویت عادی و VIP مجموعه‌ها',
   ],
 
   reminderOptions: [

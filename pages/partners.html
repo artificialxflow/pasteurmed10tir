@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>درخواست همکاری | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body data-page="partners" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+
+  <main class="flex-1 py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <section class="card-bordered p-6 sm:p-8 mb-8 bg-gradient-to-bl from-cyan-50 to-amber-50 border-cyan-200">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-cyan-800 text-xs font-bold border border-cyan-200 mb-3">
+          همکاری با پاستور پلاس
+        </span>
+        <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-950 mb-3">درخواست عضویت همکار</h1>
+        <p class="text-slate-600 leading-7">
+          پرستاران، دندانپزشکان، پزشکان و روانشناسان می‌توانند اطلاعات اولیه خود را ثبت کنند تا تیم پاستور پلاس برای بررسی شرایط همکاری تماس بگیرد.
+        </p>
+      </section>
+
+      <form id="partner-form" class="card-bordered p-6 bg-white space-y-5">
+        <div>
+          <label class="form-label">نوع همکاری</label>
+          <div id="partner-type-options" class="grid grid-cols-1 sm:grid-cols-4 gap-3"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label" for="partner-name">نام و نام خانوادگی</label>
+            <input type="text" id="partner-name" class="form-input" required />
+          </div>
+          <div>
+            <label class="form-label" for="partner-phone">شماره موبایل</label>
+            <input type="tel" id="partner-phone" class="form-input" required />
+          </div>
+          <div>
+            <label class="form-label" for="partner-specialty">تخصص / مهارت</label>
+            <input type="text" id="partner-specialty" class="form-input" placeholder="مثلاً پرستاری زخم، دندانپزشک عمومی، روانشناسی..." />
+          </div>
+          <div>
+            <label class="form-label" for="partner-city">شهر</label>
+            <input type="text" id="partner-city" class="form-input" value="تبریز" />
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label" for="partner-desc">توضیحات همکاری</label>
+          <textarea id="partner-desc" class="form-input min-h-[110px]" placeholder="سابقه کار، روزهای آزاد، محدوده فعالیت یا توضیحات تکمیلی..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary w-full">ثبت درخواست همکاری</button>
+      </form>
+
+      <div id="partner-success" class="hidden mt-6 card-bordered p-6 bg-green-50 border-green-200 text-center">
+        <p class="text-2xl mb-2">✅</p>
+        <p class="font-bold text-green-800">درخواست همکاری ثبت شد.</p>
+        <p class="text-sm text-slate-600 mt-2">پس از بررسی اولیه، کارشناسان پاستور پلاس با شما تماس می‌گیرند.</p>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    const partnerTypes = [
+      { id: 'nurse', label: 'پرستار', emoji: '👩‍⚕️' },
+      { id: 'dentist', label: 'دندانپزشک', emoji: '🦷' },
+      { id: 'doctor', label: 'پزشک', emoji: '🩺' },
+      { id: 'psychologist', label: 'روانشناس', emoji: '🧠' },
+    ];
+    let selectedPartnerType = 'nurse';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('partners');
+      document.getElementById('partner-type-options').innerHTML = partnerTypes.map((type) => `
+        <button type="button" data-type="${type.id}" class="partner-type card-bordered p-4 text-center ${type.id === selectedPartnerType ? 'border-teal-500 bg-teal-50' : ''}">
+          <span class="text-2xl">${type.emoji}</span>
+          <p class="font-bold text-sm mt-2">${type.label}</p>
+        </button>
+      `).join('');
+
+      document.getElementById('partner-type-options').addEventListener('click', (event) => {
+        const btn = event.target.closest('.partner-type');
+        if (!btn) return;
+        selectedPartnerType = btn.dataset.type;
+        document.querySelectorAll('.partner-type').forEach((el) => el.classList.remove('border-teal-500', 'bg-teal-50'));
+        btn.classList.add('border-teal-500', 'bg-teal-50');
+      });
+
+      document.getElementById('partner-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const type = partnerTypes.find((item) => item.id === selectedPartnerType);
+        PasteurStorage.savePartnerRequest({
+          id: PasteurStorage.generateId(),
+          type: selectedPartnerType,
+          typeLabel: type?.label || '—',
+          name: document.getElementById('partner-name').value.trim(),
+          phone: document.getElementById('partner-phone').value.trim(),
+          specialty: document.getElementById('partner-specialty').value.trim(),
+          city: document.getElementById('partner-city').value.trim(),
+          description: document.getElementById('partner-desc').value.trim(),
+          status: 'new',
+          createdAt: new Date().toISOString(),
+        });
+        document.getElementById('partner-form').classList.add('hidden');
+        document.getElementById('partner-success').classList.remove('hidden');
+      });
+    });
+  </script>
+</body>
+</html>

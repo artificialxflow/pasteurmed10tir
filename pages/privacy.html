@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سیاست حریم خصوصی | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body data-page="privacy" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+
+  <main class="flex-1 py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <article class="card-bordered p-6 sm:p-8 bg-white leading-8 text-slate-700">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-950 mb-4">سیاست حریم خصوصی پاستور پلاس</h1>
+        <p class="mb-4">
+          پاستور پلاس برای ثبت درخواست‌های رزرو، مشاوره، عضویت، فروشگاه و همکاری، اطلاعاتی مانند نام، شماره تماس، شرح درخواست و اطلاعات انتخاب‌شده توسط کاربر را دریافت می‌کند.
+        </p>
+        <h2 class="font-bold text-lg text-slate-900 mt-6 mb-2">استفاده از اطلاعات</h2>
+        <p>اطلاعات فقط برای پیگیری خدمات، هماهنگی تماس، بررسی درخواست‌ها و بهبود تجربه کاربری استفاده می‌شود.</p>
+        <h2 class="font-bold text-lg text-slate-900 mt-6 mb-2">نگهداری داده‌ها</h2>
+        <p>در نسخه فعلی، داده‌ها به صورت نمایشی در مرورگر کاربر ذخیره می‌شوند و برای نسخه عمومی باید به سرور امن و API واقعی منتقل شوند.</p>
+        <h2 class="font-bold text-lg text-slate-900 mt-6 mb-2">تماس</h2>
+        <p>برای سوال درباره حریم خصوصی، از صفحه تماس با ما یا شماره‌های رسمی پاستور پلاس استفاده کنید.</p>
+      </article>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => mountLayout('privacy'));
+  </script>
+</body>
+</html>
