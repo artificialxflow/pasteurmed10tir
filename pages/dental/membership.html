@@ -28,17 +28,41 @@
 
       <div id="membership-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
 
-      <section class="mt-10">
-        <div class="flex items-center justify-between gap-3 mb-4">
-          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">مقایسه خدمات عادی و VIP</h2>
-          <span class="badge bg-amber-100 text-amber-800 border-amber-300">ویژه بیماران دندانپزشکی</span>
-        </div>
-        <div id="services-comparison" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
-      </section>
-
       <section class="mt-10 card-bordered p-6 bg-cyan-50/70 border-cyan-200">
         <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4">خدمات عمومی مشترک</h2>
         <div id="common-services" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </section>
+
+      <section class="mt-10 card-bordered p-6 bg-white" aria-labelledby="loan-calculator-heading">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
+          <div>
+            <h2 id="loan-calculator-heading" class="text-xl sm:text-2xl font-extrabold text-slate-900">محاسبه‌گر اقساط وام درمانی</h2>
+            <p class="text-sm text-slate-600 mt-1">سود وام ۱۲٪ است؛ سقف و مدت بازپرداخت بر اساس طرح عادی یا VIP کنترل می‌شود.</p>
+          </div>
+          <span class="badge bg-cyan-100 text-cyan-800 border-cyan-300">وام درمانی ۱۲٪</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="form-label">نوع طرح</label>
+            <select id="loan-tier" class="form-input">
+              <option value="regular">عادی</option>
+              <option value="vip">VIP</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">مبلغ وام به تومان</label>
+            <input type="number" id="loan-amount" class="form-input" min="1000000" step="1000000" value="50000000" />
+          </div>
+          <div>
+            <label class="form-label">مدت بازپرداخت</label>
+            <select id="loan-months" class="form-input"></select>
+          </div>
+          <div>
+            <label class="form-label">سود سالانه</label>
+            <div class="form-input bg-slate-50 font-bold text-slate-700">۱۲٪</div>
+          </div>
+        </div>
+        <div id="loan-result" class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3"></div>
       </section>
 
       <section class="mt-10">
@@ -104,7 +128,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="form-label">انتخاب طرح</label>
+              <label class="form-label">مدت عضویت</label>
               <select id="app-plan" class="form-input" required></select>
             </div>
             <div>
@@ -179,6 +203,10 @@
             <label class="form-label">تعداد اعضا</label>
             <input type="number" id="member-count" class="form-input" min="1" value="1" required />
           </div>
+          <div>
+            <label class="form-label">مدت عضویت</label>
+            <select id="member-plan" class="form-input"></select>
+          </div>
           <div id="member-amount-preview" class="rounded-xl border border-cyan-100 bg-cyan-50 p-3 text-sm font-bold text-cyan-800"></div>
           <div>
             <label class="form-label">کد معرف ویزیتور (اختیاری)</label>
@@ -212,8 +240,15 @@
         regularPerPerson: 1000000,
         regularTwoYearPerPerson: 1600000,
         vipPerPerson: 1600000,
-        vipTwoYearPerPerson: 2800000,
+        vipTwoYearPerPerson: 2560000,
       };
+
+      function getMembershipDurationOptions() {
+        return PASTEUR_DATA.membershipCoveragePlans || [
+          { id: 'one-year', title: 'عضویت یک‌ساله', duration: '۱ ساله', regularPerPerson: membershipPricing.regularPerPerson, vipPerPerson: membershipPricing.vipPerPerson, regularValidity: '۱ ساله', vipValidity: '۱ ساله', discountPercent: 0 },
+          { id: 'two-year', title: 'عضویت دوساله', duration: '۲ ساله', regularPerPerson: membershipPricing.regularTwoYearPerPerson, vipPerPerson: membershipPricing.vipTwoYearPerPerson, regularValidity: '۲ ساله', vipValidity: '۲ ساله', discountPercent: 20 },
+        ];
+      }
 
       function getSelectedCoveragePlan() {
         return PASTEUR_DATA.membershipCoveragePlans.find((p) => p.id === document.getElementById('app-plan').value);
@@ -239,8 +274,9 @@
         const memberCount = normalizeMemberCount(document.getElementById('app-member-count').value);
         const unitPriceToman = getUnitPriceToman(tier, plan);
         const totalToman = unitPriceToman * memberCount;
+        const discountLabel = plan?.discountPercent ? ` | تخفیف: ${plan.discountPercent.toLocaleString('fa-IR')}٪` : '';
         document.getElementById('app-amount-preview').textContent =
-          `${toToman(unitPriceToman)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(totalToman)} | اعتبار: ${getValidityLabel(tier, plan)}`;
+          `${toToman(unitPriceToman)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(totalToman)} | مدت عضویت: ${getValidityLabel(tier, plan)}${discountLabel}`;
       }
 
       function getSelectedAmountRial() {
@@ -275,6 +311,8 @@
           planId: plan?.id,
           planTitle: plan ? `${plan.title} (${plan.duration})` : '—',
           validityLabel: getValidityLabel(tier, plan),
+          membershipDurationLabel: getValidityLabel(tier, plan),
+          discountPercent: plan?.discountPercent || 0,
           tier,
           tierLabel: tier === 'vip' ? 'VIP' : 'عادی',
           memberCount,
@@ -307,11 +345,11 @@
             </div>
             <p><strong>کد نمایندگی:</strong> ${data.referralCode || '—'} | <strong>نام نماینده:</strong> ${data.visitorName}</p>
             <p><strong>نام مشتری:</strong> ${data.patientName || '—'} | <strong>کد ملی:</strong> ${data.nationalId || '—'} | <strong>تماس:</strong> ${data.phone || '—'}</p>
-            <p><strong>طرح:</strong> ${data.planTitle} | <strong>پوشش:</strong> ${data.tierLabel} | <strong>اعتبار:</strong> ${data.validityLabel} | <strong>تعداد اعضا:</strong> ${data.memberCount.toLocaleString('fa-IR')} نفر</p>
+            <p><strong>مدت عضویت:</strong> ${data.planTitle} | <strong>پوشش:</strong> ${data.tierLabel} | <strong>تعداد اعضا:</strong> ${data.memberCount.toLocaleString('fa-IR')} نفر</p>
             <p><strong>مبلغ هر نفر:</strong> ${toToman(data.unitPriceToman)} | <strong>مبلغ کل:</strong> ${toRial(data.amountRial)}</p>
             <p><strong>اعضای تحت پوشش مجموعه:</strong> ${data.dependents.length ? data.dependents.join('، ') : '—'}</p>
             <p class="mt-4 border-t border-dashed border-slate-300 pt-3">
-              این قرارداد بر اساس شرایط عضویت پاستور پلاس، تعداد ${data.memberCount.toLocaleString('fa-IR')} عضو مجموعه، اعتبار ${data.validityLabel} و به مبلغ ${toRial(data.amountRial)} صادر می‌شود.
+              این قرارداد بر اساس شرایط عضویت پاستور پلاس، تعداد ${data.memberCount.toLocaleString('fa-IR')} عضو مجموعه، مدت عضویت ${data.membershipDurationLabel} و به مبلغ ${toRial(data.amountRial)} صادر می‌شود.
               این فرم فقط بر اساس خدمات تاییدشده دندانپزشکی و شرایط عمومی عضویت صادر می‌شود.
             </p>
             <div class="grid grid-cols-3 gap-4 mt-8 text-center text-xs text-slate-500">
@@ -323,20 +361,47 @@
         document.getElementById('contract-preview-modal').classList.remove('hidden');
       }
 
-      document.getElementById('services-comparison').innerHTML = plans.map((m) => `
-        <article class="card-bordered p-5 ${m.id === 'vip' ? 'card-vip' : ''}">
-          <div class="flex items-center gap-3 mb-4">
-            <span class="text-3xl">${m.id === 'vip' ? '💎' : '🦷'}</span>
-            <div>
-              <h3 class="font-extrabold text-lg">خدمات ${m.name}</h3>
-              <p class="text-xs text-slate-500">${m.terms}</p>
-            </div>
+      function getLoanPlan(tier) {
+        return plans.find((plan) => plan.id === tier) || plans[0];
+      }
+
+      function updateLoanMonthOptions() {
+        const tier = document.getElementById('loan-tier').value;
+        const plan = getLoanPlan(tier);
+        const maxMonths = Number(plan.loanTermLabel?.replace(/[^\d]/g, '') || (tier === 'vip' ? 24 : 15));
+        document.getElementById('loan-months').innerHTML = Array.from({ length: maxMonths }, (_, index) => index + 1)
+          .filter((month) => month === 3 || month === 6 || month === 10 || month === 12 || month === 15 || month === 18 || month === 24 || month === maxMonths)
+          .filter((month, index, arr) => arr.indexOf(month) === index && month <= maxMonths)
+          .map((month) => `<option value="${month}" ${month === maxMonths ? 'selected' : ''}>${month.toLocaleString('fa-IR')} ماهه</option>`)
+          .join('');
+      }
+
+      function updateLoanCalculator() {
+        const tier = document.getElementById('loan-tier').value;
+        const plan = getLoanPlan(tier);
+        const limit = Number(plan.loanLimit || 0);
+        const amountInput = document.getElementById('loan-amount');
+        const amount = Math.max(0, Number(amountInput.value || 0));
+        const months = Math.max(1, Number(document.getElementById('loan-months').value || 1));
+        const validAmount = Math.min(amount, limit);
+        if (amount > limit) amountInput.value = limit;
+        const totalRepayment = Math.round(validAmount * 1.12);
+        const installment = Math.ceil(totalRepayment / months);
+        document.getElementById('loan-result').innerHTML = `
+          <div class="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
+            <p class="text-xs text-slate-500">سقف وام ${plan.name}</p>
+            <p class="font-extrabold text-cyan-800 mt-1">${toToman(limit)}</p>
           </div>
-          <ul class="space-y-2 text-sm text-slate-700">
-            ${m.features.map((feature) => `<li class="flex gap-2"><span class="${m.id === 'vip' ? 'text-amber-600' : 'text-cyan-600'}">◄</span><span>${feature}</span></li>`).join('')}
-          </ul>
-        </article>
-      `).join('');
+          <div class="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+            <p class="text-xs text-slate-500">جمع بازپرداخت با سود ۱۲٪</p>
+            <p class="font-extrabold text-amber-800 mt-1">${toToman(totalRepayment)}</p>
+          </div>
+          <div class="rounded-2xl border border-teal-100 bg-teal-50 p-4">
+            <p class="text-xs text-slate-500">مبلغ هر قسط ${months.toLocaleString('fa-IR')} ماهه</p>
+            <p class="font-extrabold text-teal-800 mt-1">${toToman(installment)}</p>
+          </div>
+        `;
+      }
 
       document.getElementById('common-services').innerHTML = PASTEUR_DATA.membershipCommonServices
         .map((service) => `<div class="flex gap-2 rounded-xl bg-white/80 border border-cyan-100 p-3 text-sm text-slate-700"><span class="text-cyan-600">✓</span><span>${service}</span></div>`)
@@ -346,17 +411,17 @@
         <table class="w-full text-sm text-right">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200">
-              <th class="p-3">طرح</th>
-              <th class="p-3">مدت</th>
+              <th class="p-3">مدت عضویت</th>
+              <th class="p-3">تخفیف</th>
               <th class="p-3">عادی / هر نفر</th>
               <th class="p-3">VIP / هر نفر</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            ${PASTEUR_DATA.membershipCoveragePlans.map((plan) => `
+            ${getMembershipDurationOptions().map((plan) => `
               <tr>
-                <td class="p-3 font-bold">${plan.title}</td>
-                <td class="p-3">${plan.duration}</td>
+                <td class="p-3 font-bold">${plan.title} — ${plan.duration}</td>
+                <td class="p-3">${plan.discountPercent ? `${plan.discountPercent.toLocaleString('fa-IR')}٪` : '—'}</td>
                 <td class="p-3">${toToman(plan.regularPerPerson)}</td>
                 <td class="p-3 font-bold text-amber-700">${toToman(plan.vipPerPerson)}</td>
               </tr>`).join('')}
@@ -364,10 +429,26 @@
         </table>`;
 
       document.getElementById('app-date').value = new Date().toLocaleDateString('fa-IR');
-      document.getElementById('app-plan').innerHTML = PASTEUR_DATA.membershipCoveragePlans
+      document.getElementById('app-plan').innerHTML = getMembershipDurationOptions()
+        .map((plan) => `<option value="${plan.id}">${plan.title} — ${plan.duration}</option>`)
+        .join('');
+      document.getElementById('member-plan').innerHTML = getMembershipDurationOptions()
         .map((plan) => `<option value="${plan.id}">${plan.title} — ${plan.duration}</option>`)
         .join('');
       updateApplicationAmountPreview();
+      updateLoanMonthOptions();
+      updateLoanCalculator();
+
+      ['loan-tier', 'loan-amount', 'loan-months'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', () => {
+          if (id === 'loan-tier') updateLoanMonthOptions();
+          updateLoanCalculator();
+        });
+        document.getElementById(id).addEventListener('change', () => {
+          if (id === 'loan-tier') updateLoanMonthOptions();
+          updateLoanCalculator();
+        });
+      });
 
       ['app-plan', 'app-tier', 'app-member-count'].forEach((id) => {
         document.getElementById(id).addEventListener('input', updateApplicationAmountPreview);
@@ -395,12 +476,14 @@
         PasteurStorage.setPendingPayment({
           kind: 'membership',
           planId: data.tier,
-          planName: `${data.planTitle} — ${data.tierLabel} — اعتبار ${data.validityLabel} — ${data.memberCount} نفر`,
+          planName: `${data.planTitle} — ${data.tierLabel} — ${data.memberCount} نفر`,
           patientName: data.patientName,
           patientPhone: data.phone,
           amount: data.amountToman,
           referralCode: data.referralCode,
           validityLabel: data.validityLabel,
+          membershipDurationLabel: data.membershipDurationLabel,
+          discountPercent: data.discountPercent,
         });
         window.location.href = 'confirm.html';
       });
@@ -415,7 +498,9 @@
           <p class="text-2xl font-bold ${m.id === 'vip' ? 'text-amber-700' : 'text-teal-700'} text-center my-4">
             ${m.price} <span class="text-sm font-normal text-slate-500">تومان / هر نفر</span>
           </p>
-          <p class="text-center text-xs font-bold text-slate-500 mb-4">اعتبار: ${m.validityLabel}</p>
+          <p class="text-center text-xs font-bold ${m.id === 'vip' ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-cyan-700 bg-cyan-50 border-cyan-100'} border rounded-xl py-2 px-3 mb-4">
+            بازپرداخت وام درمانی: ${m.loanTermLabel}
+          </p>
           <ul class="text-sm text-slate-600 space-y-2 flex-1 mb-4">
             ${m.features.map((f) => `<li class="flex gap-2"><span class="text-teal-600">✓</span>${f}</li>`).join('')}
           </ul>
@@ -429,9 +514,12 @@
       function updateMembershipModalAmount() {
         if (!selectedPlan) return;
         const memberCount = normalizeMemberCount(document.getElementById('member-count').value);
-        const total = selectedPlan.priceNum * memberCount;
+        const durationPlan = getMembershipDurationOptions().find((plan) => plan.id === document.getElementById('member-plan').value);
+        const unitPrice = getUnitPriceToman(selectedPlan.id, durationPlan);
+        const total = unitPrice * memberCount;
+        const discountLabel = durationPlan?.discountPercent ? ` | تخفیف: ${durationPlan.discountPercent.toLocaleString('fa-IR')}٪` : '';
         document.getElementById('member-amount-preview').textContent =
-          `${toToman(selectedPlan.priceNum)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(total)} | اعتبار: ${selectedPlan.validityLabel}`;
+          `${toToman(unitPrice)} برای هر نفر × ${memberCount.toLocaleString('fa-IR')} نفر = ${toToman(total)} | مدت عضویت: ${getValidityLabel(selectedPlan.id, durationPlan)}${discountLabel}`;
       }
 
       grid.addEventListener('click', (e) => {
@@ -443,6 +531,7 @@
         document.getElementById('modal-plan-name').textContent = `عضویت ${selectedPlan.name}`;
         document.getElementById('modal-terms').textContent = selectedPlan.terms;
         document.getElementById('member-count').value = '1';
+        document.getElementById('member-plan').value = 'one-year';
         updateMembershipModalAmount();
         document.getElementById('membership-modal').classList.remove('hidden');
       });
@@ -451,12 +540,16 @@
         document.getElementById('membership-modal').classList.add('hidden');
       });
       document.getElementById('member-count').addEventListener('input', updateMembershipModalAmount);
+      document.getElementById('member-plan').addEventListener('change', updateMembershipModalAmount);
 
       document.getElementById('membership-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const name = document.getElementById('member-name').value.trim();
         const phone = document.getElementById('member-phone').value.trim();
         const memberCount = normalizeMemberCount(document.getElementById('member-count').value);
+        const durationPlan = getMembershipDurationOptions().find((plan) => plan.id === document.getElementById('member-plan').value);
+        const unitPrice = getUnitPriceToman(selectedPlan.id, durationPlan);
+        const membershipDurationLabel = getValidityLabel(selectedPlan.id, durationPlan);
         if (name.length < 2 || phone.replace(/[^\d]/g, '').length < 10) {
           alert('اطلاعات را کامل وارد کنید.');
           return;
@@ -464,11 +557,13 @@
         PasteurStorage.setPendingPayment({
           kind: 'membership',
           planId: selectedPlan.id,
-          planName: `${selectedPlan.name} — اعتبار ${selectedPlan.validityLabel} — ${memberCount} نفر`,
+          planName: `${selectedPlan.name} — عضویت ${membershipDurationLabel} — ${memberCount} نفر`,
           patientName: name,
           patientPhone: phone,
-          amount: selectedPlan.priceNum * memberCount,
-          validityLabel: selectedPlan.validityLabel,
+          amount: unitPrice * memberCount,
+          validityLabel: membershipDurationLabel,
+          membershipDurationLabel,
+          discountPercent: durationPlan?.discountPercent || 0,
           referralCode: document.getElementById('member-referral').value.trim().toUpperCase(),
         });
         window.location.href = 'confirm.html';

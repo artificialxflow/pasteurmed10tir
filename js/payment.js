@@ -62,6 +62,14 @@ const PaymentFlow = {
           <div class="flex justify-between border-b border-slate-100 pb-2">
             <span class="text-slate-500">طرح:</span><span class="font-semibold">${data.planName}</span>
           </div>
+          ${data.membershipDurationLabel || data.validityLabel ? `
+          <div class="flex justify-between border-b border-slate-100 pb-2">
+            <span class="text-slate-500">مدت عضویت:</span><span class="font-semibold">${data.membershipDurationLabel || data.validityLabel}</span>
+          </div>` : ''}
+          ${data.discountPercent ? `
+          <div class="flex justify-between border-b border-slate-100 pb-2">
+            <span class="text-slate-500">تخفیف مدت‌دار:</span><span class="font-semibold">${data.discountPercent.toLocaleString('fa-IR')}٪</span>
+          </div>` : ''}
           ${data.referralCode ? `
           <div class="flex justify-between border-b border-slate-100 pb-2">
             <span class="text-slate-500">کد معرف:</span><span class="font-semibold">${data.referralCode}</span>
@@ -148,6 +156,8 @@ const PaymentFlow = {
         patientPhone: pending.patientPhone,
         amount: pending.amount,
         validityLabel: pending.validityLabel,
+        membershipDurationLabel: pending.membershipDurationLabel,
+        discountPercent: pending.discountPercent,
         status: 'paid',
         createdAt: new Date().toISOString(),
       });

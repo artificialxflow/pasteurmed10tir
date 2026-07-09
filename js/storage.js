@@ -14,6 +14,7 @@ const PasteurStorage = {
     reminders: 'pasteur_reminders',
     club: 'pasteur_club',
     gallery: 'pasteur_gallery',
+    services: 'pasteur_services',
     visitors: 'pasteur_visitors',
     commissions: 'pasteur_commissions',
     facilityRequests: 'pasteur_facility_requests',
@@ -147,6 +148,28 @@ const PasteurStorage = {
   initProductsIfNeeded() {
     if (!this.get(this.KEYS.products)) {
       this.saveProducts(PASTEUR_DATA.products.map((p) => ({ ...p })));
+    }
+  },
+
+  getServices() {
+    const stored = this.get(this.KEYS.services);
+    const source = stored || PASTEUR_DATA.services;
+    return source
+      .map((service, index) => ({
+        ...service,
+        id: service.id || `service-${index + 1}`,
+        active: service.active !== false,
+      }))
+      .filter((service) => service.title && service.href);
+  },
+
+  saveServices(services) {
+    this.set(this.KEYS.services, services);
+  },
+
+  initServicesIfNeeded() {
+    if (!this.get(this.KEYS.services)) {
+      this.saveServices(PASTEUR_DATA.services.map((service) => ({ ...service, active: service.active !== false })));
     }
   },
 

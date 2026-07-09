@@ -16,6 +16,7 @@ function getAdminNavItems() {
     { href: 'bookings.html', label: 'رزروها', icon: '📅', id: 'bookings' },
     { href: 'consultations.html', label: 'مشاوره‌ها', icon: '💬', id: 'consultations' },
     { href: 'reminders.html', label: 'یادآورها', icon: '🔔', id: 'reminders' },
+    { href: 'services.html', label: 'سرویس‌ها', icon: '🧩', id: 'services' },
     { href: 'club.html', label: 'باشگاه', icon: '🎁', id: 'club' },
     { href: 'gallery.html', label: 'گالری', icon: '🖼️', id: 'gallery' },
     { href: 'visitors.html', label: 'ویزیتورها', icon: '👤', id: 'visitors' },
@@ -53,6 +54,12 @@ function getAdminPageInfo(activeId) {
       title: 'یادآورهای هوشمند بیماران',
       description: 'یادآورها بعد از رزرو موفق ساخته می‌شوند تا پیگیری نوبت و اطلاع‌رسانی ساده‌تر باشد.',
       points: ['زمان نوبت', 'نوع یادآور', 'وضعیت فعال یا غیرفعال'],
+    },
+    services: {
+      icon: '🧩',
+      title: 'مدیریت سرویس‌های صفحه اصلی',
+      description: 'کارت‌های مسیرهای اصلی سایت از این بخش قابل افزودن، ویرایش، حذف و فعال یا غیرفعال کردن هستند.',
+      points: ['افزودن مسیر جدید', 'ویرایش لینک و تصویر', 'کنترل نمایش در صفحه اصلی'],
     },
     club: {
       icon: '🎁',

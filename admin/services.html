@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سرویس‌ها | پنل ادمین</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body class="font-sans antialiased">
+  <div class="admin-layout">
+    <aside id="admin-sidebar" class="admin-sidebar"></aside>
+    <div class="admin-main">
+      <header id="admin-header" class="bg-white border-b-2 border-slate-200 px-4 sm:px-6 py-4"></header>
+      <main class="flex-1 p-4 sm:p-6 bg-slate-50">
+        <div class="card-bordered p-6 bg-white mb-8">
+          <h2 class="font-bold mb-4">افزودن سرویس جدید</h2>
+          <form id="add-service-form" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" id="service-title" class="form-input" placeholder="عنوان مثل لیزر و زیبایی" required />
+            <input type="text" id="service-emoji" class="form-input" placeholder="آیکن مثل ✨" />
+            <input type="text" id="service-href" class="form-input" placeholder="لینک مثل pages/laser.html" required />
+            <select id="service-color" class="form-input">
+              <option value="teal">سبز/فیروزه‌ای</option>
+              <option value="blue">آبی</option>
+              <option value="rose">صورتی</option>
+              <option value="purple">بنفش</option>
+              <option value="amber">طلایی</option>
+            </select>
+            <input type="url" id="service-image" class="form-input md:col-span-2" placeholder="آدرس تصویر کارت" />
+            <textarea id="service-description" class="form-input md:col-span-2 min-h-[86px]" placeholder="توضیح کوتاه سرویس"></textarea>
+            <button type="submit" class="btn-primary md:col-span-2">افزودن سرویس</button>
+          </form>
+        </div>
+
+        <div class="flex flex-wrap gap-3 items-center justify-between mb-4">
+          <h2 class="font-bold text-lg">لیست سرویس‌های صفحه اصلی</h2>
+          <button type="button" id="reset-services" class="px-4 py-2 rounded-full border-2 border-slate-200 text-sm font-bold text-slate-600 hover:bg-white">
+            بازنشانی به پیش‌فرض
+          </button>
+        </div>
+        <div id="services-table"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/admin-layout.js"></script>
+  <script>
+    function makeServiceId(title) {
+      return `service-${Date.now()}-${String(title || '').replace(/\s+/g, '-').slice(0, 16)}`;
+    }
+
+    function getFormService() {
+      const title = document.getElementById('service-title').value.trim();
+      return {
+        id: makeServiceId(title),
+        title,
+        emoji: document.getElementById('service-emoji').value.trim() || '🧩',
+        href: document.getElementById('service-href').value.trim(),
+        color: document.getElementById('service-color').value,
+        image: document.getElementById('service-image').value.trim() || 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop',
+        description: document.getElementById('service-description').value.trim() || 'مشاهده جزئیات و ثبت درخواست',
+        active: true,
+      };
+    }
+
+    function collectServicesFromTable() {
+      return Array.from(document.querySelectorAll('.service-row')).map((row) => ({
+        id: row.dataset.id,
+        title: row.querySelector('.service-title').value.trim(),
+        emoji: row.querySelector('.service-emoji').value.trim() || '🧩',
+        description: row.querySelector('.service-description').value.trim(),
+        href: row.querySelector('.service-href').value.trim(),
+        image: row.querySelector('.service-image').value.trim(),
+        color: row.querySelector('.service-color').value,
+        active: row.querySelector('.service-active').checked,
+      })).filter((service) => service.title && service.href);
+    }
+
+    function renderServices() {
+      PasteurStorage.initServicesIfNeeded();
+      const services = PasteurStorage.getServices();
+      const rows = services.map((service) => `
+        <tr class="service-row" data-id="${service.id}">
+          <td class="px-4 py-3"><input class="service-title form-input text-xs" value="${service.title || ''}" /></td>
+          <td class="px-4 py-3"><input class="service-emoji form-input text-xs" value="${service.emoji || ''}" /></td>
+          <td class="px-4 py-3"><input class="service-description form-input text-xs" value="${service.description || ''}" /></td>
+          <td class="px-4 py-3"><input class="service-href form-input text-xs ltr text-left" dir="ltr" value="${service.href || ''}" /></td>
+          <td class="px-4 py-3"><input class="service-image form-input text-xs ltr text-left" dir="ltr" value="${service.image || ''}" /></td>
+          <td class="px-4 py-3">
+            <select class="service-color form-input text-xs">
+              ${['teal', 'blue', 'rose', 'purple', 'amber'].map((color) => `<option value="${color}" ${service.color === color ? 'selected' : ''}>${color}</option>`).join('')}
+            </select>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <input type="checkbox" class="service-active" ${service.active !== false ? 'checked' : ''} />
+          </td>
+          <td class="px-4 py-3">
+            <button type="button" class="delete-service text-red-600 text-xs font-bold">حذف</button>
+          </td>
+        </tr>
+      `).join('');
+
+      document.getElementById('services-table').innerHTML = `
+        ${renderDataTable(['عنوان', 'آیکن', 'توضیح', 'لینک', 'تصویر', 'رنگ', 'فعال', 'عملیات'], rows, 'سرویسی ثبت نشده است.')}
+        <button type="button" id="save-services" class="btn-primary mt-4">ذخیره تغییرات سرویس‌ها</button>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAdminLayout('services');
+      setAdminTitle('مدیریت سرویس‌ها');
+      renderServices();
+
+      document.getElementById('add-service-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const services = PasteurStorage.getServices();
+        services.push(getFormService());
+        PasteurStorage.saveServices(services);
+        event.target.reset();
+        renderServices();
+      });
+
+      document.getElementById('services-table').addEventListener('click', (event) => {
+        if (event.target.id === 'save-services') {
+          PasteurStorage.saveServices(collectServicesFromTable());
+          renderServices();
+        }
+        if (event.target.classList.contains('delete-service')) {
+          event.target.closest('.service-row')?.remove();
+          PasteurStorage.saveServices(collectServicesFromTable());
+          renderServices();
+        }
+      });
+
+      document.getElementById('reset-services').addEventListener('click', () => {
+        PasteurStorage.saveServices(PASTEUR_DATA.services.map((service) => ({ ...service, active: service.active !== false })));
+        renderServices();
+      });
+    });
+  </script>
+</body>
+</html>
