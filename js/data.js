@@ -104,6 +104,19 @@ const PASTEUR_DATA = {
     { id: 6, name: 'درمان ریشه', emoji: '💉', description: 'عصب‌کشی و حفظ دندان طبیعی' },
   ],
 
+  medicalSpecialties: [
+    { id: 'urology', name: 'اورولوژی', emoji: '🩺', description: 'مشاوره و ویزیت تخصصی بیماری‌های کلیه، مثانه و دستگاه ادراری' },
+    { id: 'infectious', name: 'عفونی', emoji: '🦠', description: 'بررسی و درمان عفونت‌ها و بیماری‌های واگیردار' },
+    { id: 'cardiology', name: 'قلب و عروق', emoji: '❤️', description: 'مشاوره تخصصی بیماری‌های قلبی و عروقی' },
+    { id: 'pediatrics', name: 'اطفال', emoji: '👶', description: 'مشاوره و ویزیت تخصصی کودکان و نوزادان' },
+    { id: 'internal', name: 'داخلی', emoji: '🫁', description: 'بررسی بیماری‌های داخلی و مشکلات عمومی بدن' },
+    { id: 'surgery', name: 'جراحی', emoji: '🔪', description: 'مشاوره پیش از عمل و بررسی نیاز به جراحی' },
+    { id: 'orthopedics', name: 'ارتوپدی', emoji: '🦴', description: 'مشاوره تخصصی استخوان، مفاصل و آسیب‌های ورزشی' },
+    { id: 'dermatology', name: 'پوست و مو', emoji: '🧴', description: 'بررسی بیماری‌های پوستی، مو و ناخن' },
+    { id: 'neurology', name: 'مغز و اعصاب', emoji: '🧠', description: 'مشاوره تخصصی سردرد، تشنج و اختلالات عصبی' },
+    { id: 'psychiatry', name: 'روانپزشکی', emoji: '🧘', description: 'مشاوره تخصصی اضطراب، افسردگی و سلامت روان' },
+  ],
+
   educationCourses: [
     {
       title: 'مراقبت‌های بعد از ایمپلنت',

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تخصص‌ها | پزشکی — پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
+  <link rel="stylesheet" href="../../css/main.css" />
+</head>
+<body data-page="medical" class="flex flex-col min-h-screen font-sans antialiased">
+  <div id="site-header"></div>
+  <main class="flex-1 py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <nav class="text-sm text-slate-500 mb-6">
+        <a href="../medical.html" class="hover:text-teal-700">پزشکی</a>
+        <span class="mx-2">/</span>
+        <span class="text-slate-900 font-medium">تخصص‌ها</span>
+      </nav>
+      <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">🔬 تخصص‌های پزشکی</h1>
+      <p class="text-slate-600 mb-8">تخصص مورد نظر را انتخاب کنید؛ سپس نوع مشاوره یا ویزیت را ثبت کنید.</p>
+      <div id="specialty-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountLayout('medical');
+      document.getElementById('specialty-grid').innerHTML = PASTEUR_DATA.medicalSpecialties.map((s) => `
+        <a href="../consultation.html?category=medical-specialty&specialty=${s.id}&type=video" class="card-bordered p-6 hover:border-amber-500 hover:-translate-y-1 transition-transform block">
+          <span class="text-3xl">${s.emoji}</span>
+          <h2 class="font-bold text-lg mt-3 text-slate-900">${s.name}</h2>
+          <p class="text-sm text-slate-600 mt-2">${s.description}</p>
+          <span class="btn-accent mt-4 inline-flex text-sm">ثبت درخواست ←</span>
+        </a>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

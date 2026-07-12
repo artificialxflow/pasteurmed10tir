@@ -30,6 +30,7 @@
           <td class="px-4 py-3">${c.phone}</td>
           <td class="px-4 py-3">${c.typeLabel}</td>
           <td class="px-4 py-3">${c.categoryLabel}</td>
+          <td class="px-4 py-3">${c.specialtyLabel || '—'}</td>
           <td class="px-4 py-3 text-xs max-w-xs truncate">${c.description}</td>
           <td class="px-4 py-3">${c.estimate || '—'}</td>
           <td class="px-4 py-3">
@@ -40,7 +41,7 @@
           </td>
         </tr>`).join('');
       document.getElementById('consultations-table').innerHTML = renderDataTable(
-        ['نام', 'موبایل', 'نوع', 'دسته', 'شرح', 'تخمین', 'وضعیت', 'عملیات'],
+        ['نام', 'موبایل', 'نوع', 'دسته', 'تخصص', 'شرح', 'تخمین', 'وضعیت', 'عملیات'],
         rows,
         'درخواست مشاوره‌ای ثبت نشده.'
       );

@@ -27,6 +27,11 @@
           <select id="category" class="form-input" required></select>
         </div>
 
+        <div id="specialty-field" class="hidden">
+          <label class="form-label" for="c-specialty">تخصص پزشکی</label>
+          <input type="text" id="c-specialty" class="form-input bg-slate-50" readonly />
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="form-label" for="c-name">نام و نام خانوادگی</label>
@@ -76,7 +81,9 @@
   <script>
     const consultationParams = new URLSearchParams(window.location.search);
     const requestedType = consultationParams.get('type');
+    const requestedSpecialty = consultationParams.get('specialty');
     let selectedType = ['text', 'image', 'video', 'phone'].includes(requestedType) ? requestedType : 'text';
+    const selectedSpecialty = PASTEUR_DATA.medicalSpecialties.find((s) => s.id === requestedSpecialty) || null;
 
     document.addEventListener('DOMContentLoaded', () => {
       mountLayout('consultation');
@@ -97,11 +104,17 @@
         document.getElementById('category').value = requestedCategory;
       }
 
+      if (selectedSpecialty) {
+        document.getElementById('specialty-field').classList.remove('hidden');
+        document.getElementById('c-specialty').value = selectedSpecialty.name;
+      }
+
       function updateEstimate() {
         const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);
         const el = document.getElementById('estimate-preview');
         if (cat) {
-          document.getElementById('estimate-service').textContent = `خدمت پیشنهادی: ${cat.service}`;
+          const specialtyText = selectedSpecialty ? ` — تخصص: ${selectedSpecialty.name}` : '';
+          document.getElementById('estimate-service').textContent = `خدمت پیشنهادی: ${cat.service}${specialtyText}`;
           document.getElementById('estimate-price').textContent = `بازه هزینه: ${cat.estimate}`;
           el.classList.remove('hidden');
         }
@@ -139,6 +152,8 @@
           typeLabel: type?.label,
           category: document.getElementById('category').value,
           categoryLabel: cat?.label,
+          specialty: selectedSpecialty?.id || null,
+          specialtyLabel: selectedSpecialty?.name || null,
           name: document.getElementById('c-name').value,
           phone: document.getElementById('c-phone').value,
           description: document.getElementById('c-desc').value,
