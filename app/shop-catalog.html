@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>محصولات | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div id="mode-banner" class="app-card app-mb-3 app-text-sm"></div>
+      <input type="search" id="product-search" class="form-input app-mb-3" placeholder="جستجوی محصول..." />
+      <div class="app-flex app-gap-2 app-mb-3" id="category-filters">
+        <button type="button" data-cat="all" class="badge badge-available cat-filter">همه</button>
+        <button type="button" data-cat="دندانپزشکی" class="badge cat-filter" style="background:#f1f5f9">دندان</button>
+        <button type="button" data-cat="پزشکی" class="badge cat-filter" style="background:#f1f5f9">پزشکی</button>
+      </div>
+      <div id="product-grid" class="app-grid-2"></div>
+      <a id="facility-link" href="shop-facility.html" class="app-link-web app-hidden app-mt-3 app-block">درخواست تسهیلات VIP</a>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script src="../js/app-shop.js"></script>
+  <script>
+    let currentCategory = 'all';
+    let currentSearch = '';
+
+    function renderModeBanner() {
+      const type = AppShop.getCustomerType();
+      const el = document.getElementById('mode-banner');
+      const facilityLink = document.getElementById('facility-link');
+      if (type === 'vip') {
+        el.innerHTML = '<p class="app-font-bold app-text-teal" style="margin:0">💎 مشتری VIP — ۲٪ تخفیف فعال</p>';
+        facilityLink.classList.remove('app-hidden');
+      } else {
+        el.innerHTML = '<p class="app-font-bold" style="margin:0">🧾 مشتری عادی</p>';
+        facilityLink.classList.add('app-hidden');
+      }
+    }
+
+    function renderProducts() {
+      PasteurStorage.initProductsIfNeeded();
+      let products = PasteurStorage.getProducts();
+      if (currentCategory !== 'all') products = products.filter((p) => p.category === currentCategory);
+      const q = currentSearch.trim().toLowerCase();
+      if (q) products = products.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(q));
+      const isVip = AppShop.getCustomerType() === 'vip';
+      document.getElementById('product-grid').innerHTML = products.length
+        ? products.map((p) => {
+          const base = AppShop.getProductPrice(p);
+          const final = AppShop.getFinalProductPrice(p);
+          return `
+            <div class="app-tile" style="padding:0;overflow:hidden;margin:0">
+              <img src="${p.image}" alt="" class="app-tile-media" />
+              <div class="app-tile-body">
+                <span class="badge app-text-xs">${p.category}</span>
+                <p class="app-tile-title" style="margin:.35rem 0 0;font-size:.78rem">${p.name}</p>
+                ${isVip
+                  ? `<p class="app-text-xs app-text-muted" style="text-decoration:line-through;margin:.2rem 0 0">${p.price}</p><p class="app-tile-price">${AppShop.formatPrice(final)} تومان</p>`
+                  : `<p class="app-tile-price">${p.price} تومان</p>`}
+                <p class="app-text-xs ${p.stock > 0 ? 'app-text-teal' : ''}" style="color:${p.stock > 0 ? '' : '#b91c1c'}">${p.stock > 0 ? `${p.stock} موجود` : 'ناموجود'}</p>
+                <button type="button" class="btn-primary app-w-full app-text-xs app-mt-2 add-btn" data-id="${p.id}" ${p.stock <= 0 ? 'disabled style="opacity:.5"' : ''}>افزودن به سبد</button>
+              </div>
+            </div>`;
+        }).join('')
+        : '<p class="app-empty app-grid-cols-2">محصولی یافت نشد</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('vip') === 'paid') {
+        const last = JSON.parse(sessionStorage.getItem('pasteur_last_payment') || 'null');
+        AppShop.setCustomerType('vip', last?.patientPhone || '');
+        showAppSnackbar('VIP تجهیزات فعال شد');
+      }
+      mountAppShopBar('محصولات', { backHref: appHref('shop.html'), page: 'shop' });
+      renderModeBanner();
+      renderProducts();
+
+      document.getElementById('product-search').addEventListener('input', (e) => {
+        currentSearch = e.target.value;
+        renderProducts();
+      });
+      document.getElementById('category-filters').addEventListener('click', (e) => {
+        const btn = e.target.closest('.cat-filter');
+        if (!btn) return;
+        currentCategory = btn.dataset.cat;
+        document.querySelectorAll('.cat-filter').forEach((b) => b.classList.remove('badge-available'));
+        btn.classList.add('badge-available');
+        renderProducts();
+      });
+      document.getElementById('product-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.add-btn');
+        if (!btn) return;
+        if (AppShop.addToCart(btn.dataset.id)) {
+          showAppSnackbar('به سبد اضافه شد');
+          mountAppShopBar('محصولات', { backHref: appHref('shop.html'), page: 'shop' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

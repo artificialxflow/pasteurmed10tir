@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>تأیید پرداخت | پاستور پلاس</title>
+  <title>آموزش | دندان | پاستور پلاس</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../css/main.css" />
   <link rel="stylesheet" href="../../css/app.css" />
@@ -12,23 +12,24 @@
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <div id="payment-summary" class="card-bordered p-4 mb-4"></div>
-      <button id="btn-pay" class="btn-primary w-full mb-2">پرداخت موفق (نمایشی)</button>
-      <button id="btn-fail" class="w-full py-2 rounded-lg border border-red-200 text-red-700 font-bold text-sm">پرداخت ناموفق</button>
+      <p class="app-intro">آموزش‌های بعد از خدمات دندانپزشکی</p>
+      <div id="courses-list"></div>
     </main>
+    <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
   </div>
   <script src="../../js/data.js"></script>
-  <script src="../../js/storage.js"></script>
-  <script src="../../js/payment.js"></script>
   <script src="../../js/app-components.js"></script>
-  <script src="../../js/app-shop.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const pending = PasteurStorage.getPendingPayment();
-      const backHref = pending?.returnTo || appHref('dental/general.html');
-      mountAppLayout({ page: 'dental', title: 'تأیید پرداخت', backHref, showNav: false });
-      PaymentFlow.init();
+      mountAppLayout({ page: 'dental', title: 'آموزش دندان', backHref: appHref('dental/index.html') });
+      document.getElementById('courses-list').innerHTML = PASTEUR_DATA.educationCourses.map((c) => `
+        <article class="app-card">
+          <p class="app-font-bold">${c.title}</p>
+          <span class="badge badge-available app-text-xs">${c.level}</span>
+          <p class="app-text-teal app-text-sm app-mt-2">▶ ${c.duration}</p>
+          <p class="app-text-muted app-text-sm app-mt-2">${c.description}</p>
+        </article>`).join('');
     });
   </script>
 </body>

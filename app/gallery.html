@@ -18,13 +18,13 @@
   <script src="../js/app-components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      mountAppLayout({ page: 'home', title: 'گالری', backHref: appHref('index.html') });
+      mountAppLayout({ page: 'home', title: 'گالری نتایج', backHref: appHref('index.html') });
       document.getElementById('gallery-grid').innerHTML = PASTEUR_DATA.galleryItems.map((g) => `
-        <div class="app-tile" style="padding:0;overflow:hidden;margin-bottom:.75rem">
-          <p style="font-weight:800;padding:.65rem .65rem 0;margin:0">${g.title}</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem;padding:.65rem">
-            <img src="${g.before}" alt="قبل" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" />
-            <img src="${g.after}" alt="بعد" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" />
+        <div class="app-card" style="padding:0;overflow:hidden">
+          <p class="app-font-bold" style="padding:.65rem .65rem 0;margin:0">${g.title}</p>
+          <div class="app-grid app-grid-cols-2 app-gap-2-grid" style="padding:.65rem">
+            <div><p class="app-text-xs app-text-muted app-mb-2">قبل</p><img src="${g.before}" alt="" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" /></div>
+            <div><p class="app-text-xs app-text-muted app-mb-2">بعد</p><img src="${g.after}" alt="" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" /></div>
           </div>
         </div>`).join('');
     });

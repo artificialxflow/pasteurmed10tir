@@ -2,7 +2,7 @@
   "name": "پاستور پلاس",
   "short_name": "Pasteur Plus",
   "description": "سامانه رزرو، مشاوره، عضویت و فروشگاه تجهیزات پزشکی و دندانپزشکی پاستور پلاس",
-  "start_url": "index.html",
+  "start_url": "app/index.html",
   "display": "standalone",
   "dir": "rtl",
   "lang": "fa",

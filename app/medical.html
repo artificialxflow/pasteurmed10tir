@@ -8,19 +8,35 @@
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="../css/app.css" />
 </head>
-<body class="app-body app-page-enter" data-app-page="medical">
+<body class="app-body app-page-enter">
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <p style="color:#64748b;font-size:.85rem;margin:0 0 1rem">مسیر پزشکی مورد نیاز را انتخاب کنید</p>
-      <a href="consultation.html?category=medical&type=text" class="app-tile"><span style="font-size:1.75rem">👨‍⚕️</span><p style="font-weight:800;margin:.4rem 0 0">پزشکی عمومی</p><p style="font-size:.72rem;color:#64748b">شروع درخواست</p></a>
-      <a href="medical/specialty.html" class="app-tile"><span style="font-size:1.75rem">🔬</span><p style="font-weight:800;margin:.4rem 0 0">تخصص‌ها</p><p style="font-size:.72rem;color:#64748b">درخواست ویزیت تخصصی</p></a>
-      <a href="consultation.html?category=medical-home&type=phone" class="app-tile"><span style="font-size:1.75rem">🏠</span><p style="font-weight:800;margin:.4rem 0 0">ویزیت در منزل</p><p style="font-size:.72rem;color:#64748b">درخواست ویزیت منزل</p></a>
+      <p class="app-intro">مسیر پزشکی مورد نیاز را انتخاب کنید</p>
+      <a href="consultation.html?category=medical&type=text" class="app-tile">
+        <span class="app-tile-emoji">👨‍⚕️</span>
+        <p class="app-tile-title">پزشکی عمومی</p>
+        <p class="app-tile-desc">شروع درخواست</p>
+      </a>
+      <a href="medical/specialty.html" class="app-tile">
+        <span class="app-tile-emoji">🔬</span>
+        <p class="app-tile-title">تخصص‌ها</p>
+        <p class="app-tile-desc">درخواست ویزیت تخصصی</p>
+      </a>
+      <a href="consultation.html?category=medical-home&type=phone" class="app-tile">
+        <span class="app-tile-emoji">🏠</span>
+        <p class="app-tile-title">ویزیت در منزل</p>
+        <p class="app-tile-desc">درخواست ویزیت منزل</p>
+      </a>
     </main>
     <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
   </div>
   <script src="../js/app-components.js"></script>
-  <script>document.addEventListener('DOMContentLoaded', () => mountAppLayout({ page: 'consultation', title: 'بخش پزشکی', backHref: appHref('index.html') }));</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'home', title: 'بخش پزشکی', backHref: appHref('index.html') });
+    });
+  </script>
 </body>
 </html>

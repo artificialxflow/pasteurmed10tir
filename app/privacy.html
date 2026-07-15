@@ -12,15 +12,19 @@
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <div class="app-tile" style="font-size:.85rem;line-height:1.8;color:#475569">
-        <p style="font-weight:800;color:#0f172a;margin:0 0 .5rem">حریم خصوصی پاستور پلاس</p>
+      <div class="app-card app-text-sm app-text-muted" style="line-height:1.8">
+        <p class="app-font-bold app-text-teal" style="color:#0f172a;margin:0 0 .5rem">حریم خصوصی پاستور پلاس</p>
         <p>اطلاعات شخصی شما فقط برای ارائه خدمات درمانی، رزرو، مشاوره و پیگیری سفارش استفاده می‌شود.</p>
-        <p style="margin-top:.75rem">داده‌های این نسخه نمایشی در localStorage مرورگر ذخیره می‌شوند.</p>
+        <p class="app-mt-2">داده‌های این نسخه نمایشی در localStorage مرورگر ذخیره می‌شوند.</p>
       </div>
     </main>
     <div id="app-nav"></div>
   </div>
   <script src="../js/app-components.js"></script>
-  <script>document.addEventListener('DOMContentLoaded', () => mountAppLayout({ page: 'home', title: 'حریم خصوصی', backHref: appHref('index.html') }));</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'home', title: 'حریم خصوصی', backHref: appHref('index.html') });
+    });
+  </script>
 </body>
 </html>

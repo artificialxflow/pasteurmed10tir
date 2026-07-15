@@ -12,17 +12,49 @@
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <form id="consultation-form" class="space-y-4">
-        <div><label class="form-label">نوع مشاوره</label><div id="type-options" class="grid grid-cols-2 gap-2"></div></div>
-        <div><label class="form-label">دسته خدمت</label><select id="category" class="form-input" required></select></div>
-        <div id="specialty-field" class="hidden"><label class="form-label">تخصص</label><input type="text" id="c-specialty" class="form-input bg-slate-50" readonly /></div>
-        <div><label class="form-label">نام</label><input type="text" id="c-name" class="form-input" required /></div>
-        <div><label class="form-label">موبایل</label><input type="tel" id="c-phone" class="form-input" required /></div>
-        <div><label class="form-label">شرح مشکل</label><textarea id="c-desc" class="form-input min-h-[100px]" required></textarea></div>
-        <div id="estimate-preview" class="card-bordered p-4 bg-teal-50 hidden text-sm"><p id="estimate-service"></p><p id="estimate-price" class="font-bold text-teal-700 mt-1"></p></div>
-        <button type="submit" class="btn-primary w-full">ثبت درخواست</button>
+      <form id="consultation-form" class="app-form-stack">
+        <div>
+          <label class="form-label">نوع مشاوره</label>
+          <div id="type-options" class="app-grid app-grid-cols-2 app-gap-2-grid"></div>
+        </div>
+        <div>
+          <label class="form-label">دسته خدمت</label>
+          <select id="category" class="form-input" required></select>
+        </div>
+        <div id="specialty-field" class="app-hidden">
+          <label class="form-label">تخصص پزشکی</label>
+          <input type="text" id="c-specialty" class="form-input" readonly />
+        </div>
+        <div>
+          <label class="form-label">نام و نام خانوادگی</label>
+          <input type="text" id="c-name" class="form-input" required />
+        </div>
+        <div>
+          <label class="form-label">موبایل</label>
+          <input type="tel" id="c-phone" class="form-input" required />
+        </div>
+        <div>
+          <label class="form-label">شرح مشکل</label>
+          <textarea id="c-desc" class="form-input app-min-h-textarea" required></textarea>
+        </div>
+        <div>
+          <label class="form-label">آپلود تصویر (اختیاری)</label>
+          <input type="file" id="c-image" accept="image/*" class="form-input" />
+          <div id="image-preview" class="app-hidden app-mt-2">
+            <img id="preview-img" class="app-preview-img" alt="پیش‌نمایش" />
+          </div>
+        </div>
+        <div id="estimate-preview" class="app-card app-hidden app-text-sm">
+          <p id="estimate-service" class="app-mb-2"></p>
+          <p id="estimate-price" class="app-font-bold app-text-teal"></p>
+        </div>
+        <button type="submit" class="btn-primary app-w-full">ثبت درخواست</button>
       </form>
-      <div id="success-msg" class="hidden card-bordered p-6 bg-green-50 text-center mt-4"><p class="text-2xl">✅</p><p class="font-bold text-green-800">درخواست ثبت شد</p></div>
+      <div id="success-msg" class="app-hidden app-card app-card--success app-mt-4">
+        <p style="font-size:2rem;margin:0">✅</p>
+        <p class="app-font-bold" style="color:#166534">درخواست ثبت شد</p>
+        <p class="app-text-sm app-text-muted app-mt-2">کارشناسان ظرف ۲۴ ساعت پاسخ می‌دهند.</p>
+      </div>
     </main>
     <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
@@ -36,42 +68,85 @@
     const requestedSpecialty = consultationParams.get('specialty');
     let selectedType = ['text', 'image', 'video', 'phone'].includes(requestedType) ? requestedType : 'text';
     const selectedSpecialty = PASTEUR_DATA.medicalSpecialties.find((s) => s.id === requestedSpecialty) || null;
+
     document.addEventListener('DOMContentLoaded', () => {
       mountAppLayout({ page: 'consultation', title: 'مشاوره و ویزیت', backHref: appHref('index.html') });
+
       document.getElementById('type-options').innerHTML = PASTEUR_DATA.consultationTypes.map((t) => `
-        <button type="button" data-type="${t.id}" class="type-btn app-tile text-center ${t.id === selectedType ? 'border-teal-500' : ''}">
-          <span>${t.emoji}</span><p class="text-xs font-bold mt-1">${t.label}</p>
+        <button type="button" data-type="${t.id}" class="type-btn app-tile app-text-center ${t.id === selectedType ? 'is-selected' : ''}" style="margin:0">
+          <span class="app-tile-emoji">${t.emoji}</span>
+          <p class="app-tile-title" style="font-size:.78rem">${t.label}</p>
         </button>`).join('');
-      document.getElementById('category').innerHTML = PASTEUR_DATA.consultationCategories.map((c) => `<option value="${c.id}">${c.label}</option>`).join('');
+
+      document.getElementById('category').innerHTML = PASTEUR_DATA.consultationCategories.map((c) =>
+        `<option value="${c.id}">${c.label}</option>`).join('');
+
       const requestedCategory = consultationParams.get('category');
-      if (PASTEUR_DATA.consultationCategories.some((c) => c.id === requestedCategory)) document.getElementById('category').value = requestedCategory;
-      if (selectedSpecialty) { document.getElementById('specialty-field').classList.remove('hidden'); document.getElementById('c-specialty').value = selectedSpecialty.name; }
+      if (PASTEUR_DATA.consultationCategories.some((c) => c.id === requestedCategory)) {
+        document.getElementById('category').value = requestedCategory;
+      }
+
+      if (selectedSpecialty) {
+        document.getElementById('specialty-field').classList.remove('app-hidden');
+        document.getElementById('c-specialty').value = selectedSpecialty.name;
+      }
+
       function updateEstimate() {
         const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);
         if (!cat) return;
-        document.getElementById('estimate-service').textContent = cat.service + (selectedSpecialty ? ` — ${selectedSpecialty.name}` : '');
+        const specialtyText = selectedSpecialty ? ` — ${selectedSpecialty.name}` : '';
+        document.getElementById('estimate-service').textContent = `${cat.service}${specialtyText}`;
         document.getElementById('estimate-price').textContent = cat.estimate;
-        document.getElementById('estimate-preview').classList.remove('hidden');
+        document.getElementById('estimate-preview').classList.remove('app-hidden');
       }
       updateEstimate();
       document.getElementById('category').addEventListener('change', updateEstimate);
+
       document.getElementById('type-options').addEventListener('click', (e) => {
-        const btn = e.target.closest('.type-btn'); if (!btn) return;
+        const btn = e.target.closest('.type-btn');
+        if (!btn) return;
         selectedType = btn.dataset.type;
-        document.querySelectorAll('.type-btn').forEach((b) => b.classList.remove('border-teal-500'));
-        btn.classList.add('border-teal-500');
+        document.querySelectorAll('.type-btn').forEach((b) => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
       });
+
+      document.getElementById('c-image').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          document.getElementById('preview-img').src = ev.target.result;
+          document.getElementById('image-preview').classList.remove('app-hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+
       document.getElementById('consultation-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === document.getElementById('category').value);
         const type = PASTEUR_DATA.consultationTypes.find((t) => t.id === selectedType);
-        PasteurStorage.saveConsultation({ id: PasteurStorage.generateId(), type: selectedType, typeLabel: type?.label, category: document.getElementById('category').value, categoryLabel: cat?.label, specialty: selectedSpecialty?.id || null, specialtyLabel: selectedSpecialty?.name || null, name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, description: document.getElementById('c-desc').value, estimate: cat?.estimate, status: 'pending', createdAt: new Date().toISOString() });
+        PasteurStorage.saveConsultation({
+          id: PasteurStorage.generateId(),
+          type: selectedType,
+          typeLabel: type?.label,
+          category: document.getElementById('category').value,
+          categoryLabel: cat?.label,
+          specialty: selectedSpecialty?.id || null,
+          specialtyLabel: selectedSpecialty?.name || null,
+          name: document.getElementById('c-name').value,
+          phone: document.getElementById('c-phone').value,
+          description: document.getElementById('c-desc').value,
+          estimate: cat?.estimate,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        });
         PasteurStorage.addClubPoints(document.getElementById('c-phone').value, 20, 'مشاوره و ویزیت');
-        document.getElementById('consultation-form').classList.add('hidden');
-        document.getElementById('success-msg').classList.remove('hidden');
+        document.getElementById('consultation-form').classList.add('app-hidden');
+        document.getElementById('success-msg').classList.remove('app-hidden');
         showAppSnackbar('درخواست با موفقیت ثبت شد');
       });
     });
   </script>
+  <style>.type-btn.is-selected { border-color: var(--app-primary); background: var(--app-primary-container); }</style>
 </body>
 </html>

@@ -11,13 +11,14 @@
 <body class="app-body app-page-enter">
   <div class="app-device">
     <div id="app-chrome"></div>
-    <main class="app-main text-center">
-      <p style="font-size:3rem">✅</p>
-      <h2 id="success-title" style="font-weight:800;margin:.5rem 0">عملیات موفق</h2>
-      <p id="success-desc" style="color:#64748b;font-size:.88rem"></p>
-      <a href="general.html" class="btn-primary w-full block mt-6 text-center">بازگشت به رزرو</a>
-      <a href="../../index.html" class="app-link-web">خانه اپ</a>
+    <main class="app-main app-text-center">
+      <p style="font-size:3rem;margin:0">✅</p>
+      <h2 id="success-title" class="app-font-bold app-mt-2">عملیات موفق</h2>
+      <p id="success-desc" class="app-text-muted app-text-sm app-mt-2"></p>
+      <a id="primary-action" href="general.html" class="btn-primary app-w-full app-block app-text-center app-mt-4">بازگشت</a>
+      <a href="../reminders.html" id="reminder-link" class="app-link-web app-hidden">فعال‌سازی یادآور</a>
     </main>
+    <div id="app-snackbar" class="app-snackbar app-snackbar--no-nav"></div>
   </div>
   <script src="../../js/app-components.js"></script>
   <script>
@@ -26,7 +27,14 @@
       const payment = JSON.parse(sessionStorage.getItem('pasteur_last_payment') || 'null');
       if (payment?.kind === 'booking') {
         document.getElementById('success-title').textContent = 'رزرو ثبت شد';
-        document.getElementById('success-desc').textContent = 'پیامک تأیید ارسال خواهد شد.';
+        document.getElementById('success-desc').textContent = 'پیامک تأیید ارسال خواهد شد. +۵۰ امتیاز باشگاه';
+        document.getElementById('reminder-link').classList.remove('app-hidden');
+        document.getElementById('primary-action').href = appHref('dental/general.html');
+      } else if (payment?.kind === 'membership') {
+        document.getElementById('success-title').textContent = 'عضویت فعال شد';
+        document.getElementById('success-desc').textContent = `${payment.planName || ''} — ${payment.patientName || ''}`;
+        document.getElementById('primary-action').textContent = 'بازگشت به دندانپزشکی';
+        document.getElementById('primary-action').href = appHref('dental/index.html');
       }
       showAppSnackbar('پرداخت با موفقیت ثبت شد');
     });

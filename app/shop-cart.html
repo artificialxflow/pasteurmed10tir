@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>سبد خرید | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div id="cart-items" class="app-form-stack-sm app-mb-4"></div>
+      <div id="cart-summary" class="app-card app-text-sm app-mb-4"></div>
+      <form id="checkout-form" class="app-form-stack app-hidden">
+        <p class="app-section-title">اطلاعات تحویل</p>
+        <input type="text" id="order-name" class="form-input" placeholder="نام و نام خانوادگی" required />
+        <input type="tel" id="order-phone" class="form-input" placeholder="موبایل" required />
+        <textarea id="order-address" class="form-input app-min-h-textarea" placeholder="آدرس / توضیحات"></textarea>
+        <button type="submit" class="btn-primary app-w-full">ثبت سفارش</button>
+      </form>
+      <button type="button" id="clear-cart" class="app-link-web app-hidden">پاک کردن سبد</button>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script src="../js/app-shop.js"></script>
+  <script>
+    function renderCart() {
+      PasteurStorage.initProductsIfNeeded();
+      const cart = AppShop.getCart();
+      const products = PasteurStorage.getProducts();
+      const itemsEl = document.getElementById('cart-items');
+      const summaryEl = document.getElementById('cart-summary');
+      const formEl = document.getElementById('checkout-form');
+      const clearBtn = document.getElementById('clear-cart');
+
+      if (!cart.length) {
+        itemsEl.innerHTML = '<p class="app-empty">سبد خرید خالی است</p><a href="' + appHref('shop-catalog.html') + '" class="btn-primary app-w-full app-block app-text-center app-mt-4">مشاهده محصولات</a>';
+        summaryEl.innerHTML = '';
+        formEl.classList.add('app-hidden');
+        clearBtn.classList.add('app-hidden');
+        return;
+      }
+
+      formEl.classList.remove('app-hidden');
+      clearBtn.classList.remove('app-hidden');
+      const phone = AppShop.getVipPhone();
+      if (phone) document.getElementById('order-phone').value = phone;
+
+      itemsEl.innerHTML = cart.map((item) => {
+        const product = products.find((p) => String(p.id) === String(item.id));
+        if (!product) return '';
+        return `
+          <div class="app-card app-flex app-justify-between app-items-center" style="padding:.75rem">
+            <div class="app-flex-1">
+              <p class="app-font-bold app-text-sm" style="margin:0">${product.name}</p>
+              <p class="app-tile-price">${AppShop.formatPrice(AppShop.getFinalProductPrice(product))} تومان</p>
+            </div>
+            <div class="app-flex app-items-center app-gap-2">
+              <button type="button" class="qty-btn" data-id="${product.id}" data-delta="-1" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff">−</button>
+              <span class="app-font-bold">${item.qty.toLocaleString('fa-IR')}</span>
+              <button type="button" class="qty-btn" data-id="${product.id}" data-delta="1" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid #e2e8f0;background:#fff">+</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      const totals = AppShop.getCartTotals();
+      const discount = totals.subtotal - totals.total;
+      summaryEl.innerHTML = `
+        <div class="app-flex app-justify-between app-mb-2"><span>تعداد</span><strong>${totals.count.toLocaleString('fa-IR')}</strong></div>
+        <div class="app-flex app-justify-between app-mb-2"><span>جمع</span><strong>${AppShop.formatPrice(totals.subtotal)} تومان</strong></div>
+        ${discount > 0 ? `<div class="app-flex app-justify-between app-mb-2 app-text-teal"><span>تخفیف VIP</span><strong>${AppShop.formatPrice(discount)} تومان</strong></div>` : ''}
+        <div class="app-flex app-justify-between app-font-bold" style="border-top:1px solid #e2e8f0;padding-top:.5rem;margin-top:.5rem"><span>مبلغ نهایی</span><span class="app-text-teal">${AppShop.formatPrice(totals.total)} تومان</span></div>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'shop', title: 'سبد خرید', backHref: appHref('shop-catalog.html') });
+      renderCart();
+
+      document.getElementById('cart-items').addEventListener('click', (e) => {
+        const btn = e.target.closest('.qty-btn');
+        if (!btn) return;
+        AppShop.changeQty(btn.dataset.id, Number(btn.dataset.delta));
+        renderCart();
+      });
+      document.getElementById('clear-cart').addEventListener('click', () => {
+        AppShop.clearCart();
+        renderCart();
+        showAppSnackbar('سبد پاک شد');
+      });
+      document.getElementById('checkout-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const result = AppShop.submitOrder({
+          name: document.getElementById('order-name').value.trim(),
+          phone: document.getElementById('order-phone').value.trim(),
+          address: document.getElementById('order-address').value.trim(),
+        });
+        if (!result.ok) {
+          showAppSnackbar(result.message);
+          return;
+        }
+        sessionStorage.setItem('pasteur_last_shop_order_total', String(result.total));
+        window.location.href = appHref('shop-success.html');
+      });
+    });
+  </script>
+</body>
+</html>

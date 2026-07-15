@@ -12,14 +12,20 @@
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <form id="partner-form" class="space-y-3">
-        <input type="text" id="partner-name" class="form-input" placeholder="نام" required />
+      <p class="app-intro">ثبت درخواست همکاری برای پرستاران، پزشکان و روانشناسان</p>
+      <form id="partner-form" class="app-form-stack">
+        <select id="partner-type" class="form-input">
+          <option value="nurse">پرستار</option>
+          <option value="dentist">دندانپزشک</option>
+          <option value="doctor">پزشک</option>
+          <option value="psychologist">روانشناس</option>
+        </select>
+        <input type="text" id="partner-name" class="form-input" placeholder="نام و نام خانوادگی" required />
         <input type="tel" id="partner-phone" class="form-input" placeholder="موبایل" required />
-        <select id="partner-type" class="form-input"><option value="nurse">پرستار</option><option value="dentist">دندانپزشک</option><option value="doctor">پزشک</option><option value="psychologist">روانشناس</option></select>
-        <input type="text" id="partner-specialty" class="form-input" placeholder="تخصص" />
-        <input type="text" id="partner-city" class="form-input" placeholder="شهر" />
-        <textarea id="partner-notes" class="form-input min-h-[80px]" placeholder="توضیحات"></textarea>
-        <button type="submit" class="btn-primary w-full">ارسال درخواست</button>
+        <input type="text" id="partner-specialty" class="form-input" placeholder="تخصص / مهارت" />
+        <input type="text" id="partner-city" class="form-input" placeholder="شهر" value="تبریز" />
+        <textarea id="partner-notes" class="form-input app-min-h-textarea" placeholder="توضیحات"></textarea>
+        <button type="submit" class="btn-primary app-w-full">ارسال درخواست</button>
       </form>
     </main>
     <div id="app-nav"></div>
@@ -32,7 +38,17 @@
       mountAppLayout({ page: 'home', title: 'همکاری', backHref: appHref('index.html') });
       document.getElementById('partner-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        PasteurStorage.savePartnerRequest({ id: PasteurStorage.generateId(), name: document.getElementById('partner-name').value, phone: document.getElementById('partner-phone').value, type: document.getElementById('partner-type').value, specialty: document.getElementById('partner-specialty').value, city: document.getElementById('partner-city').value, notes: document.getElementById('partner-notes').value, status: 'pending', createdAt: new Date().toISOString() });
+        PasteurStorage.savePartnerRequest({
+          id: PasteurStorage.generateId(),
+          name: document.getElementById('partner-name').value,
+          phone: document.getElementById('partner-phone').value,
+          type: document.getElementById('partner-type').value,
+          specialty: document.getElementById('partner-specialty').value,
+          city: document.getElementById('partner-city').value,
+          notes: document.getElementById('partner-notes').value,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        });
         showAppSnackbar('درخواست همکاری ثبت شد');
         e.target.reset();
       });

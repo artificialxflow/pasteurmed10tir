@@ -6,8 +6,6 @@
   <meta name="theme-color" content="#0891b2" />
   <title>پاستور پلاس</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Vazirmatn', 'Tahoma', 'sans-serif'] } } } };</script>
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="../css/app.css" />
 </head>
@@ -16,13 +14,13 @@
     <div id="app-chrome"></div>
     <main id="app-main" class="app-main">
       <section class="app-hero">
-        <p style="font-size:.75rem;opacity:.9">خوش آمدید</p>
-        <p class="app-hero-title" style="font-size:1.35rem;font-weight:800;margin:.35rem 0 0">پاستور پلاس</p>
-        <p style="font-size:.82rem;opacity:.9;margin-top:.5rem;line-height:1.6">دندانپزشکی، پزشکی، پرستاری و تجهیزات در یک اپ</p>
+        <p class="app-hero-kicker">خوش آمدید</p>
+        <p class="app-hero-title">پاستور پلاس</p>
+        <p class="app-hero-sub">دندانپزشکی، پزشکی، پرستاری و تجهیزات در یک اپ</p>
       </section>
-      <p style="font-weight:800;font-size:.92rem;color:#334155;margin:0 0 .65rem">خدمات اصلی</p>
+      <p class="app-section-title">خدمات اصلی</p>
       <div class="app-grid-2" id="app-services"></div>
-      <p style="font-weight:800;font-size:.92rem;color:#334155;margin:1rem 0 .65rem">دسترسی سریع</p>
+      <p class="app-section-title app-section-title--spaced">دسترسی سریع</p>
       <div id="app-quick"></div>
       <div id="app-web-link"></div>
     </main>
@@ -46,6 +44,9 @@
       const quick = [
         { emoji: '💬', title: 'مشاوره و ویزیت', href: appHref('consultation.html') },
         { emoji: '👩‍⚕️', title: 'پرستاری در منزل', href: appHref('nursing.html') },
+        { emoji: '✨', title: 'لیزر و زیبایی', href: appHref('laser.html') },
+        { emoji: '🔔', title: 'یادآور نوبت', href: appHref('reminders.html') },
+        { emoji: '🖼️', title: 'گالری نتایج', href: appHref('gallery.html') },
         { emoji: '📞', title: 'تماس با ما', href: appHref('contact.html') },
         { emoji: '🤝', title: 'درخواست همکاری', href: appHref('partners.html') },
       ];

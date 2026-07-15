@@ -12,9 +12,11 @@
   <div class="app-device">
     <div id="app-chrome"></div>
     <main class="app-main">
-      <div class="app-hero" style="margin-bottom:.75rem"><p style="font-weight:800">فروشگاه تجهیزات</p><p style="font-size:.8rem;opacity:.9;margin-top:.35rem">محصولات پزشکی و دندانپزشکی</p></div>
-      <div id="product-grid" class="app-grid-2"></div>
-      <a href="../pages/shop.html" class="app-link-web">نسخه کامل فروشگاه (VIP و تسهیلات)</a>
+      <section class="app-hero app-mb-3">
+        <p class="app-hero-title" style="font-size:1.1rem">فروشگاه تجهیزات</p>
+        <p class="app-hero-sub">انتخاب نوع مشتری برای شروع خرید</p>
+      </section>
+      <div id="customer-types"></div>
     </main>
     <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
@@ -22,20 +24,27 @@
   <script src="../js/data.js"></script>
   <script src="../js/storage.js"></script>
   <script src="../js/app-components.js"></script>
+  <script src="../js/app-shop.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      mountAppLayout({ page: 'shop', title: 'تجهیزات', backHref: appHref('index.html') });
-      document.getElementById('product-grid').innerHTML = PASTEUR_DATA.products.map((p) => `
-        <div class="app-tile" style="padding:0;overflow:hidden">
-          <img src="${p.image}" alt="" style="width:100%;height:6rem;object-fit:cover" />
-          <div style="padding:.65rem"><p style="font-weight:800;font-size:.78rem;margin:0">${p.name}</p><p style="color:#0e7490;font-size:.72rem;font-weight:700;margin:.35rem 0 0">${p.price}</p>
-          <button type="button" class="btn-primary w-full text-xs mt-2 order-btn" data-id="${p.id}">ثبت سفارش</button></div>
-        </div>`).join('');
-      document.getElementById('product-grid').addEventListener('click', (e) => {
-        const btn = e.target.closest('.order-btn'); if (!btn) return;
-        const product = PASTEUR_DATA.products.find((p) => p.id === parseInt(btn.dataset.id, 10));
-        PasteurStorage.saveShopOrder({ id: PasteurStorage.generateId(), productId: product.id, productName: product.name, price: product.price, status: 'pending', createdAt: new Date().toISOString() });
-        showAppSnackbar(`سفارش «${product.name}» ثبت شد`);
+      mountAppLayout({ page: 'shop', title: 'فروشگاه', backHref: appHref('index.html') });
+      document.getElementById('customer-types').innerHTML = PASTEUR_DATA.shopCustomerTypes.map((t) => `
+        <button type="button" data-type="${t.id}" class="app-tile app-w-full app-text-right" style="width:100%;border:none;cursor:pointer;${t.id === 'vip' ? 'background:linear-gradient(145deg,#fff7ed,#fff)' : ''}">
+          <span class="app-tile-emoji">${t.emoji}</span>
+          <p class="app-tile-title">${t.title}</p>
+          <p class="app-tile-desc">${t.description}</p>
+          <ul class="app-text-xs app-text-muted app-mt-2" style="padding-right:1rem;margin:0">${t.benefits.map((b) => `<li>${b}</li>`).join('')}</ul>
+        </button>`).join('');
+
+      document.getElementById('customer-types').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-type]');
+        if (!btn) return;
+        if (btn.dataset.type === 'regular') {
+          AppShop.setCustomerType('regular');
+          window.location.href = appHref('shop-catalog.html');
+        } else {
+          window.location.href = appHref('shop-vip.html');
+        }
       });
     });
   </script>

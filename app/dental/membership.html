@@ -11,22 +11,186 @@
 <body class="app-body app-page-enter">
   <div class="app-device">
     <div id="app-chrome"></div>
-    <main class="app-main"><div id="plans"></div></main>
+    <main class="app-main">
+      <section class="app-hero app-mb-3">
+        <p class="app-hero-title" style="font-size:1rem">عضویت دندانپزشکی</p>
+        <p class="app-hero-sub">عادی یا VIP — یک‌ساله / دوساله</p>
+      </section>
+
+      <div id="plans" class="app-form-stack-sm app-mb-4"></div>
+
+      <section class="app-card app-mb-4">
+        <p class="app-section-title">خدمات مشترک</p>
+        <div id="common-services" class="app-form-stack-sm"></div>
+      </section>
+
+      <section class="app-card app-mb-4">
+        <p class="app-section-title">محاسبه‌گر وام درمانی</p>
+        <p class="app-text-xs app-text-muted app-mb-3">سود ۱۲٪ — سقف بر اساس طرح</p>
+        <select id="loan-tier" class="form-input app-mb-3">
+          <option value="regular">عادی</option>
+          <option value="vip">VIP</option>
+        </select>
+        <input type="number" id="loan-amount" class="form-input app-mb-3" min="1000000" step="1000000" value="50000000" placeholder="مبلغ وام (تومان)" />
+        <select id="loan-months" class="form-input app-mb-3"></select>
+        <div id="loan-result" class="app-loan-result"></div>
+      </section>
+
+      <section class="app-card app-mb-4">
+        <p class="app-section-title">جدول پوشش</p>
+        <div id="coverage-plans"></div>
+      </section>
+
+      <form id="membership-application-form" class="app-form-stack app-mb-4">
+        <p class="app-section-title">فرم پیشنهاد صدور عضویت</p>
+        <input type="text" id="app-date" class="form-input" readonly />
+        <input type="text" id="app-referral" class="form-input" placeholder="کد نمایندگی / معرف" />
+        <input type="text" id="app-agent-name" class="form-input" placeholder="نام نماینده فروش" readonly />
+        <input type="text" id="app-name" class="form-input" placeholder="نام و نام خانوادگی" required />
+        <input type="text" id="app-national-id" class="form-input" placeholder="کد ملی" />
+        <input type="number" id="app-age" class="form-input" placeholder="سن" min="1" max="120" />
+        <input type="text" id="app-job" class="form-input" placeholder="شغل" />
+        <input type="text" id="app-postal" class="form-input" placeholder="کد پستی" />
+        <input type="tel" id="app-phone" class="form-input" placeholder="موبایل" required />
+        <textarea id="app-home-address" class="form-input app-min-h-textarea" placeholder="نشانی منزل"></textarea>
+        <textarea id="app-work-address" class="form-input app-min-h-textarea" placeholder="نشانی محل کار"></textarea>
+        <select id="app-plan" class="form-input" required></select>
+        <select id="app-tier" class="form-input" required>
+          <option value="regular">پوشش عادی</option>
+          <option value="vip">پوشش VIP</option>
+        </select>
+        <input type="number" id="app-member-count" class="form-input" min="1" value="1" placeholder="تعداد اعضا" required />
+        <div id="app-amount-preview" class="app-card app-text-sm app-font-bold app-text-teal"></div>
+        <textarea id="app-medical-history" class="form-input app-min-h-textarea" placeholder="سابقه بیماری (در صورت وجود)"></textarea>
+        <input type="text" id="app-dependent-1" class="form-input" placeholder="عضو تحت پوشش ۱" />
+        <input type="text" id="app-dependent-2" class="form-input" placeholder="عضو تحت پوشش ۲" />
+        <input type="text" id="app-dependent-3" class="form-input" placeholder="عضو تحت پوشش ۳" />
+        <input type="text" id="app-dependent-4" class="form-input" placeholder="عضو تحت پوشش ۴" />
+        <div class="app-grid app-grid-cols-2 app-gap-2-grid">
+          <button type="button" id="preview-contract" class="btn-accent app-w-full">پیش‌نمایش قرارداد</button>
+          <button type="submit" class="btn-primary app-w-full">ثبت و پرداخت</button>
+        </div>
+      </form>
+    </main>
     <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
   </div>
+
+  <div id="contract-preview-modal" class="app-modal-overlay app-hidden" role="dialog" aria-modal="true">
+    <div class="app-modal-sheet">
+      <div class="app-modal-header">
+        <p class="app-font-bold" style="margin:0">پیش‌نمایش قرارداد</p>
+        <button type="button" id="contract-preview-close" class="form-input app-shrink-0" style="width:auto;padding:0.35rem 0.75rem">بستن</button>
+      </div>
+      <div id="contract-preview-content"></div>
+      <button type="button" id="contract-print" class="btn-primary app-w-full app-mt-4">چاپ</button>
+    </div>
+  </div>
+
   <script src="../../js/data.js"></script>
+  <script src="../../js/storage.js"></script>
   <script src="../../js/app-components.js"></script>
+  <script src="../../js/app-membership.js"></script>
   <script>
+    function updateLoanCalculator() {
+      const tier = document.getElementById('loan-tier').value;
+      const amount = document.getElementById('loan-amount').value;
+      const months = document.getElementById('loan-months').value;
+      const result = AppMembership.calculateLoan({ tier, amount, months });
+      if (amount > result.limit) document.getElementById('loan-amount').value = result.limit;
+      document.getElementById('loan-result').innerHTML = `
+        <div class="app-card app-text-sm"><span class="app-text-muted">سقف وام</span><p class="app-font-bold app-text-teal" style="margin:0.25rem 0 0">${AppMembership.formatToman(result.limit)}</p></div>
+        <div class="app-card app-text-sm"><span class="app-text-muted">جمع بازپرداخت</span><p class="app-font-bold" style="margin:0.25rem 0 0;color:#b45309">${AppMembership.formatToman(result.totalRepayment)}</p></div>
+        <div class="app-card app-text-sm"><span class="app-text-muted">قسط ${result.months.toLocaleString('fa-IR')} ماهه</span><p class="app-font-bold" style="margin:0.25rem 0 0;color:#0f766e">${AppMembership.formatToman(result.installment)}</p></div>`;
+    }
+
+    function updateLoanMonthOptions() {
+      const tier = document.getElementById('loan-tier').value;
+      const months = AppMembership.getLoanMonthOptions(tier);
+      const max = months[months.length - 1];
+      document.getElementById('loan-months').innerHTML = months
+        .map((m) => `<option value="${m}" ${m === max ? 'selected' : ''}>${m.toLocaleString('fa-IR')} ماهه</option>`)
+        .join('');
+      updateLoanCalculator();
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-      mountAppLayout({ page: 'dental', title: 'طرح عضویت', backHref: appHref('dental/index.html') });
-      document.getElementById('plans').innerHTML = PASTEUR_DATA.memberships.map((m) => `
-        <div class="app-tile" style="margin-bottom:.75rem">
-          <p style="font-weight:800;font-size:1.1rem">${m.name}</p>
-          <p style="color:#0e7490;font-weight:800;margin:.35rem 0">${m.price} تومان</p>
-          <p style="font-size:.75rem;color:#64748b">${m.terms}</p>
-          <a href="../../pages/dental/membership.html#${m.id}" class="btn-primary w-full block text-center mt-3 text-sm">ادامه در فرم کامل</a>
+      mountAppLayout({ page: 'dental', title: 'عضویت', backHref: appHref('dental/index.html') });
+
+      document.getElementById('app-date').value = new Date().toLocaleDateString('fa-IR');
+      document.getElementById('app-plan').innerHTML = AppMembership.getDurationOptions()
+        .map((p) => `<option value="${p.id}">${p.title} — ${p.duration}</option>`)
+        .join('');
+
+      document.getElementById('common-services').innerHTML = PASTEUR_DATA.membershipCommonServices
+        .map((s) => `<div class="app-text-sm app-flex app-gap-2"><span class="app-text-teal">✓</span><span>${s}</span></div>`)
+        .join('');
+
+      document.getElementById('coverage-plans').innerHTML = AppMembership.getDurationOptions().map((plan) => `
+        <div class="app-coverage-row">
+          <span><strong>${plan.title}</strong><br><span class="app-text-muted">${plan.duration}</span></span>
+          <span class="app-text-center">عادی<br><strong>${AppMembership.formatToman(plan.regularPerPerson)}</strong></span>
+          <span class="app-text-center">VIP<br><strong style="color:#b45309">${AppMembership.formatToman(plan.vipPerPerson)}</strong></span>
         </div>`).join('');
+
+      const plans = AppMembership.getMembershipPlans();
+      document.getElementById('plans').innerHTML = plans.map((m) => `
+        <button type="button" data-tier="${m.id}" class="app-card app-w-full app-text-right tier-btn" style="border:none;cursor:pointer;${m.id === 'vip' ? 'background:linear-gradient(145deg,#fff7ed,#fff)' : ''}">
+          <p class="app-font-bold" style="font-size:1rem;margin:0">${m.id === 'vip' ? '💎' : '🦷'} ${m.name}</p>
+          <p class="app-tile-price app-mt-2">${m.price} تومان / هر نفر</p>
+          <p class="app-text-xs app-text-muted app-mt-2">${m.loanTermLabel} — سقف ${AppMembership.formatToman(m.loanLimit)}</p>
+        </button>`).join('');
+
+      document.getElementById('plans').addEventListener('click', (e) => {
+        const btn = e.target.closest('.tier-btn');
+        if (!btn) return;
+        document.getElementById('app-tier').value = btn.dataset.tier;
+        document.querySelectorAll('.tier-btn').forEach((b) => b.style.outline = '');
+        btn.style.outline = '2px solid var(--app-teal, #0d9488)';
+        AppMembership.updateAmountPreview();
+        document.getElementById('membership-application-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      ['app-plan', 'app-tier', 'app-member-count'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', () => AppMembership.updateAmountPreview());
+        document.getElementById(id).addEventListener('change', () => AppMembership.updateAmountPreview());
+      });
+
+      document.getElementById('app-referral').addEventListener('input', (e) => {
+        const visitor = PasteurStorage.findVisitorByCode(e.target.value);
+        document.getElementById('app-agent-name').value = visitor?.name || '';
+      });
+
+      document.getElementById('loan-tier').addEventListener('change', updateLoanMonthOptions);
+      document.getElementById('loan-amount').addEventListener('input', updateLoanCalculator);
+      document.getElementById('loan-months').addEventListener('change', updateLoanCalculator);
+      updateLoanMonthOptions();
+      AppMembership.updateAmountPreview();
+
+      document.getElementById('preview-contract').addEventListener('click', () => {
+        const data = AppMembership.readApplicationForm();
+        document.getElementById('contract-preview-content').innerHTML = AppMembership.renderContractHtml(data);
+        document.getElementById('contract-preview-modal').classList.remove('app-hidden');
+      });
+      document.getElementById('contract-preview-close').addEventListener('click', () => {
+        document.getElementById('contract-preview-modal').classList.add('app-hidden');
+      });
+      document.getElementById('contract-print').addEventListener('click', () => window.print());
+      document.getElementById('contract-preview-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'contract-preview-modal') document.getElementById('contract-preview-modal').classList.add('app-hidden');
+      });
+
+      document.getElementById('membership-application-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = AppMembership.readApplicationForm();
+        if (data.patientName.length < 2 || data.phone.replace(/[^\d]/g, '').length < 10) {
+          showAppSnackbar('نام و موبایل را کامل وارد کنید');
+          return;
+        }
+        PasteurStorage.saveMembershipApplication(data);
+        PasteurStorage.setPendingPayment(AppMembership.buildPaymentPayloadFromApplication(data));
+        window.location.href = appHref('dental/confirm.html');
+      });
     });
   </script>
 </body>

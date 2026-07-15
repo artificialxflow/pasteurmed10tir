@@ -11,27 +11,30 @@
 <body class="app-body app-page-enter">
   <div class="app-device">
     <div id="app-chrome"></div>
-    <main class="app-main">
+    <main class="app-main" id="app-main">
       <div id="booking-app">
-        <div id="selected-doctor-info" class="hidden mb-3"></div>
-        <div id="booking-progress" class="flex gap-2 mb-4 overflow-x-auto text-xs"></div>
-        <div id="booking-error" class="hidden mb-3 p-3 text-sm text-red-700 bg-red-50 rounded-lg"></div>
-        <div id="step-type" class="booking-step"><div id="type-options" class="grid grid-cols-2 gap-2"></div></div>
-        <div id="step-doctor" class="booking-step hidden"><div id="doctor-list" class="space-y-2"></div></div>
-        <div id="step-day" class="booking-step hidden"><div id="day-options" class="flex flex-wrap gap-2"></div></div>
-        <div id="step-time" class="booking-step hidden"><p id="time-hint" class="text-xs bg-teal-50 p-2 rounded mb-2"></p><div id="time-options" class="grid grid-cols-3 gap-2"></div></div>
+        <div id="selected-doctor-info" class="app-hidden app-mb-3"></div>
+        <div id="booking-progress" class="app-flex app-gap-2 app-mb-4 app-text-xs"></div>
+        <div id="booking-error" class="app-hidden app-mb-3 app-text-sm" style="padding:.75rem;border-radius:.75rem;color:#b91c1c;background:#fef2f2"></div>
+        <div id="step-type" class="booking-step"><div id="type-options" class="app-grid app-grid-cols-2 app-gap-2-grid"></div></div>
+        <div id="step-doctor" class="booking-step hidden"><div id="doctor-list" class="app-form-stack-sm"></div></div>
+        <div id="step-day" class="booking-step hidden"><div id="day-options" class="app-flex app-gap-2" style="flex-wrap:wrap"></div></div>
+        <div id="step-time" class="booking-step hidden">
+          <p id="time-hint" class="app-text-xs app-mb-2 app-card app-card--info"></p>
+          <div id="time-options" class="app-grid app-grid-cols-3 app-gap-2-grid"></div>
+        </div>
         <div id="step-info" class="booking-step hidden">
-          <div id="booking-summary" class="mb-4 text-sm"></div>
-          <form id="booking-form" class="space-y-3">
+          <div id="booking-summary" class="app-mb-4 app-text-sm"></div>
+          <form id="booking-form" class="app-form-stack-sm">
             <input type="text" id="patient-name" class="form-input" placeholder="نام و نام خانوادگی" required />
             <input type="tel" id="patient-phone" class="form-input" placeholder="موبایل" required />
             <input type="text" id="referral-code" class="form-input" placeholder="کد معرف (اختیاری)" />
-            <button type="submit" id="btn-submit" class="btn-primary w-full hidden">تأیید</button>
+            <button type="submit" id="btn-submit" class="btn-primary app-w-full hidden">تأیید</button>
           </form>
         </div>
-        <div class="flex gap-2 mt-4">
-          <button type="button" id="btn-back" class="flex-1 py-2 rounded-lg border border-slate-200">قبلی</button>
-          <button type="button" id="btn-next" class="btn-primary flex-1">بعدی</button>
+        <div class="app-flex app-gap-2 app-mt-4">
+          <button type="button" id="btn-back" class="app-flex-1" style="padding:.5rem;border-radius:.75rem;border:1px solid var(--app-outline);background:#fff">قبلی</button>
+          <button type="button" id="btn-next" class="btn-primary app-flex-1">بعدی</button>
         </div>
       </div>
     </main>

@@ -15,12 +15,20 @@
 | `app/dental/booking.html` | `/dental/booking` | `BookingFlowScreen` |
 | `app/dental/confirm.html` | `/dental/confirm` | `PaymentConfirmScreen` |
 | `app/dental/success.html` | `/dental/success` | `SuccessScreen` |
-| `app/shop.html` | `/shop` | `ShopScreen` |
+| `app/shop.html` | `/shop` | `ShopCustomerTypeScreen` |
+| `app/shop-catalog.html` | `/shop/catalog` | `ShopCatalogScreen` |
+| `app/shop-cart.html` | `/shop/cart` | `ShopCartScreen` |
+| `app/shop-vip.html` | `/shop/vip` | `ShopVipScreen` |
+| `app/shop-success.html` | `/shop/success` | `ShopOrderSuccessScreen` |
+| `app/shop-facility.html` | `/shop/facility` | `ShopFacilityScreen` |
+| `app/dental/membership.html` | `/dental/membership` | `MembershipScreen` |
 | `app/club.html` | `/club` | `ClubScreen` |
 | `app/nursing.html` | `/nursing` | `NursingScreen` |
 | `app/contact.html` | `/contact` | `ContactScreen` |
 | `app/partners.html` | `/partners` | `PartnerFormScreen` |
-| `app/gallery.html` | `/gallery` | `GalleryScreen` |
+| `app/laser.html` | `/laser` | `LaserScreen` |
+| `app/reminders.html` | `/reminders` | `RemindersScreen` |
+| `app/dental/education.html` | `/dental/education` | `DentalEducationScreen` |
 
 ## Widget Mapping
 

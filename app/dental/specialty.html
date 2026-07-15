@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>تخصصی | دندان | پاستور پلاس</title>
+  <title>تخصص | دندان | پاستور پلاس</title>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../css/main.css" />
   <link rel="stylesheet" href="../../css/app.css" />
@@ -13,7 +13,6 @@
     <div id="app-chrome"></div>
     <main class="app-main"><div id="specialty-grid"></div></main>
     <div id="app-nav"></div>
-    <div id="app-snackbar" class="app-snackbar"></div>
   </div>
   <script src="../../js/data.js"></script>
   <script src="../../js/app-components.js"></script>
@@ -21,7 +20,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       mountAppLayout({ page: 'dental', title: 'تخصص دندان', backHref: appHref('dental/index.html') });
       document.getElementById('specialty-grid').innerHTML = PASTEUR_DATA.dentalSpecialties.map((s) => `
-        <a href="general.html" class="app-tile"><span style="font-size:1.75rem">${s.emoji}</span><p style="font-weight:800;margin:.4rem 0 0">${s.name}</p><p style="font-size:.72rem;color:#64748b">${s.description}</p></a>`).join('');
+        <a href="general.html" class="app-tile">
+          <span class="app-tile-emoji">${s.emoji}</span>
+          <p class="app-tile-title">${s.name}</p>
+          <p class="app-tile-desc">${s.description}</p>
+        </a>`).join('');
     });
   </script>
 </body>

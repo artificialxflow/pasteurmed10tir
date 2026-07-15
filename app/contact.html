@@ -21,10 +21,10 @@
       mountAppLayout({ page: 'home', title: 'تماس با ما', backHref: appHref('index.html') });
       const i = PASTEUR_DATA.institute;
       document.getElementById('contact-main').innerHTML = `
-        <a href="tel:${i.phoneDigits}" class="app-tile block"><p style="font-weight:800">📞 ${i.phone}</p></a>
-        <a href="tel:${i.phoneAltDigits}" class="app-tile block"><p style="font-weight:800">☎️ ${i.phoneAlt}</p></a>
-        <a href="https://wa.me/${i.whatsappDigits}" class="app-tile block"><p style="font-weight:800">💬 واتساپ</p></a>
-        <div class="app-tile"><p style="font-weight:800">📍 آدرس</p><p style="font-size:.82rem;color:#64748b;margin-top:.35rem">${i.address}</p></div>`;
+        <a href="tel:${i.phoneDigits}" class="app-tile app-block"><p class="app-font-bold">📞 ${i.phone}</p><p class="app-tile-desc">تماس اصلی</p></a>
+        <a href="tel:${i.phoneAltDigits}" class="app-tile app-block"><p class="app-font-bold">☎️ ${i.phoneAlt}</p><p class="app-tile-desc">تماس دوم</p></a>
+        <a href="https://wa.me/${i.whatsappDigits}" class="app-tile app-block"><p class="app-font-bold">💬 واتساپ</p><p class="app-tile-desc">${i.whatsapp}</p></a>
+        <div class="app-tile"><p class="app-font-bold">📍 آدرس</p><p class="app-tile-desc">${i.address}</p><p class="app-tile-desc app-mt-2">محدوده: ${i.serviceArea}</p></div>`;
     });
   </script>
 </body>

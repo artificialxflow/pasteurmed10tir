@@ -11,7 +11,10 @@
 <body class="app-body app-page-enter">
   <div class="app-device">
     <div id="app-chrome"></div>
-    <main class="app-main"><div id="specialty-grid"></div></main>
+    <main class="app-main">
+      <p class="app-intro">تخصص مورد نظر را انتخاب کنید</p>
+      <div id="specialty-grid"></div>
+    </main>
     <div id="app-nav"></div>
     <div id="app-snackbar" class="app-snackbar"></div>
   </div>
@@ -19,12 +22,12 @@
   <script src="../../js/app-components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      mountAppLayout({ page: 'consultation', title: 'تخصص‌های پزشکی', backHref: appHref('medical.html') });
+      mountAppLayout({ page: 'home', title: 'تخصص‌های پزشکی', backHref: appHref('medical.html') });
       document.getElementById('specialty-grid').innerHTML = PASTEUR_DATA.medicalSpecialties.map((s) => `
         <a href="${appHref(`consultation.html?category=medical-specialty&specialty=${s.id}&type=video`)}" class="app-tile">
-          <span style="font-size:1.75rem">${s.emoji}</span>
-          <p style="font-weight:800;margin:.4rem 0 0">${s.name}</p>
-          <p style="font-size:.72rem;color:#64748b;margin:.25rem 0 0">${s.description}</p>
+          <span class="app-tile-emoji">${s.emoji}</span>
+          <p class="app-tile-title">${s.name}</p>
+          <p class="app-tile-desc">${s.description}</p>
         </a>`).join('');
     });
   </script>
