@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (page === 'home') {
     initLandingPage();
+    if (typeof initAppLandingEntry === 'function') initAppLandingEntry();
   }
 });
 

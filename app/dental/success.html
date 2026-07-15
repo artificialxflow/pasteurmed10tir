@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>موفق | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main text-center">
+      <p style="font-size:3rem">✅</p>
+      <h2 id="success-title" style="font-weight:800;margin:.5rem 0">عملیات موفق</h2>
+      <p id="success-desc" style="color:#64748b;font-size:.88rem"></p>
+      <a href="general.html" class="btn-primary w-full block mt-6 text-center">بازگشت به رزرو</a>
+      <a href="../../index.html" class="app-link-web">خانه اپ</a>
+    </main>
+  </div>
+  <script src="../../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'dental', title: 'موفق', backHref: null, showNav: false });
+      const payment = JSON.parse(sessionStorage.getItem('pasteur_last_payment') || 'null');
+      if (payment?.kind === 'booking') {
+        document.getElementById('success-title').textContent = 'رزرو ثبت شد';
+        document.getElementById('success-desc').textContent = 'پیامک تأیید ارسال خواهد شد.';
+      }
+      showAppSnackbar('پرداخت با موفقیت ثبت شد');
+    });
+  </script>
+</body>
+</html>

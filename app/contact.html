@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>تماس | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main" id="contact-main"></main>
+    <div id="app-nav"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'home', title: 'تماس با ما', backHref: appHref('index.html') });
+      const i = PASTEUR_DATA.institute;
+      document.getElementById('contact-main').innerHTML = `
+        <a href="tel:${i.phoneDigits}" class="app-tile block"><p style="font-weight:800">📞 ${i.phone}</p></a>
+        <a href="tel:${i.phoneAltDigits}" class="app-tile block"><p style="font-weight:800">☎️ ${i.phoneAlt}</p></a>
+        <a href="https://wa.me/${i.whatsappDigits}" class="app-tile block"><p style="font-weight:800">💬 واتساپ</p></a>
+        <div class="app-tile"><p style="font-weight:800">📍 آدرس</p><p style="font-size:.82rem;color:#64748b;margin-top:.35rem">${i.address}</p></div>`;
+    });
+  </script>
+</body>
+</html>

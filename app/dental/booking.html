@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>رزرو نوبت | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div id="booking-app">
+        <div id="selected-doctor-info" class="hidden mb-3"></div>
+        <div id="booking-progress" class="flex gap-2 mb-4 overflow-x-auto text-xs"></div>
+        <div id="booking-error" class="hidden mb-3 p-3 text-sm text-red-700 bg-red-50 rounded-lg"></div>
+        <div id="step-type" class="booking-step"><div id="type-options" class="grid grid-cols-2 gap-2"></div></div>
+        <div id="step-doctor" class="booking-step hidden"><div id="doctor-list" class="space-y-2"></div></div>
+        <div id="step-day" class="booking-step hidden"><div id="day-options" class="flex flex-wrap gap-2"></div></div>
+        <div id="step-time" class="booking-step hidden"><p id="time-hint" class="text-xs bg-teal-50 p-2 rounded mb-2"></p><div id="time-options" class="grid grid-cols-3 gap-2"></div></div>
+        <div id="step-info" class="booking-step hidden">
+          <div id="booking-summary" class="mb-4 text-sm"></div>
+          <form id="booking-form" class="space-y-3">
+            <input type="text" id="patient-name" class="form-input" placeholder="نام و نام خانوادگی" required />
+            <input type="tel" id="patient-phone" class="form-input" placeholder="موبایل" required />
+            <input type="text" id="referral-code" class="form-input" placeholder="کد معرف (اختیاری)" />
+            <button type="submit" id="btn-submit" class="btn-primary w-full hidden">تأیید</button>
+          </form>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button type="button" id="btn-back" class="flex-1 py-2 rounded-lg border border-slate-200">قبلی</button>
+          <button type="button" id="btn-next" class="btn-primary flex-1">بعدی</button>
+        </div>
+      </div>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/storage.js"></script>
+  <script src="../../js/booking.js"></script>
+  <script src="../../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'dental', title: 'رزرو نوبت', backHref: appHref('dental/general.html'), showNav: false });
+      BookingFlow.init();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>دندانپزشکی | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div class="app-grid-2">
+        <a href="general.html" class="app-tile"><span style="font-size:1.75rem">👨‍⚕️</span><p style="font-weight:800;margin:.4rem 0 0">عمومی</p><p style="font-size:.72rem;color:#64748b">رزرو نوبت</p></a>
+        <a href="specialty.html" class="app-tile"><span style="font-size:1.75rem">🔬</span><p style="font-weight:800;margin:.4rem 0 0">تخصصی</p></a>
+        <a href="membership.html" class="app-tile"><span style="font-size:1.75rem">💎</span><p style="font-weight:800;margin:.4rem 0 0">عضویت</p></a>
+        <a href="../consultation.html?category=dental-home&type=phone" class="app-tile"><span style="font-size:1.75rem">🏠</span><p style="font-weight:800;margin:.4rem 0 0">اعزام منزل</p></a>
+      </div>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/app-components.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => mountAppLayout({ page: 'dental', title: 'دندانپزشکی', backHref: appHref('index.html') }));</script>
+</body>
+</html>

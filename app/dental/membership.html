@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>عضویت | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main"><div id="plans"></div></main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../../js/data.js"></script>
+  <script src="../../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'dental', title: 'طرح عضویت', backHref: appHref('dental/index.html') });
+      document.getElementById('plans').innerHTML = PASTEUR_DATA.memberships.map((m) => `
+        <div class="app-tile" style="margin-bottom:.75rem">
+          <p style="font-weight:800;font-size:1.1rem">${m.name}</p>
+          <p style="color:#0e7490;font-weight:800;margin:.35rem 0">${m.price} تومان</p>
+          <p style="font-size:.75rem;color:#64748b">${m.terms}</p>
+          <a href="../../pages/dental/membership.html#${m.id}" class="btn-primary w-full block text-center mt-3 text-sm">ادامه در فرم کامل</a>
+        </div>`).join('');
+    });
+  </script>
+</body>
+</html>

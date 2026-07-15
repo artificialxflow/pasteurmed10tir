@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>باشگاه | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter" data-app-page="club">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div class="flex gap-2 mb-4"><input type="tel" id="club-phone" class="form-input flex-1" placeholder="موبایل" /><button type="button" id="club-load" class="btn-primary shrink-0">بررسی</button></div>
+      <div id="club-dashboard" class="hidden">
+        <div class="app-grid-2 mb-4">
+          <div class="app-tile text-center"><p id="club-points" style="font-size:1.5rem;font-weight:800;color:#0e7490;margin:0">۰</p><p style="font-size:.72rem;color:#64748b">امتیاز</p></div>
+          <div class="app-tile text-center"><p id="club-tier" style="font-weight:800;margin:0">—</p><p style="font-size:.72rem;color:#64748b">سطح</p></div>
+        </div>
+        <div id="rewards-grid"></div>
+      </div>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script>
+    let currentPhone = '';
+    function loadClub(phone) {
+      const digits = phone.replace(/[^\d]/g, '');
+      if (digits.length < 10) { showAppSnackbar('شماره موبایل معتبر نیست'); return; }
+      currentPhone = digits;
+      const profile = PasteurStorage.getClubProfile(digits);
+      const tier = PasteurStorage.getClubTier(profile.points);
+      document.getElementById('club-dashboard').classList.remove('hidden');
+      document.getElementById('club-points').textContent = profile.points.toLocaleString('fa-IR');
+      document.getElementById('club-tier').textContent = `${tier.emoji} ${tier.name}`;
+      document.getElementById('rewards-grid').innerHTML = PASTEUR_DATA.clubRewards.map((r) => `
+        <div class="app-tile flex justify-between items-center"><div><p style="font-weight:800;margin:0">${r.emoji} ${r.title}</p><p style="font-size:.75rem;color:#0e7490">${r.points} امتیاز</p></div>
+        <button type="button" class="redeem-btn btn-primary text-xs px-3 py-1" data-id="${r.id}" data-points="${r.points}" ${profile.points >= r.points ? '' : 'disabled'}>دریافت</button></div>`).join('');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'club', title: 'باشگاه', backHref: appHref('index.html') });
+      document.getElementById('club-load').addEventListener('click', () => loadClub(document.getElementById('club-phone').value));
+      document.getElementById('rewards-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.redeem-btn'); if (!btn || btn.disabled) return;
+        const reward = PASTEUR_DATA.clubRewards.find((r) => r.id === parseInt(btn.dataset.id, 10));
+        const profile = PasteurStorage.getClubProfile(currentPhone);
+        profile.points -= reward.points;
+        profile.history.unshift({ points: -reward.points, reason: `دریافت: ${reward.title}`, date: new Date().toISOString() });
+        PasteurStorage.saveClubProfile(currentPhone, profile);
+        showAppSnackbar(`پاداش «${reward.title}» فعال شد`);
+        loadClub(currentPhone);
+      });
+    });
+  </script>
+</body>
+</html>

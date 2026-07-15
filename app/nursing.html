@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>پرستاری | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main"><div id="nursing-grid"></div></main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'home', title: 'پرستاری', backHref: appHref('index.html') });
+      document.getElementById('nursing-grid').innerHTML = PASTEUR_DATA.nursingServices.map((s) => `
+        <div class="app-tile"><span style="font-size:1.75rem">${s.emoji}</span><p style="font-weight:800;margin:.4rem 0 0">${s.title}</p><p style="font-size:.72rem;color:#64748b">${s.price || ''}</p></div>`).join('');
+      const phone = PASTEUR_DATA.institute.phoneDigits;
+      const call = document.createElement('a');
+      call.href = `tel:${phone}`;
+      call.className = 'btn-primary w-full block text-center mt-4';
+      call.textContent = 'تماس برای درخواست';
+      document.querySelector('.app-main').appendChild(call);
+    });
+  </script>
+</body>
+</html>

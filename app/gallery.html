@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>گالری | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main"><div id="gallery-grid"></div></main>
+    <div id="app-nav"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'home', title: 'گالری', backHref: appHref('index.html') });
+      document.getElementById('gallery-grid').innerHTML = PASTEUR_DATA.galleryItems.map((g) => `
+        <div class="app-tile" style="padding:0;overflow:hidden;margin-bottom:.75rem">
+          <p style="font-weight:800;padding:.65rem .65rem 0;margin:0">${g.title}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem;padding:.65rem">
+            <img src="${g.before}" alt="قبل" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" />
+            <img src="${g.after}" alt="بعد" style="width:100%;height:5rem;object-fit:cover;border-radius:.5rem" />
+          </div>
+        </div>`).join('');
+    });
+  </script>
+</body>
+</html>

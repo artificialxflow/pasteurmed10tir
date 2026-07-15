@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>فروشگاه | پاستور پلاس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/app.css" />
+</head>
+<body class="app-body app-page-enter" data-app-page="shop">
+  <div class="app-device">
+    <div id="app-chrome"></div>
+    <main class="app-main">
+      <div class="app-hero" style="margin-bottom:.75rem"><p style="font-weight:800">فروشگاه تجهیزات</p><p style="font-size:.8rem;opacity:.9;margin-top:.35rem">محصولات پزشکی و دندانپزشکی</p></div>
+      <div id="product-grid" class="app-grid-2"></div>
+      <a href="../pages/shop.html" class="app-link-web">نسخه کامل فروشگاه (VIP و تسهیلات)</a>
+    </main>
+    <div id="app-nav"></div>
+    <div id="app-snackbar" class="app-snackbar"></div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/app-components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      mountAppLayout({ page: 'shop', title: 'تجهیزات', backHref: appHref('index.html') });
+      document.getElementById('product-grid').innerHTML = PASTEUR_DATA.products.map((p) => `
+        <div class="app-tile" style="padding:0;overflow:hidden">
+          <img src="${p.image}" alt="" style="width:100%;height:6rem;object-fit:cover" />
+          <div style="padding:.65rem"><p style="font-weight:800;font-size:.78rem;margin:0">${p.name}</p><p style="color:#0e7490;font-size:.72rem;font-weight:700;margin:.35rem 0 0">${p.price}</p>
+          <button type="button" class="btn-primary w-full text-xs mt-2 order-btn" data-id="${p.id}">ثبت سفارش</button></div>
+        </div>`).join('');
+      document.getElementById('product-grid').addEventListener('click', (e) => {
+        const btn = e.target.closest('.order-btn'); if (!btn) return;
+        const product = PASTEUR_DATA.products.find((p) => p.id === parseInt(btn.dataset.id, 10));
+        PasteurStorage.saveShopOrder({ id: PasteurStorage.generateId(), productId: product.id, productName: product.name, price: product.price, status: 'pending', createdAt: new Date().toISOString() });
+        showAppSnackbar(`سفارش «${product.name}» ثبت شد`);
+      });
+    });
+  </script>
+</body>
+</html>
