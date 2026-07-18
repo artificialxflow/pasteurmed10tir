@@ -87,6 +87,17 @@
 
 ---
 
+## فاز ۱۰ - Parity UI با وب (صفحات کلیدی)
+- [x] `booking.js` — نوار پیشرفت رزرو با استایل `app-*` در اپ
+- [x] `app/dental/general.html` — badge وضعیت + روز/ساعت + غیرفعال برای inactive
+- [x] `app/gallery.html` — فیلتر دسته + lightbox بزرگنمایی
+- [x] `app/contact.html` — hero + ساعات + آدرس + دکمه‌های سریع
+- [x] `app/dental/index.html` — اصلاح kicker hero
+- [x] `css/app.css` — استایل progress، gallery، lightbox
+- [ ] تست دستی فاز ۱۰ (کارفرما)
+
+---
+
 ## فاز 7 - بهبود UI و تکمیل قابلیت‌ها (بازبینی)
 - [x] گسترش `css/app.css` — Design System + utility classes (`.hidden`, `.app-*`)
 - [x] AppBar با status bar و لوگوی واقعی

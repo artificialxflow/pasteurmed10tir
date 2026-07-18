@@ -58,6 +58,10 @@ const BookingFlow = {
     this.updateDoctorSummary();
   },
 
+  isAppContext() {
+    return window.location.pathname.replace(/\\/g, '/').includes('/app/');
+  },
+
   renderProgress() {
     const labels = this.steps.map((s) => ({
       type: 'نوع خدمت',
@@ -69,6 +73,21 @@ const BookingFlow = {
 
     const container = document.getElementById('booking-progress');
     if (!container) return;
+
+    if (this.isAppContext()) {
+      container.className = 'app-booking-progress app-mb-4';
+      container.innerHTML = labels
+        .map(
+          (label, i) => `
+          <div class="app-progress-step">
+            <div class="app-progress-dot is-pending progress-dot" data-index="${i}">${i + 1}</div>
+            <span class="app-progress-label">${label}</span>
+            ${i < labels.length - 1 ? '<div class="app-progress-line progress-line"></div>' : ''}
+          </div>`
+        )
+        .join('');
+      return;
+    }
 
     container.innerHTML = labels
       .map(
@@ -86,6 +105,26 @@ const BookingFlow = {
   },
 
   updateProgress(activeIndex) {
+    if (this.isAppContext()) {
+      document.querySelectorAll('.progress-dot').forEach((dot, i) => {
+        dot.classList.remove('is-active', 'is-done', 'is-pending');
+        if (i < activeIndex) {
+          dot.classList.add('is-done');
+          dot.innerHTML = '✓';
+        } else if (i === activeIndex) {
+          dot.classList.add('is-active');
+          dot.textContent = i + 1;
+        } else {
+          dot.classList.add('is-pending');
+          dot.textContent = i + 1;
+        }
+      });
+      document.querySelectorAll('.progress-line').forEach((line, i) => {
+        line.classList.toggle('is-done', i < activeIndex);
+      });
+      return;
+    }
+
     document.querySelectorAll('.progress-dot').forEach((dot, i) => {
       dot.classList.remove('bg-teal-500', 'text-white', 'bg-white', 'text-teal-700');
       if (i < activeIndex) {
