@@ -204,6 +204,13 @@ const PASTEUR_DATA = {
 
   nursingServices: [
     {
+      title: 'مراقبت از بیماران ICU و CCU در منزل',
+      emoji: '🫀',
+      price: 'تماس برای هماهنگی',
+      description: 'اعزام پرستار مجرب برای مراقبت‌های ویژه بیماران ICU و CCU در منزل، با هماهنگی پزشک معالج.',
+      image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&h=320&fit=crop',
+    },
+    {
       title: 'تزریقات و سایر امور پرستاری در منزل',
       emoji: '💉',
       price: 'تماس برای هماهنگی',

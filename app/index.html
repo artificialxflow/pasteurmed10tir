@@ -37,14 +37,14 @@
       const services = [
         { emoji: '🦷', title: 'دندانپزشکی', desc: 'رزرو نوبت', href: appHref('dental/index.html') },
         { emoji: '🩺', title: 'پزشکی', desc: 'مشاوره و ویزیت', href: appHref('medical.html') },
+        { emoji: '👩‍⚕️', title: 'پرستاری', desc: 'خدمات در منزل', href: appHref('nursing.html') },
+        { emoji: '✨', title: 'لیزر و زیبایی', desc: 'لیزر و جوانسازی', href: appHref('laser.html') },
         { emoji: '🛒', title: 'تجهیزات', desc: 'فروشگاه', href: appHref('shop.html') },
         { emoji: '🎁', title: 'باشگاه', desc: 'امتیاز و پاداش', href: appHref('club.html') },
       ];
       document.getElementById('app-services').innerHTML = services.map((s) => renderAppTile(s)).join('');
       const quick = [
         { emoji: '💬', title: 'مشاوره و ویزیت', href: appHref('consultation.html') },
-        { emoji: '👩‍⚕️', title: 'پرستاری در منزل', href: appHref('nursing.html') },
-        { emoji: '✨', title: 'لیزر و زیبایی', href: appHref('laser.html') },
         { emoji: '🔔', title: 'یادآور نوبت', href: appHref('reminders.html') },
         { emoji: '🖼️', title: 'گالری نتایج', href: appHref('gallery.html') },
         { emoji: '📞', title: 'تماس با ما', href: appHref('contact.html') },

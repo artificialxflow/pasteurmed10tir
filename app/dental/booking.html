@@ -13,13 +13,21 @@
     <div id="app-chrome"></div>
     <main class="app-main" id="app-main">
       <div id="booking-app">
-        <div id="selected-doctor-info" class="app-hidden app-mb-3"></div>
+        <p class="app-text-sm app-text-muted app-mb-3">انتخاب نوع خدمت: ویزیت یا شروع درمان</p>
+        <div id="selected-doctor-info" class="hidden app-mb-3"></div>
         <div id="booking-progress" class="app-flex app-gap-2 app-mb-4 app-text-xs"></div>
-        <div id="booking-error" class="app-hidden app-mb-3 app-text-sm" style="padding:.75rem;border-radius:.75rem;color:#b91c1c;background:#fef2f2"></div>
+        <div id="booking-error" class="hidden app-mb-3 app-text-sm" style="padding:.75rem;border-radius:.75rem;color:#b91c1c;background:#fef2f2"></div>
         <div id="step-type" class="booking-step"><div id="type-options" class="app-grid app-grid-cols-2 app-gap-2-grid"></div></div>
-        <div id="step-doctor" class="booking-step hidden"><div id="doctor-list" class="app-form-stack-sm"></div></div>
-        <div id="step-day" class="booking-step hidden"><div id="day-options" class="app-flex app-gap-2" style="flex-wrap:wrap"></div></div>
+        <div id="step-doctor" class="booking-step hidden">
+          <p class="app-text-sm app-text-muted app-mb-3">دندانپزشک مورد نظر را انتخاب کنید</p>
+          <div id="doctor-list" class="app-form-stack-sm"></div>
+        </div>
+        <div id="step-day" class="booking-step hidden">
+          <p class="app-text-sm app-text-muted app-mb-3">روز حضور پزشک را انتخاب کنید</p>
+          <div id="day-options" class="app-flex app-gap-2" style="flex-wrap:wrap"></div>
+        </div>
         <div id="step-time" class="booking-step hidden">
+          <p class="app-text-sm app-text-muted app-mb-2">ساعت یا بازه زمانی را انتخاب کنید</p>
           <p id="time-hint" class="app-text-xs app-mb-2 app-card app-card--info"></p>
           <div id="time-options" class="app-grid app-grid-cols-3 app-gap-2-grid"></div>
         </div>
@@ -38,8 +46,7 @@
         </div>
       </div>
     </main>
-    <div id="app-nav"></div>
-    <div id="app-snackbar" class="app-snackbar"></div>
+    <div id="app-snackbar" class="app-snackbar app-snackbar--no-nav"></div>
   </div>
   <script src="../../js/data.js"></script>
   <script src="../../js/storage.js"></script>

@@ -3,6 +3,12 @@
  */
 
 const BookingFlow = {
+  setVisible(el, visible) {
+    if (!el) return;
+    el.classList.toggle('hidden', !visible);
+    el.classList.toggle('app-hidden', !visible);
+  },
+
   state: {
     type: null,
     doctorId: null,
@@ -101,9 +107,9 @@ const BookingFlow = {
 
   showStep(stepName) {
     this.currentStepName = stepName;
-    document.querySelectorAll('.booking-step').forEach((el) => el.classList.add('hidden'));
+    document.querySelectorAll('.booking-step').forEach((el) => this.setVisible(el, false));
     const target = document.getElementById(`step-${stepName}`);
-    if (target) target.classList.remove('hidden');
+    this.setVisible(target, true);
 
     const idx = this.steps.indexOf(stepName);
     this.updateProgress(idx);
@@ -113,8 +119,8 @@ const BookingFlow = {
     const btnSubmit = document.getElementById('btn-submit');
     if (btnNext && btnSubmit) {
       const isLast = stepName === 'info';
-      btnNext.classList.toggle('hidden', isLast);
-      btnSubmit.classList.toggle('hidden', !isLast);
+      this.setVisible(btnNext, !isLast);
+      this.setVisible(btnSubmit, isLast);
     }
   },
 
@@ -278,9 +284,9 @@ const BookingFlow = {
             <p class="text-sm text-teal-700">${doctor.specialty}</p>
           </div>
         </div>`;
-      el.classList.remove('hidden');
+      this.setVisible(el, true);
     } else {
-      el.classList.add('hidden');
+      this.setVisible(el, false);
     }
   },
 
@@ -350,7 +356,7 @@ const BookingFlow = {
   next() {
     const current = this.steps[this.currentStepIndex()];
     const err = document.getElementById('booking-error');
-    if (err) { err.classList.add('hidden'); err.textContent = ''; }
+    if (err) { this.setVisible(err, false); err.textContent = ''; }
 
     if (current === 'type' && !this.state.type) {
       this.showError('لطفاً نوع خدمت را انتخاب کنید.');
@@ -389,7 +395,7 @@ const BookingFlow = {
     const err = document.getElementById('booking-error');
     if (err) {
       err.textContent = msg;
-      err.classList.remove('hidden');
+      this.setVisible(err, true);
     }
   },
 
