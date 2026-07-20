@@ -170,6 +170,24 @@ const BookingFlow = {
   renderStepType() {
     const container = document.getElementById('type-options');
     if (!container) return;
+    const app = this.isAppContext();
+
+    if (app) {
+      container.innerHTML = `
+        <button type="button" data-type="visit"
+                class="type-option app-option app-option--center ${this.state.type === 'visit' ? 'is-selected' : ''}">
+          <span class="app-option-emoji">🦷</span>
+          <h3 class="app-option-title">ویزیت</h3>
+          <p class="app-option-desc">انتخاب ساعت کلی — ویزیت هر زمان قابل انتخاب است</p>
+        </button>
+        <button type="button" data-type="treatment"
+                class="type-option app-option app-option--center ${this.state.type === 'treatment' ? 'is-selected is-selected--blue' : ''}">
+          <span class="app-option-emoji">🪥</span>
+          <h3 class="app-option-title">شروع یا ادامه درمان</h3>
+          <p class="app-option-desc">بازه‌های یک‌ساعته — هر خدمت دقیقاً یک ساعت</p>
+        </button>`;
+      return;
+    }
 
     container.innerHTML = `
       <button type="button" data-type="visit"
@@ -191,16 +209,32 @@ const BookingFlow = {
   renderStepDoctor() {
     const container = document.getElementById('doctor-list');
     if (!container) return;
+    const app = this.isAppContext();
 
     container.innerHTML = PASTEUR_DATA.dentists
       .map((d) => {
         const status = STATUS_LABELS[d.status] || STATUS_LABELS.inactive;
         const selected = this.state.doctorId === d.id;
+        const inactive = d.status === 'inactive';
+        if (app) {
+          return `
+          <button type="button" data-doctor="${d.id}"
+                  class="doctor-option app-option app-option--row ${selected ? 'is-selected' : ''} ${inactive ? 'is-disabled cursor-not-allowed' : ''}">
+            <img src="${d.image}" alt="" class="app-doctor-thumb" />
+            <div class="app-flex-1">
+              <div class="app-flex app-items-center app-gap-2" style="flex-wrap:wrap">
+                <span class="app-font-bold">${d.name}</span>
+                <span class="badge ${status.class}">${status.text}</span>
+              </div>
+              <p class="app-text-sm app-text-teal">${d.specialty}</p>
+            </div>
+          </button>`;
+        }
         return `
         <button type="button" data-doctor="${d.id}"
                 class="doctor-option card-bordered p-4 flex items-center gap-4 w-full text-right
                        ${selected ? 'border-teal-500 ring-2 ring-teal-200' : ''}
-                       ${d.status === 'inactive' ? 'opacity-50 cursor-not-allowed' : ''}">
+                       ${inactive ? 'opacity-50 cursor-not-allowed' : ''}">
           <img src="${d.image}" alt="" class="w-14 h-14 rounded-lg object-cover border-2 border-slate-200" />
           <div class="flex-1">
             <div class="flex items-center gap-2">
@@ -218,20 +252,34 @@ const BookingFlow = {
     const container = document.getElementById('day-options');
     const doctor = this.getDoctor();
     if (!container || !doctor) return;
+    const app = this.isAppContext();
 
     const days = Object.keys(doctor.schedule || {});
-    container.innerHTML = days.length
-      ? days
-          .map(
-            (day) => `
+    if (!days.length) {
+      container.innerHTML = app
+        ? '<p class="app-empty">روزی برای این پزشک ثبت نشده است.</p>'
+        : '<p class="text-slate-500 col-span-full text-center py-6">روزی برای این پزشک ثبت نشده است.</p>';
+      return;
+    }
+
+    container.innerHTML = days
+      .map((day) => {
+        const selected = this.state.day === day;
+        if (app) {
+          return `
+          <button type="button" data-day="${day}"
+                  class="day-option app-option app-option--chip ${selected ? 'is-selected' : ''}">
+            📅 ${day}
+          </button>`;
+        }
+        return `
           <button type="button" data-day="${day}"
                   class="day-option card-bordered px-5 py-4 font-semibold text-center min-w-[100px]
-                         ${this.state.day === day ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : ''}">
+                         ${selected ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : ''}">
             📅 ${day}
-          </button>`
-          )
-          .join('')
-      : '<p class="text-slate-500 col-span-full text-center py-6">روزی برای این پزشک ثبت نشده است.</p>';
+          </button>`;
+      })
+      .join('');
   },
 
   renderStepTime() {
@@ -239,10 +287,13 @@ const BookingFlow = {
     const hint = document.getElementById('time-hint');
     const doctor = this.getDoctor();
     if (!container || !doctor || !this.state.day || !this.state.type) return;
+    const app = this.isAppContext();
 
     const daySchedule = doctor.schedule[this.state.day];
     if (!daySchedule) {
-      container.innerHTML = '<p class="text-slate-500 text-center py-6 col-span-full">برنامه‌ای برای این روز وجود ندارد.</p>';
+      container.innerHTML = app
+        ? '<p class="app-empty">برنامه‌ای برای این روز وجود ندارد.</p>'
+        : '<p class="text-slate-500 text-center py-6 col-span-full">برنامه‌ای برای این روز وجود ندارد.</p>';
       return;
     }
 
@@ -253,6 +304,15 @@ const BookingFlow = {
         .map((h) => {
           const booked = PasteurStorage.isSlotBooked(doctor.id, this.state.day, 'visit', h);
           const selected = this.state.timeValue === h;
+          if (app) {
+            return `
+            <label class="time-slot app-option app-option--chip ${booked ? 'is-disabled cursor-not-allowed' : ''} ${selected ? 'is-selected' : ''}">
+              <input type="radio" name="visit-time" value="${h}" class="sr-only"
+                     ${booked ? 'disabled' : ''} ${selected ? 'checked' : ''} />
+              ${PasteurStorage.formatHour(h)}
+              ${booked ? '<span class="app-slot-full">پر</span>' : ''}
+            </label>`;
+          }
           return `
           <label class="time-slot ${booked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
                         card-bordered px-4 py-3 text-center font-semibold
@@ -271,6 +331,15 @@ const BookingFlow = {
         .map((slot) => {
           const booked = slot.booked || PasteurStorage.isSlotBooked(doctor.id, this.state.day, 'treatment', slot.start);
           const selected = this.state.timeValue === slot.start;
+          if (app) {
+            return `
+            <label class="time-slot app-option app-option--chip ${booked ? 'is-disabled cursor-not-allowed' : ''} ${selected ? 'is-selected is-selected--blue' : ''}">
+              <input type="radio" name="treatment-time" value="${slot.start}" data-label="${slot.label}"
+                     class="sr-only" ${booked ? 'disabled' : ''} ${selected ? 'checked' : ''} />
+              ${slot.label}
+              ${booked ? '<span class="app-slot-full">رزرو شده</span>' : ''}
+            </label>`;
+          }
           return `
           <label class="time-slot ${booked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
                         card-bordered px-4 py-3 text-center font-semibold
@@ -301,6 +370,16 @@ const BookingFlow = {
     if (!el || !doctor) return;
 
     const typeLabel = this.state.type === 'visit' ? 'ویزیت' : 'شروع یا ادامه درمان';
+    if (this.isAppContext()) {
+      el.innerHTML = `
+        <div class="app-card app-summary">
+          <div class="app-summary-row"><span class="app-text-muted">پزشک:</span><span class="app-font-bold">${doctor.name}</span></div>
+          <div class="app-summary-row"><span class="app-text-muted">نوع:</span><span class="app-font-bold">${typeLabel}</span></div>
+          <div class="app-summary-row"><span class="app-text-muted">روز:</span><span class="app-font-bold">${this.state.day || '—'}</span></div>
+          <div class="app-summary-row"><span class="app-text-muted">زمان:</span><span class="app-font-bold">${this.state.timeLabel || '—'}</span></div>
+        </div>`;
+      return;
+    }
     el.innerHTML = `
       <div class="card-bordered p-4 bg-slate-50 space-y-2 text-sm">
         <div class="flex justify-between"><span class="text-slate-500">پزشک:</span><span class="font-semibold">${doctor.name}</span></div>
@@ -315,14 +394,25 @@ const BookingFlow = {
     const doctor = this.getDoctor();
     if (!el) return;
     if (doctor) {
-      el.innerHTML = `
-        <div class="flex items-center gap-3 card-bordered p-3 mb-6 bg-teal-50 border-teal-200">
-          <img src="${doctor.image}" class="w-12 h-12 rounded-lg object-cover" alt="" />
-          <div>
-            <p class="font-bold">${doctor.name}</p>
-            <p class="text-sm text-teal-700">${doctor.specialty}</p>
-          </div>
-        </div>`;
+      if (this.isAppContext()) {
+        el.innerHTML = `
+          <div class="app-card app-doctor-banner">
+            <img src="${doctor.image}" class="app-doctor-thumb" alt="" />
+            <div>
+              <p class="app-font-bold" style="margin:0">${doctor.name}</p>
+              <p class="app-text-sm app-text-teal">${doctor.specialty}</p>
+            </div>
+          </div>`;
+      } else {
+        el.innerHTML = `
+          <div class="flex items-center gap-3 card-bordered p-3 mb-6 bg-teal-50 border-teal-200">
+            <img src="${doctor.image}" class="w-12 h-12 rounded-lg object-cover" alt="" />
+            <div>
+              <p class="font-bold">${doctor.name}</p>
+              <p class="text-sm text-teal-700">${doctor.specialty}</p>
+            </div>
+          </div>`;
+      }
       this.setVisible(el, true);
     } else {
       this.setVisible(el, false);

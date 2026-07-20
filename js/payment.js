@@ -46,83 +46,60 @@ const PaymentFlow = {
     return amount.toLocaleString('fa-IR') + ' تومان';
   },
 
+  summaryRow(label, value, { last, total, app } = {}) {
+    if (app) {
+      return `<div class="app-summary-row${last ? ' app-summary-row--total' : ''}"><span class="app-text-muted">${label}</span><span class="${total ? 'app-font-bold app-text-teal' : 'app-font-bold'}">${value}</span></div>`;
+    }
+    if (last) {
+      return `<div class="flex justify-between pt-2 text-base"><span class="font-bold">${label}</span><span class="font-bold text-teal-700">${value}</span></div>`;
+    }
+    return `<div class="flex justify-between border-b border-slate-100 pb-2"><span class="text-slate-500">${label}</span><span class="font-semibold">${value}</span></div>`;
+  },
+
   renderSummary(data) {
     const el = document.getElementById('payment-summary');
     if (!el) return;
+    const app = this.isAppContext();
+    const wrap = (title, rows) => {
+      if (app) {
+        return `<div class="app-card app-summary"><h2 class="app-font-bold app-mb-3" style="font-size:1.05rem;margin-top:0">${title}</h2>${rows}</div>`;
+      }
+      return `<h2 class="font-bold text-lg mb-4">${title}</h2><div class="space-y-3 text-sm">${rows}</div>`;
+    };
 
     if (data.kind === 'booking') {
-      el.innerHTML = `
-        <h2 class="font-bold text-lg mb-4">خلاصه رزرو</h2>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">مراجع:</span><span class="font-semibold">${data.patientName}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">موبایل:</span><span class="font-semibold">${data.patientPhone}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">پزشک:</span><span class="font-semibold">${data.doctorName}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">نوع خدمت:</span><span class="font-semibold">${data.typeLabel}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">روز:</span><span class="font-semibold">${data.day}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">زمان:</span><span class="font-semibold">${data.timeLabel}</span>
-          </div>
-          ${data.referralCode ? `
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">کد معرف:</span><span class="font-semibold">${data.referralCode}</span>
-          </div>` : ''}
-          <div class="flex justify-between pt-2 text-base">
-            <span class="font-bold">مبلغ قابل پرداخت:</span>
-            <span class="font-bold text-teal-700">${this.formatPrice(data.amount)}</span>
-          </div>
-        </div>`;
+      const rows = [
+        this.summaryRow('مراجع:', data.patientName, { app }),
+        this.summaryRow('موبایل:', data.patientPhone, { app }),
+        this.summaryRow('پزشک:', data.doctorName, { app }),
+        this.summaryRow('نوع خدمت:', data.typeLabel, { app }),
+        this.summaryRow('روز:', data.day, { app }),
+        this.summaryRow('زمان:', data.timeLabel, { app }),
+        data.referralCode ? this.summaryRow('کد معرف:', data.referralCode, { app }) : '',
+        this.summaryRow('مبلغ قابل پرداخت:', this.formatPrice(data.amount), { last: true, total: true, app }),
+      ].join('');
+      el.innerHTML = wrap('خلاصه رزرو', rows);
     } else if (data.planId === 'shop-vip') {
-      el.innerHTML = `
-        <h2 class="font-bold text-lg mb-4">VIP تجهیزات</h2>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">نام:</span><span class="font-semibold">${data.patientName}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">موبایل:</span><span class="font-semibold">${data.patientPhone}</span>
-          </div>
-          <div class="flex justify-between pt-2 text-base">
-            <span class="font-bold">حق عضویت:</span>
-            <span class="font-bold text-teal-700">${this.formatPrice(data.amountToman || data.amount / 10)}</span>
-          </div>
-        </div>`;
+      const rows = [
+        this.summaryRow('نام:', data.patientName, { app }),
+        this.summaryRow('موبایل:', data.patientPhone, { app }),
+        this.summaryRow('حق عضویت:', this.formatPrice(data.amountToman || data.amount / 10), { last: true, total: true, app }),
+      ].join('');
+      el.innerHTML = wrap('VIP تجهیزات', rows);
     } else if (data.kind === 'membership') {
-      el.innerHTML = `
-        <h2 class="font-bold text-lg mb-4">خلاصه عضویت</h2>
-        <div class="space-y-3 text-sm">
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">نام:</span><span class="font-semibold">${data.patientName}</span>
-          </div>
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">طرح:</span><span class="font-semibold">${data.planName}</span>
-          </div>
-          ${data.membershipDurationLabel || data.validityLabel ? `
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">مدت عضویت:</span><span class="font-semibold">${data.membershipDurationLabel || data.validityLabel}</span>
-          </div>` : ''}
-          ${data.discountPercent ? `
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">تخفیف مدت‌دار:</span><span class="font-semibold">${data.discountPercent.toLocaleString('fa-IR')}٪</span>
-          </div>` : ''}
-          ${data.referralCode ? `
-          <div class="flex justify-between border-b border-slate-100 pb-2">
-            <span class="text-slate-500">کد معرف:</span><span class="font-semibold">${data.referralCode}</span>
-          </div>` : ''}
-          <div class="flex justify-between pt-2 text-base">
-            <span class="font-bold">مبلغ واریزی:</span>
-            <span class="font-bold text-teal-700">${this.formatPrice(data.amount)}</span>
-          </div>
-        </div>`;
+      const rows = [
+        this.summaryRow('نام:', data.patientName, { app }),
+        this.summaryRow('طرح:', data.planName, { app }),
+        data.membershipDurationLabel || data.validityLabel
+          ? this.summaryRow('مدت عضویت:', data.membershipDurationLabel || data.validityLabel, { app })
+          : '',
+        data.discountPercent
+          ? this.summaryRow('تخفیف مدت‌دار:', `${data.discountPercent.toLocaleString('fa-IR')}٪`, { app })
+          : '',
+        data.referralCode ? this.summaryRow('کد معرف:', data.referralCode, { app }) : '',
+        this.summaryRow('مبلغ واریزی:', this.formatPrice(data.amount), { last: true, total: true, app }),
+      ].join('');
+      el.innerHTML = wrap('خلاصه عضویت', rows);
     }
   },
 
@@ -130,7 +107,9 @@ const PaymentFlow = {
     document.getElementById('btn-pay')?.addEventListener('click', () => {
       const btn = document.getElementById('btn-pay');
       btn.disabled = true;
-      btn.innerHTML = '<span class="inline-block animate-spin">⏳</span> در حال اتصال به درگاه...';
+      btn.innerHTML = this.isAppContext()
+        ? '<span class="app-pay-loading">⏳</span> در حال اتصال به درگاه...'
+        : '<span class="inline-block animate-spin">⏳</span> در حال اتصال به درگاه...';
 
       setTimeout(() => {
         this.completePayment(pending);
