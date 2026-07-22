@@ -11,8 +11,10 @@ type Consultation = Record<string, unknown> & {
   typeLabel?: string;
   categoryLabel?: string;
   specialtyLabel?: string;
+  doctorName?: string;
   description?: string;
   estimate?: string;
+  amount?: number;
   status?: string;
 };
 
@@ -34,7 +36,18 @@ export default function AdminConsultationsPage() {
 
   return (
     <AdminTable
-      headers={["نام", "موبایل", "نوع", "دسته", "تخصص", "شرح", "تخمین", "وضعیت", "عملیات"]}
+      headers={[
+        "نام",
+        "موبایل",
+        "نوع",
+        "دسته",
+        "تخصص",
+        "پزشک",
+        "شرح",
+        "مبلغ",
+        "وضعیت",
+        "عملیات",
+      ]}
       empty="درخواست مشاوره‌ای ثبت نشده."
     >
       {items.map((c) => (
@@ -44,10 +57,19 @@ export default function AdminConsultationsPage() {
           <td className="px-4 py-3">{String(c.typeLabel || "—")}</td>
           <td className="px-4 py-3">{String(c.categoryLabel || "—")}</td>
           <td className="px-4 py-3">{String(c.specialtyLabel || "—")}</td>
+          <td className="px-4 py-3">{String(c.doctorName || "—")}</td>
           <td className="max-w-xs truncate px-4 py-3 text-xs">
             {String(c.description || "—")}
           </td>
-          <td className="px-4 py-3">{String(c.estimate || "—")}</td>
+          <td className="px-4 py-3">
+            {Number(c.amount || 0).toLocaleString("fa-IR")}
+            {c.estimate ? (
+              <>
+                <br />
+                <span className="text-xs text-slate-500">{String(c.estimate)}</span>
+              </>
+            ) : null}
+          </td>
           <td className="px-4 py-3">
             <AdminBadge tone={c.status === "answered" ? "success" : "warn"}>
               {c.status === "answered" ? "پاسخ داده" : "در انتظار"}

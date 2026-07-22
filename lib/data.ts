@@ -79,23 +79,40 @@ export interface Physician {
   id: number;
   name: string;
   specialty: string;
+  specialtyId?: string;
   image: string;
   days: string[];
   status: DoctorStatus;
 }
 
+export interface NursingItem {
+  id: string;
+  title: string;
+  priceNum: number;
+  price?: string;
+  unit?: string;
+  active?: boolean;
+}
+
 export interface NursingService {
+  id: string;
   title: string;
   emoji: string;
   price: string;
   description: string;
   image?: string;
+  items: NursingItem[];
+  active?: boolean;
 }
 
 export interface LaserService {
+  id: string;
   title: string;
   emoji: string;
   price: string;
+  priceNum?: number;
+  description?: string;
+  active?: boolean;
 }
 
 export interface Product {
@@ -115,6 +132,7 @@ export interface Membership {
   priceNum: number;
   loanTermLabel: string;
   loanLimit: number;
+  downPaymentPercent: number;
   features: string[];
   terms: string;
   highlighted: boolean;
@@ -177,13 +195,22 @@ export interface ConsultationType {
   label: string;
   emoji: string;
   desc: string;
+  priceNum?: number;
+  price?: string;
 }
 
 export interface ConsultationCategory {
   id: string;
   label: string;
   estimate: string;
+  estimateMin?: number;
   service: string;
+}
+
+export type SpecialtyTariffs = Record<string, Record<string, number>>;
+
+export interface PasteurSettings {
+  dentalReservationFee: number;
 }
 
 export interface GalleryItem {
@@ -246,6 +273,8 @@ export interface PasteurData {
   visitors: Visitor[];
   consultationTypes: ConsultationType[];
   consultationCategories: ConsultationCategory[];
+  specialtyTariffs: SpecialtyTariffs;
+  settings: PasteurSettings;
   galleryItems: GalleryItem[];
   galleryCategories: GalleryCategory[];
   clubTiers: ClubTier[];
@@ -455,45 +484,174 @@ export const PASTEUR_DATA = {
   ],
 
   physicians: [
-    { id: 1, name: 'دکتر سعید نوری', specialty: 'پزشک عمومی', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop', days: ['شنبه', 'سه‌شنبه'], status: 'available' },
-    { id: 2, name: 'دکتر فاطمه موسوی', specialty: 'قلب و عروق', image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop', days: ['یکشنبه', 'چهارشنبه'], status: 'available' },
-    { id: 3, name: 'دکتر رضا جعفری', specialty: 'اطفال', image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop', days: ['دوشنبه', 'پنجشنبه'], status: 'available' },
+    { id: 1, name: 'دکتر سعید نوری', specialty: 'پزشک عمومی', specialtyId: 'internal', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop', days: ['شنبه', 'سه‌شنبه'], status: 'available' },
+    { id: 2, name: 'دکتر فاطمه موسوی', specialty: 'قلب و عروق', specialtyId: 'cardiology', image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop', days: ['یکشنبه', 'چهارشنبه'], status: 'available' },
+    { id: 3, name: 'دکتر رضا جعفری', specialty: 'اطفال', specialtyId: 'pediatrics', image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop', days: ['دوشنبه', 'پنجشنبه'], status: 'available' },
+    { id: 4, name: 'دکتر مهدی اکبری', specialty: 'اورولوژی', specialtyId: 'urology', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop', days: ['شنبه', 'دوشنبه'], status: 'available' },
+    { id: 5, name: 'دکتر ساناز حیدری', specialty: 'عفونی', specialtyId: 'infectious', image: 'https://images.unsplash.com/photo-1582750433449-648ed127fbfe?w=200&h=200&fit=crop', days: ['یکشنبه', 'سه‌شنبه'], status: 'available' },
+    { id: 6, name: 'دکتر پرویز صادقی', specialty: 'جراحی', specialtyId: 'surgery', image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop', days: ['چهارشنبه', 'پنجشنبه'], status: 'available' },
+    { id: 7, name: 'دکتر نرگس طاهری', specialty: 'پوست و مو', specialtyId: 'dermatology', image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop', days: ['شنبه', 'چهارشنبه'], status: 'available' },
+    { id: 8, name: 'دکتر امیر کاظمی', specialty: 'ارتوپدی', specialtyId: 'orthopedics', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop', days: ['دوشنبه', 'پنجشنبه'], status: 'available' },
+    { id: 9, name: 'دکتر لیلا باقری', specialty: 'مغز و اعصاب', specialtyId: 'neurology', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop', days: ['یکشنبه', 'پنجشنبه'], status: 'available' },
+    { id: 10, name: 'دکتر حمید فرهادی', specialty: 'روانپزشکی', specialtyId: 'psychiatry', image: 'https://images.unsplash.com/photo-1582750433449-648ed127fbfe?w=200&h=200&fit=crop', days: ['سه‌شنبه', 'چهارشنبه'], status: 'available' },
   ],
 
   nursingServices: [
     {
+      id: 'nursing-icu',
       title: 'مراقبت از بیماران ICU و CCU در منزل',
       emoji: '🫀',
       price: 'تماس برای هماهنگی',
       description: 'اعزام پرستار مجرب برای مراقبت‌های ویژه بیماران ICU و CCU در منزل، با هماهنگی پزشک معالج.',
       image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&h=320&fit=crop',
+      active: true,
+      items: [
+        {
+          id: 'icu-shift-8',
+          title: 'شیفت ۸ ساعته',
+          priceNum: 850000,
+          price: '۸۵۰,۰۰۰ تومان',
+          unit: 'هر شیفت',
+          active: true,
+        },
+        {
+          id: 'icu-shift-12',
+          title: 'شیفت ۱۲ ساعته',
+          priceNum: 1200000,
+          price: '۱,۲۰۰,۰۰۰ تومان',
+          unit: 'هر شیفت',
+          active: true,
+        },
+      ],
     },
     {
+      id: 'nursing-injection',
       title: 'تزریقات و سایر امور پرستاری در منزل',
       emoji: '💉',
       price: 'تماس برای هماهنگی',
       description: 'اعزام نیروی پرستاری برای تزریقات، سرم‌تراپی و امور پایه مراقبتی در منزل.',
+      active: true,
+      items: [
+        {
+          id: 'injection-iv',
+          title: 'تزریق وریدی',
+          priceNum: 180000,
+          price: '۱۸۰,۰۰۰ تومان',
+          unit: 'هر بار',
+          active: true,
+        },
+        {
+          id: 'injection-serum',
+          title: 'سرم‌تراپی',
+          priceNum: 350000,
+          price: '۳۵۰,۰۰۰ تومان',
+          unit: 'هر جلسه',
+          active: true,
+        },
+      ],
     },
     {
+      id: 'nursing-wound',
       title: 'زخم و امور پانسمان در منزل',
       emoji: '🩹',
       price: 'تماس برای هماهنگی',
       description: 'رسیدگی به زخم، تعویض پانسمان و پیگیری مراقبت‌های مورد نیاز بیمار در منزل.',
+      active: true,
+      items: [
+        {
+          id: 'wound-dressing',
+          title: 'تعویض پانسمان',
+          priceNum: 220000,
+          price: '۲۲۰,۰۰۰ تومان',
+          unit: 'هر بار',
+          active: true,
+        },
+      ],
     },
     {
+      id: 'nursing-equipment',
       title: 'اجاره تجهیزات پزشکی',
       emoji: '🏥',
       price: 'استعلام قیمت',
       description: 'هماهنگی اجاره تجهیزات پزشکی مورد نیاز بیمار با پیگیری کارشناسان پاستور پلاس.',
       image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&h=320&fit=crop',
+      active: true,
+      items: [
+        {
+          id: 'equip-oxygen',
+          title: 'اکسیژن‌ساز قابل حمل',
+          priceNum: 450000,
+          price: '۴۵۰,۰۰۰ تومان',
+          unit: 'ماهانه',
+          active: true,
+        },
+        {
+          id: 'equip-bed',
+          title: 'تخت بیمارستانی',
+          priceNum: 380000,
+          price: '۳۸۰,۰۰۰ تومان',
+          unit: 'ماهانه',
+          active: true,
+        },
+      ],
     },
   ],
 
   laserServices: [
-    { title: 'لیزر موهای زائد', emoji: '✨', price: 'از ۲۵۰,۰۰۰ تومان' },
-    { title: 'جوانسازی پوست', emoji: '🌟', price: 'از ۵۰۰,۰۰۰ تومان' },
-    { title: 'رفع لک و تیرگی', emoji: '💫', price: 'از ۴۰۰,۰۰۰ تومان' },
-    { title: 'لیفت ابرو و پلک', emoji: '👁️', price: 'از ۶۰۰,۰۰۰ تومان' },
+    {
+      id: 'laser-hair',
+      title: 'لیزر موهای زائد',
+      emoji: '✨',
+      price: 'از ۲۵۰,۰۰۰ تومان',
+      priceNum: 250000,
+      description: 'لیزر موهای زائد با دستگاه‌های پیشرفته برای نواحی مختلف بدن',
+      active: true,
+    },
+    {
+      id: 'laser-rejuvenation',
+      title: 'جوانسازی پوست',
+      emoji: '🌟',
+      price: 'از ۵۰۰,۰۰۰ تومان',
+      priceNum: 500000,
+      description: 'جوانسازی و بازسازی پوست با تکنولوژی لیزر',
+      active: true,
+    },
+    {
+      id: 'laser-spots',
+      title: 'رفع لک و تیرگی',
+      emoji: '💫',
+      price: 'از ۴۰۰,۰۰۰ تومان',
+      priceNum: 400000,
+      description: 'درمان لک، تیرگی و ملasma با لیزر',
+      active: true,
+    },
+    {
+      id: 'laser-brow',
+      title: 'لیفت ابرو و پلک',
+      emoji: '👁️',
+      price: 'از ۶۰۰,۰۰۰ تومان',
+      priceNum: 600000,
+      description: 'لیفت و جوانسازی ابرو و پلک',
+      active: true,
+    },
+    {
+      id: 'laser-abdomen',
+      title: 'لیزر شکم',
+      emoji: '🔥',
+      price: 'از ۳۵۰,۰۰۰ تومان',
+      priceNum: 350000,
+      description: 'لیزر موهای زائد ناحیه شکم',
+      active: true,
+    },
+    {
+      id: 'laser-chest',
+      title: 'لیزر سینه',
+      emoji: '💪',
+      price: 'از ۳۵۰,۰۰۰ تومان',
+      priceNum: 350000,
+      description: 'لیزر موهای زائد ناحیه سینه',
+      active: true,
+    },
   ],
 
   products: [
@@ -513,7 +671,9 @@ export const PASTEUR_DATA = {
       priceNum: 1000000,
       loanTermLabel: '۱۵ ماهه',
       loanLimit: 150000000,
+      downPaymentPercent: 30,
       features: [
+        'پیش‌پرداخت ۳۰٪ برای فعال‌سازی وام درمانی',
         'وام درمانی ۱۲٪ تا سقف ۱۵۰ میلیون تومان — بازپرداخت ۱۵ ماهه',
         'پرداخت بخشی از هزینه‌های درمان تا سقف ۵٪',
         'جرم‌گیری سالانه با تخفیف ۳۰٪ برای هر نفر',
@@ -530,7 +690,9 @@ export const PASTEUR_DATA = {
       priceNum: 1600000,
       loanTermLabel: '۲۴ ماهه',
       loanLimit: 300000000,
+      downPaymentPercent: 20,
       features: [
+        'پیش‌پرداخت ۲۰٪ برای فعال‌سازی وام درمانی',
         'وام درمانی ۱۲٪ تا سقف ۳۰۰ میلیون تومان — بازپرداخت ۲۴ ماهه',
         'پرداخت بخشی از هزینه‌های درمان تا سقف ۱۰٪',
         'اسکان رایگان ویژه مشترکین غیربومی',
@@ -631,22 +793,39 @@ export const PASTEUR_DATA = {
   ],
 
   consultationTypes: [
-    { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی در بستر اپلیکیشن' },
-    { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس داخل اپلیکیشن برای بررسی تخصصی' },
-    { id: 'video', label: 'ویزیت تصویری / تلفنی', emoji: '🎥', desc: 'اولویت با بستر اپلیکیشن؛ در صورت نیاز از روبیکا هماهنگ می‌شود' },
-    { id: 'phone', label: 'ویزیت تلفنی', emoji: '☎️', desc: 'هماهنگی تماس تلفنی با پزشک یا کارشناس مربوطه' },
+    { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی در بستر اپلیکیشن', priceNum: 120000, price: '۱۲۰,۰۰۰ تومان' },
+    { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس داخل اپلیکیشن برای بررسی تخصصی', priceNum: 150000, price: '۱۵۰,۰۰۰ تومان' },
+    { id: 'video', label: 'ویزیت تصویری / تلفنی', emoji: '🎥', desc: 'اولویت با بستر اپلیکیشن؛ در صورت نیاز از روبیکا هماهنگ می‌شود', priceNum: 350000, price: '۳۵۰,۰۰۰ تومان' },
+    { id: 'phone', label: 'ویزیت تلفنی', emoji: '☎️', desc: 'هماهنگی تماس تلفنی با پزشک یا کارشناس مربوطه', priceNum: 250000, price: '۲۵۰,۰۰۰ تومان' },
   ],
 
   consultationCategories: [
-    { id: 'dental', label: 'دندانپزشکی', estimate: '۳۵۰,۰۰۰ — ۲,۰۰۰,۰۰۰ تومان', service: 'ویزیت یا درمان دندان' },
-    { id: 'medical', label: 'پزشکی عمومی', estimate: '۲۵۰,۰۰۰ — ۸۰۰,۰۰۰ تومان', service: 'مشاوره یا ویزیت آنلاین پزشکی عمومی' },
-    { id: 'medical-specialty', label: 'پزشکی تخصصی', estimate: 'پس از بررسی تخصص مشخص می‌شود', service: 'مشاوره یا ویزیت تخصصی پزشکی' },
-    { id: 'medical-home', label: 'ویزیت پزشک در منزل', estimate: 'پس از هماهنگی کارشناس اعلام می‌شود', service: 'اعزام پزشک یا هماهنگی ویزیت در منزل' },
-    { id: 'dental-home', label: 'اعزام دندانپزشک به منزل', estimate: 'پس از بررسی شرایط بیمار اعلام می‌شود', service: 'اعزام دندانپزشک به منزل' },
-    { id: 'dental-corporate', label: 'اعزام دندانپزشک به مجموعه طرف قرارداد', estimate: 'بر اساس تعداد نفرات و محل مجموعه اعلام می‌شود', service: 'اعزام دندانپزشک به مجموعه‌های طرف قرارداد' },
-    { id: 'laser', label: 'لیزر و زیبایی', estimate: '۴۰۰,۰۰۰ — ۳,۰۰۰,۰۰۰ تومان', service: 'جلسه لیزر یا زیبایی' },
-    { id: 'nursing', label: 'پرستاری', estimate: '۱۵۰,۰۰۰ — ۵۰۰,۰۰۰ تومان', service: 'خدمات پرستاری' },
+    { id: 'dental', label: 'دندانپزشکی', estimate: '۳۵۰,۰۰۰ — ۲,۰۰۰,۰۰۰ تومان', estimateMin: 350000, service: 'ویزیت یا درمان دندان' },
+    { id: 'medical', label: 'پزشکی عمومی', estimate: '۲۵۰,۰۰۰ — ۸۰۰,۰۰۰ تومان', estimateMin: 250000, service: 'مشاوره یا ویزیت آنلاین پزشکی عمومی' },
+    { id: 'medical-specialty', label: 'پزشکی تخصصی', estimate: 'از ۲۵۰,۰۰۰ تومان', estimateMin: 250000, service: 'مشاوره یا ویزیت تخصصی پزشکی' },
+    { id: 'medical-home', label: 'ویزیت پزشک در منزل', estimate: 'از ۵۰۰,۰۰۰ تومان', estimateMin: 500000, service: 'اعزام پزشک یا هماهنگی ویزیت در منزل' },
+    { id: 'dental-home', label: 'اعزام دندانپزشک به منزل', estimate: 'از ۴۰۰,۰۰۰ تومان', estimateMin: 400000, service: 'اعزام دندانپزشک به منزل' },
+    { id: 'dental-corporate', label: 'اعزام دندانپزشک به مجموعه طرف قرارداد', estimate: 'از ۶۰۰,۰۰۰ تومان', estimateMin: 600000, service: 'اعزام دندانپزشک به مجموعه‌های طرف قرارداد' },
+    { id: 'laser', label: 'لیزر و زیبایی', estimate: '۴۰۰,۰۰۰ — ۳,۰۰۰,۰۰۰ تومان', estimateMin: 400000, service: 'جلسه لیزر یا زیبایی' },
+    { id: 'nursing', label: 'پرستاری', estimate: '۱۵۰,۰۰۰ — ۵۰۰,۰۰۰ تومان', estimateMin: 150000, service: 'خدمات پرستاری' },
   ],
+
+  specialtyTariffs: {
+    urology: { text: 140000, image: 170000, video: 380000, phone: 290000 },
+    infectious: { text: 130000, image: 160000, video: 340000, phone: 270000 },
+    cardiology: { text: 160000, image: 190000, video: 420000, phone: 320000 },
+    pediatrics: { text: 125000, image: 155000, video: 330000, phone: 260000 },
+    internal: { text: 120000, image: 150000, video: 350000, phone: 250000 },
+    surgery: { text: 180000, image: 210000, video: 450000, phone: 350000 },
+    orthopedics: { text: 150000, image: 180000, video: 400000, phone: 310000 },
+    dermatology: { text: 140000, image: 170000, video: 370000, phone: 285000 },
+    neurology: { text: 170000, image: 200000, video: 430000, phone: 330000 },
+    psychiatry: { text: 155000, image: 185000, video: 390000, phone: 300000 },
+  },
+
+  settings: {
+    dentalReservationFee: 200000,
+  },
 
   galleryItems: [
     {

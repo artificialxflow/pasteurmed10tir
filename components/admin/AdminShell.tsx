@@ -12,6 +12,8 @@ const links = [
   { href: ROUTES.admin.consultations, label: "مشاوره‌ها" },
   { href: ROUTES.admin.reminders, label: "یادآورها" },
   { href: ROUTES.admin.services, label: "سرویس‌ها" },
+  { href: ROUTES.admin.laserServices, label: "لیزر" },
+  { href: ROUTES.admin.nursingServices, label: "پرستاری" },
   { href: ROUTES.admin.club, label: "باشگاه" },
   { href: ROUTES.admin.gallery, label: "گالری" },
   { href: ROUTES.admin.visitors, label: "ویزیتورها" },
@@ -20,6 +22,8 @@ const links = [
   { href: ROUTES.admin.partners, label: "همکاری‌ها" },
   { href: ROUTES.admin.doctors, label: "پزشکان" },
   { href: ROUTES.admin.memberships, label: "عضویت‌ها" },
+  { href: ROUTES.admin.consultationPrices, label: "قیمت مشاوره" },
+  { href: ROUTES.admin.wallets, label: "کیف اعتبار" },
   { href: ROUTES.admin.shop, label: "فروشگاه" },
 ];
 
@@ -32,6 +36,8 @@ function titleFromPath(pathname: string) {
       [ROUTES.admin.consultations]: "درخواست‌های مشاوره و ویزیت",
       [ROUTES.admin.reminders]: "یادآورهای هوشمند",
       [ROUTES.admin.services]: "مدیریت سرویس‌ها",
+      [ROUTES.admin.laserServices]: "مدیریت خدمات لیزر",
+      [ROUTES.admin.nursingServices]: "مدیریت خدمات پرستاری",
       [ROUTES.admin.club]: "باشگاه مشتریان",
       [ROUTES.admin.gallery]: "مدیریت گالری نتایج",
       [ROUTES.admin.visitors]: "مدیریت ویزیتورها و کد معرف",
@@ -40,6 +46,8 @@ function titleFromPath(pathname: string) {
       [ROUTES.admin.partners]: "درخواست‌های همکاری",
       [ROUTES.admin.doctors]: "مدیریت پزشکان",
       [ROUTES.admin.memberships]: "مدیریت عضویت",
+      [ROUTES.admin.consultationPrices]: "قیمت مشاوره و تعرفه تخصصی",
+      [ROUTES.admin.wallets]: "مدیریت کیف اعتبار",
       [ROUTES.admin.shop]: "مدیریت فروشگاه",
     };
     return map[match.href] || match.label;

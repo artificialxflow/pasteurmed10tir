@@ -2,6 +2,7 @@
  * پرداخت mock — پاستور پلاس
  */
 import { PasteurStorage, type Booking } from './storage';
+import { planIdToWalletKinds } from './wallet';
 
 export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip';
 
@@ -115,6 +116,8 @@ export const PaymentFlow = {
         patientName: pending.patientName,
         patientPhone: pending.patientPhone,
         amount: pending.amount,
+        isDeposit: true,
+        depositNonRefundable: true,
         status: 'confirmed',
         createdAt: new Date().toISOString(),
         dateLabel: new Date().toLocaleDateString('fa-IR'),
@@ -136,6 +139,7 @@ export const PaymentFlow = {
     } else if (pending.planId === 'shop-vip') {
       PasteurStorage.activateShopVip(pending.patientPhone);
       PasteurStorage.setShopCustomerType('vip', pending.patientPhone || '');
+      PasteurStorage.upgradeWalletForUser(pending.patientPhone, planIdToWalletKinds('shop-vip'));
       if (pending.referralCode) {
         PasteurStorage.saveCommission({
           referralCode: pending.referralCode,
@@ -160,9 +164,10 @@ export const PaymentFlow = {
         status: 'paid',
         createdAt: new Date().toISOString(),
       });
-      if (pending.planId === 'vip' || pending.planId === 'shop-vip') {
-        PasteurStorage.activateShopVip(pending.patientPhone);
-      }
+      PasteurStorage.upgradeWalletForUser(
+        pending.patientPhone,
+        planIdToWalletKinds(String(pending.planId || 'regular')),
+      );
       if (pending.referralCode) {
         PasteurStorage.saveCommission({
           referralCode: pending.referralCode,

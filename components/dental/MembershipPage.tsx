@@ -8,7 +8,7 @@ import {
   FormSelect,
   FormTextarea,
 } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
+import { PASTEUR_DATA, type Membership } from "@/lib/data";
 import {
   calculateLoan,
   formatRial,
@@ -83,14 +83,17 @@ const INITIAL_FORM: ApplicationForm = {
 export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   const router = useRouter();
   const app = isAppDental(basePath);
-  const plans = useMemo(() => getMembershipPlans(), []);
+  const [form, setForm] = useState<ApplicationForm>(INITIAL_FORM);
+  const [membershipPlans, setMembershipPlans] = useState<Membership[]>(() =>
+    getMembershipPlans(),
+  );
   const durationOptions = useMemo(() => getDurationOptions(), []);
   const confirmHref = app ? ROUTES.app.dentalConfirm : ROUTES.web.dentalConfirm;
   const returnHref = app ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership;
   const successHref = app ? ROUTES.app.dentalSuccess : ROUTES.web.dentalSuccess;
   const dentalHref = app ? ROUTES.app.dental : ROUTES.web.dental;
 
-  const [form, setForm] = useState<ApplicationForm>(INITIAL_FORM);
+  const plans = membershipPlans;
   const [loanTier, setLoanTier] = useState<MembershipTier>("regular");
   const [loanAmount, setLoanAmount] = useState("50000000");
   const [loanMonths, setLoanMonths] = useState(15);
@@ -106,11 +109,25 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     referral: "",
   });
 
-  const monthOptions = useMemo(() => getLoanMonthOptions(loanTier), [loanTier]);
-  const loanResult = useMemo(
-    () => calculateLoan({ tier: loanTier, amount: loanAmount, months: loanMonths }),
-    [loanTier, loanAmount, loanMonths],
+  const monthOptions = useMemo(
+    () => getLoanMonthOptions(loanTier, membershipPlans),
+    [loanTier, membershipPlans],
   );
+  const loanResult = useMemo(
+    () =>
+      calculateLoan({
+        tier: loanTier,
+        amount: loanAmount,
+        months: loanMonths,
+        plans: membershipPlans,
+      }),
+    [loanTier, loanAmount, loanMonths, membershipPlans],
+  );
+
+  useEffect(() => {
+    PasteurStorage.initMembershipPlansIfNeeded();
+    setMembershipPlans(PasteurStorage.getMembershipPlans());
+  }, []);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -229,7 +246,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const unit = getUnitPrice(quick.tier, quick.planId);
     const membershipDurationLabel = getValidityLabel(quick.tier, quick.planId);
     const plan = durationOptions.find((p) => p.id === quick.planId);
-    const membership = PASTEUR_DATA.memberships.find((m) => m.id === quick.tier);
+    const membership = membershipPlans.find((m) => m.id === quick.tier);
     if (name.length < 2 || normalizePhone(phone).length < 10) {
       setError("اطلاعات را کامل وارد کنید.");
       return;
@@ -320,6 +337,17 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             >
               بازپرداخت وام درمانی: {m.loanTermLabel} — سقف {formatToman(m.loanLimit)}
             </p>
+            <p
+              className={cn(
+                "mb-4 rounded-xl border px-3 py-2 text-center text-xs font-bold",
+                m.id === "vip"
+                  ? "border-amber-200 bg-amber-100/60 text-amber-800"
+                  : "border-cyan-200 bg-cyan-100/60 text-cyan-800",
+              )}
+            >
+              پیش‌پرداخت {m.downPaymentPercent.toLocaleString("fa-IR")}٪ — مثال برای ۵۰
+              میلیون: {formatToman(Math.round(50000000 * m.downPaymentPercent / 100))}
+            </p>
             {!app ? (
               <>
                 <ul className="mb-4 flex-1 space-y-2 text-sm text-slate-600">
@@ -404,7 +432,8 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               محاسبه‌گر اقساط وام درمانی
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              سود وام ۱۲٪ است؛ سقف و مدت بازپرداخت بر اساس طرح عادی یا VIP کنترل می‌شود.
+              سود وام ۱۲٪ است؛ پیش‌پرداخت از مبلغ وام کسر شده و اقساط روی مانده محاسبه
+              می‌شود.
             </p>
           </div>
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
@@ -452,10 +481,22 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             </div>
           </div>
         </div>
-        <div className={cn("mt-5 grid gap-3", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3")}>
+        <div className={cn("mt-5 grid gap-3", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-5")}>
           <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
             <p className="text-xs text-slate-500">سقف وام {loanResult.plan.name}</p>
             <p className="mt-1 font-extrabold text-cyan-800">{formatToman(loanResult.limit)}</p>
+          </div>
+          <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4">
+            <p className="text-xs text-slate-500">
+              پیش‌پرداخت ({loanResult.downPaymentPercent.toLocaleString("fa-IR")}٪)
+            </p>
+            <p className="mt-1 font-extrabold text-violet-800">
+              {formatToman(loanResult.downPaymentAmount)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4">
+            <p className="text-xs text-slate-500">مانده وام (پس از پیش‌پرداخت)</p>
+            <p className="mt-1 font-extrabold text-sky-800">{formatToman(loanResult.remaining)}</p>
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
             <p className="text-xs text-slate-500">جمع بازپرداخت با سود ۱۲٪</p>
@@ -822,7 +863,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-[1.25rem] border border-sky-200 bg-white p-6">
             <h2 className="mb-4 text-xl font-bold">
-              عضویت {PASTEUR_DATA.memberships.find((m) => m.id === quick.tier)?.name}
+              عضویت {membershipPlans.find((m) => m.id === quick.tier)?.name}
             </h2>
             <form onSubmit={submitQuick} className="space-y-4">
               <div>
@@ -885,7 +926,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 />
               </div>
               <p className="text-xs text-slate-500">
-                {PASTEUR_DATA.memberships.find((m) => m.id === quick.tier)?.terms}
+                {membershipPlans.find((m) => m.id === quick.tier)?.terms}
               </p>
               {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
               <div className="flex gap-3">

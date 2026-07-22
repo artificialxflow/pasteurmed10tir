@@ -1,8 +1,10 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { Button } from "@/components/ui/Button";
+import { Card, FormInput } from "@/components/ui/Card";
 import { PasteurStorage, type Booking } from "@/lib/storage";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
 type Filter = "all" | "visit" | "treatment";
@@ -10,6 +12,7 @@ type Filter = "all" | "visit" | "treatment";
 export default function AdminBookingsPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reservationFee, setReservationFee] = useState(200000);
 
   function reload(type: Filter = filter) {
     let list = PasteurStorage.getBookings();
@@ -18,17 +21,68 @@ export default function AdminBookingsPage() {
   }
 
   useEffect(() => {
+    PasteurStorage.initSettingsIfNeeded();
+    setReservationFee(PasteurStorage.getDentalReservationFee());
     reload("all");
   }, []);
 
   function cancelBooking(id: string) {
-    if (!window.confirm("آیا از لغو این رزرو مطمئن هستید؟")) return;
-    PasteurStorage.updateBooking(id, { status: "cancelled" });
+    if (
+      !window.confirm(
+        "آیا از لغو این رزرو مطمئن هستید؟ بیعانه پرداخت‌شده قابل استرداد نیست.",
+      )
+    ) {
+      return;
+    }
+    PasteurStorage.updateBooking(id, {
+      status: "cancelled",
+      depositNonRefundable: true,
+    });
     reload(filter);
+  }
+
+  function saveReservationFee() {
+    PasteurStorage.saveSettings({
+      dentalReservationFee: Number(reservationFee || 0),
+    });
+    setReservationFee(PasteurStorage.getDentalReservationFee());
+  }
+
+  function resetReservationFee() {
+    PasteurStorage.resetSettings();
+    setReservationFee(PasteurStorage.getDentalReservationFee());
   }
 
   return (
     <div className="space-y-6">
+      <Card hover={false} className="p-5">
+        <h2 className="mb-3 text-lg font-bold">تنظیمات بیعانه رزرو دندان</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          مبلغ ثابت بیعانه رزرو نوبت (غیرقابل استرداد هنگام لغو).
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-slate-600">
+              مبلغ بیعانه (تومان)
+            </label>
+            <FormInput
+              type="number"
+              min={0}
+              value={reservationFee}
+              onChange={(e) => setReservationFee(Number(e.target.value || 0))}
+              className="max-w-[200px]"
+            />
+          </div>
+          <Button onClick={saveReservationFee}>ذخیره</Button>
+          <Button variant="outline" onClick={resetReservationFee}>
+            پیش‌فرض (۲۰۰,۰۰۰)
+          </Button>
+        </div>
+        <p className="mt-3 text-xs text-amber-700">
+          مقدار فعلی در جریان رزرو: {formatPrice(reservationFee)}
+        </p>
+      </Card>
+
       <div className="flex flex-wrap gap-2">
         {(
           [
@@ -57,7 +111,7 @@ export default function AdminBookingsPage() {
       </div>
 
       <AdminTable
-        headers={["کد", "مراجع", "پزشک", "نوع", "زمان", "مبلغ", "وضعیت", "عملیات"]}
+        headers={["کد", "مراجع", "پزشک", "نوع", "زمان", "بیعانه", "وضعیت", "عملیات"]}
         empty="رزروی ثبت نشده است."
       >
         {bookings.map((b) => (
@@ -69,7 +123,15 @@ export default function AdminBookingsPage() {
             <td className="px-4 py-3">
               {b.day} — {b.timeLabel}
             </td>
-            <td className="px-4 py-3">{(b.amount || 0).toLocaleString("fa-IR")}</td>
+            <td className="px-4 py-3">
+              {(b.amount || 0).toLocaleString("fa-IR")}
+              {b.isDeposit ? (
+                <>
+                  <br />
+                  <span className="text-xs text-amber-700">بیعانه</span>
+                </>
+              ) : null}
+            </td>
             <td className="px-4 py-3">
               <AdminBadge
                 tone={
@@ -83,7 +145,9 @@ export default function AdminBookingsPage() {
                 {b.status === "confirmed"
                   ? "تأیید"
                   : b.status === "cancelled"
-                    ? "لغو"
+                    ? b.depositNonRefundable
+                      ? "لغو — بدون عودت"
+                      : "لغو"
                     : "در انتظار"}
               </AdminBadge>
             </td>

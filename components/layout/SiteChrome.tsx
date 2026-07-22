@@ -1,7 +1,6 @@
 "use client";
 
 import { Logo } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -77,10 +76,6 @@ export function SiteHeader() {
               </Link>
             ))}
           </nav>
-
-          <Button href={ROUTES.web.shopVip} variant="accent" className="hidden shrink-0 py-2 text-sm sm:inline-flex">
-            💎 VIP تجهیزات
-          </Button>
 
           <button
             type="button"

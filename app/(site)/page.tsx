@@ -265,6 +265,13 @@ export default function HomePage() {
                 hover: "hover:border-amber-500",
               },
               {
+                href: ROUTES.web.wallet,
+                emoji: "💳",
+                title: "کیف اعتبار",
+                desc: "سقف اعتبار و شرایط بازپرداخت",
+                hover: "hover:border-emerald-500",
+              },
+              {
                 href: ROUTES.web.reminders,
                 emoji: "🔔",
                 title: "یادآور هوشمند",

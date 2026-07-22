@@ -15,6 +15,9 @@ import { useState } from "react";
 
 type Variant = "web" | "app";
 
+const INSTAGRAM_URL = "https://instagram.com/pastor.beauty.tbz";
+const INSTAGRAM_USERNAME = "pastor.beauty.tbz";
+
 function digitsOnly(value: string) {
   return value.replace(/[^\d]/g, "");
 }
@@ -57,7 +60,22 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
     showMessage(`پاداش «${reward.title}» با موفقیت فعال شد!`);
   }
 
+  function recordBrush() {
+    if (!currentPhone || !profile) {
+      showMessage("ابتدا شماره موبایل باشگاه را وارد کنید.");
+      return;
+    }
+    const result = PasteurStorage.recordBrush(currentPhone);
+    if (!result.ok) {
+      showMessage(result.error);
+      return;
+    }
+    setProfile({ ...result.profile });
+    showMessage("مسواک شما ثبت شد! +۵ امتیاز");
+  }
+
   const tier = profile ? PasteurStorage.getClubTier(profile.points) : null;
+  const brushStatus = profile ? PasteurStorage.getBrushStatus(profile) : null;
   const isApp = variant === "app";
 
   return (
@@ -153,6 +171,56 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
             </Card>
           </div>
 
+          <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
+            <Card hover={false} className="p-5">
+              <h2 className="mb-2 text-lg font-bold">
+                {isApp ? "مسواک زدم" : "🪥 مسواک زدم"}
+              </h2>
+              <p className="mb-4 text-sm leading-7 text-slate-600">
+                با ثبت مسواک روزانه، هر بار {Number(5).toLocaleString("fa-IR")} امتیاز بگیرید.
+                حداکثر {Number(3).toLocaleString("fa-IR")} بار در روز و با فاصله حداقل ۸ ساعت.
+              </p>
+              {brushStatus ? (
+                <p className="mb-4 text-sm font-bold text-teal-700">
+                  امروز: {brushStatus.brushesToday.toLocaleString("fa-IR")} از{" "}
+                  {brushStatus.maxPerDay.toLocaleString("fa-IR")} بار
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                disabled={!brushStatus?.canBrush}
+                onClick={recordBrush}
+              >
+                مسواک زدم (+۵ امتیاز)
+              </Button>
+              {brushStatus && !brushStatus.canBrush && brushStatus.errorMessage ? (
+                <p className="mt-3 text-sm font-bold text-amber-800">{brushStatus.errorMessage}</p>
+              ) : null}
+            </Card>
+
+            <Card hover={false} className="p-5">
+              <h2 className="mb-2 text-lg font-bold">
+                {isApp ? "اینستاگرام پاستور" : "📸 اینستاگرام پاستور"}
+              </h2>
+              <p className="mb-4 text-sm leading-7 text-slate-600">
+                برای دیدن نمونه کارها، اخبار و پیشنهادهای ویژه، پیج ما را در اینستاگرام دنبال
+                کنید.
+              </p>
+              <p className="mb-4 rounded-xl border border-pink-100 bg-pink-50 p-3 text-sm font-bold text-pink-800">
+                @{INSTAGRAM_USERNAME}
+              </p>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-slate-900 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-50 sm:w-auto"
+              >
+                مشاهده پیج اینستاگرام
+              </a>
+            </Card>
+          </div>
+
           <div>
             <h2 className="mb-4 text-lg font-bold">{isApp ? "پاداش‌ها" : "🎁 پاداش‌های قابل دریافت"}</h2>
             <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
@@ -228,9 +296,17 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                 </Card>
               </>
             ) : (
-              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
-                کد دعوت: PLUS-{currentPhone.slice(-4)}
-              </p>
+              <>
+                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
+                  کد دعوت: PLUS-{currentPhone.slice(-4)}
+                </p>
+                <Card hover={false} className="border-emerald-200 bg-emerald-50 p-4 text-center">
+                  <p className="mb-3 text-sm text-slate-700">کیف اعتبار (جدا از امتیاز)</p>
+                  <Button href={ROUTES.app.wallet} className="w-full">
+                    مشاهده کیف اعتبار
+                  </Button>
+                </Card>
+              </>
             )}
           </div>
 
@@ -272,6 +348,11 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
 
           {!isApp ? (
             <>
+              <Card hover={false} className="border-emerald-200 bg-emerald-50 p-5 text-center">
+                <p className="mb-3 text-slate-700">اعتبار مصرفی (تومان) — جدا از امتیاز باشگاه</p>
+                <Button href={ROUTES.web.wallet}>مشاهده کیف اعتبار</Button>
+              </Card>
+
               <Card hover={false} className="border-slate-200 bg-slate-50 p-5">
                 <h2 className="mb-4 text-lg font-bold">📌 قوانین باشگاه</h2>
                 <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-3">

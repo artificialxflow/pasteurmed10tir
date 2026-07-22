@@ -1,8 +1,10 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
-import { Card } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
+import { Button } from "@/components/ui/Button";
+import { Card, FormInput } from "@/components/ui/Card";
+import { type Membership } from "@/lib/data";
+import { formatToman } from "@/lib/membership";
 import { PasteurStorage, type Member } from "@/lib/storage";
 import { useEffect, useState } from "react";
 
@@ -23,11 +25,40 @@ type Application = Record<string, unknown> & {
 export default function AdminMembershipsPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [plans, setPlans] = useState<Membership[]>([]);
+
+  function reloadPlans() {
+    PasteurStorage.initMembershipPlansIfNeeded();
+    setPlans(PasteurStorage.getMembershipPlans().map((p) => ({ ...p, features: [...p.features] })));
+  }
 
   useEffect(() => {
     setMembers(PasteurStorage.getMembers());
     setApplications(PasteurStorage.getMembershipApplications() as Application[]);
+    reloadPlans();
   }, []);
+
+  function updatePlan(index: number, patch: Partial<Membership>) {
+    setPlans((prev) =>
+      prev.map((plan, i) => (i === index ? { ...plan, ...patch } : plan)),
+    );
+  }
+
+  function savePlans() {
+    const cleaned = plans.map((plan) => ({
+      ...plan,
+      loanLimit: Number(plan.loanLimit || 0),
+      downPaymentPercent: Number(plan.downPaymentPercent || 0),
+      loanTermLabel: String(plan.loanTermLabel || "").trim(),
+    }));
+    PasteurStorage.saveMembershipPlans(cleaned);
+    reloadPlans();
+  }
+
+  function resetPlans() {
+    PasteurStorage.resetMembershipPlans();
+    reloadPlans();
+  }
 
   return (
     <div className="space-y-8">
@@ -102,19 +133,66 @@ export default function AdminMembershipsPage() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-bold">طرح‌های عضویت</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PASTEUR_DATA.memberships.map((m) => (
-            <Card key={m.id} hover={false} className="p-4">
-              <h3 className="font-bold">{m.name}</h3>
-              <p className="my-2 font-bold text-teal-700">{m.price} تومان</p>
-              <p className="mb-2 text-xs font-bold text-slate-500">
-                بازپرداخت وام: {m.loanTermLabel || "—"}
-              </p>
-              <p className="text-xs text-slate-500">{m.terms}</p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-bold">تنظیمات طرح‌های عضویت</h2>
+          <button
+            type="button"
+            onClick={resetPlans}
+            className="rounded-full border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-white"
+          >
+            بازنشانی به پیش‌فرض
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {plans.map((plan, index) => (
+            <Card key={plan.id} hover={false} className="p-4">
+              <h3 className="mb-3 font-bold">
+                {plan.name} ({plan.id})
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="mb-1 text-xs font-bold text-slate-500">مدت بازپرداخت وام</p>
+                  <FormInput
+                    value={plan.loanTermLabel || ""}
+                    onChange={(e) => updatePlan(index, { loanTermLabel: e.target.value })}
+                    placeholder="مثلاً ۱۵ ماهه"
+                  />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-bold text-slate-500">سقف وام (تومان)</p>
+                  <FormInput
+                    type="number"
+                    min={0}
+                    value={plan.loanLimit ?? 0}
+                    onChange={(e) =>
+                      updatePlan(index, { loanLimit: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-bold text-slate-500">درصد پیش‌پرداخت</p>
+                  <FormInput
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={plan.downPaymentPercent ?? 0}
+                    onChange={(e) =>
+                      updatePlan(index, { downPaymentPercent: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  حق عضویت: {plan.price} تومان — مثال پیش‌پرداخت برای ۵۰ میلیون:{" "}
+                  {formatToman(Math.round(50000000 * (plan.downPaymentPercent || 0) / 100))}
+                </p>
+                <p className="text-xs text-slate-500">{plan.terms}</p>
+              </div>
             </Card>
           ))}
         </div>
+        <Button type="button" className="mt-4" onClick={savePlans}>
+          ذخیره تنظیمات طرح‌ها
+        </Button>
       </div>
     </div>
   );

@@ -32,6 +32,8 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
 
   const kind = payment?.kind;
   const planId = payment?.planId;
+  const showWalletLink = kind === "membership" || planId === "shop-vip";
+  const walletHref = app ? ROUTES.app.wallet : ROUTES.web.wallet;
 
   let title = "پرداخت با موفقیت انجام شد!";
   let desc = "اطلاعات شما ثبت شد و کارشناسان پاستور پلاس پیگیری می‌کنند.";
@@ -43,9 +45,11 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
   if (kind === "booking") {
     title = app ? "رزرو ثبت شد" : "رزرو با موفقیت ثبت شد!";
     desc = app
-      ? "پیامک تأیید ارسال خواهد شد. +۵۰ امتیاز باشگاه"
-      : "پیامک تأیید به شماره موبایل شما ارسال خواهد شد.";
-    badge = "+۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁";
+      ? "بیعانه رزرو پرداخت شد. هزینه ویزیت یا درمان در مطب جداگانه هماهنگ می‌شود."
+      : "بیعانه رزرو شما پرداخت شد. هزینه کامل ویزیت یا درمان در مطب جداگانه هماهنگ می‌شود.";
+    badge = app
+      ? `بیعانه ${formatPrice(Number(payment?.amount) || 0)} ثبت شد. +۵۰ امتیاز باشگاه`
+      : `بیعانه ${formatPrice(Number(payment?.amount) || 0)} ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁`;
     primaryLabel = "رزرو جدید";
     primaryHref = `${basePath}/general`;
     showReminder = true;
@@ -77,6 +81,11 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
         <Button href={primaryHref} className="w-full">
           {primaryLabel}
         </Button>
+        {showWalletLink ? (
+          <Button href={walletHref} variant="outline" className="w-full">
+            مشاهده کیف اعتبار
+          </Button>
+        ) : null}
         {showReminder ? (
           <Link
             href={ROUTES.app.reminders}
@@ -115,6 +124,11 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
 
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
           <Button href={primaryHref}>{primaryLabel}</Button>
+          {showWalletLink ? (
+            <Button href={walletHref} variant="outline">
+              مشاهده کیف اعتبار
+            </Button>
+          ) : null}
           <Button href={ROUTES.web.club} variant="outline" className="border-amber-300 text-amber-800">
             باشگاه مشتریان
           </Button>

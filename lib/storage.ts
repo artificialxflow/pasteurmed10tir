@@ -4,13 +4,46 @@
 import {
   PASTEUR_DATA,
   type ClubTier,
+  type ConsultationType,
   type GalleryItem,
+  type LaserService,
+  type Membership,
+  type NursingService,
+  type PasteurSettings,
   type Product,
   type Service,
+  type SpecialtyTariffs,
   type Visitor,
 } from './data';
+import {
+  computeWalletCeiling,
+  DEFAULT_WALLET_SETTINGS,
+  type Wallet,
+  type WalletKind,
+  type WalletSettings,
+  type WalletStatus,
+  type WalletTransaction,
+  type WalletTransactionStatus,
+  type WalletTransactionType,
+} from './wallet';
 
-export type { ClubTier, GalleryItem, Product, Service, Visitor };
+export type {
+  ClubTier,
+  GalleryItem,
+  LaserService,
+  Membership,
+  NursingService,
+  Product,
+  Service,
+  Visitor,
+  Wallet,
+  WalletKind,
+  WalletSettings,
+  WalletStatus,
+  WalletTransaction,
+  WalletTransactionStatus,
+  WalletTransactionType,
+};
 
 export type Booking = {
   id: string;
@@ -25,6 +58,8 @@ export type Booking = {
   patientName?: string;
   patientPhone?: string;
   amount?: number;
+  isDeposit?: boolean;
+  depositNonRefundable?: boolean;
   status?: string;
   createdAt?: string;
   dateLabel?: string;
@@ -97,8 +132,94 @@ export type ClubProfile = {
   referredPhones: string[];
   redeemed: unknown[];
   history: ClubHistoryItem[];
+  brushHistory?: string[];
   [key: string]: unknown;
 };
+
+export type BrushStatus = {
+  canBrush: boolean;
+  brushesToday: number;
+  maxPerDay: number;
+  remainingCooldownMs: number | null;
+  errorMessage: string | null;
+};
+
+export type BrushResult =
+  | { ok: true; profile: ClubProfile }
+  | { ok: false; error: string };
+
+const BRUSH_POINTS = 5;
+const BRUSH_MAX_PER_DAY = 3;
+const BRUSH_COOLDOWN_MS = 8 * 60 * 60 * 1000;
+
+function localDayKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function normalizeBrushHistory(profile: ClubProfile): string[] {
+  if (!Array.isArray(profile.brushHistory)) return [];
+  return profile.brushHistory.filter((entry) => typeof entry === 'string');
+}
+
+function formatBrushRemainingTime(ms: number): string {
+  const totalMinutes = Math.ceil(ms / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) {
+    return `${hours.toLocaleString('fa-IR')} ساعت و ${minutes.toLocaleString('fa-IR')} دقیقه`;
+  }
+  if (hours > 0) {
+    return `${hours.toLocaleString('fa-IR')} ساعت`;
+  }
+  return `${minutes.toLocaleString('fa-IR')} دقیقه`;
+}
+
+function getBrushStatusForProfile(profile: ClubProfile, now = new Date()): BrushStatus {
+  const brushHistory = normalizeBrushHistory(profile);
+  const todayKey = localDayKey(now);
+  const brushesToday = brushHistory.filter(
+    (iso) => localDayKey(new Date(iso)) === todayKey,
+  ).length;
+
+  if (brushesToday >= BRUSH_MAX_PER_DAY) {
+    return {
+      canBrush: false,
+      brushesToday,
+      maxPerDay: BRUSH_MAX_PER_DAY,
+      remainingCooldownMs: null,
+      errorMessage: `سقف روزانه (${BRUSH_MAX_PER_DAY.toLocaleString('fa-IR')} بار) تکمیل شده است. فردا دوباره امتحان کنید.`,
+    };
+  }
+
+  const lastBrushAt = brushHistory.length
+    ? new Date(brushHistory[brushHistory.length - 1]!).getTime()
+    : null;
+
+  if (lastBrushAt !== null) {
+    const elapsed = now.getTime() - lastBrushAt;
+    const remaining = BRUSH_COOLDOWN_MS - elapsed;
+    if (remaining > 0) {
+      return {
+        canBrush: false,
+        brushesToday,
+        maxPerDay: BRUSH_MAX_PER_DAY,
+        remainingCooldownMs: remaining,
+        errorMessage: `حداقل ۸ ساعت بین هر «مسواک زدم» لازم است. ${formatBrushRemainingTime(remaining)} دیگر صبر کنید.`,
+      };
+    }
+  }
+
+  return {
+    canBrush: true,
+    brushesToday,
+    maxPerDay: BRUSH_MAX_PER_DAY,
+    remainingCooldownMs: null,
+    errorMessage: null,
+  };
+}
 
 export type ShopCartItem = {
   id: string | number;
@@ -136,6 +257,12 @@ export const KEYS = {
   club: 'pasteur_club',
   gallery: 'pasteur_gallery',
   services: 'pasteur_services',
+  laserServices: 'pasteur_laser_services',
+  membershipPlans: 'pasteur_membership_plans',
+  nursingServices: 'pasteur_nursing_services',
+  consultationTypes: 'pasteur_consultation_types',
+  specialtyTariffs: 'pasteur_specialty_tariffs',
+  settings: 'pasteur_settings',
   visitors: 'pasteur_visitors',
   commissions: 'pasteur_commissions',
   facilityRequests: 'pasteur_facility_requests',
@@ -149,6 +276,8 @@ export const KEYS = {
   shopCart: 'pasteur_app_shop_cart',
   shopCustomerType: 'pasteur_app_shop_customer_type',
   shopVipPhone: 'pasteur_app_shop_vip_phone',
+  walletSettings: 'pasteur_wallet_settings',
+  wallets: 'pasteur_wallets',
 } as const;
 
 export const PasteurStorage = {
@@ -685,6 +814,7 @@ export const PasteurStorage = {
       : [];
     all[key].redeemed = Array.isArray(all[key].redeemed) ? all[key].redeemed : [];
     all[key].history = Array.isArray(all[key].history) ? all[key].history : [];
+    all[key].brushHistory = normalizeBrushHistory(all[key]);
     return all[key];
   },
 
@@ -701,6 +831,34 @@ export const PasteurStorage = {
     profile.points += points;
     profile.history.unshift({ points, reason, date: new Date().toISOString() });
     return this.saveClubProfile(phone, profile);
+  },
+
+  getBrushStatus(profile: ClubProfile): BrushStatus {
+    return getBrushStatusForProfile(profile);
+  },
+
+  recordBrush(phone: string | null | undefined): BrushResult {
+    const key = digitsOnly(phone);
+    if (!key || key.length < 10) {
+      return { ok: false, error: 'ابتدا شماره موبایل باشگاه را وارد کنید.' };
+    }
+
+    const profile = this.getClubProfile(key);
+    const status = getBrushStatusForProfile(profile);
+    if (!status.canBrush) {
+      return { ok: false, error: status.errorMessage || 'در حال حاضر امکان ثبت مسواک وجود ندارد.' };
+    }
+
+    const nowIso = new Date().toISOString();
+    profile.brushHistory = [...normalizeBrushHistory(profile), nowIso];
+    profile.points += BRUSH_POINTS;
+    profile.history.unshift({
+      points: BRUSH_POINTS,
+      reason: 'مسواک زدم',
+      date: nowIso,
+    });
+
+    return { ok: true, profile: this.saveClubProfile(key, profile) };
   },
 
   getClubTier(points: number): ClubTier {
@@ -726,8 +884,387 @@ export const PasteurStorage = {
     }
   },
 
+  getLaserServices(): LaserService[] {
+    const stored = this.get(this.KEYS.laserServices) as LaserService[] | null;
+    const source = stored || PASTEUR_DATA.laserServices.map((s) => ({ ...s }));
+    return source.map((service, index) => ({
+      ...service,
+      id: service.id || `laser-${index + 1}`,
+      active: service.active !== false,
+    }));
+  },
+
+  saveLaserServices(services: LaserService[]): void {
+    this.set(this.KEYS.laserServices, services);
+  },
+
+  initLaserServicesIfNeeded(): void {
+    if (!this.get(this.KEYS.laserServices)) {
+      this.saveLaserServices(PASTEUR_DATA.laserServices.map((s) => ({ ...s })));
+    }
+  },
+
+  resetLaserServices(): void {
+    this.saveLaserServices(PASTEUR_DATA.laserServices.map((s) => ({ ...s })));
+  },
+
+  getMembershipPlans(): Membership[] {
+    const stored = this.get(this.KEYS.membershipPlans) as Membership[] | null;
+    const source = stored || PASTEUR_DATA.memberships.map((m) => ({ ...m, features: [...m.features] }));
+    return source
+      .filter((m) => m.id === 'regular' || m.id === 'vip')
+      .map((m) => ({
+        ...m,
+        features: [...(m.features || [])],
+        downPaymentPercent: Number(m.downPaymentPercent ?? (m.id === 'vip' ? 20 : 30)),
+      }));
+  },
+
+  saveMembershipPlans(plans: Membership[]): void {
+    this.set(this.KEYS.membershipPlans, plans);
+  },
+
+  initMembershipPlansIfNeeded(): void {
+    if (!this.get(this.KEYS.membershipPlans)) {
+      this.saveMembershipPlans(
+        PASTEUR_DATA.memberships.map((m) => ({ ...m, features: [...m.features] })),
+      );
+    }
+  },
+
+  resetMembershipPlans(): void {
+    this.saveMembershipPlans(
+      PASTEUR_DATA.memberships.map((m) => ({ ...m, features: [...m.features] })),
+    );
+  },
+
+  getNursingServices(): NursingService[] {
+    const stored = this.get(this.KEYS.nursingServices) as NursingService[] | null;
+    const source = stored || PASTEUR_DATA.nursingServices.map((s) => ({
+      ...s,
+      items: (s.items || []).map((item) => ({ ...item })),
+    }));
+    return source.map((service, index) => ({
+      ...service,
+      id: service.id || `nursing-${index + 1}`,
+      items: Array.isArray(service.items) ? service.items.map((item) => ({ ...item })) : [],
+      active: service.active !== false,
+    }));
+  },
+
+  saveNursingServices(services: NursingService[]): void {
+    this.set(this.KEYS.nursingServices, services);
+  },
+
+  initNursingServicesIfNeeded(): void {
+    if (!this.get(this.KEYS.nursingServices)) {
+      this.saveNursingServices(
+        PASTEUR_DATA.nursingServices.map((s) => ({
+          ...s,
+          items: (s.items || []).map((item) => ({ ...item })),
+        })),
+      );
+    }
+  },
+
+  resetNursingServices(): void {
+    this.saveNursingServices(
+      PASTEUR_DATA.nursingServices.map((s) => ({
+        ...s,
+        items: (s.items || []).map((item) => ({ ...item })),
+      })),
+    );
+  },
+
+  getSettings(): PasteurSettings {
+    const stored = this.get(this.KEYS.settings) as Partial<PasteurSettings> | null;
+    return {
+      dentalReservationFee: Number(
+        stored?.dentalReservationFee ?? PASTEUR_DATA.settings.dentalReservationFee,
+      ),
+    };
+  },
+
+  saveSettings(settings: PasteurSettings): void {
+    this.set(this.KEYS.settings, {
+      dentalReservationFee: Number(settings.dentalReservationFee || 0),
+    });
+  },
+
+  initSettingsIfNeeded(): void {
+    if (!this.get(this.KEYS.settings)) {
+      this.saveSettings({ ...PASTEUR_DATA.settings });
+    }
+  },
+
+  resetSettings(): void {
+    this.saveSettings({ ...PASTEUR_DATA.settings });
+  },
+
+  getDentalReservationFee(): number {
+    this.initSettingsIfNeeded();
+    return this.getSettings().dentalReservationFee;
+  },
+
+  getConsultationTypes(): ConsultationType[] {
+    const stored = this.get(this.KEYS.consultationTypes) as ConsultationType[] | null;
+    const source = stored || PASTEUR_DATA.consultationTypes.map((type) => ({ ...type }));
+    return source.map((type) => ({
+      ...type,
+      priceNum: Number(type.priceNum || 0),
+      price: type.price || `${Number(type.priceNum || 0).toLocaleString('fa-IR')} تومان`,
+    }));
+  },
+
+  saveConsultationTypes(types: ConsultationType[]): void {
+    this.set(
+      this.KEYS.consultationTypes,
+      types.map((type) => ({
+        ...type,
+        priceNum: Number(type.priceNum || 0),
+        price: `${Number(type.priceNum || 0).toLocaleString('fa-IR')} تومان`,
+      })),
+    );
+  },
+
+  initConsultationPricingIfNeeded(): void {
+    if (!this.get(this.KEYS.consultationTypes)) {
+      this.saveConsultationTypes(PASTEUR_DATA.consultationTypes.map((type) => ({ ...type })));
+    }
+    if (!this.get(this.KEYS.specialtyTariffs)) {
+      this.saveSpecialtyTariffs({ ...PASTEUR_DATA.specialtyTariffs });
+    }
+  },
+
+  resetConsultationTypes(): void {
+    this.saveConsultationTypes(PASTEUR_DATA.consultationTypes.map((type) => ({ ...type })));
+  },
+
+  getSpecialtyTariffs(): SpecialtyTariffs {
+    const stored = this.get(this.KEYS.specialtyTariffs) as SpecialtyTariffs | null;
+    return stored ? { ...stored } : { ...PASTEUR_DATA.specialtyTariffs };
+  },
+
+  saveSpecialtyTariffs(tariffs: SpecialtyTariffs): void {
+    this.set(this.KEYS.specialtyTariffs, tariffs);
+  },
+
+  resetSpecialtyTariffs(): void {
+    this.saveSpecialtyTariffs({ ...PASTEUR_DATA.specialtyTariffs });
+  },
+
   getLastBooking(): Booking | null {
     const bookings = this.getBookings().filter((b) => b.status === 'confirmed');
     return bookings[0] || null;
+  },
+
+  getWalletSettings(): WalletSettings {
+    this.initWalletSettingsIfNeeded();
+    const stored = this.get(this.KEYS.walletSettings) as WalletSettings | null;
+    return {
+      ...DEFAULT_WALLET_SETTINGS,
+      ...(stored || {}),
+    };
+  },
+
+  saveWalletSettings(settings: WalletSettings): WalletSettings {
+    const cleaned: WalletSettings = {
+      regularCap: Number(settings.regularCap || DEFAULT_WALLET_SETTINGS.regularCap),
+      membershipVipCap: Number(settings.membershipVipCap || DEFAULT_WALLET_SETTINGS.membershipVipCap),
+      shopVipCap: Number(settings.shopVipCap || DEFAULT_WALLET_SETTINGS.shopVipCap),
+      graceMonths: Number(settings.graceMonths ?? DEFAULT_WALLET_SETTINGS.graceMonths),
+      installmentMin: Number(settings.installmentMin ?? DEFAULT_WALLET_SETTINGS.installmentMin),
+      installmentMax: Number(settings.installmentMax ?? DEFAULT_WALLET_SETTINGS.installmentMax),
+    };
+    this.set(this.KEYS.walletSettings, cleaned);
+    return cleaned;
+  },
+
+  initWalletSettingsIfNeeded(): void {
+    if (!this.get(this.KEYS.walletSettings)) {
+      this.saveWalletSettings(DEFAULT_WALLET_SETTINGS);
+    }
+  },
+
+  getWalletsMap(): Record<string, Wallet> {
+    return (this.get(this.KEYS.wallets) as Record<string, Wallet> | null) || {};
+  },
+
+  listWallets(): Wallet[] {
+    return Object.values(this.getWalletsMap()).sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+  },
+
+  saveWallet(wallet: Wallet): Wallet {
+    const key = digitsOnly(wallet.phone);
+    const all = this.getWalletsMap();
+    all[key] = {
+      ...wallet,
+      phone: key,
+      transactions: Array.isArray(wallet.transactions) ? wallet.transactions : [],
+      activeKinds: Array.isArray(wallet.activeKinds) ? wallet.activeKinds : ['regular'],
+    };
+    this.set(this.KEYS.wallets, all);
+    return all[key];
+  },
+
+  deriveWalletKindsFromUser(phone?: string | null): WalletKind[] {
+    const key = digitsOnly(phone);
+    if (!key) return ['regular'];
+
+    const kinds: WalletKind[] = ['regular'];
+    const paidMembers = this.getMembers().filter(
+      (m) => m.status === 'paid' && digitsOnly(m.patientPhone) === key,
+    );
+
+    for (const member of paidMembers) {
+      const planId = String(member.planId || '');
+      if (planId === 'regular') kinds.push('regular');
+      if (planId === 'vip') {
+        kinds.push('membership-vip');
+        kinds.push('shop-vip');
+      }
+      if (planId === 'shop-vip') kinds.push('shop-vip');
+    }
+
+    if (this.isShopVip(key)) kinds.push('shop-vip');
+
+    return [...new Set(kinds)];
+  },
+
+  getOrCreateWallet(phone?: string | null): Wallet | null {
+    const key = digitsOnly(phone);
+    if (!key) return null;
+
+    this.initWalletSettingsIfNeeded();
+    const settings = this.getWalletSettings();
+    const all = this.getWalletsMap();
+    const now = new Date().toISOString();
+
+    if (!all[key]) {
+      const activeKinds = this.deriveWalletKindsFromUser(key);
+      all[key] = {
+        phone: key,
+        balance: 0,
+        ceiling: computeWalletCeiling(activeKinds, settings),
+        activeKinds,
+        status: 'active',
+        transactions: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.set(this.KEYS.wallets, all);
+    }
+
+    return all[key];
+  },
+
+  syncWalletFromMembership(phone?: string | null): Wallet | null {
+    const wallet = this.getOrCreateWallet(phone);
+    if (!wallet) return null;
+
+    const settings = this.getWalletSettings();
+    const derived = this.deriveWalletKindsFromUser(phone);
+    const merged = [...new Set([...wallet.activeKinds, ...derived])];
+    const newCeiling = computeWalletCeiling(merged, settings);
+
+    wallet.activeKinds = merged;
+    wallet.ceiling = newCeiling;
+    wallet.updatedAt = new Date().toISOString();
+    return this.saveWallet(wallet);
+  },
+
+  upgradeWalletForUser(phone?: string | null, kinds: WalletKind[] = []): Wallet | null {
+    const wallet = this.getOrCreateWallet(phone);
+    if (!wallet || !kinds.length) return wallet;
+
+    const settings = this.getWalletSettings();
+    const merged = [...new Set([...wallet.activeKinds, ...kinds])];
+    const oldCeiling = wallet.ceiling;
+    const newCeiling = computeWalletCeiling(merged, settings);
+
+    wallet.activeKinds = merged;
+    wallet.ceiling = newCeiling;
+    wallet.updatedAt = new Date().toISOString();
+
+    if (newCeiling > oldCeiling) {
+      wallet.transactions.unshift({
+        id: this.generateId(),
+        type: 'upgrade',
+        amount: newCeiling - oldCeiling,
+        balanceAfter: wallet.balance,
+        description: `ارتقای سقف اعتبار به ${newCeiling.toLocaleString('fa-IR')} تومان`,
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    return this.saveWallet(wallet);
+  },
+
+  addTransaction(
+    phone: string | null | undefined,
+    input: {
+      type: WalletTransactionType;
+      amount: number;
+      description: string;
+      status?: WalletTransactionStatus;
+    },
+  ): Wallet | null {
+    const wallet = this.getOrCreateWallet(phone);
+    if (!wallet) return null;
+
+    const status = input.status || 'completed';
+    let balanceAfter = wallet.balance;
+
+    if (status === 'completed') {
+      if (input.type === 'credit') {
+        balanceAfter = Math.min(wallet.balance + input.amount, wallet.ceiling);
+      } else if (input.type === 'debit') {
+        balanceAfter = Math.max(0, wallet.balance - input.amount);
+      }
+    }
+
+    wallet.balance = balanceAfter;
+    wallet.transactions.unshift({
+      id: this.generateId(),
+      type: input.type,
+      amount: input.amount,
+      balanceAfter,
+      description: input.description,
+      status,
+      createdAt: new Date().toISOString(),
+    });
+    wallet.updatedAt = new Date().toISOString();
+    return this.saveWallet(wallet);
+  },
+
+  updateWalletStatus(phone: string | null | undefined, status: WalletStatus): Wallet | null {
+    const wallet = this.getOrCreateWallet(phone);
+    if (!wallet) return null;
+    wallet.status = status;
+    wallet.updatedAt = new Date().toISOString();
+    return this.saveWallet(wallet);
+  },
+
+  updateWalletTransactionStatus(
+    phone: string | null | undefined,
+    transactionId: string,
+    status: WalletTransactionStatus,
+  ): Wallet | null {
+    const wallet = this.getOrCreateWallet(phone);
+    if (!wallet) return null;
+
+    const tx = wallet.transactions.find((item) => item.id === transactionId);
+    if (!tx) return wallet;
+
+    tx.status = status;
+    wallet.updatedAt = new Date().toISOString();
+    return this.saveWallet(wallet);
+  },
+
+  initWalletsIfNeeded(): void {
+    this.initWalletSettingsIfNeeded();
   },
 };

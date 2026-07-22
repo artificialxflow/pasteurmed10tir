@@ -11,7 +11,7 @@ function isAppMedical(basePath: MedicalBasePath): boolean {
 
 export function MedicalSpecialtyList({ basePath }: { basePath: MedicalBasePath }) {
   const app = isAppMedical(basePath);
-  const consultation = app ? ROUTES.app.consultation : ROUTES.web.consultation;
+  const doctorsPage = app ? ROUTES.app.medicalDoctors : ROUTES.web.medicalDoctors;
   const medical = app ? ROUTES.app.medical : ROUTES.web.medical;
 
   if (app) {
@@ -20,7 +20,7 @@ export function MedicalSpecialtyList({ basePath }: { basePath: MedicalBasePath }
         {PASTEUR_DATA.medicalSpecialties.map((s) => (
           <Link
             key={s.id}
-            href={`${consultation}?category=medical-specialty&specialty=${s.id}&type=video`}
+            href={`${doctorsPage}?specialty=${s.id}`}
             className="rounded-2xl border border-sky-200 bg-white p-4 transition hover:border-amber-500"
           >
             <span className="text-2xl">{s.emoji}</span>
@@ -45,7 +45,7 @@ export function MedicalSpecialtyList({ basePath }: { basePath: MedicalBasePath }
         🔬 تخصص‌های پزشکی
       </h1>
       <p className="mb-8 text-slate-600">
-        تخصص مورد نظر را انتخاب کنید؛ سپس نوع مشاوره یا ویزیت را ثبت کنید.
+        تخصص مورد نظر را انتخاب کنید؛ سپس پزشک و نوع مشاوره یا ویزیت را مشخص می‌کنید.
       </p>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {PASTEUR_DATA.medicalSpecialties.map((s) => (
@@ -56,7 +56,7 @@ export function MedicalSpecialtyList({ basePath }: { basePath: MedicalBasePath }
             <Button
               variant="accent"
               className="mt-4 text-sm"
-              href={`${consultation}?category=medical-specialty&specialty=${s.id}&type=video`}
+              href={`${doctorsPage}?specialty=${s.id}`}
             >
               انتخاب و ادامه ←
             </Button>

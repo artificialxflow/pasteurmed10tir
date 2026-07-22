@@ -179,7 +179,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       return;
     }
 
-    const amount = state.type === "visit" ? 350000 : 850000;
+    const amount = PasteurStorage.getDentalReservationFee();
     PasteurStorage.setPendingPayment({
       kind: "booking",
       doctorId: doctor.id,
@@ -193,6 +193,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       patientName,
       patientPhone: state.patientPhone.trim(),
       amount,
+      isDeposit: true,
+      paymentLabel: "بیعانه رزرو نوبت",
       referralCode: state.referralCode,
     });
     PasteurStorage.clearPendingBooking();

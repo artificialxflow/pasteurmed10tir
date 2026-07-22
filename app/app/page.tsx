@@ -14,6 +14,7 @@ const services = [
   { emoji: "✨", title: "لیزر و زیبایی", desc: "لیزر و جوانسازی", href: ROUTES.app.laser },
   { emoji: "🛒", title: "تجهیزات", desc: "فروشگاه", href: ROUTES.app.shop },
   { emoji: "🎁", title: "باشگاه", desc: "امتیاز و پاداش", href: ROUTES.app.club },
+  { emoji: "💳", title: "کیف اعتبار", desc: "سقف و بازپرداخت", href: ROUTES.app.wallet },
 ];
 
 const quick = [

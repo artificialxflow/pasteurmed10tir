@@ -50,10 +50,14 @@ function PaymentSummary({ pending }: { pending: PendingPayment }) {
           <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
         ) : null}
         <SummaryRow
-          label="مبلغ قابل پرداخت:"
+          label="بیعانه رزرو نوبت:"
           value={formatPrice(Number(pending.amount) || 0)}
           last
         />
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
+          این مبلغ بیعانه رزرو است و در صورت لغو نوبت قابل استرداد نیست. هزینه کامل
+          ویزیت یا درمان جداگانه در مطب هماهنگ می‌شود.
+        </p>
       </Card>
     );
   }
