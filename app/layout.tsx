@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Clinique Pasteur", url: "https://pasteur.plus" }],
   manifest: "/manifest.webmanifest",
   themeColor: "#0891b2",
+  other: {
+    enamad: "10209334",
+  },
   openGraph: {
     type: "website",
     locale: "fa_IR",
