@@ -85,6 +85,7 @@ export const ROUTES = {
     wallets: '/admin/wallets',
     consultationPrices: '/admin/consultation-prices',
     shop: '/admin/shop',
+    access: '/admin/access',
   },
 } as const;
 

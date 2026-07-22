@@ -22,7 +22,7 @@
   --color-primary: #0891b2;
   --color-primary-dark: #0e7490;
   --color-primary-light: #cffafe;
-  --color-accent: #7c3aed;
+  --color-accent: #0284c7;
   --color-vip: #f59e0b;
   --color-vip-dark: #b45309;
   --color-vip-light: #fef3c7;
@@ -136,4 +136,15 @@ body {
 @keyframes appEnter {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

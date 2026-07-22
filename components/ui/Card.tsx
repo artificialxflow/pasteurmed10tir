@@ -15,11 +15,11 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[1.25rem] border bg-gradient-to-b from-white/95 to-white/90 p-4 shadow-[0_18px_45px_-28px_rgb(8_145_178_/_0.45)] backdrop-blur-md",
+        "rounded-[1.25rem] border bg-gradient-to-b from-white to-white/95 p-4 shadow-[0_10px_32px_-26px_rgb(8_145_178_/_0.4)]",
         vip
           ? "border-amber-400/55 bg-gradient-to-br from-orange-50 via-white to-amber-50"
-          : "border-sky-300/45",
-        hover && "transition hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_24px_60px_-32px_rgb(8_145_178_/_0.65)]",
+          : "border-sky-200/90",
+        hover && "transition duration-300 hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-[0_18px_40px_-28px_rgb(8_145_178_/_0.5)]",
         className,
       )}
     >

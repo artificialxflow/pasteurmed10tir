@@ -16,6 +16,17 @@ import {
   type Visitor,
 } from './data';
 import {
+  ALL_ADMIN_PERMISSIONS,
+  DEFAULT_ADMIN_ROLES,
+  DEFAULT_ADMIN_USERS,
+  firstAllowedAdminPath,
+  hasPermission,
+  type AdminPermission,
+  type AdminRole,
+  type AdminSession,
+  type AdminUser,
+} from './adminAccess';
+import {
   computeWalletCeiling,
   DEFAULT_WALLET_SETTINGS,
   type Wallet,
@@ -252,6 +263,8 @@ export const KEYS = {
   products: 'pasteur_products',
   shopOrders: 'pasteur_shop_orders',
   adminSession: 'pasteur_admin_session',
+  adminRoles: 'pasteur_admin_roles',
+  adminUsers: 'pasteur_admin_users',
   consultations: 'pasteur_consultations',
   reminders: 'pasteur_reminders',
   club: 'pasteur_club',
@@ -693,19 +706,146 @@ export const PasteurStorage = {
     return localStorage.getItem(this.KEYS.shopVipPhone) || '';
   },
 
-  isAdminLoggedIn(): boolean {
-    if (!canUseStorage()) return false;
-    return sessionStorage.getItem(this.KEYS.adminSession) === 'true';
+  initAdminAccessIfNeeded(): void {
+    if (!this.get(this.KEYS.adminRoles)) {
+      this.saveAdminRoles(DEFAULT_ADMIN_ROLES.map((role) => ({ ...role, permissions: [...role.permissions] })));
+    }
+    if (!this.get(this.KEYS.adminUsers)) {
+      this.saveAdminUsers(DEFAULT_ADMIN_USERS.map((user) => ({ ...user })));
+    }
   },
 
-  adminLogin(): void {
+  getAdminRoles(): AdminRole[] {
+    this.initAdminAccessIfNeeded();
+    const stored = (this.get(this.KEYS.adminRoles) as AdminRole[] | null) || [];
+    return stored.map((role) => ({
+      ...role,
+      permissions: Array.isArray(role.permissions) ? [...role.permissions] : [],
+    }));
+  },
+
+  saveAdminRoles(roles: AdminRole[]): void {
+    this.set(this.KEYS.adminRoles, roles);
+  },
+
+  resetAdminRoles(): void {
+    this.saveAdminRoles(DEFAULT_ADMIN_ROLES.map((role) => ({ ...role, permissions: [...role.permissions] })));
+  },
+
+  getAdminUsers(): AdminUser[] {
+    this.initAdminAccessIfNeeded();
+    const stored = (this.get(this.KEYS.adminUsers) as AdminUser[] | null) || [];
+    return stored.map((user) => ({ ...user }));
+  },
+
+  saveAdminUsers(users: AdminUser[]): void {
+    this.set(this.KEYS.adminUsers, users);
+  },
+
+  resetAdminUsers(): void {
+    this.saveAdminUsers(DEFAULT_ADMIN_USERS.map((user) => ({ ...user })));
+  },
+
+  findAdminUser(username: string, password: string): AdminUser | null {
+    const normalized = username.trim().toLowerCase();
+    return (
+      this.getAdminUsers().find(
+        (user) =>
+          user.active !== false &&
+          user.username.trim().toLowerCase() === normalized &&
+          user.password === password,
+      ) || null
+    );
+  },
+
+  buildAdminSession(user: AdminUser): AdminSession | null {
+    const role = this.getAdminRoles().find((item) => item.id === user.roleId);
+    if (!role) return null;
+    return {
+      userId: user.id,
+      username: user.username,
+      displayName: user.displayName || user.username,
+      roleId: role.id,
+      roleName: role.name,
+      permissions: [...role.permissions],
+    };
+  },
+
+  isAdminLoggedIn(): boolean {
+    return Boolean(this.getAdminSession());
+  },
+
+  getAdminSession(): AdminSession | null {
+    if (!canUseStorage()) return null;
+    this.initAdminAccessIfNeeded();
+    try {
+      const raw = sessionStorage.getItem(this.KEYS.adminSession);
+      if (!raw) return null;
+      // migrate legacy boolean session
+      if (raw === 'true') {
+        const admin = this.getAdminUsers().find((u) => u.username === 'admin');
+        if (!admin) return null;
+        const session = this.buildAdminSession(admin);
+        if (session) this.setAdminSession(session);
+        return session;
+      }
+      const parsed = JSON.parse(raw) as AdminSession;
+      if (!parsed?.userId || !Array.isArray(parsed.permissions)) return null;
+      // refresh permissions from latest role definition
+      const user = this.getAdminUsers().find((u) => u.id === parsed.userId);
+      if (!user || user.active === false) return null;
+      return this.buildAdminSession(user);
+    } catch {
+      return null;
+    }
+  },
+
+  setAdminSession(session: AdminSession): void {
     if (!canUseStorage()) return;
-    sessionStorage.setItem(this.KEYS.adminSession, 'true');
+    sessionStorage.setItem(this.KEYS.adminSession, JSON.stringify(session));
+  },
+
+  adminLogin(username: string, password: string): AdminSession | null {
+    const user = this.findAdminUser(username, password);
+    if (!user) return null;
+    const session = this.buildAdminSession(user);
+    if (!session) return null;
+    this.setAdminSession(session);
+    return session;
   },
 
   adminLogout(): void {
     if (!canUseStorage()) return;
     sessionStorage.removeItem(this.KEYS.adminSession);
+  },
+
+  adminHasPermission(permission: AdminPermission): boolean {
+    const session = this.getAdminSession();
+    return hasPermission(session?.permissions, permission);
+  },
+
+  adminHomePath(): string {
+    const session = this.getAdminSession();
+    return firstAllowedAdminPath(session?.permissions || []);
+  },
+
+  /** Ensure at least one superadmin-like user keeps access permission. */
+  ensureAccessPermissionCoverage(roles: AdminRole[], users: AdminUser[]): AdminRole[] {
+    const next = roles.map((role) => ({
+      ...role,
+      permissions: Array.isArray(role.permissions) ? [...role.permissions] : [],
+    }));
+    const accessHolders = users.filter((user) => {
+      if (user.active === false) return false;
+      const role = next.find((r) => r.id === user.roleId);
+      return role?.permissions.includes('access');
+    });
+    if (accessHolders.length) return next;
+    const superRole = next.find((role) => role.id === 'superadmin');
+    if (superRole && !superRole.permissions.includes('access')) {
+      superRole.permissions = [...ALL_ADMIN_PERMISSIONS];
+    }
+    return next;
   },
 
   generateId(): string {

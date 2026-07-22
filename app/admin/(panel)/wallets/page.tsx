@@ -76,8 +76,13 @@ export default function AdminWalletsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="mb-4 text-lg font-bold">تنظیمات سقف و بازپرداخت</h2>
-        <Card hover={false} className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mb-4">
+          <h2 className="text-lg font-extrabold text-slate-900">تنظیمات سقف و بازپرداخت</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            سقف اعتبار بر اساس نوع کاربر؛ هنگام چند VIP فعال، سقف برابر بیشترین مقدار است.
+          </p>
+        </div>
+        <Card hover={false} className="grid gap-4 border-cyan-100 p-5 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <FormLabel>سقف بیمار عادی (تومان)</FormLabel>
             <FormInput

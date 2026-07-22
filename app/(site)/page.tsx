@@ -13,7 +13,7 @@ const colorBorder: Record<string, string> = {
   teal: "border-teal-300 hover:border-teal-500 group-hover:bg-teal-50",
   blue: "border-blue-300 hover:border-blue-500 group-hover:bg-blue-50",
   rose: "border-rose-300 hover:border-rose-500 group-hover:bg-rose-50",
-  purple: "border-purple-300 hover:border-purple-500 group-hover:bg-purple-50",
+  purple: "border-cyan-300 hover:border-cyan-500 group-hover:bg-cyan-50",
   amber: "border-amber-300 hover:border-amber-500 group-hover:bg-amber-50",
 };
 
@@ -31,107 +31,89 @@ export default function HomePage() {
     setServices(PasteurStorage.getServices().filter((s) => s.active !== false));
   }, []);
 
-  const quickIds = ["dental", "medical", "nursing", "shop"];
-  const quickServices = quickIds
-    .map((id) => services.find((s) => s.id === id))
-    .filter(Boolean) as ServiceItem[];
-
   return (
     <main className="flex-1">
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-cyan-100">
+      {/* Hero — یک ترکیب: برند، یک تیتر، یک جمله، CTA، تصویر غالب */}
+      <section className="relative min-h-[min(92vh,860px)] overflow-hidden border-b border-cyan-100">
         <div
-          className="pointer-events-none absolute inset-0 opacity-80"
+          className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 18% 30%, #a5f3fc 0%, transparent 26rem), radial-gradient(circle at 86% 10%, #fde68a 0%, transparent 22rem), linear-gradient(135deg, #f8fdff 0%, #ecfeff 48%, #fff7ed 100%)",
+              "radial-gradient(ellipse 70% 55% at 85% 40%, rgb(0 173 239 / 0.28), transparent), radial-gradient(ellipse 50% 45% at 10% 80%, rgb(233 30 140 / 0.12), transparent), linear-gradient(160deg, #f0fbfd 0%, #e8f7fc 45%, #f8fafc 100%)",
           }}
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-20 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-            <div>
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-4 py-2 text-sm font-bold text-cyan-800 shadow-sm">
-                <Logo className="h-7 w-7" />
-                پاستور پلاس — سامانه خدمات مرکز پاستور
-              </span>
-              <h1 className="mb-4 text-3xl font-extrabold leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                دندانپزشکی، پزشکی، پرستاری و تجهیزات پزشکی در یک سامانه
-              </h1>
-              <p className="mb-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-xl">
-                از اینجا مسیر مورد نیازتان را انتخاب کنید: رزرو دندانپزشکی، مشاوره و ویزیت
-                آنلاین پزشکی، خدمات پرستاری، آموزش‌های دندانپزشکی و فروشگاه تجهیزات.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button href={ROUTES.web.dentalGeneral} className="px-6 text-base">
-                  🦷 دندانپزشکی و رزرو نوبت
-                </Button>
-                <Button href={ROUTES.web.medical} variant="accent" className="px-6 text-base">
-                  🩺 پزشکی و ویزیت آنلاین
-                </Button>
-                <Button
-                  href={ROUTES.app.home}
-                  variant="outline"
-                  className="px-6 text-base"
-                  onClick={markAppView}
-                >
-                  📱 ورود به نسخه موبایل
-                </Button>
-              </div>
-              <div className="mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
-                {quickServices.map((service) => (
-                  <Link key={service.id} href={service.href}>
-                    <Card className="p-3 text-center hover:border-teal-500">
-                      <p className="text-xl font-extrabold text-cyan-700">{service.emoji || "•"}</p>
-                      <p className="text-xs font-bold text-slate-600">{service.title}</p>
-                    </Card>
-                  </Link>
-                ))}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+          }}
+        />
+        <div className="relative mx-auto grid min-h-[min(92vh,860px)] max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-8">
+          <div className="animate-[fadeUp_0.7s_ease-out_both]">
+            <div className="mb-6 flex items-center gap-4">
+              <Logo className="h-16 w-16 sm:h-20 sm:w-20" />
+              <div>
+                <p className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+                  پاستور پلاس
+                </p>
+                <p className="mt-1 text-sm font-bold text-cyan-800 sm:text-base">
+                  سامانه خدمات مرکز پاستور
+                </p>
               </div>
             </div>
-
-            <div className="hidden justify-center lg:flex">
-              <Link
+            <h1 className="mb-4 max-w-xl text-xl font-bold leading-relaxed text-slate-800 sm:text-2xl lg:text-3xl">
+              مراقبت، نوبت و تجهیزات پزشکی در یک مسیر ساده
+            </h1>
+            <p className="mb-8 max-w-lg text-base leading-7 text-slate-600 sm:text-lg">
+              رزرو دندانپزشکی، ویزیت آنلاین، پرستاری و فروشگاه تجهیزات — از موبایل تا وب.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button href={ROUTES.web.dentalGeneral} className="px-7 text-base">
+                رزرو نوبت دندانپزشکی
+              </Button>
+              <Button href={ROUTES.web.medical} variant="outline" className="border-cyan-700 px-7 text-base text-cyan-900">
+                مشاوره و ویزیت پزشکی
+              </Button>
+              <Button
                 href={ROUTES.app.home}
+                variant="ghost"
+                className="px-5 text-base text-slate-600"
                 onClick={markAppView}
-                className="block transition-transform hover:scale-[1.02]"
-                aria-label="ورود به نسخه موبایل اپ"
               >
-                <div className="w-[330px] overflow-hidden rounded-[1.75rem] border border-slate-800 bg-white shadow-2xl">
-                  <div className="flex h-7 items-center justify-center bg-slate-950">
-                    <span className="h-1 w-16 rounded-full bg-slate-700" />
-                  </div>
-                  <div className="bg-gradient-to-b from-cyan-50 to-white p-5">
-                    <div className="mb-5 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-500">خوش آمدید</p>
-                        <p className="font-extrabold text-slate-900">پاستور پلاس</p>
-                      </div>
-                      <Logo className="h-12 w-12" />
-                    </div>
-                    <Card vip className="mb-4 rounded-2xl p-4">
-                      <p className="text-sm font-bold text-cyan-800">مسیرهای خدمات مرکز</p>
-                      <p className="mt-1 text-2xl font-extrabold text-slate-900">انتخاب سریع خدمت</p>
-                      <p className="mt-2 text-xs text-slate-500">
-                        دندانپزشکی، پزشکی، پرستاری و تجهیزات
-                      </p>
-                    </Card>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { emoji: "🦷", label: "رزرو دندان" },
-                        { emoji: "🛒", label: "تجهیزات" },
-                        { emoji: "💬", label: "مشاوره" },
-                        { emoji: "🎁", label: "باشگاه" },
-                      ].map((tile) => (
-                        <Card key={tile.label} className="p-4 text-center">
-                          <span className="text-2xl">{tile.emoji}</span>
-                          <p className="mt-2 text-xs font-bold">{tile.label}</p>
-                        </Card>
-                      ))}
-                    </div>
+                نسخه موبایل ←
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative animate-[fadeUp_0.85s_ease-out_0.12s_both]">
+            <div className="pointer-events-none absolute -inset-8 rounded-full bg-cyan-300/25 blur-3xl" />
+            <Link
+              href={ROUTES.app.home}
+              onClick={markAppView}
+              className="relative mx-auto block w-full max-w-[360px] transition duration-500 hover:-translate-y-1 lg:mr-0 lg:ml-auto"
+              aria-label="ورود به نسخه موبایل اپ"
+            >
+              <div className="overflow-hidden rounded-[2rem] border border-slate-800/90 bg-white shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)]">
+                <div className="flex h-8 items-center justify-center bg-slate-950">
+                  <span className="h-1.5 w-20 rounded-full bg-slate-600" />
+                </div>
+                <div className="relative aspect-[9/14] bg-gradient-to-b from-cyan-100 via-white to-sky-50 p-6">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=720&h=900&fit=crop"
+                    alt="فضای درمانگاه پاستور پلاس"
+                    className="absolute inset-0 h-full w-full object-cover opacity-90"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/25 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                    <p className="text-xs font-bold text-cyan-200">پاستور پلاس</p>
+                    <p className="mt-1 text-xl font-extrabold">همراه شما در مسیر درمان</p>
+                    <p className="mt-2 text-sm text-white/80">ورود به تجربه موبایل</p>
                   </div>
                 </div>
-              </Link>
-            </div>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -152,12 +134,9 @@ export default function HomePage() {
               <Link
                 key={service.id}
                 href={service.href}
-                className="group relative block overflow-hidden rounded-[1.25rem] border border-sky-300/45 bg-white shadow-[0_18px_45px_-28px_rgb(8_145_178_/_0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_-32px_rgb(8_145_178_/_0.65)]"
+                className="group relative block overflow-hidden rounded-[1.25rem] border border-sky-200/80 bg-white shadow-[0_12px_36px_-28px_rgb(8_145_178_/_0.4)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-[0_20px_48px_-30px_rgb(8_145_178_/_0.55)]"
                 style={{ animationDelay: `${index * 0.08}s` }}
               >
-                <div className="absolute top-3 left-3 z-10 rounded-full border border-white bg-white/90 px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">
-                  پاستور پلاس
-                </div>
                 <div className="relative h-40 overflow-hidden sm:h-48">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -255,7 +234,7 @@ export default function HomePage() {
                 emoji: "🖼️",
                 title: "گالری نتایج",
                 desc: "قبل و بعد — دندان، لیزر، زیبایی",
-                hover: "hover:border-purple-500",
+                hover: "hover:border-cyan-500",
               },
               {
                 href: ROUTES.web.club,
@@ -269,18 +248,18 @@ export default function HomePage() {
                 emoji: "💳",
                 title: "کیف اعتبار",
                 desc: "سقف اعتبار و شرایط بازپرداخت",
-                hover: "hover:border-emerald-500",
+                hover: "hover:border-cyan-600",
               },
               {
                 href: ROUTES.web.reminders,
                 emoji: "🔔",
                 title: "یادآور هوشمند",
                 desc: "اعلان نوبت — ۲۴ ساعت و ۲ ساعت قبل",
-                hover: "hover:border-blue-500",
+                hover: "hover:border-sky-500",
               },
             ].map((f) => (
               <Link key={f.href} href={f.href}>
-                <Card className={cn("block p-6 text-center", f.hover)}>
+                <Card hover className={cn("block p-6 text-center", f.hover)}>
                   <span className="text-4xl">{f.emoji}</span>
                   <h3 className="mt-3 font-bold">{f.title}</h3>
                   <p className="mt-2 text-sm text-slate-600">{f.desc}</p>

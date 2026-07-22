@@ -12,24 +12,25 @@ export function AdminTable({
   const hasRows = Children.toArray(children).some(isValidElement);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-cyan-100 bg-white shadow-[0_10px_32px_-28px_rgb(8_145_178_/_0.35)]">
       <table className="min-w-full text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
+        <thead className="border-b border-cyan-100 bg-gradient-to-l from-cyan-50/80 to-slate-50 text-slate-600">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="whitespace-nowrap px-4 py-3 text-right font-bold">
+              <th key={h} className="whitespace-nowrap px-4 py-3.5 text-right font-bold">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-100">
           {hasRows ? (
             children
           ) : (
             <tr>
-              <td colSpan={headers.length} className="px-4 py-10 text-center text-slate-500">
-                {empty || "موردی یافت نشد."}
+              <td colSpan={headers.length} className="px-4 py-14 text-center">
+                <p className="text-sm font-bold text-slate-500">{empty || "موردی یافت نشد."}</p>
+                <p className="mt-1 text-xs text-slate-400">پس از ثبت داده در سایت، اینجا نمایش داده می‌شود.</p>
               </td>
             </tr>
           )}
