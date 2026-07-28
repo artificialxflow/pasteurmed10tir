@@ -11,14 +11,14 @@ type Variant = "primary" | "accent" | "danger" | "ghost" | "outline";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-gradient-to-br from-cyan-500 via-primary-dark to-cyan-900 text-white border border-cyan-800/40 shadow-lg shadow-cyan-900/20 hover:-translate-y-0.5",
+    "bg-cyan-800 text-white border border-cyan-950 shadow-md shadow-cyan-950/25 hover:bg-cyan-900 hover:-translate-y-0.5 [color:#fff]",
   accent:
-    "bg-gradient-to-br from-amber-400 to-vip-dark text-white border border-amber-700/40 shadow-lg shadow-amber-900/20 hover:-translate-y-0.5",
+    "bg-amber-600 text-white border border-amber-800 shadow-md shadow-amber-900/25 hover:bg-amber-700 hover:-translate-y-0.5 [color:#fff]",
   danger:
     "bg-white text-red-700 border-2 border-red-200 hover:bg-red-50",
   ghost: "bg-transparent text-slate-700 hover:bg-slate-100 border border-transparent",
   outline:
-    "bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50",
+    "bg-white text-slate-900 border-2 border-slate-800 hover:bg-slate-50",
 };
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {

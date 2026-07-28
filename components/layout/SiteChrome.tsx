@@ -15,6 +15,8 @@ const navItems = [
   { href: ROUTES.web.club, label: "باشگاه", id: "club" },
   { href: ROUTES.web.dental, label: "دندانپزشکی", id: "dental" },
   { href: ROUTES.web.consultation, label: "مشاوره و ویزیت", id: "consultation" },
+  { href: ROUTES.web.account, label: "پنل کاربری", id: "account" },
+  { href: ROUTES.web.help, label: "آموزش", id: "help" },
   { href: ROUTES.web.contact, label: "تماس با ما", id: "contact" },
   { href: ROUTES.web.partners, label: "همکاری", id: "partners" },
   { href: ROUTES.admin.login, label: "پنل ادمین", id: "admin" },
@@ -34,6 +36,8 @@ function activeId(pathname: string) {
   if (pathname.startsWith("/shop")) return "shop";
   if (pathname.startsWith("/club")) return "club";
   if (pathname.startsWith("/consultation")) return "consultation";
+  if (pathname.startsWith("/account")) return "account";
+  if (pathname.startsWith("/help")) return "help";
   if (pathname.startsWith("/gallery")) return "gallery";
   if (pathname.startsWith("/contact")) return "contact";
   if (pathname.startsWith("/partners")) return "partners";
@@ -141,6 +145,9 @@ export function SiteFooter() {
             <Link href={ROUTES.web.medical}>پزشکی</Link>
             <Link href={ROUTES.web.shop}>فروشگاه</Link>
             <Link href={ROUTES.web.club}>باشگاه</Link>
+            <Link href={ROUTES.web.account}>پنل کاربری</Link>
+            <Link href={ROUTES.web.help}>آموزش سامانه</Link>
+            <Link href={ROUTES.web.complaints}>شکایات</Link>
             <Link href={ROUTES.web.partners}>درخواست همکاری</Link>
           </div>
         </div>

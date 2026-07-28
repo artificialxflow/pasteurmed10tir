@@ -22,6 +22,11 @@ export type AdminPermission =
   | 'club'
   | 'visitors'
   | 'partners'
+  | 'insurances'
+  | 'reviews'
+  | 'complaints'
+  | 'help'
+  | 'installments'
   | 'access';
 
 export type AdminRole = {
@@ -72,6 +77,11 @@ export const ADMIN_PERMISSION_META: {
   { id: 'club', label: 'باشگاه', href: ROUTES.admin.club },
   { id: 'visitors', label: 'ویزیتورها', href: ROUTES.admin.visitors },
   { id: 'partners', label: 'همکاری‌ها', href: ROUTES.admin.partners },
+  { id: 'insurances', label: 'بیمه‌ها و استعلام', href: ROUTES.admin.insurances },
+  { id: 'reviews', label: 'نظرات پزشکان', href: ROUTES.admin.reviews },
+  { id: 'complaints', label: 'شکایات', href: ROUTES.admin.complaints },
+  { id: 'help', label: 'آموزش سامانه', href: ROUTES.admin.help },
+  { id: 'installments', label: 'اقساط', href: ROUTES.admin.installments },
   { id: 'access', label: 'سطح دسترسی', href: ROUTES.admin.access },
 ];
 

@@ -48,6 +48,8 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.shop, label: "فروشگاه", permission: "shop" },
       { href: ROUTES.admin.commissions, label: "پورسانت‌ها", permission: "commissions" },
       { href: ROUTES.admin.facilities, label: "تسهیلات", permission: "facilities" },
+      { href: ROUTES.admin.insurances, label: "بیمه‌ها", permission: "insurances" },
+      { href: ROUTES.admin.installments, label: "اقساط", permission: "installments" },
     ],
   },
   {
@@ -56,6 +58,9 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.club, label: "باشگاه", permission: "club" },
       { href: ROUTES.admin.visitors, label: "ویزیتورها", permission: "visitors" },
       { href: ROUTES.admin.partners, label: "همکاری‌ها", permission: "partners" },
+      { href: ROUTES.admin.reviews, label: "نظرات", permission: "reviews" },
+      { href: ROUTES.admin.complaints, label: "شکایات", permission: "complaints" },
+      { href: ROUTES.admin.help, label: "آموزش", permission: "help" },
     ],
   },
   {
@@ -84,6 +89,11 @@ const titles: Record<string, string> = {
   [ROUTES.admin.wallets]: "مدیریت کیف اعتبار",
   [ROUTES.admin.shop]: "مدیریت فروشگاه",
   [ROUTES.admin.access]: "مدیریت سطح دسترسی",
+  [ROUTES.admin.insurances]: "بیمه‌ها و استعلام",
+  [ROUTES.admin.reviews]: "نظرات پزشکان",
+  [ROUTES.admin.complaints]: "شکایات بیماران",
+  [ROUTES.admin.help]: "آموزش سامانه",
+  [ROUTES.admin.installments]: "اقساط کاربران",
 };
 
 function titleFromPath(pathname: string) {

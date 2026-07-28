@@ -55,6 +55,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [onlineInsurance, setOnlineInsurance] = useState(false);
+  const [hasComplementary, setHasComplementary] = useState(false);
 
   const requiresDoctor = category === "medical-specialty" && Boolean(selectedSpecialty);
   const selectedDoctor = useMemo(
@@ -71,7 +73,14 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
 
   useEffect(() => {
     PasteurStorage.initConsultationPricingIfNeeded();
+    PasteurStorage.initPatientDomainIfNeeded();
     setConsultationTypes(getConsultationTypes());
+    const session = PasteurStorage.getPatientSession();
+    setHasComplementary(Boolean(session?.complementaryInsuranceId));
+    if (session) {
+      setName((prev) => prev || session.name);
+      setPhone((prev) => prev || session.phone);
+    }
   }, []);
 
   const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === category);
@@ -124,6 +133,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       amount: pricing.amount,
       priceSource: pricing.source,
       hasImage: Boolean(imagePreview),
+      onlineInsuranceCovered: onlineInsurance,
       status: "pending",
       createdAt: new Date().toISOString(),
     });
@@ -347,6 +357,24 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
           </div>
         ) : null}
       </div>
+
+      <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 accent-cyan-800"
+          checked={onlineInsurance}
+          disabled={!hasComplementary}
+          onChange={(e) => setOnlineInsurance(e.target.checked)}
+        />
+        <span>
+          ویزیت آنلاین با پوشش بیمه تکمیلی
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            {hasComplementary
+              ? "اکثر بیمه‌های تکمیلی آنلاین طرف قرارداد هستند؛ کسر از بیمه پس از استعلام."
+              : "ابتدا در پنل کاربری بیمه تکمیلی را ثبت کنید تا این گزینه فعال شود."}
+          </span>
+        </span>
+      </label>
 
       <Card hover={false} className="border-teal-200 bg-teal-50 p-5">
         <h3 className="mb-2 font-bold text-teal-800">🔮 پیش‌نمایش هوشمند</h3>

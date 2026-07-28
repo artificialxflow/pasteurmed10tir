@@ -27,6 +27,22 @@ import {
   type AdminUser,
 } from './adminAccess';
 import {
+  buildDueDates,
+  DEFAULT_BASE_INSURANCES,
+  DEFAULT_COMPLEMENTARY_INSURANCES,
+  DEFAULT_HELP_ITEMS,
+  normalizePatientPhone,
+  type Complaint,
+  type ComplaintStatus,
+  type DoctorReview,
+  type HelpItem,
+  type InstallmentPlan,
+  type InsuranceCompany,
+  type InsuranceInquiry,
+  type InsuranceInquiryStatus,
+  type PatientProfile,
+} from './patient';
+import {
   computeWalletCeiling,
   DEFAULT_WALLET_SETTINGS,
   type Wallet,
@@ -291,6 +307,15 @@ export const KEYS = {
   shopVipPhone: 'pasteur_app_shop_vip_phone',
   walletSettings: 'pasteur_wallet_settings',
   wallets: 'pasteur_wallets',
+  patients: 'pasteur_patients',
+  patientSession: 'pasteur_patient_session',
+  baseInsurances: 'pasteur_base_insurances',
+  complementaryInsurances: 'pasteur_complementary_insurances',
+  insuranceInquiries: 'pasteur_insurance_inquiries',
+  doctorReviews: 'pasteur_doctor_reviews',
+  complaints: 'pasteur_complaints',
+  helpItems: 'pasteur_help_items',
+  installmentPlans: 'pasteur_installment_plans',
 } as const;
 
 export const PasteurStorage = {
@@ -1406,5 +1431,269 @@ export const PasteurStorage = {
 
   initWalletsIfNeeded(): void {
     this.initWalletSettingsIfNeeded();
+  },
+
+  // —— بیمار / بیمه / نظرات / شکایات / راهنما / اقساط ——
+
+  initPatientDomainIfNeeded(): void {
+    if (!this.get(this.KEYS.baseInsurances)) {
+      this.set(this.KEYS.baseInsurances, DEFAULT_BASE_INSURANCES.map((i) => ({ ...i })));
+    }
+    if (!this.get(this.KEYS.complementaryInsurances)) {
+      this.set(
+        this.KEYS.complementaryInsurances,
+        DEFAULT_COMPLEMENTARY_INSURANCES.map((i) => ({ ...i })),
+      );
+    }
+    if (!this.get(this.KEYS.helpItems)) {
+      this.set(this.KEYS.helpItems, DEFAULT_HELP_ITEMS.map((i) => ({ ...i })));
+    }
+    if (!this.get(this.KEYS.patients)) this.set(this.KEYS.patients, {});
+    if (!this.get(this.KEYS.insuranceInquiries)) this.set(this.KEYS.insuranceInquiries, []);
+    if (!this.get(this.KEYS.doctorReviews)) this.set(this.KEYS.doctorReviews, []);
+    if (!this.get(this.KEYS.complaints)) this.set(this.KEYS.complaints, []);
+    if (!this.get(this.KEYS.installmentPlans)) this.set(this.KEYS.installmentPlans, []);
+  },
+
+  getBaseInsurances(): InsuranceCompany[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.baseInsurances) as InsuranceCompany[] | null) || []).map((i) => ({
+      ...i,
+    }));
+  },
+
+  saveBaseInsurances(list: InsuranceCompany[]): void {
+    this.set(this.KEYS.baseInsurances, list);
+  },
+
+  getComplementaryInsurances(): InsuranceCompany[] {
+    this.initPatientDomainIfNeeded();
+    return (
+      (this.get(this.KEYS.complementaryInsurances) as InsuranceCompany[] | null) || []
+    ).map((i) => ({ ...i }));
+  },
+
+  saveComplementaryInsurances(list: InsuranceCompany[]): void {
+    this.set(this.KEYS.complementaryInsurances, list);
+  },
+
+  getPatientProfile(phone?: string | null): PatientProfile | null {
+    this.initPatientDomainIfNeeded();
+    const key = normalizePatientPhone(phone);
+    if (!key) return null;
+    const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
+    return all[key] ? { ...all[key] } : null;
+  },
+
+  savePatientProfile(profile: PatientProfile): PatientProfile {
+    this.initPatientDomainIfNeeded();
+    const key = normalizePatientPhone(profile.phone);
+    const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
+    const next: PatientProfile = {
+      ...profile,
+      phone: key,
+      franchiseAmount: Number(profile.franchiseAmount || 0),
+      updatedAt: new Date().toISOString(),
+    };
+    all[key] = next;
+    this.set(this.KEYS.patients, all);
+    return next;
+  },
+
+  listPatientProfiles(): PatientProfile[] {
+    this.initPatientDomainIfNeeded();
+    const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
+    return Object.values(all).map((p) => ({ ...p }));
+  },
+
+  patientLogin(phone: string, name: string): PatientProfile {
+    const key = normalizePatientPhone(phone);
+    const existing = this.getPatientProfile(key);
+    const now = new Date().toISOString();
+    const profile =
+      existing ||
+      this.savePatientProfile({
+        phone: key,
+        name: name.trim() || 'بیمار',
+        franchiseAmount: 50000,
+        createdAt: now,
+        updatedAt: now,
+      });
+    if (name.trim() && profile.name !== name.trim()) {
+      profile.name = name.trim();
+      this.savePatientProfile(profile);
+    }
+    if (canUseStorage()) {
+      sessionStorage.setItem(this.KEYS.patientSession, JSON.stringify({ phone: key }));
+    }
+    return profile;
+  },
+
+  getPatientSession(): PatientProfile | null {
+    if (!canUseStorage()) return null;
+    try {
+      const raw = sessionStorage.getItem(this.KEYS.patientSession);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { phone?: string };
+      return this.getPatientProfile(parsed.phone);
+    } catch {
+      return null;
+    }
+  },
+
+  patientLogout(): void {
+    if (!canUseStorage()) return;
+    sessionStorage.removeItem(this.KEYS.patientSession);
+  },
+
+  getInsuranceInquiries(): InsuranceInquiry[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.insuranceInquiries) as InsuranceInquiry[] | null) || []).map(
+      (i) => ({ ...i }),
+    );
+  },
+
+  saveInsuranceInquiry(inquiry: InsuranceInquiry): InsuranceInquiry {
+    const list = this.getInsuranceInquiries();
+    list.unshift(inquiry);
+    this.set(this.KEYS.insuranceInquiries, list);
+    return inquiry;
+  },
+
+  updateInsuranceInquiry(
+    id: string,
+    status: InsuranceInquiryStatus,
+  ): InsuranceInquiry | null {
+    const list = this.getInsuranceInquiries();
+    const idx = list.findIndex((i) => i.id === id);
+    if (idx < 0) return null;
+    list[idx] = {
+      ...list[idx],
+      status,
+      resolvedAt: new Date().toISOString(),
+    };
+    this.set(this.KEYS.insuranceInquiries, list);
+    return list[idx];
+  },
+
+  getDoctorReviews(): DoctorReview[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.doctorReviews) as DoctorReview[] | null) || []).map((r) => ({
+      ...r,
+    }));
+  },
+
+  saveDoctorReview(review: DoctorReview): DoctorReview {
+    const list = this.getDoctorReviews();
+    list.unshift(review);
+    this.set(this.KEYS.doctorReviews, list);
+    return review;
+  },
+
+  updateDoctorReviewStatus(
+    id: string,
+    status: DoctorReview['status'],
+  ): DoctorReview | null {
+    const list = this.getDoctorReviews();
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx < 0) return null;
+    list[idx] = { ...list[idx], status };
+    this.set(this.KEYS.doctorReviews, list);
+    return list[idx];
+  },
+
+  getApprovedReviewsForDoctor(doctorId: string | number): DoctorReview[] {
+    return this.getDoctorReviews().filter(
+      (r) => String(r.doctorId) === String(doctorId) && r.status === 'approved',
+    );
+  },
+
+  getComplaints(): Complaint[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.complaints) as Complaint[] | null) || []).map((c) => ({
+      ...c,
+    }));
+  },
+
+  saveComplaint(complaint: Complaint): Complaint {
+    const list = this.getComplaints();
+    list.unshift(complaint);
+    this.set(this.KEYS.complaints, list);
+    return complaint;
+  },
+
+  updateComplaintStatus(id: string, status: ComplaintStatus): Complaint | null {
+    const list = this.getComplaints();
+    const idx = list.findIndex((c) => c.id === id);
+    if (idx < 0) return null;
+    list[idx] = { ...list[idx], status };
+    this.set(this.KEYS.complaints, list);
+    return list[idx];
+  },
+
+  getHelpItems(): HelpItem[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.helpItems) as HelpItem[] | null) || []).map((h) => ({ ...h }));
+  },
+
+  saveHelpItems(items: HelpItem[]): void {
+    this.set(this.KEYS.helpItems, items);
+  },
+
+  getInstallmentPlans(phone?: string | null): InstallmentPlan[] {
+    this.initPatientDomainIfNeeded();
+    const all = ((this.get(this.KEYS.installmentPlans) as InstallmentPlan[] | null) || []).map(
+      (p) => ({ ...p }),
+    );
+    const key = normalizePatientPhone(phone);
+    if (!key) return all;
+    return all.filter((p) => p.phone === key);
+  },
+
+  saveInstallmentPlan(plan: InstallmentPlan): InstallmentPlan {
+    const list = this.getInstallmentPlans();
+    list.unshift(plan);
+    this.set(this.KEYS.installmentPlans, list);
+    return plan;
+  },
+
+  createMembershipInstallmentPlan(input: {
+    phone?: string | null;
+    patientName?: string;
+    amount?: number;
+    planName?: string;
+  }): InstallmentPlan | null {
+    const phone = normalizePatientPhone(input.phone);
+    if (!phone) return null;
+    const total = Math.max(0, Number(input.amount || 0));
+    const count = 6;
+    const plan: InstallmentPlan = {
+      id: this.generateId(),
+      phone,
+      patientName: input.patientName,
+      source: 'membership',
+      title: `اقساط ${input.planName || 'عضویت'}`,
+      totalAmount: total,
+      paidAmount: Math.round(total / count),
+      installmentCount: count,
+      dueDates: buildDueDates(count),
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+    this.saveInstallmentPlan(plan);
+    const nextDue = plan.dueDates[0];
+    if (nextDue) {
+      this.saveReminder({
+        id: this.generateId(),
+        type: 'installment',
+        phone,
+        title: `سررسید قسط — ${plan.title}`,
+        message: `قسط بعدی طرح «${plan.title}» در تاریخ ${nextDue}`,
+        dueDate: nextDue,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+      });
+    }
+    return plan;
   },
 };

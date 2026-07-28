@@ -24,6 +24,7 @@ type BookingState = {
   patientName: string;
   patientPhone: string;
   referralCode: string;
+  onlineInsuranceCovered: boolean;
 };
 
 const STEP_LABELS: Record<StepName, string> = {
@@ -43,6 +44,7 @@ const INITIAL_STATE: BookingState = {
   patientName: "",
   patientPhone: "",
   referralCode: "",
+  onlineInsuranceCovered: false,
 };
 
 function getDoctor(id: number | null): Dentist | undefined {
@@ -196,6 +198,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       isDeposit: true,
       paymentLabel: "بیعانه رزرو نوبت",
       referralCode: state.referralCode,
+      onlineInsuranceCovered: state.onlineInsuranceCovered,
     });
     PasteurStorage.clearPendingBooking();
     router.push(`${basePath}/confirm`);
@@ -427,6 +430,24 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 اگر اپلیکیشن را از طریق ویزیتور شناختید، کد معرف را وارد کنید.
               </p>
             </div>
+            {state.type === "visit" ? (
+              <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-cyan-800"
+                  checked={state.onlineInsuranceCovered}
+                  onChange={(e) =>
+                    updateState({ onlineInsuranceCovered: e.target.checked })
+                  }
+                />
+                <span>
+                  ویزیت آنلاین با پوشش بیمه تکمیلی
+                  <span className="mt-1 block text-xs font-normal text-slate-500">
+                    بیمه تکمیلی را در پنل کاربری ثبت کنید؛ استعلام در مرحله پرداخت انجام می‌شود.
+                  </span>
+                </span>
+              </label>
+            ) : null}
           </form>
         </div>
       ) : null}

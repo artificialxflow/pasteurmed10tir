@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/Card";
+import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
@@ -44,44 +45,50 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   }
 
   const content = (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {doctors.length ? (
         doctors.map((doctor) => {
           const inactive = doctor.status !== "available" && doctor.status !== "busy";
           const href = `${consultation}?category=medical-specialty&specialty=${specialty.id}&doctor=${doctor.id}`;
           return (
-            <Link
-              key={doctor.id}
-              href={href}
-              className={cn(
-                "flex items-center gap-4 rounded-2xl border p-4 text-right transition",
-                inactive
-                  ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-50"
-                  : "border-sky-200 bg-white hover:border-teal-400",
-              )}
-              aria-disabled={inactive}
-              onClick={(event) => {
-                if (inactive) event.preventDefault();
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={doctor.image}
-                alt=""
-                className="h-16 w-16 rounded-lg border-2 border-slate-200 object-cover"
-              />
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-slate-900">{doctor.name}</span>
-                  <Badge status={doctor.status} />
+            <div key={doctor.id}>
+              <Link
+                href={href}
+                className={cn(
+                  "flex items-center gap-4 rounded-2xl border p-4 text-right transition",
+                  inactive
+                    ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-50"
+                    : "border-sky-200 bg-white hover:border-teal-400",
+                )}
+                aria-disabled={inactive}
+                onClick={(event) => {
+                  if (inactive) event.preventDefault();
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={doctor.image}
+                  alt=""
+                  className="h-16 w-16 rounded-lg border-2 border-slate-200 object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-900">{doctor.name}</span>
+                    <Badge status={doctor.status} />
+                  </div>
+                  <p className="text-sm text-teal-700">{doctor.specialty}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    روزهای حضور: {doctor.days.join("، ")}
+                  </p>
                 </div>
-                <p className="text-sm text-teal-700">{doctor.specialty}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  روزهای حضور: {doctor.days.join("، ")}
-                </p>
-              </div>
-              <span className="text-sm font-bold text-teal-700">انتخاب ←</span>
-            </Link>
+                <span className="text-sm font-bold text-teal-700">انتخاب ←</span>
+              </Link>
+              <DoctorReviewForm
+                doctorId={doctor.id}
+                doctorName={doctor.name}
+                doctorKind="medical"
+              />
+            </div>
           );
         })
       ) : (

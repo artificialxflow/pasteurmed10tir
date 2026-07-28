@@ -168,6 +168,12 @@ export const PaymentFlow = {
         pending.patientPhone,
         planIdToWalletKinds(String(pending.planId || 'regular')),
       );
+      PasteurStorage.createMembershipInstallmentPlan({
+        phone: pending.patientPhone,
+        patientName: pending.patientName as string | undefined,
+        amount: pending.amount,
+        planName: pending.planName as string | undefined,
+      });
       if (pending.referralCode) {
         PasteurStorage.saveCommission({
           referralCode: pending.referralCode,

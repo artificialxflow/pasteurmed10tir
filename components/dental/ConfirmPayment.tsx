@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
+import type { InsuranceMode } from "@/lib/patient";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
@@ -35,7 +36,13 @@ function SummaryRow({
   );
 }
 
-function PaymentSummary({ pending }: { pending: PendingPayment }) {
+function PaymentSummary({
+  pending,
+  amountLabel,
+}: {
+  pending: PendingPayment;
+  amountLabel?: string;
+}) {
   if (pending.kind === "booking") {
     return (
       <Card className="mb-6 space-y-3 p-6 text-sm" hover={false}>
@@ -50,13 +57,13 @@ function PaymentSummary({ pending }: { pending: PendingPayment }) {
           <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
         ) : null}
         <SummaryRow
-          label="بیعانه رزرو نوبت:"
+          label={amountLabel || "بیعانه رزرو نوبت:"}
           value={formatPrice(Number(pending.amount) || 0)}
           last
         />
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
-          این مبلغ بیعانه رزرو است و در صورت لغو نوبت قابل استرداد نیست. هزینه کامل
-          ویزیت یا درمان جداگانه در مطب هماهنگ می‌شود.
+          بیعانه رزرو در صورت لغو قابل استرداد نیست. اگر استعلام بیمه تأیید شود، مبلغ قابل پرداخت
+          برابر فرانشیز خواهد بود.
         </p>
       </Card>
     );
@@ -91,15 +98,6 @@ function PaymentSummary({ pending }: { pending: PendingPayment }) {
             value={String(pending.membershipDurationLabel || pending.validityLabel)}
           />
         ) : null}
-        {pending.discountPercent ? (
-          <SummaryRow
-            label="تخفیف مدت‌دار:"
-            value={`${Number(pending.discountPercent).toLocaleString("fa-IR")}٪`}
-          />
-        ) : null}
-        {pending.referralCode ? (
-          <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
-        ) : null}
         <SummaryRow
           label="مبلغ واریزی:"
           value={formatPrice(Number(pending.amount) || 0)}
@@ -112,11 +110,7 @@ function PaymentSummary({ pending }: { pending: PendingPayment }) {
   return (
     <Card className="mb-6 space-y-3 p-6 text-sm" hover={false}>
       <h2 className="mb-1 text-lg font-bold">خلاصه پرداخت</h2>
-      <SummaryRow
-        label="مبلغ:"
-        value={formatPrice(Number(pending.amount) || 0)}
-        last
-      />
+      <SummaryRow label="مبلغ:" value={formatPrice(Number(pending.amount) || 0)} last />
     </Card>
   );
 }
@@ -125,18 +119,106 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
   const router = useRouter();
   const app = isAppDental(basePath);
   const [pending, setPending] = useState<PendingPayment | null>(null);
+  const [depositAmount, setDepositAmount] = useState(0);
   const [paying, setPaying] = useState(false);
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<InsuranceMode>("none");
+  const [baseId, setBaseId] = useState("");
+  const [compId, setCompId] = useState("");
+  const [inquiryId, setInquiryId] = useState<string | null>(null);
+  const [inquiryStatus, setInquiryStatus] = useState<"none" | "pending" | "approved" | "rejected">(
+    "none",
+  );
+  const [note, setNote] = useState("");
+
+  const baseList = useMemo(
+    () => PasteurStorage.getBaseInsurances().filter((i) => i.active !== false),
+    [],
+  );
+  const compList = useMemo(
+    () => PasteurStorage.getComplementaryInsurances().filter((i) => i.active !== false),
+    [],
+  );
 
   useEffect(() => {
+    PasteurStorage.initPatientDomainIfNeeded();
     const data = PasteurStorage.getPendingPayment() as PendingPayment | null;
     if (!data) {
       router.replace(app ? "/app/dental/general" : "/dental/general");
       return;
     }
+    const deposit = Number(data.amount) || PasteurStorage.getDentalReservationFee();
+    setDepositAmount(deposit);
     setPending(data);
+    const profile = PasteurStorage.getPatientProfile(String(data.patientPhone || ""));
+    if (profile?.baseInsuranceId) setBaseId(profile.baseInsuranceId);
+    if (profile?.complementaryInsuranceId) setCompId(profile.complementaryInsuranceId);
     setReady(true);
   }, [app, router]);
+
+  function applyAmount(next: PendingPayment) {
+    setPending(next);
+    PasteurStorage.setPendingPayment(next);
+  }
+
+  function submitInquiry() {
+    if (!pending || pending.kind !== "booking") return;
+    if (mode === "none") {
+      setNote("برای استعلام، نوع بیمه را انتخاب کنید.");
+      return;
+    }
+    const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
+    const franchise = Number(profile?.franchiseAmount || 50000);
+    const inquiry = PasteurStorage.saveInsuranceInquiry({
+      id: PasteurStorage.generateId(),
+      phone: String(pending.patientPhone || ""),
+      patientName: String(pending.patientName || ""),
+      mode,
+      baseInsuranceId: mode === "base" || mode === "both" ? baseId : undefined,
+      complementaryInsuranceId:
+        mode === "complementary" || mode === "both" ? compId : undefined,
+      franchiseAmount: franchise,
+      depositAmount,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    });
+    setInquiryId(inquiry.id);
+    setInquiryStatus("pending");
+    setNote("درخواست استعلام ثبت شد. کارشناسان بررسی می‌کنند (نمایشی).");
+  }
+
+  function simulateApprove() {
+    if (!pending || !inquiryId) return;
+    PasteurStorage.updateInsuranceInquiry(inquiryId, "approved");
+    const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
+    const franchise = Number(profile?.franchiseAmount || 50000);
+    const next = {
+      ...pending,
+      amount: franchise,
+      insuranceInquiryId: inquiryId,
+      insuranceStatus: "approved",
+      paymentLabel: "فرانشیز پس از تأیید بیمه",
+    };
+    applyAmount(next);
+    setInquiryStatus("approved");
+    setNote(`استعلام تأیید شد. مبلغ قابل پرداخت: ${formatPrice(franchise)}`);
+  }
+
+  function clearInsurance() {
+    if (!pending) return;
+    const next = {
+      ...pending,
+      amount: depositAmount,
+      insuranceInquiryId: undefined,
+      insuranceStatus: undefined,
+      paymentLabel: "بیعانه رزرو نوبت",
+    };
+    applyAmount(next);
+    setInquiryId(null);
+    setInquiryStatus("none");
+    setMode("none");
+    setNote("به بیعانه رزرو برگشتید.");
+  }
 
   const onPay = () => {
     if (!pending || paying) return;
@@ -166,6 +248,9 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     );
   }
 
+  const amountLabel =
+    inquiryStatus === "approved" ? "فرانشیز (پس از تأیید بیمه):" : "بیعانه رزرو نوبت:";
+
   return (
     <div className={app ? "space-y-4" : "mx-auto max-w-lg px-4 py-10"}>
       {!app ? (
@@ -177,26 +262,80 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
         </>
       ) : null}
 
-      <PaymentSummary pending={pending} />
+      <PaymentSummary pending={pending} amountLabel={amountLabel} />
+
+      {pending.kind === "booking" ? (
+        <Card hover={false} className="mb-6 space-y-3 border-cyan-100 p-5">
+          <h2 className="font-extrabold text-slate-900">بیمه پایه / تکمیلی</h2>
+          <p className="text-xs leading-6 text-slate-500">
+            اکثر بیمه‌های تکمیلی به‌صورت آنلاین طرف قرارداد هستند. پس از استعلام و تأیید کارشناسان،
+            فقط فرانشیز پرداخت می‌شود.
+          </p>
+          <div>
+            <FormLabel>نوع پوشش</FormLabel>
+            <FormSelect
+              value={mode}
+              onChange={(e) => setMode(e.target.value as InsuranceMode)}
+            >
+              <option value="none">بدون بیمه — پرداخت بیعانه</option>
+              <option value="base">فقط بیمه پایه</option>
+              <option value="complementary">فقط بیمه تکمیلی</option>
+              <option value="both">پایه + تکمیلی</option>
+            </FormSelect>
+          </div>
+          {mode === "base" || mode === "both" ? (
+            <div>
+              <FormLabel>بیمه پایه</FormLabel>
+              <FormSelect value={baseId} onChange={(e) => setBaseId(e.target.value)}>
+                <option value="">— انتخاب —</option>
+                {baseList.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
+          ) : null}
+          {mode === "complementary" || mode === "both" ? (
+            <div>
+              <FormLabel>بیمه تکمیلی</FormLabel>
+              <FormSelect value={compId} onChange={(e) => setCompId(e.target.value)}>
+                <option value="">— انتخاب —</option>
+                {compList.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" className="text-sm" onClick={submitInquiry} disabled={mode === "none"}>
+              استعلام و بررسی کارشناسان
+            </Button>
+            {inquiryStatus === "pending" ? (
+              <Button type="button" variant="accent" className="text-sm" onClick={simulateApprove}>
+                شبیه‌سازی تأیید
+              </Button>
+            ) : null}
+            {inquiryStatus !== "none" ? (
+              <Button type="button" variant="outline" className="text-sm" onClick={clearInsurance}>
+                بازگشت به بیعانه
+              </Button>
+            ) : null}
+          </div>
+          {note ? <p className="text-sm font-bold text-cyan-800">{note}</p> : null}
+        </Card>
+      ) : null}
 
       {!app ? (
         <Card className="mb-6 border-blue-200 bg-blue-50 p-4 text-sm leading-7 text-blue-800" hover={false}>
-          🔒 اتصال امن به درگاه پرداخت — این نسخه نمایشی است. برای ارائه فرانت، پرداخت موفق و
-          ناموفق هر دو قابل شبیه‌سازی هستند.
+          🔒 اتصال امن به درگاه پرداخت — نسخه نمایشی فرانت.
         </Card>
       ) : null}
 
       <Button onClick={onPay} disabled={paying} className="mb-3 w-full py-3 text-base">
-        {paying ? (
-          <>
-            <span className="inline-block animate-spin">⏳</span>
-            در حال اتصال به درگاه...
-          </>
-        ) : app ? (
-          "پرداخت موفق (نمایشی)"
-        ) : (
-          "شبیه‌سازی پرداخت موفق"
-        )}
+        {paying ? "در حال اتصال به درگاه..." : app ? "پرداخت موفق (نمایشی)" : "شبیه‌سازی پرداخت موفق"}
       </Button>
       <Button variant="danger" onClick={onFail} disabled={paying} className="mb-2 w-full">
         {app ? "پرداخت ناموفق" : "شبیه‌سازی پرداخت ناموفق"}
