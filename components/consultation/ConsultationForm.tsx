@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/Card";
 import { getConsultationPrice, getConsultationTypes } from "@/lib/consultationPrice";
 import { PASTEUR_DATA } from "@/lib/data";
+import {
+  isPatientApproved,
+  payableFromFranchise,
+  resolveFranchisePercent,
+} from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -57,6 +62,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [submitted, setSubmitted] = useState(false);
   const [onlineInsurance, setOnlineInsurance] = useState(false);
   const [hasComplementary, setHasComplementary] = useState(false);
+  const [patientApproved, setPatientApproved] = useState(false);
+  const [franchisePercent, setFranchisePercent] = useState(10);
 
   const requiresDoctor = category === "medical-specialty" && Boolean(selectedSpecialty);
   const selectedDoctor = useMemo(
@@ -77,6 +84,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     setConsultationTypes(getConsultationTypes());
     const session = PasteurStorage.getPatientSession();
     setHasComplementary(Boolean(session?.complementaryInsuranceId));
+    setPatientApproved(isPatientApproved(session));
+    setFranchisePercent(resolveFranchisePercent(session));
     if (session) {
       setName((prev) => prev || session.name);
       setPhone((prev) => prev || session.phone);
@@ -363,15 +372,17 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
           type="checkbox"
           className="mt-1 h-4 w-4 accent-cyan-800"
           checked={onlineInsurance}
-          disabled={!hasComplementary}
+          disabled={!hasComplementary || !patientApproved}
           onChange={(e) => setOnlineInsurance(e.target.checked)}
         />
         <span>
           ویزیت آنلاین با پوشش بیمه تکمیلی
           <span className="mt-1 block text-xs font-normal text-slate-500">
-            {hasComplementary
-              ? "اکثر بیمه‌های تکمیلی آنلاین طرف قرارداد هستند؛ کسر از بیمه پس از استعلام."
-              : "ابتدا در پنل کاربری بیمه تکمیلی را ثبت کنید تا این گزینه فعال شود."}
+            {!hasComplementary
+              ? "ابتدا در پنل کاربری بیمه تکمیلی را ثبت کنید تا این گزینه فعال شود."
+              : !patientApproved
+                ? "کاربری شما در حال بررسی است؛ پس از تأیید کارشناس، فرانشیز٪ اعمال می‌شود."
+                : `پس از تأیید، مبلغ واریزی = ${franchisePercent.toLocaleString("fa-IR")}٪ از هزینه ویزیت.`}
           </span>
         </span>
       </label>
@@ -386,6 +397,12 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         <p className="mt-2 text-lg font-bold text-teal-700">
           {formatPrice(pricePreview.amount)}
         </p>
+        {onlineInsurance && patientApproved ? (
+          <p className="mt-2 text-sm font-bold text-cyan-900">
+            مبلغ واریزی با فرانشیز {franchisePercent.toLocaleString("fa-IR")}٪:{" "}
+            {formatPrice(payableFromFranchise(pricePreview.amount, franchisePercent))}
+          </p>
+        ) : null}
         <p className="mt-2 text-xs text-slate-500">
           مبلغ نهایی بر اساس نوع ویزیت
           {selectedSpecialty ? " و تخصص انتخاب‌شده" : ""} محاسبه شده است.

@@ -31,8 +31,20 @@ export default function AdminFacilitiesPage() {
     } else {
       const list = PasteurStorage.getFacilityRequests() as FacilityRequest[];
       if (!list[index]) return;
-      list[index] = { ...list[index], status };
+      const prev = list[index];
+      list[index] = { ...prev, status };
       PasteurStorage.set(PasteurStorage.KEYS.facilityRequests, list);
+      if (status === "approved" && prev.status !== "approved") {
+        const rawAmount = String(list[index].amount || "").replace(/[^\d]/g, "");
+        const amount = Number(rawAmount) || 0;
+        if (amount > 0) {
+          PasteurStorage.createFacilityInstallmentPlan({
+            phone: String(list[index].phone || ""),
+            patientName: String(list[index].name || ""),
+            amount,
+          });
+        }
+      }
     }
     reload();
   }

@@ -30,8 +30,11 @@ import {
   buildDueDates,
   DEFAULT_BASE_INSURANCES,
   DEFAULT_COMPLEMENTARY_INSURANCES,
+  DEFAULT_FRANCHISE_PERCENT,
   DEFAULT_HELP_ITEMS,
   normalizePatientPhone,
+  normalizePatientProfile,
+  resolveFranchisePercent,
   type Complaint,
   type ComplaintStatus,
   type DoctorReview,
@@ -632,9 +635,28 @@ export const PasteurStorage = {
     const list = this.getFacilityRequests();
     const idx = list.findIndex((request) => request.id === id);
     if (idx === -1) return null;
-    list[idx] = { ...list[idx], ...updates };
+    const prev = list[idx];
+    list[idx] = { ...prev, ...updates };
     this.set(this.KEYS.facilityRequests, list);
-    return list[idx];
+    const next = list[idx];
+    if (updates.status === 'approved' && prev.status !== 'approved') {
+      const rawAmount = String(next.amount || '').replace(/[^\d]/g, '');
+      const amount = Number(rawAmount) || 0;
+      if (amount > 0) {
+        const already = this.getAllInstallmentPlansRaw().some(
+          (p) => p.linkedRequestId === id && p.source === 'facility',
+        );
+        if (!already) {
+          this.createFacilityInstallmentPlan({
+            phone: String(next.phone || ''),
+            patientName: String(next.name || ''),
+            amount,
+            linkedRequestId: id,
+          });
+        }
+      }
+    }
+    return next;
   },
 
   getExtraDoctors(): Record<string, unknown>[] {
@@ -1482,46 +1504,72 @@ export const PasteurStorage = {
     const key = normalizePatientPhone(phone);
     if (!key) return null;
     const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
-    return all[key] ? { ...all[key] } : null;
+    return all[key] ? normalizePatientProfile(all[key]) : null;
   },
 
   savePatientProfile(profile: PatientProfile): PatientProfile {
     this.initPatientDomainIfNeeded();
     const key = normalizePatientPhone(profile.phone);
     const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
-    const next: PatientProfile = {
+    const prev = all[key];
+    const insuranceChanged =
+      prev &&
+      (prev.baseInsuranceId !== profile.baseInsuranceId ||
+        prev.complementaryInsuranceId !== profile.complementaryInsuranceId ||
+        resolveFranchisePercent(prev) !== resolveFranchisePercent(profile));
+    let status = profile.status || prev?.status || 'pending';
+    if (!prev) status = 'pending';
+    else if (insuranceChanged && status === 'approved') status = 'pending';
+    const next = normalizePatientProfile({
+      ...prev,
       ...profile,
       phone: key,
-      franchiseAmount: Number(profile.franchiseAmount || 0),
+      status,
+      franchisePercent: resolveFranchisePercent(profile),
       updatedAt: new Date().toISOString(),
-    };
+    });
     all[key] = next;
     this.set(this.KEYS.patients, all);
     return next;
   },
 
+  setPatientStatus(
+    phone: string,
+    status: 'pending' | 'approved' | 'rejected',
+    reviewNote?: string,
+  ): PatientProfile | null {
+    const profile = this.getPatientProfile(phone);
+    if (!profile) return null;
+    return this.savePatientProfile({
+      ...profile,
+      status,
+      reviewedAt: new Date().toISOString(),
+      reviewNote,
+    });
+  },
+
   listPatientProfiles(): PatientProfile[] {
     this.initPatientDomainIfNeeded();
     const all = (this.get(this.KEYS.patients) as Record<string, PatientProfile> | null) || {};
-    return Object.values(all).map((p) => ({ ...p }));
+    return Object.values(all).map((p) => normalizePatientProfile(p));
   },
 
   patientLogin(phone: string, name: string): PatientProfile {
     const key = normalizePatientPhone(phone);
     const existing = this.getPatientProfile(key);
     const now = new Date().toISOString();
-    const profile =
+    let profile =
       existing ||
       this.savePatientProfile({
         phone: key,
         name: name.trim() || 'بیمار',
-        franchiseAmount: 50000,
+        franchisePercent: DEFAULT_FRANCHISE_PERCENT,
+        status: 'pending',
         createdAt: now,
         updatedAt: now,
       });
     if (name.trim() && profile.name !== name.trim()) {
-      profile.name = name.trim();
-      this.savePatientProfile(profile);
+      profile = this.savePatientProfile({ ...profile, name: name.trim() });
     }
     if (canUseStorage()) {
       sessionStorage.setItem(this.KEYS.patientSession, JSON.stringify({ phone: key }));
@@ -1645,55 +1693,122 @@ export const PasteurStorage = {
     const all = ((this.get(this.KEYS.installmentPlans) as InstallmentPlan[] | null) || []).map(
       (p) => ({ ...p }),
     );
+    const visible = all.filter((p) => p.status !== 'hidden' && p.source !== 'membership');
     const key = normalizePatientPhone(phone);
-    if (!key) return all;
-    return all.filter((p) => p.phone === key);
+    if (!key) return visible;
+    return visible.filter((p) => p.phone === key);
+  },
+
+  /** شامل طرح‌های membership مخفی — فقط برای ادمین */
+  getAllInstallmentPlansRaw(): InstallmentPlan[] {
+    this.initPatientDomainIfNeeded();
+    return ((this.get(this.KEYS.installmentPlans) as InstallmentPlan[] | null) || []).map((p) => ({
+      ...p,
+    }));
   },
 
   saveInstallmentPlan(plan: InstallmentPlan): InstallmentPlan {
-    const list = this.getInstallmentPlans();
+    const list = this.getAllInstallmentPlansRaw();
     list.unshift(plan);
     this.set(this.KEYS.installmentPlans, list);
     return plan;
   },
 
-  createMembershipInstallmentPlan(input: {
+  hideMembershipInstallmentPlans(phone?: string | null): void {
+    const key = normalizePatientPhone(phone);
+    const list = this.getAllInstallmentPlansRaw().map((p) => {
+      if (p.source !== 'membership') return p;
+      if (key && p.phone !== key) return p;
+      return { ...p, status: 'hidden' as const };
+    });
+    this.set(this.KEYS.installmentPlans, list);
+  },
+
+  /** @deprecated v4: حق عضویت دیگر قسط‌بندی نمی‌شود */
+  createMembershipInstallmentPlan(_input: {
     phone?: string | null;
     patientName?: string;
     amount?: number;
     planName?: string;
+  }): null {
+    return null;
+  },
+
+  createCreditInstallmentPlan(input: {
+    phone?: string | null;
+    patientName?: string;
+    ceilingAmount: number;
+    label?: string;
+  }): InstallmentPlan | null {
+    const phone = normalizePatientPhone(input.phone);
+    if (!phone) return null;
+    const settings = this.getWalletSettings();
+    const total = Math.max(0, Number(input.ceilingAmount || 0));
+    if (!total) return null;
+    const count = settings.installmentMax || 6;
+    const start = new Date();
+    start.setMonth(start.getMonth() + (settings.graceMonths || 1));
+    const plan: InstallmentPlan = {
+      id: this.generateId(),
+      phone,
+      patientName: input.patientName,
+      source: 'credit',
+      title: input.label || `اقساط بسته اعتباری ${total.toLocaleString('fa-IR')} تومان`,
+      totalAmount: total,
+      paidAmount: 0,
+      installmentCount: count,
+      dueDates: buildDueDates(count, start),
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+    this.saveInstallmentPlan(plan);
+    this.addInstallmentReminder(plan);
+    return plan;
+  },
+
+  createFacilityInstallmentPlan(input: {
+    phone?: string | null;
+    patientName?: string;
+    amount: number;
+    linkedRequestId?: string;
+    title?: string;
   }): InstallmentPlan | null {
     const phone = normalizePatientPhone(input.phone);
     if (!phone) return null;
     const total = Math.max(0, Number(input.amount || 0));
+    if (!total) return null;
     const count = 6;
     const plan: InstallmentPlan = {
       id: this.generateId(),
       phone,
       patientName: input.patientName,
-      source: 'membership',
-      title: `اقساط ${input.planName || 'عضویت'}`,
+      source: 'facility',
+      title: input.title || `اقساط تسهیلات ${total.toLocaleString('fa-IR')} تومان`,
       totalAmount: total,
-      paidAmount: Math.round(total / count),
+      paidAmount: 0,
       installmentCount: count,
       dueDates: buildDueDates(count),
       status: 'active',
+      linkedRequestId: input.linkedRequestId,
       createdAt: new Date().toISOString(),
     };
     this.saveInstallmentPlan(plan);
-    const nextDue = plan.dueDates[0];
-    if (nextDue) {
-      this.saveReminder({
-        id: this.generateId(),
-        type: 'installment',
-        phone,
-        title: `سررسید قسط — ${plan.title}`,
-        message: `قسط بعدی طرح «${plan.title}» در تاریخ ${nextDue}`,
-        dueDate: nextDue,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-      });
-    }
+    this.addInstallmentReminder(plan);
     return plan;
+  },
+
+  addInstallmentReminder(plan: InstallmentPlan): void {
+    const nextDue = plan.dueDates[0];
+    if (!nextDue) return;
+    this.saveReminder({
+      id: this.generateId(),
+      type: 'installment',
+      phone: plan.phone,
+      title: `سررسید قسط — ${plan.title}`,
+      message: `قسط بعدی طرح «${plan.title}» در تاریخ ${nextDue}`,
+      dueDate: nextDue,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    });
   },
 };

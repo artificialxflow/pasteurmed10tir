@@ -82,12 +82,17 @@ export default function AdminInsurancesPage() {
 
       <div>
         <h2 className="mb-3 text-lg font-extrabold">درخواست‌های استعلام</h2>
-        <AdminTable headers={["بیمار", "موبایل", "فرانشیز", "وضعیت", "عملیات"]} empty="استعلامی نیست.">
+        <AdminTable headers={["بیمار", "موبایل", "فرانشیز٪", "وضعیت", "عملیات"]} empty="استعلامی نیست.">
           {inquiries.map((inq) => (
             <tr key={inq.id} className="border-t border-slate-100">
               <td className="px-4 py-3">{inq.patientName || "—"}</td>
               <td className="px-4 py-3">{inq.phone}</td>
-              <td className="px-4 py-3">{formatPrice(inq.franchiseAmount)}</td>
+              <td className="px-4 py-3">
+                {(inq.franchisePercent ?? 0).toLocaleString("fa-IR")}٪
+                {inq.visitFee
+                  ? ` از ${formatPrice(inq.visitFee)}`
+                  : ""}
+              </td>
               <td className="px-4 py-3">
                 <AdminBadge
                   tone={

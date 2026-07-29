@@ -50,6 +50,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.facilities, label: "تسهیلات", permission: "facilities" },
       { href: ROUTES.admin.insurances, label: "بیمه‌ها", permission: "insurances" },
       { href: ROUTES.admin.installments, label: "اقساط", permission: "installments" },
+      { href: ROUTES.admin.patients, label: "بیماران", permission: "patients" },
     ],
   },
   {
@@ -94,6 +95,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.complaints]: "شکایات بیماران",
   [ROUTES.admin.help]: "آموزش سامانه",
   [ROUTES.admin.installments]: "اقساط کاربران",
+  [ROUTES.admin.patients]: "تأیید بیماران",
 };
 
 function titleFromPath(pathname: string) {

@@ -94,6 +94,7 @@ export const ROUTES = {
     consultationPrices: '/admin/consultation-prices',
     shop: '/admin/shop',
     access: '/admin/access',
+    patients: '/admin/patients',
     insurances: '/admin/insurances',
     reviews: '/admin/reviews',
     complaints: '/admin/complaints',

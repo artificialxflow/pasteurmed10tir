@@ -168,12 +168,21 @@ export const PaymentFlow = {
         pending.patientPhone,
         planIdToWalletKinds(String(pending.planId || 'regular')),
       );
-      PasteurStorage.createMembershipInstallmentPlan({
-        phone: pending.patientPhone,
-        patientName: pending.patientName as string | undefined,
-        amount: pending.amount,
-        planName: pending.planName as string | undefined,
-      });
+      const wallet = PasteurStorage.getOrCreateWallet(pending.patientPhone);
+      if (wallet && wallet.ceiling > 0) {
+        PasteurStorage.hideMembershipInstallmentPlans(pending.patientPhone);
+        const existingCredit = PasteurStorage.getInstallmentPlans(pending.patientPhone).some(
+          (p) => p.source === 'credit' || p.source === 'wallet',
+        );
+        if (!existingCredit) {
+          PasteurStorage.createCreditInstallmentPlan({
+            phone: pending.patientPhone,
+            patientName: pending.patientName as string | undefined,
+            ceilingAmount: wallet.ceiling,
+            label: `اقساط بسته اعتباری ${wallet.ceiling.toLocaleString('fa-IR')} تومان`,
+          });
+        }
+      }
       if (pending.referralCode) {
         PasteurStorage.saveCommission({
           referralCode: pending.referralCode,

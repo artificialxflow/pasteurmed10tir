@@ -3,6 +3,12 @@
 import { Button } from "@/components/ui/Button";
 import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
 import type { InsuranceMode } from "@/lib/patient";
+import {
+  DEFAULT_VISIT_FEE_TOMAN,
+  isPatientApproved,
+  payableFromFranchise,
+  resolveFranchisePercent,
+} from "@/lib/patient";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
@@ -62,8 +68,8 @@ function PaymentSummary({
           last
         />
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
-          بیعانه رزرو در صورت لغو قابل استرداد نیست. اگر استعلام بیمه تأیید شود، مبلغ قابل پرداخت
-          برابر فرانشیز خواهد بود.
+          بیعانه رزرو در صورت لغو قابل استرداد نیست. اگر استعلام بیمه تأیید شود و کاربری بیمار تأیید
+          شده باشد، مبلغ قابل پرداخت برابر درصد فرانشیز از هزینه ویزیت خواهد بود.
         </p>
       </Card>
     );
@@ -168,7 +174,12 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       return;
     }
     const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
-    const franchise = Number(profile?.franchiseAmount || 50000);
+    if (!isPatientApproved(profile)) {
+      setNote("کاربری بیمار هنوز تأیید نشده است. ابتدا در پنل ادمین تأیید شود.");
+      return;
+    }
+    const percent = resolveFranchisePercent(profile);
+    const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
     const inquiry = PasteurStorage.saveInsuranceInquiry({
       id: PasteurStorage.generateId(),
       phone: String(pending.patientPhone || ""),
@@ -177,7 +188,8 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       baseInsuranceId: mode === "base" || mode === "both" ? baseId : undefined,
       complementaryInsuranceId:
         mode === "complementary" || mode === "both" ? compId : undefined,
-      franchiseAmount: franchise,
+      franchisePercent: percent,
+      visitFee,
       depositAmount,
       status: "pending",
       createdAt: new Date().toISOString(),
@@ -191,17 +203,27 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     if (!pending || !inquiryId) return;
     PasteurStorage.updateInsuranceInquiry(inquiryId, "approved");
     const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
-    const franchise = Number(profile?.franchiseAmount || 50000);
+    if (!isPatientApproved(profile)) {
+      setNote("کاربری بیمار تأیید نشده؛ فرانشیز٪ اعمال نشد.");
+      return;
+    }
+    const percent = resolveFranchisePercent(profile);
+    const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
+    const payable = payableFromFranchise(visitFee, percent);
     const next = {
       ...pending,
-      amount: franchise,
+      amount: payable,
+      visitFee,
+      franchisePercent: percent,
       insuranceInquiryId: inquiryId,
       insuranceStatus: "approved",
-      paymentLabel: "فرانشیز پس از تأیید بیمه",
+      paymentLabel: `فرانشیز ${percent}٪ از هزینه ویزیت`,
     };
     applyAmount(next);
     setInquiryStatus("approved");
-    setNote(`استعلام تأیید شد. مبلغ قابل پرداخت: ${formatPrice(franchise)}`);
+    setNote(
+      `استعلام تأیید شد. هزینه ویزیت ${formatPrice(visitFee)} × ${percent}٪ = ${formatPrice(payable)}`,
+    );
   }
 
   function clearInsurance() {

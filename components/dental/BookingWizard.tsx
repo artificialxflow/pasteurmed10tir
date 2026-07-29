@@ -195,6 +195,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       patientName,
       patientPhone: state.patientPhone.trim(),
       amount,
+      visitFee: 350000,
       isDeposit: true,
       paymentLabel: "بیعانه رزرو نوبت",
       referralCode: state.referralCode,

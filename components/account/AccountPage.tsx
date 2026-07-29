@@ -4,8 +4,16 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
+import {
+  clampFranchisePercent,
+  DEFAULT_FRANCHISE_PERCENT,
+  DEFAULT_VISIT_FEE_TOMAN,
+  isPatientApproved,
+  patientStatusLabel,
+  payableFromFranchise,
+  type PatientProfile,
+} from "@/lib/patient";
 import { formatPrice, normalizePhone } from "@/lib/utils";
-import type { PatientProfile } from "@/lib/patient";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -16,7 +24,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [nationalId, setNationalId] = useState("");
   const [baseId, setBaseId] = useState("");
   const [compId, setCompId] = useState("");
-  const [franchise, setFranchise] = useState("50000");
+  const [franchise, setFranchise] = useState(String(DEFAULT_FRANCHISE_PERCENT));
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
 
@@ -30,11 +38,12 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     setNationalId(p.nationalId || "");
     setBaseId(p.baseInsuranceId || "");
     setCompId(p.complementaryInsuranceId || "");
-    setFranchise(String(p.franchiseAmount || 0));
+    setFranchise(String(p.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT));
   }
 
   useEffect(() => {
     PasteurStorage.initPatientDomainIfNeeded();
+    PasteurStorage.hideMembershipInstallmentPlans();
     const session = PasteurStorage.getPatientSession();
     if (session) hydrate(session);
     setReady(true);
@@ -55,16 +64,21 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   function save(e: FormEvent) {
     e.preventDefault();
     if (!profile) return;
+    const percent = clampFranchisePercent(Number(franchise));
     const next = PasteurStorage.savePatientProfile({
       ...profile,
       name: name.trim(),
       nationalId: nationalId.trim() || undefined,
       baseInsuranceId: baseId || undefined,
       complementaryInsuranceId: compId || undefined,
-      franchiseAmount: Number(franchise) || 0,
+      franchisePercent: percent,
     });
     hydrate(next);
-    setMessage("پروفایل ذخیره شد.");
+    setMessage(
+      next.status === "approved"
+        ? "پروفایل ذخیره شد."
+        : "پروفایل ذخیره شد و برای بررسی کارشناس در صف قرار گرفت.",
+    );
   }
 
   function logout() {
@@ -114,12 +128,24 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     );
   }
 
+  const samplePayable = payableFromFranchise(
+    DEFAULT_VISIT_FEE_TOMAN,
+    clampFranchisePercent(Number(franchise)),
+  );
+
   return (
     <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-6 px-4 py-10"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">پنل کاربری</h1>
           <p className="mt-1 text-sm text-slate-500">{profile.phone}</p>
+          <p
+            className={`mt-2 text-sm font-bold ${
+              isPatientApproved(profile) ? "text-teal-700" : "text-amber-700"
+            }`}
+          >
+            وضعیت کاربری: {patientStatusLabel(profile.status)}
+          </p>
         </div>
         <Button type="button" variant="outline" className="text-sm" onClick={logout}>
           خروج
@@ -151,9 +177,11 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             <FormInput value={nationalId} onChange={(e) => setNationalId(e.target.value)} />
           </div>
           <div>
-            <FormLabel>فرانشیز (تومان)</FormLabel>
+            <FormLabel>فرانشیز (درصد)</FormLabel>
             <FormInput
               type="number"
+              min={0}
+              max={100}
               value={franchise}
               onChange={(e) => setFranchise(e.target.value)}
             />
@@ -181,9 +209,10 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             </FormSelect>
           </div>
           <div className="sm:col-span-2">
-            <p className="mb-3 text-xs text-slate-500">
-              فرانشیز فعلی نمایشی: {formatPrice(Number(franchise) || 0)} — پس از تأیید استعلام بیمه
-              در پرداخت، همین مبلغ مبنا قرار می‌گیرد.
+            <p className="mb-3 text-xs leading-6 text-slate-500">
+              پس از تأیید کارشناس، فقط همین درصد از هزینه ویزیت پرداخت می‌شود. مثال: ویزیت{" "}
+              {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {clampFranchisePercent(Number(franchise))}٪
+              → مبلغ واریزی {formatPrice(samplePayable)}.
             </p>
             {message ? <p className="mb-3 text-sm font-bold text-cyan-800">{message}</p> : null}
             <Button type="submit">ذخیره مشخصات</Button>
