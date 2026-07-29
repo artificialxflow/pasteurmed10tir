@@ -129,6 +129,10 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
       'shop',
       'commissions',
       'facilities',
+      'installments',
+      'insurances',
+      'patients',
+      'complaints',
     ],
   },
 ];

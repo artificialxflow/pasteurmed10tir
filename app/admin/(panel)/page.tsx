@@ -2,23 +2,86 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Card } from "@/components/ui/Card";
+import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Booking, type BookingStats } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Period = "day" | "week" | "month";
 
+type QueueCounts = {
+  pendingPatients: number;
+  pendingFacilities: number;
+  newComplaints: number;
+  paidMembers: number;
+  pendingCommissions: number;
+};
+
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<Period>("day");
   const [stats, setStats] = useState<BookingStats | null>(null);
+  const [queue, setQueue] = useState<QueueCounts>({
+    pendingPatients: 0,
+    pendingFacilities: 0,
+    newComplaints: 0,
+    paidMembers: 0,
+    pendingCommissions: 0,
+  });
 
   useEffect(() => {
+    PasteurStorage.initPatientDomainIfNeeded();
     setStats(PasteurStorage.getBookingStats());
+    const patients = PasteurStorage.listPatientProfiles();
+    const facilities = PasteurStorage.getFacilityRequests();
+    const complaints = PasteurStorage.getComplaints();
+    const commissions = PasteurStorage.getCommissions();
+    setQueue({
+      pendingPatients: patients.filter((p) => p.status !== "approved" && p.status !== "rejected")
+        .length,
+      pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending").length,
+      newComplaints: complaints.filter((c) => c.status === "new" || !c.status).length,
+      paidMembers: PasteurStorage.getMembers().filter((m) => m.status === "paid").length,
+      pendingCommissions: commissions.filter((c) => c.status !== "paid").length,
+    });
   }, [period]);
 
   if (!stats) {
     return <p className="text-slate-500">در حال بارگذاری...</p>;
   }
+
+  const shortcuts = [
+    {
+      href: ROUTES.admin.patients,
+      label: "بیماران در انتظار تأیید",
+      count: queue.pendingPatients,
+      tone: "text-amber-700",
+    },
+    {
+      href: ROUTES.admin.facilities,
+      label: "تسهیلات / وام در بررسی",
+      count: queue.pendingFacilities,
+      tone: "text-rose-700",
+    },
+    {
+      href: ROUTES.admin.memberships,
+      label: "عضویت‌های پرداخت‌شده",
+      count: queue.paidMembers,
+      tone: "text-violet-700",
+    },
+    {
+      href: ROUTES.admin.complaints,
+      label: "شکایات جدید",
+      count: queue.newComplaints,
+      tone: "text-cyan-800",
+    },
+    {
+      href: ROUTES.admin.commissions,
+      label: "پورسانت در انتظار",
+      count: queue.pendingCommissions,
+      tone: "text-teal-700",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -44,6 +107,20 @@ export default function AdminDashboardPage() {
             {item.label}
           </button>
         ))}
+      </div>
+
+      <div>
+        <h2 className="mb-3 text-lg font-bold">صف‌های نیازمند توجه</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {shortcuts.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <Card hover className="p-4 transition hover:border-teal-200">
+                <p className={`text-2xl font-bold ${item.tone}`}>{item.count}</p>
+                <p className="mt-1 text-xs font-bold text-slate-600">{item.label}</p>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">

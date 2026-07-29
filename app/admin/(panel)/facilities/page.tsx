@@ -78,9 +78,17 @@ export default function AdminFacilitiesPage() {
               onChange={(e) => updateStatus(r.id ? String(r.id) : undefined, e.target.value, index)}
             >
               <option value="pending">در بررسی</option>
-              <option value="approved">تأیید شده</option>
-              <option value="rejected">رد شده</option>
+              <option value="approved">تأیید (اقساط ساخته می‌شود)</option>
+              <option value="rejected">رد</option>
             </FormSelect>
+            {r.status === "approved" ? (
+              <a
+                href="/admin/installments"
+                className="mt-1 block text-[11px] font-semibold text-teal-700"
+              >
+                مشاهده اقساط →
+              </a>
+            ) : null}
           </td>
         </tr>
       ))}

@@ -2,6 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Card } from "@/components/ui/Card";
+import { commissionBasisLabel, commissionSourceTypeLabel } from "@/lib/commission";
 import { PasteurStorage, type Commission } from "@/lib/storage";
 import { useEffect, useState } from "react";
 
@@ -29,6 +30,14 @@ export default function AdminCommissionsPage() {
 
   return (
     <div className="space-y-8">
+      <Card hover={false} className="border-cyan-100 bg-cyan-50/70 p-4 text-sm leading-7 text-slate-700">
+        <p className="font-extrabold text-cyan-900">مبنای محاسبه (تا قفل کارفرما)</p>
+        <p>
+          پورسانت = درصد ویزیتور × <strong>مبلغ همان تراکنش</strong> که کد معرف روی آن ثبت شده
+          (رزرو ≈ مبلغ درگاه؛ عضویت/VIP ≈ حق عضویت پرداخت‌شده).
+        </p>
+      </Card>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card hover={false} className="p-5">
           <p className="text-2xl font-bold text-teal-700">{total.toLocaleString("fa-IR")}</p>
@@ -49,8 +58,9 @@ export default function AdminCommissionsPage() {
           "ویزیتور",
           "کد",
           "منبع",
+          "مبنا",
           "مشتری",
-          "مبلغ",
+          "مبلغ پایه",
           "درصد",
           "پورسانت",
           "وضعیت",
@@ -62,7 +72,15 @@ export default function AdminCommissionsPage() {
           <tr key={c.id} className="border-t border-slate-100">
             <td className="px-4 py-3">{c.visitorName}</td>
             <td className="px-4 py-3 font-mono">{c.referralCode}</td>
-            <td className="px-4 py-3">{c.sourceLabel}</td>
+            <td className="px-4 py-3">
+              {commissionSourceTypeLabel(c.sourceType)}
+              {c.sourceLabel ? (
+                <span className="mt-0.5 block text-xs text-slate-500">{c.sourceLabel}</span>
+              ) : null}
+            </td>
+            <td className="max-w-[10rem] px-4 py-3 text-xs text-slate-600">
+              {commissionBasisLabel(c.sourceType)}
+            </td>
             <td className="px-4 py-3">{c.customerName}</td>
             <td className="px-4 py-3">{Number(c.amount || 0).toLocaleString("fa-IR")}</td>
             <td className="px-4 py-3">{c.commissionRate}%</td>

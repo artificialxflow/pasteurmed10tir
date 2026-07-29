@@ -65,10 +65,12 @@ export default function AdminMembershipsPage() {
       <div>
         <h2 className="mb-4 text-lg font-bold">اعضا و پرداخت‌ها</h2>
         <AdminTable
-          headers={["نام", "طرح", "مدت عضویت", "مبلغ", "وضعیت پرداخت"]}
+          headers={["نام", "طرح", "مدت عضویت", "مبلغ", "سقف اعتبار", "وضعیت پرداخت"]}
           empty="هنوز عضوی ثبت نشده است."
         >
-          {members.map((m) => (
+          {members.map((m) => {
+            const wallet = PasteurStorage.getOrCreateWallet(m.patientPhone);
+            return (
             <tr key={m.id} className="border-t border-slate-100">
               <td className="px-4 py-3">{m.patientName}</td>
               <td className="px-4 py-3">{m.planName}</td>
@@ -76,13 +78,17 @@ export default function AdminMembershipsPage() {
                 {m.membershipDurationLabel || m.validityLabel || "—"}
               </td>
               <td className="px-4 py-3">{(m.amount || 0).toLocaleString("fa-IR")}</td>
+              <td className="px-4 py-3 text-xs">
+                {wallet ? `${wallet.ceiling.toLocaleString("fa-IR")} تومان` : "—"}
+              </td>
               <td className="px-4 py-3">
                 <AdminBadge tone={m.status === "paid" ? "success" : "warn"}>
                   {m.status === "paid" ? "موفق" : "در انتظار"}
                 </AdminBadge>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </AdminTable>
       </div>
 

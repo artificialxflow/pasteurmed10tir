@@ -140,6 +140,19 @@ export const PaymentFlow = {
       PasteurStorage.activateShopVip(pending.patientPhone);
       PasteurStorage.setShopCustomerType('vip', pending.patientPhone || '');
       PasteurStorage.upgradeWalletForUser(pending.patientPhone, planIdToWalletKinds('shop-vip'));
+      PasteurStorage.saveMembershipApplication({
+        id: PasteurStorage.generateId(),
+        patientName: pending.patientName,
+        phone: pending.patientPhone,
+        planTitle: pending.planName || 'VIP تجهیزات',
+        tier: 'shop-vip',
+        tierLabel: 'VIP تجهیزات',
+        amountToman: pending.amount,
+        referralCode: pending.referralCode,
+        status: 'paid',
+        source: 'shop-vip-payment',
+        createdAt: new Date().toISOString(),
+      });
       if (pending.referralCode) {
         PasteurStorage.saveCommission({
           referralCode: pending.referralCode,
@@ -162,6 +175,19 @@ export const PaymentFlow = {
         membershipDurationLabel: pending.membershipDurationLabel as string | undefined,
         discountPercent: pending.discountPercent as number | undefined,
         status: 'paid',
+        createdAt: new Date().toISOString(),
+      });
+      PasteurStorage.saveMembershipApplication({
+        id: PasteurStorage.generateId(),
+        patientName: pending.patientName,
+        phone: pending.patientPhone,
+        planTitle: pending.planName,
+        tier: pending.planId,
+        tierLabel: pending.planId === 'vip' ? 'VIP' : pending.planId,
+        amountToman: pending.amount,
+        referralCode: pending.referralCode,
+        status: 'paid',
+        source: 'payment-complete',
         createdAt: new Date().toISOString(),
       });
       PasteurStorage.upgradeWalletForUser(

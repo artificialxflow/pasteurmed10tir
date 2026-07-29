@@ -52,6 +52,10 @@ export default function AdminVisitorsPage() {
 
   return (
     <div className="space-y-8">
+      <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm leading-7 text-slate-700">
+        درصد پورسانت روی <strong>مبلغ تراکنش معرف‌شده</strong> اعمال می‌شود (رزرو = مبلغ درگاه؛ عضویت =
+        حق عضویت). جزئیات در صفحه پورسانت‌ها.
+      </Card>
       <AdminTable
         headers={["نام", "کد معرف", "تماس", "پورسانت", "وضعیت", "عملیات"]}
         empty="ویزیتوری ثبت نشده است."
