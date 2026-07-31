@@ -797,7 +797,11 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             <div className="rounded-xl border-2 border-slate-900 p-4 text-sm leading-7">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="پاستور پلاس" className="h-10 w-10 object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="Clinique Pasteur | پاستور پلاس"
+                  className="h-12 w-auto max-w-[8rem] object-contain"
+                />
                 <div className="flex-1 text-center">
                   <p className="text-lg font-extrabold">فرم پیشنهاد صدور عضویت</p>
                   <p className="text-slate-500">پاستور پلاس</p>

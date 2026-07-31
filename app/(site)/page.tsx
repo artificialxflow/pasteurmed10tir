@@ -52,7 +52,7 @@ export default function HomePage() {
         <div className="relative mx-auto grid min-h-[min(92vh,860px)] max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-8">
           <div className="animate-[fadeUp_0.7s_ease-out_both]">
             <div className="mb-6 flex items-center gap-4">
-              <Logo className="h-16 w-16 sm:h-20 sm:w-20" />
+              <Logo className="h-20 w-auto max-w-[14rem] sm:h-24 sm:max-w-[16rem]" />
               <div>
                 <p className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
                   پاستور پلاس

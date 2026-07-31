@@ -101,7 +101,10 @@ export function Logo({ className }: { className?: string }) {
     <img
       src="/logo.png"
       alt="Clinique Pasteur | پاستور پلاس"
-      className={cn("h-10 w-10 object-contain rounded-lg bg-white", className)}
+      className={cn(
+        "h-12 w-auto max-w-[9rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[10rem]",
+        className,
+      )}
     />
   );
 }

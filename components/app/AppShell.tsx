@@ -51,10 +51,10 @@ export function AppShell({
             ←
           </Link>
         ) : (
-          <Logo className="h-8 w-8" />
+          <Logo className="h-9 w-auto max-w-[4.5rem]" />
         )}
         <h1 className="flex-1 text-center text-sm font-extrabold text-slate-900">{title}</h1>
-        <Logo className="h-8 w-8" />
+        <Logo className="h-9 w-auto max-w-[4.5rem]" />
       </header>
       <main className={cn("flex-1 overflow-y-auto px-4 py-4", showNav ? "pb-24" : "pb-4")}>{children}</main>
       {showNav ? (

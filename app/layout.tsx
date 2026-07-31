@@ -21,9 +21,12 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   themeColor: "#0891b2",
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    apple: [{ url: "/icon-192.png", type: "image/png" }],
-    shortcut: ["/logo.png"],
+    icon: [
+      { url: "/icon.png?v=20260731", type: "image/png", sizes: "any" },
+      { url: "/logo.png?v=20260731", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png?v=20260731", type: "image/png", sizes: "192x192" }],
+    shortcut: ["/logo.png?v=20260731"],
   },
   other: {
     enamad: "10209334",

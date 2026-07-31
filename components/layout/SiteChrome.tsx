@@ -53,9 +53,9 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-cyan-100 bg-white/80 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6 lg:px-8">
-          <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-3">
-            <Logo />
+        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-4 sm:h-24 sm:px-6 lg:px-8">
+          <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <Logo className="h-12 w-auto max-w-[10rem] sm:h-14 sm:max-w-[11rem]" />
             <div className="min-w-0">
               <p className="truncate text-base font-extrabold leading-tight text-slate-900 sm:text-lg">
                 {PASTEUR_DATA.institute.nameFa}
@@ -129,8 +129,8 @@ export function SiteFooter() {
     <footer className="mt-auto border-t-2 border-slate-200 bg-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
         <div>
-          <div className="mb-4 flex items-center gap-3">
-            <Logo />
+          <div className="mb-4 flex items-center gap-3 sm:gap-4">
+            <Logo className="h-12 w-auto max-w-[10rem]" />
             <div>
               <p className="font-bold text-slate-900">{institute.nameFa}</p>
               <p className="text-xs text-slate-500">{institute.nameEn}</p>

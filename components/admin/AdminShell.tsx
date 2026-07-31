@@ -184,7 +184,7 @@ export function AdminShell({
       <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-l border-cyan-100/80 bg-white/95 shadow-[_-8px_0_40px_-28px_rgb(8_145_178_/_0.35)] backdrop-blur lg:flex">
         <div className="border-b border-cyan-50 px-5 py-5">
           <div className="flex items-center gap-3">
-            <Logo className="h-11 w-11" />
+            <Logo className="h-12 w-auto max-w-[9rem]" />
             <div>
               <p className="text-base font-extrabold text-slate-900">پاستور پلاس</p>
               <p className="text-xs font-bold text-cyan-800">پنل مدیریت</p>
