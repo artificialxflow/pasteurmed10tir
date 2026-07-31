@@ -6,7 +6,7 @@ import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 const navItems = [
   { href: ROUTES.web.home, label: "صفحه اصلی", id: "home" },
@@ -49,28 +49,50 @@ export function SiteHeader() {
   const pathname = usePathname();
   const active = activeId(pathname);
   const [open, setOpen] = useState(false);
+  const menuId = useId();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-cyan-100 bg-white/80 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between gap-4 px-4 sm:h-24 sm:px-6 lg:px-8">
-          <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Logo className="h-12 w-auto max-w-[10rem] sm:h-14 sm:max-w-[11rem]" />
-            <div className="min-w-0">
+      <header className="sticky top-0 z-[70] border-b border-cyan-100 bg-white/90 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-3 sm:h-24 sm:gap-4 sm:px-6 lg:px-8">
+          <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <Logo className="h-11 w-auto max-w-[7.5rem] sm:h-14 sm:max-w-[11rem]" />
+            <div className="hidden min-w-0 sm:block">
               <p className="truncate text-base font-extrabold leading-tight text-slate-900 sm:text-lg">
                 {PASTEUR_DATA.institute.nameFa}
               </p>
-              <p className="hidden truncate text-xs text-slate-500 sm:block">سامانه خدمات مرکز پاستور</p>
+              <p className="hidden truncate text-xs text-slate-500 md:block">سامانه خدمات مرکز پاستور</p>
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-slate-100 bg-slate-50/80 p-1 md:flex" aria-label="منوی اصلی">
+          <nav
+            className="hidden max-w-[min(100%,52rem)] flex-wrap items-center justify-end gap-1 rounded-full border border-slate-100 bg-slate-50/80 p-1 lg:flex"
+            aria-label="منوی اصلی"
+          >
             {navItems.map((item) => (
               <Link
                 key={item.id}
                 href={item.href}
                 className={cn(
-                  "rounded-full px-3 py-2 text-xs font-bold transition-colors lg:text-sm",
+                  "rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors xl:px-3 xl:text-sm",
                   active === item.id
                     ? "border border-cyan-300 bg-cyan-100 text-cyan-800"
                     : "text-slate-600 hover:bg-white hover:text-cyan-700",
@@ -83,31 +105,51 @@ export function SiteHeader() {
 
           <button
             type="button"
-            className="rounded-xl border border-cyan-200 bg-white/80 p-2 text-slate-700 md:hidden"
-            aria-label="باز کردن منو"
+            className="shrink-0 rounded-xl border border-cyan-200 bg-white/90 px-3 py-2 text-base font-bold text-slate-700 lg:hidden"
+            aria-label={open ? "بستن منو" : "باز کردن منو"}
+            aria-expanded={open}
+            aria-controls={menuId}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? "✕" : "☰"}
           </button>
         </div>
-        {open ? (
-          <nav className="flex flex-col gap-1 border-t border-cyan-50 px-4 py-3 md:hidden">
-            {navItems.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "rounded-xl px-3 py-2.5 text-sm font-bold",
-                  active === item.id ? "bg-cyan-50 text-cyan-800" : "text-slate-700",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
       </header>
+
+      {/* Mobile overlay menu — only below lg; does not push page content */}
+      {open ? (
+        <div className="fixed inset-0 z-[60] lg:hidden" role="presentation">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
+            aria-label="بستن منو"
+            onClick={() => setOpen(false)}
+          />
+          <nav
+            id={menuId}
+            aria-label="منوی موبایل"
+            className="absolute inset-x-0 top-[4.25rem] max-h-[min(calc(85dvh-4.25rem),32rem)] overflow-y-auto border-b border-cyan-100 bg-white px-3 py-3 shadow-xl sm:top-24 sm:max-h-[min(calc(85dvh-6rem),34rem)] animate-[appEnter_0.18s_ease]"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col gap-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "rounded-xl px-3 py-3 text-sm font-bold transition-colors",
+                    active === item.id
+                      ? "bg-cyan-50 text-cyan-800"
+                      : "text-slate-700 hover:bg-slate-50",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        </div>
+      ) : null}
 
       <nav className="mobile-bottom-nav" aria-label="ناوبری موبایل">
         {bottomNav.map((item) => (
