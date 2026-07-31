@@ -6,6 +6,7 @@ import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import type { InsuranceCompany, InsuranceInquiry } from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminInsurancesPage() {
@@ -81,7 +82,13 @@ export default function AdminInsurancesPage() {
       </Card>
 
       <div>
-        <h2 className="mb-3 text-lg font-extrabold">درخواست‌های استعلام</h2>
+        <h2 className="mb-3 text-lg font-extrabold">درخواست‌های استعلام بیمه</h2>
+        <p className="mb-3 text-sm leading-7 text-slate-600">
+          تأیید استعلام پرداخت جدا از «تأیید کاربری / فرانشیز» است.{" "}
+          <Link href="/admin/patients" className="font-bold text-teal-700 underline-offset-2 hover:underline">
+            رفتن به تأیید کاربری →
+          </Link>
+        </p>
         <AdminTable headers={["بیمار", "موبایل", "فرانشیز٪", "وضعیت", "عملیات"]} empty="استعلامی نیست.">
           {inquiries.map((inq) => (
             <tr key={inq.id} className="border-t border-slate-100">

@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.dashboard, label: "داشبورد", permission: "dashboard" },
       { href: ROUTES.admin.bookings, label: "رزروها", permission: "bookings" },
       { href: ROUTES.admin.consultations, label: "مشاوره‌ها", permission: "consultations" },
+      { href: ROUTES.admin.patients, label: "تأیید کاربری", permission: "patients" },
       { href: ROUTES.admin.reminders, label: "یادآورها", permission: "reminders" },
     ],
   },
@@ -48,9 +49,8 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.shop, label: "فروشگاه", permission: "shop" },
       { href: ROUTES.admin.commissions, label: "پورسانت‌ها", permission: "commissions" },
       { href: ROUTES.admin.facilities, label: "تسهیلات", permission: "facilities" },
-      { href: ROUTES.admin.insurances, label: "بیمه‌ها", permission: "insurances" },
+      { href: ROUTES.admin.insurances, label: "بیمه‌ها و استعلام", permission: "insurances" },
       { href: ROUTES.admin.installments, label: "اقساط", permission: "installments" },
-      { href: ROUTES.admin.patients, label: "بیماران", permission: "patients" },
     ],
   },
   {
@@ -95,7 +95,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.complaints]: "شکایات بیماران",
   [ROUTES.admin.help]: "آموزش سامانه",
   [ROUTES.admin.installments]: "اقساط کاربران",
-  [ROUTES.admin.patients]: "تأیید بیماران",
+  [ROUTES.admin.patients]: "تأیید کاربری و فرانشیز",
 };
 
 function titleFromPath(pathname: string) {

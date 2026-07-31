@@ -98,6 +98,10 @@ export function EmptyState({ title, desc }: { title: string; desc?: string }) {
 export function Logo({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/logo.png" alt="پاستور پلاس" className={cn("h-10 w-10 object-contain rounded-lg bg-white", className)} />
+    <img
+      src="/logo.png"
+      alt="Clinique Pasteur | پاستور پلاس"
+      className={cn("h-10 w-10 object-contain rounded-lg bg-white", className)}
+    />
   );
 }

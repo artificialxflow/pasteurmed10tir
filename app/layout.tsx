@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Clinique Pasteur", url: "https://pasteur.plus" }],
   manifest: "/manifest.webmanifest",
   themeColor: "#0891b2",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/icon-192.png", type: "image/png" }],
+    shortcut: ["/logo.png"],
+  },
   other: {
     enamad: "10209334",
   },
@@ -31,6 +36,7 @@ export const metadata: Metadata = {
     title: "پاستور پلاس | درمانگاه پزشکی و دندانپزشکی",
     description:
       "خدمات پزشکی، دندانپزشکی و نوبت‌دهی آنلاین در پاستور پلاس.",
+    images: [{ url: "/brand/clinique-pasteur-logo.png", alt: "Clinique Pasteur" }],
   },
 };
 

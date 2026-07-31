@@ -11,8 +11,14 @@ const nav = [
   { href: ROUTES.app.home, label: "خانه", icon: "🏠", match: (p: string) => p === "/app" || p === "/app/" },
   { href: ROUTES.app.dentalGeneral, label: "رزرو", icon: "🦷", match: (p: string) => p.includes("/dental") },
   { href: ROUTES.app.shop, label: "تجهیزات", icon: "🛒", match: (p: string) => p.includes("/shop") },
-  { href: ROUTES.app.club, label: "باشگاه", icon: "🎁", match: (p: string) => p.includes("/club") },
   { href: ROUTES.app.consultation, label: "مشاوره", icon: "💬", match: (p: string) => p.includes("/consultation") },
+  {
+    href: ROUTES.app.account,
+    label: "کاربری",
+    icon: "👤",
+    match: (p: string) =>
+      p.includes("/account") || p.includes("/installments") || p.includes("/complaints") || p.includes("/help"),
+  },
 ];
 
 export function AppShell({

@@ -9,6 +9,7 @@ import {
   type PatientStatus,
 } from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function AdminPatientsPage() {
@@ -34,8 +35,12 @@ export default function AdminPatientsPage() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        پس از تأیید، درصد فرانشیز بیمار روی هزینه ویزیت قابل اعمال است.
+      <p className="text-sm leading-7 text-slate-600">
+        این صف معادل «پنل کاربری» بیماران است: پروفایل، بیمه تکمیلی و درصد فرانشیز.
+        پس از تأیید، همان درصد روی هزینه ویزیت (وب و اپ) اعمال می‌شود.{" "}
+        <Link href="/admin/insurances" className="font-bold text-teal-700 underline-offset-2 hover:underline">
+          استعلام بیمه پرداخت →
+        </Link>
       </p>
       <AdminTable
         headers={["نام", "موبایل", "فرانشیز٪", "بیمه تکمیلی", "وضعیت", "عملیات"]}

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 const services = [
+  { emoji: "👤", title: "پنل کاربری", desc: "بیمه، فرانشیز و وضعیت", href: ROUTES.app.account },
   { emoji: "🦷", title: "دندانپزشکی", desc: "رزرو نوبت", href: ROUTES.app.dental },
   { emoji: "🩺", title: "پزشکی", desc: "مشاوره و ویزیت", href: ROUTES.app.medical },
   { emoji: "👩‍⚕️", title: "پرستاری", desc: "خدمات در منزل", href: ROUTES.app.nursing },
@@ -18,6 +19,7 @@ const services = [
 ];
 
 const quick = [
+  { emoji: "👤", title: "پنل کاربری (بیمه و فرانشیز)", href: ROUTES.app.account },
   { emoji: "💬", title: "مشاوره و ویزیت", href: ROUTES.app.consultation },
   { emoji: "🔔", title: "یادآور نوبت", href: ROUTES.app.reminders },
   { emoji: "🖼️", title: "گالری نتایج", href: ROUTES.app.gallery },
@@ -60,6 +62,12 @@ export default function AppHomePage() {
         <p className="mt-1 text-xs leading-6 text-slate-600">
           دندانپزشکی، پزشکی، پرستاری و تجهیزات در یک اپ
         </p>
+        <Link
+          href={ROUTES.app.account}
+          className="mt-3 inline-flex rounded-xl bg-cyan-700 px-3 py-2 text-xs font-extrabold text-white"
+        >
+          ورود به پنل کاربری
+        </Link>
       </section>
 
       <p className="mb-3 text-sm font-extrabold text-slate-900">خدمات اصلی</p>

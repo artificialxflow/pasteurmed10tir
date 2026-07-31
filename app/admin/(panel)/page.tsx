@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
   const shortcuts = [
     {
       href: ROUTES.admin.patients,
-      label: "بیماران در انتظار تأیید",
+      label: "تأیید کاربری / فرانشیز",
       count: queue.pendingPatients,
       tone: "text-amber-700",
     },

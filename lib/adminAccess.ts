@@ -83,7 +83,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'complaints', label: 'شکایات', href: ROUTES.admin.complaints },
   { id: 'help', label: 'آموزش سامانه', href: ROUTES.admin.help },
   { id: 'installments', label: 'اقساط', href: ROUTES.admin.installments },
-  { id: 'patients', label: 'بیماران', href: ROUTES.admin.patients },
+  { id: 'patients', label: 'تأیید کاربری / فرانشیز', href: ROUTES.admin.patients },
   { id: 'access', label: 'سطح دسترسی', href: ROUTES.admin.access },
 ];
 
