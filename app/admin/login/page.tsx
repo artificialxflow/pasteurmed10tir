@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, Logo } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
+import { firstAllowedAdminPath, type AdminSession } from "@/lib/adminAccess";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,20 +15,38 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    PasteurStorage.initAdminAccessIfNeeded();
-    if (PasteurStorage.isAdminLoggedIn()) {
-      router.replace(PasteurStorage.adminHomePath());
-    }
+    fetch("/api/admin/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = (await res.json()) as { session?: AdminSession };
+        return data.session ?? null;
+      })
+      .then((session) => {
+        if (session) {
+          router.replace(firstAllowedAdminPath(session.permissions));
+        }
+      });
   }, [router]);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const session = PasteurStorage.adminLogin(username, password);
-    if (session) {
-      router.push(PasteurStorage.adminHomePath());
-      return;
+    setError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = (await res.json()) as { session?: AdminSession; error?: string };
+      if (!res.ok || !data.session) {
+        setError(data.error || "نام کاربری یا رمز عبور اشتباه است، یا حساب غیرفعال است.");
+        return;
+      }
+      router.push(firstAllowedAdminPath(data.session.permissions));
+    } catch {
+      setError("خطا در ارتباط با سرور.");
     }
-    setError("نام کاربری یا رمز عبور اشتباه است، یا حساب غیرفعال است.");
   }
 
   return (
@@ -38,7 +56,7 @@ export default function AdminLoginPage() {
           <Logo className="mx-auto mb-4 h-20 w-auto max-w-[12rem]" />
           <p className="text-lg font-extrabold text-slate-900">پاستور پلاس</p>
           <h1 className="mt-1 text-base font-bold text-cyan-800">ورود به پنل مدیریت</h1>
-          <p className="mt-2 text-xs text-slate-500">نسخه نمایشی فرانت — سطح دسترسی mock</p>
+          <p className="mt-2 text-xs text-slate-500">ورود با دیتابیس — سطح دسترسی بر اساس نقش</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

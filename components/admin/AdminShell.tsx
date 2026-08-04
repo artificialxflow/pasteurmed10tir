@@ -8,7 +8,6 @@ import {
   type AdminPermission,
   type AdminSession,
 } from "@/lib/adminAccess";
-import { PasteurStorage } from "@/lib/storage";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -154,21 +153,27 @@ export function AdminShell({
   );
 
   useEffect(() => {
-    PasteurStorage.initAdminAccessIfNeeded();
-    const current = PasteurStorage.getAdminSession();
-    if (!current) {
-      router.replace(ROUTES.admin.login);
-      return;
-    }
+    fetch("/api/admin/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = (await res.json()) as { session?: AdminSession };
+        return data.session ?? null;
+      })
+      .then((current) => {
+        if (!current) {
+          router.replace(ROUTES.admin.login);
+          return;
+        }
 
-    const needed = permissionForPath(pathname);
-    if (needed && !hasPermission(current.permissions, needed)) {
-      router.replace(firstAllowedAdminPath(current.permissions));
-      return;
-    }
+        const needed = permissionForPath(pathname);
+        if (needed && !hasPermission(current.permissions, needed)) {
+          router.replace(firstAllowedAdminPath(current.permissions));
+          return;
+        }
 
-    setSession(current);
-    setReady(true);
+        setSession(current);
+        setReady(true);
+      });
   }, [router, pathname]);
 
   if (!ready || !session) {
@@ -219,8 +224,8 @@ export function AdminShell({
           <button
             type="button"
             className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50"
-            onClick={() => {
-              PasteurStorage.adminLogout();
+            onClick={async () => {
+              await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
               router.push(ROUTES.admin.login);
             }}
           >
@@ -239,7 +244,7 @@ export function AdminShell({
               <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{heading}</h1>
             </div>
             <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800">
-              دسترسی بر اساس نقش (mock)
+              دسترسی بر اساس نقش
             </span>
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">

@@ -15,23 +15,25 @@ import {
 } from "@/lib/patient";
 import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [nationalId, setNationalId] = useState("");
   const [baseId, setBaseId] = useState("");
   const [compId, setCompId] = useState("");
   const [franchise, setFranchise] = useState(String(DEFAULT_FRANCHISE_PERCENT));
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const baseList = PasteurStorage.getBaseInsurances().filter((i) => i.active !== false);
   const compList = PasteurStorage.getComplementaryInsurances().filter((i) => i.active !== false);
 
-  function hydrate(p: PatientProfile) {
+  const hydrate = useCallback((p: PatientProfile) => {
     setProfile(p);
     setPhone(p.phone);
     setName(p.name);
@@ -39,51 +41,121 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     setBaseId(p.baseInsuranceId || "");
     setCompId(p.complementaryInsuranceId || "");
     setFranchise(String(p.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT));
-  }
+  }, []);
 
   useEffect(() => {
     PasteurStorage.initPatientDomainIfNeeded();
     PasteurStorage.hideMembershipInstallmentPlans();
-    const session = PasteurStorage.getPatientSession();
-    if (session) hydrate(session);
-    setReady(true);
-  }, []);
 
-  function login(e: FormEvent) {
-    e.preventDefault();
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const data = (await res.json()) as { profile?: PatientProfile };
+        return data.profile ?? null;
+      })
+      .then((p) => {
+        if (p) hydrate(p);
+      })
+      .finally(() => setReady(true));
+  }, [hydrate]);
+
+  async function sendOtp() {
     const digits = normalizePhone(phone);
-    if (digits.length < 10 || !name.trim()) {
-      setMessage("نام و موبایل معتبر وارد کنید.");
+    if (digits.length < 10) {
+      setMessage("موبایل معتبر وارد کنید.");
       return;
     }
-    const p = PasteurStorage.patientLogin(digits, name.trim());
-    hydrate(p);
-    setMessage("وارد شدید.");
+    setSendingOtp(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/otp/send", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: digits }),
+      });
+      const data = (await res.json()) as { error?: string; message?: string };
+      if (!res.ok) {
+        setMessage(data.error || "ارسال کد ناموفق بود.");
+        return;
+      }
+      setMessage(data.message || "کد ارسال شد.");
+    } catch {
+      setMessage("خطا در ارتباط با سرور.");
+    } finally {
+      setSendingOtp(false);
+    }
   }
 
-  function save(e: FormEvent) {
+  async function login(e: FormEvent) {
+    e.preventDefault();
+    const digits = normalizePhone(phone);
+    if (digits.length < 10 || !name.trim() || !otpCode.trim()) {
+      setMessage("نام، موبایل و کد تأیید را وارد کنید.");
+      return;
+    }
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: digits,
+          code: otpCode.trim(),
+          name: name.trim(),
+        }),
+      });
+      const data = (await res.json()) as { profile?: PatientProfile; error?: string };
+      if (!res.ok || !data.profile) {
+        setMessage(data.error || "ورود ناموفق بود.");
+        return;
+      }
+      hydrate(data.profile);
+      setMessage("وارد شدید.");
+    } catch {
+      setMessage("خطا در ارتباط با سرور.");
+    }
+  }
+
+  async function save(e: FormEvent) {
     e.preventDefault();
     if (!profile) return;
     const percent = clampFranchisePercent(Number(franchise));
-    const next = PasteurStorage.savePatientProfile({
-      ...profile,
-      name: name.trim(),
-      nationalId: nationalId.trim() || undefined,
-      baseInsuranceId: baseId || undefined,
-      complementaryInsuranceId: compId || undefined,
-      franchisePercent: percent,
-    });
-    hydrate(next);
-    setMessage(
-      next.status === "approved"
-        ? "پروفایل ذخیره شد."
-        : "پروفایل ذخیره شد و برای بررسی کارشناس در صف قرار گرفت.",
-    );
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          nationalId: nationalId.trim() || undefined,
+          baseInsuranceId: baseId || undefined,
+          complementaryInsuranceId: compId || undefined,
+          franchisePercent: percent,
+        }),
+      });
+      const data = (await res.json()) as { profile?: PatientProfile; error?: string };
+      if (!res.ok || !data.profile) {
+        setMessage(data.error || "ذخیره ناموفق بود.");
+        return;
+      }
+      hydrate(data.profile);
+      setMessage(
+        data.profile.status === "approved"
+          ? "پروفایل ذخیره شد."
+          : "پروفایل ذخیره شد و برای بررسی کارشناس در صف قرار گرفت.",
+      );
+    } catch {
+      setMessage("خطا در ارتباط با سرور.");
+    }
   }
 
-  function logout() {
-    PasteurStorage.patientLogout();
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setProfile(null);
+    setOtpCode("");
     setMessage("خارج شدید.");
   }
 
@@ -117,6 +189,27 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
                 onChange={(e) => setPhone(e.target.value)}
                 required
               />
+            </div>
+            <div>
+              <FormLabel>کد تأیید</FormLabel>
+              <div className="flex gap-2">
+                <FormInput
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="00000"
+                  required
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 text-sm"
+                  disabled={sendingOtp}
+                  onClick={sendOtp}
+                >
+                  {sendingOtp ? "..." : "دریافت کد"}
+                </Button>
+              </div>
             </div>
             {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
             <Button type="submit" className="w-full">
