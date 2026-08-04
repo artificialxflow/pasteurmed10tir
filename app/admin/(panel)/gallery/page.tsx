@@ -34,7 +34,7 @@ export default function AdminGalleryPage() {
     void persist([
       ...items,
       {
-        id: Date.now(),
+        id: 0,
         title,
         category,
         before: before || "/uploads/placeholder.svg",

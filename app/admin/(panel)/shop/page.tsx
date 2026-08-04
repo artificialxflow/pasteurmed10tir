@@ -60,7 +60,7 @@ export default function AdminShopPage() {
     void persistProducts([
       ...products,
       {
-        id: Date.now(),
+        id: 0,
         name: name.trim(),
         price: price.trim(),
         priceNum: parsePrice(price),

@@ -1,8 +1,20 @@
 /** Client-side fetch helpers for content API (Phase 2). */
 
 async function parseJson<T>(res: Response): Promise<T> {
-  const data = (await res.json()) as T & { error?: string };
-  if (!res.ok) throw new Error((data as { error?: string }).error || 'خطا در دریافت داده.');
+  const text = await res.text();
+  if (!text) {
+    if (!res.ok) throw new Error(`خطا (${res.status})`);
+    throw new Error('پاسخ خالی از سرور.');
+  }
+
+  let data: T & { error?: string };
+  try {
+    data = JSON.parse(text) as T & { error?: string };
+  } catch {
+    throw new Error(!res.ok ? `خطا (${res.status})` : 'پاسخ نامعتبر از سرور.');
+  }
+
+  if (!res.ok) throw new Error(data.error || 'خطا در دریافت داده.');
   return data as T;
 }
 

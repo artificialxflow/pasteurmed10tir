@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { assignIntIds } from '@/lib/content/int-id';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -27,15 +28,17 @@ export async function PUT(request: Request) {
   const body = await parseJson<{ items?: PhysicianBody[] }>(request);
   if (!body?.items) return jsonError('درخواست نامعتبر است.');
 
-  const cleaned = body.items.map((p, i) => ({
-    id: Number(p.id) || i + 1,
-    name: String(p.name || '').trim(),
-    specialty: String(p.specialty || '').trim(),
-    specialtyId: p.specialtyId?.trim() || null,
-    image: String(p.image || '/uploads/placeholder.svg').trim(),
-    days: Array.isArray(p.days) ? p.days.map(String) : [],
-    status: String(p.status || 'available'),
-  }));
+  const cleaned = assignIntIds(
+    body.items.map((p) => ({
+      id: Number(p.id),
+      name: String(p.name || '').trim(),
+      specialty: String(p.specialty || '').trim(),
+      specialtyId: p.specialtyId?.trim() || null,
+      image: String(p.image || '/uploads/placeholder.svg').trim(),
+      days: Array.isArray(p.days) ? p.days.map(String) : [],
+      status: String(p.status || 'available'),
+    })),
+  ).filter((p) => p.name);
 
   await prisma.$transaction([
     prisma.physician.deleteMany(),
