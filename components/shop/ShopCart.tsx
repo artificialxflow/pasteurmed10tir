@@ -60,16 +60,17 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("نام و موبایل را کامل وارد کنید");
       return;
     }
-    const result = ShopCart.submitOrder({
+    void ShopCart.submitOrderAsync({
       name: name.trim(),
       phone: phone.trim(),
       address: address.trim(),
+    }).then((result) => {
+      if (!result.ok) {
+        setMessage(result.message || "خطا در ثبت سفارش");
+        return;
+      }
+      router.push(routes.success);
     });
-    if (!result.ok) {
-      setMessage(result.message || "خطا در ثبت سفارش");
-      return;
-    }
-    router.push(routes.success);
   }
 
   const discount = totals.subtotal - totals.total;

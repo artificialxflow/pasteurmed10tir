@@ -5,8 +5,9 @@ import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { type Product } from "@/lib/data";
-import { PasteurStorage, type ShopOrder } from "@/lib/storage";
+import { type ShopOrder } from "@/lib/storage";
 import { FormEvent, useEffect, useState } from "react";
 
 function formatPrice(num: number) {
@@ -39,7 +40,9 @@ export default function AdminShopPage() {
 
   function reload() {
     void loadProducts().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
-    setOrders(PasteurStorage.getShopOrders());
+    void fetchAdminCommerce<{ items: ShopOrder[] }>("/api/admin/commerce/orders")
+      .then((data) => setOrders(data.items))
+      .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
@@ -86,8 +89,9 @@ export default function AdminShopPage() {
   }
 
   function updateOrderStatus(id: string, status: string) {
-    PasteurStorage.updateShopOrder(id, { status });
-    reload();
+    void patchAdminCommerce("/api/admin/commerce/orders", { id, status })
+      .then(() => reload())
+      .catch((e: Error) => setError(e.message));
   }
 
   return (
@@ -158,8 +162,8 @@ export default function AdminShopPage() {
                     onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                   >
                     <option value="pending">در انتظار</option>
-                    <option value="processing">در حال پیگیری</option>
-                    <option value="completed">تکمیل شده</option>
+                    <option value="confirmed">تأیید شده</option>
+                    <option value="shipped">ارسال شده</option>
                     <option value="cancelled">لغو شده</option>
                   </FormSelect>
                 </td>

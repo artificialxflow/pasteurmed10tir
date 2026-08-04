@@ -26,6 +26,9 @@ model User {
   reminders          Reminder[]
   doctorReviews      DoctorReview[]
   complaints         Complaint[]
+  members            Member[]
+  wallets            Wallet[]
+  shopOrders         ShopOrder[]
 }
 
 model PatientProfile {
@@ -378,4 +381,251 @@ model PartnerRequest {
   updatedAt    DateTime             @updatedAt
 
   @@index([status])
+}
+
+// —— Phase 4: Commerce & finance ——
+
+enum VisitorStatus {
+  active
+  inactive
+}
+
+enum CommissionStatus {
+  pending
+  paid
+}
+
+enum FacilityRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum InstallmentSource {
+  credit
+  facility
+  membership
+  wallet
+}
+
+enum InstallmentPlanStatus {
+  active
+  completed
+  overdue
+  hidden
+}
+
+enum WalletStatus {
+  active
+  suspended
+  closed
+}
+
+enum WalletTransactionType {
+  credit
+  debit
+  upgrade
+  adjustment
+}
+
+enum WalletTransactionStatus {
+  pending
+  completed
+  cancelled
+}
+
+enum ShopOrderStatus {
+  pending
+  confirmed
+  shipped
+  cancelled
+}
+
+model MembershipPlan {
+  id                  String   @id
+  name                String
+  price               String
+  priceNum            Int
+  loanTermLabel       String
+  loanLimit           Int
+  downPaymentPercent  Int      @default(30)
+  features            String[]
+  terms               String   @default("")
+  highlighted         Boolean  @default(false)
+  sortOrder           Int      @default(0)
+}
+
+model Member {
+  id                       String   @id
+  userId                   String?
+  user                     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  planId                   String?
+  planName                 String?
+  patientName              String?
+  patientPhone             String
+  amount                   Int      @default(0)
+  status                   String   @default("paid")
+  validityLabel            String?
+  membershipDurationLabel  String?
+  discountPercent          Int?
+  createdAt                DateTime @default(now())
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+}
+
+model MembershipApplication {
+  id                       String   @id
+  patientName              String?
+  phone                    String?
+  nationalId               String?
+  age                      String?
+  job                      String?
+  postalCode               String?
+  homeAddress              String?
+  workAddress              String?
+  medicalHistory           String?
+  dependents               String?
+  planId                   String?
+  planTitle                String?
+  tier                     String?
+  tierLabel                String?
+  validityLabel            String?
+  membershipDurationLabel  String?
+  discountPercent          Int?
+  memberCount              Int?
+  unitPriceToman           Int?
+  amountRial               Int?
+  amountToman              Int?
+  loanAmount               Int?
+  referralCode             String?
+  visitorName              String?
+  status                   String   @default("pending")
+  source                   String?
+  date                     String?
+  extra                    Json?
+  createdAt                DateTime @default(now())
+
+  @@index([phone])
+  @@index([status])
+}
+
+model Wallet {
+  phone        String               @id
+  userId       String?
+  user         User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  balance      Int                  @default(0)
+  ceiling      Int                  @default(15000000)
+  activeKinds  String[]             @default(["regular"])
+  status       WalletStatus         @default(active)
+  shopVip      Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  transactions WalletTransaction[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model WalletTransaction {
+  id           String                   @id
+  walletPhone  String
+  wallet       Wallet                   @relation(fields: [walletPhone], references: [phone], onDelete: Cascade)
+  type         WalletTransactionType
+  amount       Int
+  balanceAfter Int
+  description  String
+  status       WalletTransactionStatus  @default(completed)
+  createdAt    DateTime                 @default(now())
+
+  @@index([walletPhone])
+}
+
+model ShopOrder {
+  id                 String          @id
+  userId             String?
+  user               User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerType       String?
+  customerTypeLabel  String?
+  customerName       String?
+  customerPhone      String
+  address            String?
+  items              Json
+  subtotal           Int             @default(0)
+  discount           Int             @default(0)
+  total              Int             @default(0)
+  status             ShopOrderStatus @default(pending)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([customerPhone])
+  @@index([status])
+}
+
+model Visitor {
+  id             Int            @id
+  name           String
+  code           String         @unique
+  commissionRate Int
+  phone          String
+  status         VisitorStatus  @default(active)
+  commissions    Commission[]
+}
+
+model Commission {
+  id               String           @id
+  visitorId        Int
+  visitor          Visitor          @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  visitorName      String
+  referralCode     String
+  commissionRate   Int
+  commissionAmount Int
+  sourceType       String?
+  sourceLabel      String?
+  customerName     String?
+  customerPhone    String?
+  amount           Int              @default(0)
+  status           CommissionStatus @default(pending)
+  createdAt        DateTime         @default(now())
+
+  @@index([visitorId])
+  @@index([referralCode])
+  @@index([status])
+}
+
+model FacilityRequest {
+  id          String                @id
+  name        String
+  phone       String
+  amount      String                @default("")
+  amountNum   Int                   @default(0)
+  description String?
+  status      FacilityRequestStatus @default(pending)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([phone])
+  @@index([status])
+}
+
+model InstallmentPlan {
+  id               String                @id
+  phone            String
+  patientName      String?
+  source           InstallmentSource
+  title            String
+  totalAmount      Int
+  paidAmount       Int                   @default(0)
+  installmentCount Int
+  dueDates         String[]
+  status           InstallmentPlanStatus @default(active)
+  linkedRequestId  String?
+  createdAt        DateTime              @default(now())
+
+  @@index([phone])
+  @@index([source])
+  @@index([status])
+  @@index([linkedRequestId])
 }

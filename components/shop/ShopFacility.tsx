@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { checkShopVipApi, createFacilityRequestApi } from "@/lib/commerce/client";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ShopCart } from "@/lib/shop";
-import { PasteurStorage } from "@/lib/storage";
 import { normalizePhone } from "@/lib/utils";
 import { useEffect, useState, type FormEvent } from "react";
 import { shopRoutes, type ShopVariant } from "./types";
@@ -20,10 +20,10 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
 
   useEffect(() => {
     const p = ShopCart.getVipPhone();
-    const vip =
-      ShopCart.getCustomerType() === "vip" && PasteurStorage.isShopVip(p);
-    setIsVip(vip);
     if (p) setPhone(p);
+    if (p && ShopCart.getCustomerType() === "vip") {
+      void checkShopVipApi(p).then((data) => setIsVip(data.vip)).catch(() => setIsVip(false));
+    }
   }, []);
 
   function onSubmit(e: FormEvent) {
@@ -32,21 +32,21 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("نام و موبایل را کامل وارد کنید");
       return;
     }
-    PasteurStorage.saveFacilityRequest({
-      id: PasteurStorage.generateId(),
+    void createFacilityRequestApi({
       name: name.trim(),
       phone: phone.trim(),
       amount: amount.trim(),
       description: note.trim(),
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    });
-    setMessage("درخواست ثبت شد");
-    setName("");
-    setAmount("");
-    setNote("");
-    const p = ShopCart.getVipPhone();
-    if (p) setPhone(p);
+    })
+      .then(() => {
+        setMessage("درخواست ثبت شد");
+        setName("");
+        setAmount("");
+        setNote("");
+        const p = ShopCart.getVipPhone();
+        if (p) setPhone(p);
+      })
+      .catch((err: Error) => setMessage(err.message || "ثبت ناموفق"));
   }
 
   const body = !isVip ? (

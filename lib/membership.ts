@@ -20,11 +20,23 @@ function defaultMembershipPlans(): Membership[] {
 }
 
 export function getMembershipPlans(): Membership[] {
+  // Sync fallback — prefer getMembershipPlansAsync for DB
   if (typeof window !== 'undefined') {
     PasteurStorage.initMembershipPlansIfNeeded();
     return PasteurStorage.getMembershipPlans();
   }
   return defaultMembershipPlans();
+}
+
+export async function getMembershipPlansAsync(): Promise<Membership[]> {
+  try {
+    const { getMembershipPlansApi } = await import('./commerce/client');
+    const data = await getMembershipPlansApi();
+    if (data.items?.length) return data.items.map((m) => ({ ...m, features: [...m.features] }));
+  } catch {
+    /* fall through */
+  }
+  return getMembershipPlans();
 }
 
 export function normalizeMemberCount(value: string | number, fallback = 1): number {

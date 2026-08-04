@@ -154,7 +154,7 @@ Phase 0 — do manually before any Cursor prompt:
 ### ✅ Phase 0 complete when / تکمیل فاز ۰
 
 - [ ] `.env.local` exists with **remote** URI (no quotes)
-- [ ] Runflare panel has **internal** vars + **DEV_OTP** from `.env.production`
+- [x] Runflare panel has **internal** vars + **DEV_OTP** from `.env.production`
 - [ ] Live test: https://pasteur.plus/account with 09126723365 / 00000 (after Phase 1)
 - [ ] Neither env file is in git
 - [ ] Connection OK after Phase 1 migrate
@@ -464,8 +464,10 @@ STOP after phase 4.
 
 ### ✅ Phase 4 complete when / تکمیل فاز ۴
 
-- [ ] Wallet + shop + membership persisted in DB
-- [ ] Commission on referral code (if visitor seeded)
+- [x] Wallet + shop + membership persisted in DB
+- [x] Commission on referral code (if visitor seeded)
+- [ ] Manual tests phase 4 (local + live)
+- [ ] `git commit` done
 
 ---
 

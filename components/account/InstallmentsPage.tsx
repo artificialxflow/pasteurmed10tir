@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/Card";
+import { getInstallmentsApi } from "@/lib/commerce/client";
 import {
   formatJalaliDate,
   installmentSourceLabel,
@@ -8,20 +9,29 @@ import {
   remainingInstallment,
   type InstallmentPlan,
 } from "@/lib/patient";
-import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
 export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [plans, setPlans] = useState<InstallmentPlan[]>([]);
   const [phone, setPhone] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    PasteurStorage.initPatientDomainIfNeeded();
-    PasteurStorage.hideMembershipInstallmentPlans();
-    const session = PasteurStorage.getPatientSession();
-    setPhone(session?.phone || null);
-    setPlans(PasteurStorage.getInstallmentPlans(session?.phone));
+    void fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) {
+          setPhone(null);
+          return;
+        }
+        const data = (await res.json()) as { user?: { phone?: string } };
+        const p = data.user?.phone || null;
+        setPhone(p);
+        if (!p) return;
+        const result = await getInstallmentsApi();
+        setPlans(result.items as InstallmentPlan[]);
+      })
+      .catch((e: Error) => setError(e.message || "خطا در دریافت اقساط"));
   }, []);
 
   if (!phone) {
@@ -38,6 +48,7 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
       <p className="text-sm text-slate-600">
         مبلغ پرداخت‌شده، مانده و تاریخ سررسید بعدی — اعتبار و تسهیلات جداگانه
       </p>
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {plans.map((plan) => {
         const remaining = remainingInstallment(plan);
         const nextDue = nextInstallmentDue(plan);

@@ -2,8 +2,12 @@
  * پرداخت mock — پاستور پلاس
  */
 import { PasteurStorage, type Booking } from './storage';
+import {
+  completeMembershipPaymentApi,
+  completeShopVipPaymentApi,
+} from './commerce/client';
 import { createBookingApi } from './operations/client';
-import { planIdToWalletKinds } from './wallet';
+import { ShopCart } from './shop';
 
 export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip';
 
@@ -124,16 +128,27 @@ export const PaymentFlow = {
       const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
       profile.visits += 1;
       PasteurStorage.saveClubProfile(pending.patientPhone, profile);
-      if (pending.referralCode) {
-        PasteurStorage.saveCommission({
-          referralCode: pending.referralCode,
-          sourceType: 'booking',
-          sourceLabel: pending.typeLabel as string | undefined,
-          customerName: pending.patientName,
-          customerPhone: pending.patientPhone,
-          amount: pending.amount,
-        });
-      }
+    } else if (pending.planId === 'shop-vip') {
+      await completeShopVipPaymentApi({
+        patientName: pending.patientName,
+        patientPhone: pending.patientPhone,
+        planName: pending.planName,
+        amount: pending.amount,
+        referralCode: pending.referralCode,
+      });
+      ShopCart.setCustomerType('vip', pending.patientPhone || '');
+    } else if (pending.kind === 'membership') {
+      await completeMembershipPaymentApi({
+        patientName: pending.patientName,
+        patientPhone: pending.patientPhone,
+        planId: pending.planId,
+        planName: pending.planName,
+        amount: pending.amount,
+        validityLabel: pending.validityLabel,
+        membershipDurationLabel: pending.membershipDurationLabel,
+        discountPercent: pending.discountPercent,
+        referralCode: pending.referralCode,
+      });
     } else {
       return this.completePayment(pending);
     }
@@ -149,127 +164,6 @@ export const PaymentFlow = {
       status: 'paid',
       paidAt: new Date().toISOString(),
     };
-
-    if (pending.kind === 'booking') {
-      // legacy sync path — prefer completePaymentAsync
-      const booking: Booking = PasteurStorage.saveBooking({
-        id: PasteurStorage.generateId(),
-        doctorId: pending.doctorId as string | undefined,
-        doctorName: pending.doctorName as string | undefined,
-        specialty: pending.specialty as string | undefined,
-        type: pending.type as string | undefined,
-        typeLabel: pending.typeLabel as string | undefined,
-        day: pending.day as string | undefined,
-        timeValue: pending.timeValue as string | number | undefined,
-        timeLabel: pending.timeLabel as string | undefined,
-        patientName: pending.patientName,
-        patientPhone: pending.patientPhone,
-        amount: pending.amount,
-        isDeposit: true,
-        depositNonRefundable: true,
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-        dateLabel: new Date().toLocaleDateString('fa-IR'),
-      });
-      const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
-      profile.visits += 1;
-      PasteurStorage.saveClubProfile(pending.patientPhone, profile);
-      if (pending.referralCode) {
-        PasteurStorage.saveCommission({
-          referralCode: pending.referralCode,
-          sourceType: 'booking',
-          sourceLabel: pending.typeLabel as string | undefined,
-          customerName: pending.patientName,
-          customerPhone: pending.patientPhone,
-          amount: pending.amount,
-        });
-      }
-      PasteurStorage.setSessionLastBooking(booking);
-    } else if (pending.planId === 'shop-vip') {
-      PasteurStorage.activateShopVip(pending.patientPhone);
-      PasteurStorage.setShopCustomerType('vip', pending.patientPhone || '');
-      PasteurStorage.upgradeWalletForUser(pending.patientPhone, planIdToWalletKinds('shop-vip'));
-      PasteurStorage.saveMembershipApplication({
-        id: PasteurStorage.generateId(),
-        patientName: pending.patientName,
-        phone: pending.patientPhone,
-        planTitle: pending.planName || 'VIP تجهیزات',
-        tier: 'shop-vip',
-        tierLabel: 'VIP تجهیزات',
-        amountToman: pending.amount,
-        referralCode: pending.referralCode,
-        status: 'paid',
-        source: 'shop-vip-payment',
-        createdAt: new Date().toISOString(),
-      });
-      if (pending.referralCode) {
-        PasteurStorage.saveCommission({
-          referralCode: pending.referralCode,
-          sourceType: 'shop-vip',
-          sourceLabel: pending.planName as string | undefined,
-          customerName: pending.patientName,
-          customerPhone: pending.patientPhone,
-          amount: pending.amount,
-        });
-      }
-    } else if (pending.kind === 'membership') {
-      PasteurStorage.saveMember({
-        id: PasteurStorage.generateId(),
-        planId: pending.planId as string | undefined,
-        planName: pending.planName as string | undefined,
-        patientName: pending.patientName,
-        patientPhone: pending.patientPhone,
-        amount: pending.amount,
-        validityLabel: pending.validityLabel as string | undefined,
-        membershipDurationLabel: pending.membershipDurationLabel as string | undefined,
-        discountPercent: pending.discountPercent as number | undefined,
-        status: 'paid',
-        createdAt: new Date().toISOString(),
-      });
-      PasteurStorage.saveMembershipApplication({
-        id: PasteurStorage.generateId(),
-        patientName: pending.patientName,
-        phone: pending.patientPhone,
-        planTitle: pending.planName,
-        tier: pending.planId,
-        tierLabel: pending.planId === 'vip' ? 'VIP' : pending.planId,
-        amountToman: pending.amount,
-        referralCode: pending.referralCode,
-        status: 'paid',
-        source: 'payment-complete',
-        createdAt: new Date().toISOString(),
-      });
-      PasteurStorage.upgradeWalletForUser(
-        pending.patientPhone,
-        planIdToWalletKinds(String(pending.planId || 'regular')),
-      );
-      const wallet = PasteurStorage.getOrCreateWallet(pending.patientPhone);
-      if (wallet && wallet.ceiling > 0) {
-        PasteurStorage.hideMembershipInstallmentPlans(pending.patientPhone);
-        const existingCredit = PasteurStorage.getInstallmentPlans(pending.patientPhone).some(
-          (p) => p.source === 'credit' || p.source === 'wallet',
-        );
-        if (!existingCredit) {
-          PasteurStorage.createCreditInstallmentPlan({
-            phone: pending.patientPhone,
-            patientName: pending.patientName as string | undefined,
-            ceilingAmount: wallet.ceiling,
-            label: `اقساط بسته اعتباری ${wallet.ceiling.toLocaleString('fa-IR')} تومان`,
-          });
-        }
-      }
-      if (pending.referralCode) {
-        PasteurStorage.saveCommission({
-          referralCode: pending.referralCode,
-          sourceType: pending.planId === 'shop-vip' ? 'shop-vip' : 'membership',
-          sourceLabel: pending.planName as string | undefined,
-          customerName: pending.patientName,
-          customerPhone: pending.patientPhone,
-          amount: pending.amount,
-        });
-      }
-    }
-
     PasteurStorage.setLastPayment(completed);
     PasteurStorage.clearPendingPayment();
     return completed;

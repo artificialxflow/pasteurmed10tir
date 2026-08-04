@@ -2,11 +2,13 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState, FormInput, FormLabel } from "@/components/ui/Card";
+import { getWalletApi } from "@/lib/commerce/client";
 import { formatToman } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Wallet } from "@/lib/storage";
 import { cn, normalizePhone } from "@/lib/utils";
 import {
+  DEFAULT_WALLET_SETTINGS,
   formatWalletRepaymentTerms,
   WALLET_KIND_LABELS,
   type WalletSettings,
@@ -21,33 +23,34 @@ const statusLabels = {
   closed: "بسته",
 } as const;
 
-function guessStoredPhone(): string {
-  const lastPayment = PasteurStorage.getLastPayment() as { patientPhone?: string } | null;
-  if (lastPayment?.patientPhone) return normalizePhone(String(lastPayment.patientPhone));
-
-  const shopPhone = PasteurStorage.getShopVipPhone();
-  if (shopPhone) return normalizePhone(shopPhone);
-
-  const lastBooking = PasteurStorage.getLastBooking();
-  if (lastBooking?.patientPhone) return normalizePhone(String(lastBooking.patientPhone));
-
-  return "";
-}
-
 export function WalletPage({ variant = "web" }: { variant?: Variant }) {
   const isApp = variant === "app";
 
   const [phone, setPhone] = useState("");
   const [currentPhone, setCurrentPhone] = useState("");
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [settings, setSettings] = useState<WalletSettings | null>(null);
+  const [settings, setSettings] = useState<WalletSettings | null>(DEFAULT_WALLET_SETTINGS);
   const [message, setMessage] = useState("");
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   useEffect(() => {
-    PasteurStorage.initWalletsIfNeeded();
-    setSettings(PasteurStorage.getWalletSettings());
-    const stored = guessStoredPhone();
-    if (stored) setPhone(stored);
+    void fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as { user?: { phone?: string } };
+        if (data.user?.phone) setPhone(normalizePhone(data.user.phone));
+      })
+      .catch(() => {
+        const lastPayment = PasteurStorage.getLastPayment() as { patientPhone?: string } | null;
+        if (lastPayment?.patientPhone) setPhone(normalizePhone(String(lastPayment.patientPhone)));
+      });
+
+    void fetch("/api/content/settings")
+      .then((res) => res.json())
+      .then((data: { wallet?: WalletSettings }) => {
+        if (data.wallet) setSettings(data.wallet);
+      })
+      .catch(() => setSettings(DEFAULT_WALLET_SETTINGS));
   }, []);
 
   function showMessage(text: string) {
@@ -62,9 +65,21 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
       return;
     }
     setCurrentPhone(digits);
-    const synced = PasteurStorage.syncWalletFromMembership(digits);
-    setWallet(synced ? { ...synced } : null);
-    setSettings(PasteurStorage.getWalletSettings());
+    setNeedsLogin(false);
+    void getWalletApi(digits)
+      .then((data) => {
+        setWallet({ ...data.wallet });
+        setSettings(data.settings);
+      })
+      .catch((err: Error) => {
+        setWallet(null);
+        if (String(err.message).includes("وارد") || String(err.message).includes("401")) {
+          setNeedsLogin(true);
+          showMessage("برای مشاهده کیف اعتبار وارد پنل کاربری شوید.");
+        } else {
+          showMessage(err.message || "خطا در دریافت کیف اعتبار");
+        }
+      });
   }
 
   const availableCredit = wallet ? Math.max(0, wallet.ceiling - wallet.balance) : 0;
@@ -237,7 +252,9 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
 
       {!isApp && !wallet ? (
         <p className="text-center text-sm text-slate-500">
-          برای مشاهده کیف اعتبار، شماره موبایل ثبت‌شده در عضویت یا VIP را وارد کنید.
+          {needsLogin
+            ? "ابتدا از /account وارد شوید، سپس کیف اعتبار را با همان شماره مشاهده کنید."
+            : "برای مشاهده کیف اعتبار، شماره موبایل ثبت‌شده در عضویت یا VIP را وارد کنید."}
         </p>
       ) : null}
     </div>

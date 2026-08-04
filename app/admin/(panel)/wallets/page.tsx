@@ -4,9 +4,9 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { formatToman } from "@/lib/membership";
 import {
-  PasteurStorage,
   type Wallet,
   type WalletSettings,
   type WalletStatus,
@@ -35,13 +35,15 @@ export default function AdminWalletsPage() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [settings, setSettings] = useState<WalletSettings>(DEFAULT_WALLET_SETTINGS);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   function reload() {
-    PasteurStorage.initWalletsIfNeeded();
     void fetchAdmin<{ wallet: WalletSettings }>("/api/admin/content/settings")
       .then((data) => setSettings(data.wallet))
-      .catch(() => setSettings(PasteurStorage.getWalletSettings()));
-    setWallets(PasteurStorage.listWallets());
+      .catch(() => setSettings(DEFAULT_WALLET_SETTINGS));
+    void fetchAdminCommerce<{ items: Wallet[] }>("/api/admin/commerce/wallets")
+      .then((data) => setWallets(data.items))
+      .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function AdminWalletsPage() {
   }, []);
 
   const selected = selectedPhone
-    ? wallets.find((w) => w.phone === selectedPhone) || PasteurStorage.getOrCreateWallet(selectedPhone)
+    ? wallets.find((w) => w.phone === selectedPhone) || null
     : null;
 
   function saveSettings() {
@@ -65,13 +67,19 @@ export default function AdminWalletsPage() {
   }
 
   function updateWalletStatus(phone: string, status: WalletStatus) {
-    PasteurStorage.updateWalletStatus(phone, status);
-    reload();
+    void patchAdminCommerce("/api/admin/commerce/wallets", { phone, status })
+      .then(() => reload())
+      .catch((e: Error) => setError(e.message));
   }
 
   function updateTxStatus(phone: string, txId: string, status: WalletTransactionStatus) {
-    PasteurStorage.updateWalletTransactionStatus(phone, txId, status);
-    reload();
+    void patchAdminCommerce("/api/admin/commerce/wallets", {
+      phone,
+      transactionId: txId,
+      transactionStatus: status,
+    })
+      .then(() => reload())
+      .catch((e: Error) => setError(e.message));
   }
 
   function kindSummary(kinds: WalletKind[]) {
@@ -80,6 +88,7 @@ export default function AdminWalletsPage() {
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <div>
         <div className="mb-4">
           <h2 className="text-lg font-extrabold text-slate-900">تنظیمات سقف و بازپرداخت</h2>

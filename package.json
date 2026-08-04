@@ -12,6 +12,7 @@
     "db:seed": "prisma db seed",
     "db:seed:phase2": "prisma generate && tsx scripts/seed-phase2.ts",
     "db:seed:phase3": "prisma generate && tsx scripts/seed-phase3.ts",
+    "db:seed:phase4": "prisma generate && tsx scripts/seed-phase4.ts",
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {

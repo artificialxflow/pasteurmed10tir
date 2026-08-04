@@ -3,12 +3,17 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
+import {
+  fetchAdminCommerce,
+  putAdminCommerce,
+} from "@/lib/commerce/client";
 import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
-import { PasteurStorage, type Member } from "@/lib/storage";
+import { type Member } from "@/lib/storage";
 import { useEffect, useState } from "react";
 
 type Application = Record<string, unknown> & {
+  id?: string;
   patientName?: string;
   planTitle?: string;
   tier?: string;
@@ -22,20 +27,34 @@ type Application = Record<string, unknown> & {
   phone?: string;
 };
 
+type MemberRow = Member & { walletCeiling?: number | null };
+
 export default function AdminMembershipsPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberRow[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [plans, setPlans] = useState<Membership[]>([]);
+  const [error, setError] = useState("");
 
-  function reloadPlans() {
-    PasteurStorage.initMembershipPlansIfNeeded();
-    setPlans(PasteurStorage.getMembershipPlans().map((p) => ({ ...p, features: [...p.features] })));
+  async function reload() {
+    try {
+      const [plansData, membersData] = await Promise.all([
+        fetchAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans"),
+        fetchAdminCommerce<{
+          members: MemberRow[];
+          applications: Application[];
+        }>("/api/admin/commerce/members"),
+      ]);
+      setPlans(plansData.items.map((p) => ({ ...p, features: [...p.features] })));
+      setMembers(membersData.members);
+      setApplications(membersData.applications);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا در بارگذاری");
+    }
   }
 
   useEffect(() => {
-    setMembers(PasteurStorage.getMembers());
-    setApplications(PasteurStorage.getMembershipApplications() as Application[]);
-    reloadPlans();
+    void reload();
   }, []);
 
   function updatePlan(index: number, patch: Partial<Membership>) {
@@ -51,26 +70,31 @@ export default function AdminMembershipsPage() {
       downPaymentPercent: Number(plan.downPaymentPercent || 0),
       loanTermLabel: String(plan.loanTermLabel || "").trim(),
     }));
-    PasteurStorage.saveMembershipPlans(cleaned);
-    reloadPlans();
+    void putAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans", {
+      items: cleaned,
+    })
+      .then((data) => setPlans(data.items.map((p) => ({ ...p, features: [...p.features] }))))
+      .catch((e: Error) => setError(e.message));
   }
 
   function resetPlans() {
-    PasteurStorage.resetMembershipPlans();
-    reloadPlans();
+    void putAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans", {
+      reset: true,
+    })
+      .then((data) => setPlans(data.items.map((p) => ({ ...p, features: [...p.features] }))))
+      .catch((e: Error) => setError(e.message));
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <div>
         <h2 className="mb-4 text-lg font-bold">اعضا و پرداخت‌ها</h2>
         <AdminTable
           headers={["نام", "طرح", "مدت عضویت", "مبلغ", "سقف اعتبار", "وضعیت پرداخت"]}
           empty="هنوز عضوی ثبت نشده است."
         >
-          {members.map((m) => {
-            const wallet = PasteurStorage.getOrCreateWallet(m.patientPhone);
-            return (
+          {members.map((m) => (
             <tr key={m.id} className="border-t border-slate-100">
               <td className="px-4 py-3">{m.patientName}</td>
               <td className="px-4 py-3">{m.planName}</td>
@@ -79,7 +103,9 @@ export default function AdminMembershipsPage() {
               </td>
               <td className="px-4 py-3">{(m.amount || 0).toLocaleString("fa-IR")}</td>
               <td className="px-4 py-3 text-xs">
-                {wallet ? `${wallet.ceiling.toLocaleString("fa-IR")} تومان` : "—"}
+                {m.walletCeiling != null
+                  ? `${Number(m.walletCeiling).toLocaleString("fa-IR")} تومان`
+                  : "—"}
               </td>
               <td className="px-4 py-3">
                 <AdminBadge tone={m.status === "paid" ? "success" : "warn"}>
@@ -87,8 +113,7 @@ export default function AdminMembershipsPage() {
                 </AdminBadge>
               </td>
             </tr>
-            );
-          })}
+          ))}
         </AdminTable>
       </div>
 
@@ -107,8 +132,8 @@ export default function AdminMembershipsPage() {
           ]}
           empty="فرم عضویتی ثبت نشده است."
         >
-          {applications.map((app, index) => (
-            <tr key={index} className="border-t border-slate-100">
+          {applications.map((app) => (
+            <tr key={String(app.id)} className="border-t border-slate-100">
               <td className="px-4 py-3">{String(app.patientName || "—")}</td>
               <td className="px-4 py-3">{String(app.planTitle || "—")}</td>
               <td className="px-4 py-3">
@@ -197,7 +222,7 @@ export default function AdminMembershipsPage() {
           ))}
         </div>
         <Button type="button" className="mt-4" onClick={savePlans}>
-          ذخیره تنظیمات طرح‌ها
+          ذخیره طرح‌ها
         </Button>
       </div>
     </div>

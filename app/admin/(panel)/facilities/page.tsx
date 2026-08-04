@@ -2,7 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
+import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { useEffect, useState } from "react";
 
 type FacilityRequest = Record<string, unknown> & {
@@ -16,82 +16,63 @@ type FacilityRequest = Record<string, unknown> & {
 
 export default function AdminFacilitiesPage() {
   const [items, setItems] = useState<FacilityRequest[]>([]);
+  const [error, setError] = useState("");
 
   function reload() {
-    setItems(PasteurStorage.getFacilityRequests() as FacilityRequest[]);
+    void fetchAdminCommerce<{ items: FacilityRequest[] }>("/api/admin/commerce/facilities")
+      .then((data) => setItems(data.items))
+      .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
     reload();
   }, []);
 
-  function updateStatus(id: string | undefined, status: string, index: number) {
-    if (id) {
-      PasteurStorage.updateFacilityRequest(id, { status });
-    } else {
-      const list = PasteurStorage.getFacilityRequests() as FacilityRequest[];
-      if (!list[index]) return;
-      const prev = list[index];
-      list[index] = { ...prev, status };
-      PasteurStorage.set(PasteurStorage.KEYS.facilityRequests, list);
-      if (status === "approved" && prev.status !== "approved") {
-        const rawAmount = String(list[index].amount || "").replace(/[^\d]/g, "");
-        const amount = Number(rawAmount) || 0;
-        if (amount > 0) {
-          PasteurStorage.createFacilityInstallmentPlan({
-            phone: String(list[index].phone || ""),
-            patientName: String(list[index].name || ""),
-            amount,
-          });
-        }
-      }
-    }
-    reload();
+  function updateStatus(id: string | undefined, status: string) {
+    if (!id) return;
+    void patchAdminCommerce("/api/admin/commerce/facilities", { id, status })
+      .then(() => reload())
+      .catch((e: Error) => setError(e.message));
   }
 
   return (
-    <AdminTable
-      headers={["نام", "موبایل", "مبلغ تقریبی", "توضیحات", "وضعیت", "عملیات"]}
-      empty="درخواست تسهیلاتی ثبت نشده است."
-    >
-      {items.map((r, index) => (
-        <tr key={String(r.id || index)} className="border-t border-slate-100">
-          <td className="px-4 py-3">{String(r.name || "—")}</td>
-          <td className="px-4 py-3">{String(r.phone || "—")}</td>
-          <td className="px-4 py-3">{String(r.amount || "—")}</td>
-          <td className="max-w-xs truncate px-4 py-3 text-xs">
-            {String(r.description || "—")}
-          </td>
-          <td className="px-4 py-3">
-            <AdminBadge tone={r.status === "approved" ? "success" : "warn"}>
-              {r.status === "approved"
-                ? "تأیید شده"
-                : r.status === "rejected"
-                  ? "رد شده"
-                  : "در بررسی"}
-            </AdminBadge>
-          </td>
-          <td className="px-4 py-3">
-            <FormSelect
-              className="py-1 text-xs"
-              value={String(r.status || "pending")}
-              onChange={(e) => updateStatus(r.id ? String(r.id) : undefined, e.target.value, index)}
-            >
-              <option value="pending">در بررسی</option>
-              <option value="approved">تأیید (اقساط ساخته می‌شود)</option>
-              <option value="rejected">رد</option>
-            </FormSelect>
-            {r.status === "approved" ? (
-              <a
-                href="/admin/installments"
-                className="mt-1 block text-[11px] font-semibold text-teal-700"
+    <div className="space-y-4">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      <AdminTable
+        headers={["نام", "موبایل", "مبلغ تقریبی", "توضیحات", "وضعیت", "عملیات"]}
+        empty="درخواست تسهیلاتی ثبت نشده است."
+      >
+        {items.map((r) => (
+          <tr key={String(r.id)} className="border-t border-slate-100">
+            <td className="px-4 py-3">{String(r.name || "—")}</td>
+            <td className="px-4 py-3">{String(r.phone || "—")}</td>
+            <td className="px-4 py-3">{String(r.amount || "—")}</td>
+            <td className="max-w-xs truncate px-4 py-3 text-xs">
+              {String(r.description || "—")}
+            </td>
+            <td className="px-4 py-3">
+              <AdminBadge tone={r.status === "approved" ? "success" : "warn"}>
+                {r.status === "approved"
+                  ? "تأیید شده"
+                  : r.status === "rejected"
+                    ? "رد شده"
+                    : "در بررسی"}
+              </AdminBadge>
+            </td>
+            <td className="px-4 py-3">
+              <FormSelect
+                className="py-1 text-xs"
+                value={String(r.status || "pending")}
+                onChange={(e) => updateStatus(r.id ? String(r.id) : undefined, e.target.value)}
               >
-                مشاهده اقساط →
-              </a>
-            ) : null}
-          </td>
-        </tr>
-      ))}
-    </AdminTable>
+                <option value="pending">در بررسی</option>
+                <option value="approved">تأیید</option>
+                <option value="rejected">رد</option>
+              </FormSelect>
+            </td>
+          </tr>
+        ))}
+      </AdminTable>
+    </div>
   );
 }

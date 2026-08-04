@@ -2,15 +2,19 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Card } from "@/components/ui/Card";
+import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { commissionBasisLabel, commissionSourceTypeLabel } from "@/lib/commission";
-import { PasteurStorage, type Commission } from "@/lib/storage";
+import { type Commission } from "@/lib/storage";
 import { useEffect, useState } from "react";
 
 export default function AdminCommissionsPage() {
   const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [error, setError] = useState("");
 
   function reload() {
-    setCommissions(PasteurStorage.getCommissions());
+    void fetchAdminCommerce<{ items: Commission[] }>("/api/admin/commerce/commissions")
+      .then((data) => setCommissions(data.items))
+      .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
@@ -24,12 +28,14 @@ export default function AdminCommissionsPage() {
   const pending = total - paid;
 
   function markPaid(id: string) {
-    PasteurStorage.updateCommission(id, { status: "paid" });
-    reload();
+    void patchAdminCommerce("/api/admin/commerce/commissions", { id, status: "paid" })
+      .then(() => reload())
+      .catch((e: Error) => setError(e.message));
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <Card hover={false} className="border-cyan-100 bg-cyan-50/70 p-4 text-sm leading-7 text-slate-700">
         <p className="font-extrabold text-cyan-900">مبنای محاسبه (تا قفل کارفرما)</p>
         <p>
@@ -78,10 +84,11 @@ export default function AdminCommissionsPage() {
                 <span className="mt-0.5 block text-xs text-slate-500">{c.sourceLabel}</span>
               ) : null}
             </td>
-            <td className="max-w-[10rem] px-4 py-3 text-xs text-slate-600">
-              {commissionBasisLabel(c.sourceType)}
+            <td className="px-4 py-3 text-xs">{commissionBasisLabel(c.sourceType)}</td>
+            <td className="px-4 py-3">
+              {c.customerName}
+              <div className="text-xs text-slate-500">{c.customerPhone}</div>
             </td>
-            <td className="px-4 py-3">{c.customerName}</td>
             <td className="px-4 py-3">{Number(c.amount || 0).toLocaleString("fa-IR")}</td>
             <td className="px-4 py-3">{c.commissionRate}%</td>
             <td className="px-4 py-3 font-bold text-teal-700">
@@ -96,10 +103,10 @@ export default function AdminCommissionsPage() {
               {c.status !== "paid" ? (
                 <button
                   type="button"
-                  className="text-xs font-semibold text-teal-700"
-                  onClick={() => markPaid(c.id)}
+                  className="text-xs font-bold text-teal-700"
+                  onClick={() => markPaid(String(c.id))}
                 >
-                  تسویه
+                  علامت پرداخت
                 </button>
               ) : (
                 "—"

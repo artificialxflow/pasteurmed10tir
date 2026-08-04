@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { checkShopVipApi } from "@/lib/commerce/client";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ShopCart } from "@/lib/shop";
 import { PasteurStorage } from "@/lib/storage";
@@ -24,9 +25,13 @@ export function ShopVip({ variant = "web" }: { variant?: ShopVariant }) {
   useEffect(() => {
     const saved = ShopCart.getVipPhone();
     if (saved) setPhone(saved);
-    if (saved && PasteurStorage.isShopVip(saved)) {
-      setActive(true);
-      ShopCart.setCustomerType("vip", saved);
+    if (saved) {
+      void checkShopVipApi(saved).then((data) => {
+        if (data.vip) {
+          setActive(true);
+          ShopCart.setCustomerType("vip", saved);
+        }
+      });
     }
   }, []);
 
@@ -42,13 +47,15 @@ export function ShopVip({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("شماره موبایل را وارد کنید");
       return;
     }
-    if (PasteurStorage.isShopVip(p)) {
-      showActive(p);
-      setMessage("VIP فعال — در حال انتقال...");
-      setTimeout(() => router.push(routes.catalog), 800);
-    } else {
-      setMessage("برای این شماره VIP فعال نیست");
-    }
+    void checkShopVipApi(p).then((data) => {
+      if (data.vip) {
+        showActive(p);
+        setMessage("VIP فعال — در حال انتقال...");
+        setTimeout(() => router.push(routes.catalog), 800);
+      } else {
+        setMessage("برای این شماره VIP فعال نیست");
+      }
+    });
   }
 
   function payVip(e: FormEvent) {

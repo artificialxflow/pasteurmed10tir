@@ -73,3 +73,22 @@ Run seed first: `npm run db:seed:phase2`
 
 Run seed: `npm run db:seed:phase3`
 
+---
+
+## Phase 4 — Commerce & finance
+
+| # | Flow | Steps | Expected |
+|---|------|-------|----------|
+| 1 | Membership | `/dental/membership` → pay mock | `/admin/memberships` member + application; wallet ceiling updates |
+| 2 | Wallet | login `/account` → `/wallet` load phone | ceiling 15M / 30M / 20M rule; transactions list |
+| 3 | Shop | `/shop` cart → order | `/admin/shop` shows order; stock decreases |
+| 4 | Shop VIP | `/shop/vip` pay → catalog VIP | `/admin/wallets` has shop-vip kind |
+| 5 | Facility | VIP → `/shop/facility` request → admin approve | `/admin/installments` facility plan |
+| 6 | Commission | membership/booking with code `PLUS100` | `/admin/commissions` pending row |
+| 7 | Installments | `/installments` while logged in | credit plan from seed/membership visible |
+| 8 | IDOR | patient A GET `/api/commerce/wallet?phone=B` | 403 |
+
+Referral codes (seed): `PLUS100`, `PLUS200`, `EQUIPVIP`
+
+Run seed: `npm run db:seed:phase4`
+

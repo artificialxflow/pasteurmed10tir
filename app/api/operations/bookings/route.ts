@@ -1,4 +1,5 @@
 import { jsonError } from '@/lib/auth/api-utils';
+import { createCommission } from '@/lib/commerce/commission-service';
 import { generateOperationId, mapBooking } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
@@ -42,12 +43,16 @@ export async function POST(request: Request) {
       ? session.userId
       : null;
 
+  const referralCode = body.referralCode ? String(body.referralCode) : null;
+  const patientName = String(body.patientName || '').trim() || null;
+  const amount = Number(body.amount || 0);
+
   const row = await prisma.booking.create({
     data: {
       id: generateOperationId(),
       userId,
       patientPhone,
-      patientName: String(body.patientName || '').trim() || null,
+      patientName,
       doctorId,
       doctorName: body.doctorName ? String(body.doctorName) : null,
       specialty: body.specialty ? String(body.specialty) : null,
@@ -56,15 +61,26 @@ export async function POST(request: Request) {
       day,
       timeValue,
       timeLabel: body.timeLabel ? String(body.timeLabel) : null,
-      amount: Number(body.amount || 0),
+      amount,
       isDeposit: body.isDeposit !== false,
       depositNonRefundable: body.depositNonRefundable !== false,
       status: 'confirmed',
       dateLabel:
         body.dateLabel ? String(body.dateLabel) : new Date().toLocaleDateString('fa-IR'),
-      referralCode: body.referralCode ? String(body.referralCode) : null,
+      referralCode,
     },
   });
+
+  if (referralCode) {
+    await createCommission({
+      referralCode,
+      sourceType: 'booking',
+      sourceLabel: body.typeLabel ? String(body.typeLabel) : undefined,
+      customerName: patientName || undefined,
+      customerPhone: patientPhone,
+      amount,
+    });
+  }
 
   return NextResponse.json({ booking: mapBooking(row) }, { status: 201 });
 }

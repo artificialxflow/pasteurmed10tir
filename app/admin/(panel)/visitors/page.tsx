@@ -3,8 +3,8 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
+import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
 import { type Visitor } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminVisitorsPage() {
@@ -13,45 +13,53 @@ export default function AdminVisitorsPage() {
   const [code, setCode] = useState("");
   const [phone, setPhone] = useState("");
   const [rate, setRate] = useState("5");
+  const [error, setError] = useState("");
 
   function reload() {
-    setVisitors(PasteurStorage.getVisitors().map((v) => ({ ...v })));
+    void fetchAdminCommerce<{ items: Visitor[] }>("/api/admin/commerce/visitors")
+      .then((data) => setVisitors(data.items.map((v) => ({ ...v }))))
+      .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
     reload();
   }, []);
 
+  function persist(next: Visitor[]) {
+    void putAdminCommerce<{ items: Visitor[] }>("/api/admin/commerce/visitors", { items: next })
+      .then((data) => setVisitors(data.items.map((v) => ({ ...v }))))
+      .catch((e: Error) => setError(e.message));
+  }
+
   function addVisitor(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getVisitors(),
+    const nextId = Math.max(0, ...visitors.map((v) => Number(v.id) || 0)) + 1;
+    persist([
+      ...visitors,
       {
-        id: Date.now(),
+        id: nextId,
         name: name.trim(),
         code: code.trim().toUpperCase(),
         phone: phone.trim(),
         commissionRate: Number(rate || 0),
-        status: "active" as const,
+        status: "active",
       },
-    ];
-    PasteurStorage.saveVisitors(next);
+    ]);
     setName("");
     setCode("");
     setPhone("");
     setRate("5");
-    reload();
   }
 
   function toggleVisitor(index: number) {
-    const next = PasteurStorage.getVisitors().map((v) => ({ ...v }));
+    const next = visitors.map((v) => ({ ...v }));
     next[index].status = next[index].status === "active" ? "inactive" : "active";
-    PasteurStorage.saveVisitors(next);
-    reload();
+    persist(next);
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm leading-7 text-slate-700">
         درصد پورسانت روی <strong>مبلغ تراکنش معرف‌شده</strong> اعمال می‌شود (رزرو = مبلغ درگاه؛ عضویت =
         حق عضویت). جزئیات در صفحه پورسانت‌ها.

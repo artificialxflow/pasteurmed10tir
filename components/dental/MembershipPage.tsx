@@ -16,12 +16,17 @@ import {
   getDurationOptions,
   getLoanMonthOptions,
   getMembershipPlans,
+  getMembershipPlansAsync,
   getUnitPrice,
   getValidityLabel,
   normalizeMemberCount,
   type MembershipTier,
 } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
+import {
+  createMembershipApplicationApi,
+  lookupVisitorApi,
+} from "@/lib/commerce/client";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
@@ -125,8 +130,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   );
 
   useEffect(() => {
-    PasteurStorage.initMembershipPlansIfNeeded();
-    setMembershipPlans(PasteurStorage.getMembershipPlans());
+    void getMembershipPlansAsync().then(setMembershipPlans);
   }, []);
 
   useEffect(() => {
@@ -164,18 +168,38 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
   function onReferralChange(value: string) {
     const code = value.toUpperCase();
-    const visitor = PasteurStorage.findVisitorByCode(code);
     setForm((prev) => ({
       ...prev,
       referral: value,
-      agentName: visitor?.name || "",
     }));
+    if (!code.trim()) {
+      setForm((prev) => ({ ...prev, agentName: "" }));
+      return;
+    }
+    void lookupVisitorApi(code)
+      .then(({ visitor }) => {
+        setForm((prev) => ({
+          ...prev,
+          agentName: visitor?.name || "",
+        }));
+      })
+      .catch(() => {
+        setForm((prev) => ({ ...prev, agentName: "" }));
+      });
   }
 
-  function buildApplication() {
+  async function buildApplication() {
     const plan = durationOptions.find((p) => p.id === form.planId);
     const referralCode = form.referral.trim().toUpperCase();
-    const visitor = PasteurStorage.findVisitorByCode(referralCode);
+    let visitorName = form.agentName || "—";
+    if (referralCode) {
+      try {
+        const { visitor } = await lookupVisitorApi(referralCode);
+        if (visitor?.name) visitorName = visitor.name;
+      } catch {
+        /* ignore */
+      }
+    }
     const count = normalizeMemberCount(form.memberCount);
     const unit = getUnitPrice(form.tier, form.planId);
     const total = unit * count;
@@ -183,7 +207,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       id: PasteurStorage.generateId(),
       date: form.date || new Date().toLocaleDateString("fa-IR"),
       referralCode,
-      visitorName: visitor?.name || form.agentName || "—",
+      visitorName,
       patientName: form.name.trim(),
       nationalId: form.nationalId.trim(),
       age: form.age,
@@ -211,15 +235,58 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     };
   }
 
-  function submitApplication(e: FormEvent) {
+  function buildApplicationSync() {
+    const plan = durationOptions.find((p) => p.id === form.planId);
+    const referralCode = form.referral.trim().toUpperCase();
+    const count = normalizeMemberCount(form.memberCount);
+    const unit = getUnitPrice(form.tier, form.planId);
+    const total = unit * count;
+    return {
+      id: PasteurStorage.generateId(),
+      date: form.date || new Date().toLocaleDateString("fa-IR"),
+      referralCode,
+      visitorName: form.agentName || "—",
+      patientName: form.name.trim(),
+      nationalId: form.nationalId.trim(),
+      age: form.age,
+      job: form.job.trim(),
+      postalCode: form.postal.trim(),
+      phone: form.phone.trim(),
+      homeAddress: form.homeAddress.trim(),
+      workAddress: form.workAddress.trim(),
+      planId: plan?.id,
+      planTitle: plan ? `${plan.title} (${plan.duration})` : "—",
+      validityLabel: getValidityLabel(form.tier, form.planId),
+      membershipDurationLabel: getValidityLabel(form.tier, form.planId),
+      discountPercent: plan?.discountPercent || 0,
+      tier: form.tier,
+      tierLabel: form.tier === "vip" ? "VIP" : "عادی",
+      memberCount: count,
+      unitPriceToman: unit,
+      amountRial: total * 10,
+      amountToman: total,
+      medicalHistory: form.medicalHistory.trim(),
+      loanAmount: form.loanAmount.trim() || loanAmount,
+      dependents: form.dependents.map((d) => d.trim()).filter(Boolean),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  async function submitApplication(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const data = buildApplication();
+    const data = await buildApplication();
     if (data.patientName.length < 2 || normalizePhone(data.phone).length < 10) {
       setError("نام و شماره تماس را کامل وارد کنید.");
       return;
     }
-    PasteurStorage.saveMembershipApplication(data);
+    try {
+      await createMembershipApplicationApi(data as Record<string, unknown>);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ثبت درخواست ناموفق بود.");
+      return;
+    }
     PasteurStorage.setPendingPayment({
       kind: "membership",
       planId: data.tier,
@@ -268,7 +335,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     router.push(confirmHref);
   }
 
-  const contractData = buildApplication();
+  const contractData = buildApplicationSync();
 
   const shell = (
     <>

@@ -104,7 +104,7 @@ export const ShopCart = {
     this.saveCart([]);
   },
 
-  submitOrder({
+  async submitOrderAsync({
     name,
     phone,
     address,
@@ -112,52 +112,78 @@ export const ShopCart = {
     name: string;
     phone: string;
     address: string;
-  }): { ok: boolean; message?: string; total?: number } {
+  }): Promise<{ ok: boolean; message?: string; total?: number }> {
     const cart = this.getCart();
     if (!cart.length) return { ok: false, message: 'سبد خالی است' };
 
-    PasteurStorage.initProductsIfNeeded();
-    const products = PasteurStorage.getProducts();
-    const totals = this.getCartTotals();
-    const customerType = this.getCustomerType();
+    const { fetchPublic } = await import('./content/client');
+    const { createShopOrderApi } = await import('./commerce/client');
 
+    let products: Product[] = [];
+    try {
+      const data = await fetchPublic<{ items: Product[] }>('/api/content/products');
+      products = data.items;
+    } catch {
+      PasteurStorage.initProductsIfNeeded();
+      products = PasteurStorage.getProducts();
+    }
+
+    const customerType = this.getCustomerType();
+    const getPrice = (product: Product) => this.getProductPrice(product);
+    const getFinal = (product: Product) =>
+      customerType === 'vip' ? Math.round(getPrice(product) * 0.98) : getPrice(product);
+
+    let subtotal = 0;
+    let total = 0;
     const orderItems = cart.map((item) => {
-      const product = products.find((p) => String(p.id) === String(item.id))!;
+      const product = products.find((p) => String(p.id) === String(item.id));
+      if (!product) {
+        return null;
+      }
+      const unitPrice = getPrice(product);
+      const finalUnitPrice = getFinal(product);
+      subtotal += unitPrice * item.qty;
+      total += finalUnitPrice * item.qty;
       return {
         id: product.id,
         name: product.name,
         category: product.category,
         qty: item.qty,
-        unitPrice: this.getProductPrice(product),
-        finalUnitPrice: this.getFinalProductPrice(product),
+        unitPrice,
+        finalUnitPrice,
       };
-    });
+    }).filter(Boolean);
 
-    PasteurStorage.saveShopOrder({
-      id: PasteurStorage.generateId(),
-      customerType,
-      customerTypeLabel: customerType === 'vip' ? 'VIP تجهیزات' : 'عادی',
-      customerName: name,
-      customerPhone: phone,
-      address,
-      items: orderItems,
-      subtotal: totals.subtotal,
-      discount: totals.subtotal - totals.total,
-      total: totals.total,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    });
+    if (!orderItems.length) return { ok: false, message: 'سبد نامعتبر است' };
 
-    const updatedProducts = products.map((product) => {
-      const item = cart.find((i) => String(i.id) === String(product.id));
-      return item
-        ? { ...product, stock: Math.max(0, Number(product.stock || 0) - item.qty) }
-        : product;
-    });
-    PasteurStorage.saveProducts(updatedProducts);
+    try {
+      await createShopOrderApi({
+        customerName: name,
+        customerPhone: phone,
+        address,
+        customerType,
+        items: orderItems,
+        subtotal,
+        discount: subtotal - total,
+        total,
+      });
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : 'ثبت سفارش ناموفق' };
+    }
+
     this.clearCart();
-    this.setLastOrderTotal(totals.total);
-    return { ok: true, total: totals.total };
+    this.setLastOrderTotal(total);
+    return { ok: true, total };
+  },
+
+  submitOrder(args: {
+    name: string;
+    phone: string;
+    address: string;
+  }): { ok: boolean; message?: string; total?: number } {
+    // Sync stub — UI should call submitOrderAsync
+    void this.submitOrderAsync(args);
+    return { ok: false, message: 'لطفاً دوباره تلاش کنید' };
   },
 
   setLastOrderTotal(total: number): void {

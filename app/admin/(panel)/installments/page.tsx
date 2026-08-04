@@ -1,36 +1,44 @@
 "use client";
 
 import { AdminTable } from "@/components/admin/AdminTable";
+import { fetchAdminCommerce } from "@/lib/commerce/client";
 import {
   installmentSourceLabel,
   remainingInstallment,
   type InstallmentPlan,
 } from "@/lib/patient";
-import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 
 export default function AdminInstallmentsPage() {
   const [items, setItems] = useState<InstallmentPlan[]>([]);
+  const [rawItems, setRawItems] = useState<InstallmentPlan[]>([]);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    PasteurStorage.initPatientDomainIfNeeded();
-    setItems(PasteurStorage.getInstallmentPlans());
+    void Promise.all([
+      fetchAdminCommerce<{ items: InstallmentPlan[] }>("/api/admin/commerce/installments"),
+      fetchAdminCommerce<{ items: InstallmentPlan[] }>("/api/admin/commerce/installments?raw=1"),
+    ])
+      .then(([visible, raw]) => {
+        setItems(visible.items);
+        setRawItems(raw.items);
+      })
+      .catch((e: Error) => setError(e.message));
   }, []);
 
   const filtered = useMemo(() => {
     if (sourceFilter === "all") return items;
     if (sourceFilter === "legacy-membership") {
-      return PasteurStorage.getAllInstallmentPlansRaw().filter(
-        (p) => p.source === "membership" || p.status === "hidden",
-      );
+      return rawItems.filter((p) => p.source === "membership" || p.status === "hidden");
     }
     return items.filter((p) => p.source === sourceFilter);
-  }, [items, sourceFilter]);
+  }, [items, rawItems, sourceFilter]);
 
   return (
     <div className="space-y-4">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-slate-600">فیلتر منبع:</span>
         <select
