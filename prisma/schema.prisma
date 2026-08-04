@@ -14,12 +14,18 @@ enum PatientStatus {
 }
 
 model User {
-  id        String          @id @default(cuid())
-  phone     String          @unique
-  name      String
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  profile   PatientProfile?
+  id                 String              @id @default(cuid())
+  phone              String              @unique
+  name               String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  profile            PatientProfile?
+  bookings           Booking[]
+  consultations      Consultation[]
+  insuranceInquiries InsuranceInquiry[]
+  reminders          Reminder[]
+  doctorReviews      DoctorReview[]
+  complaints         Complaint[]
 }
 
 model PatientProfile {
@@ -178,4 +184,198 @@ model MediaAsset {
   filename  String
   sourceUrl String?
   createdAt DateTime @default(now())
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum ConsultationStatus {
+  pending
+  answered
+}
+
+enum InsuranceInquiryStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ReviewStatus {
+  pending
+  approved
+  hidden
+}
+
+enum ComplaintStatus {
+  new
+  reviewing
+  closed
+}
+
+enum PartnerRequestStatus {
+  new
+  reviewing
+  approved
+  rejected
+}
+
+enum ReminderStatus {
+  active
+  cancelled
+  sent
+}
+
+model Booking {
+  id                   String        @id
+  userId               String?
+  user                 User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone         String
+  patientName          String?
+  doctorId             String?
+  doctorName           String?
+  specialty            String?
+  type                 String?
+  typeLabel            String?
+  day                  String?
+  timeValue            String?
+  timeLabel            String?
+  amount               Int           @default(0)
+  isDeposit            Boolean       @default(true)
+  depositNonRefundable Boolean       @default(true)
+  status               BookingStatus @default(confirmed)
+  dateLabel            String?
+  referralCode         String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  reminders            Reminder[]
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+  @@index([doctorId, day, type])
+}
+
+model Consultation {
+  id                     String             @id
+  userId                 String?
+  user                   User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone           String
+  patientName            String?
+  type                   String?
+  typeLabel              String?
+  category               String?
+  categoryLabel          String?
+  specialty              String?
+  specialtyLabel         String?
+  doctorId               String?
+  doctorName             String?
+  description            String?
+  estimate               String?
+  amount                 Int                @default(0)
+  priceSource            String?
+  hasImage               Boolean            @default(false)
+  onlineInsuranceCovered Boolean            @default(false)
+  status                 ConsultationStatus @default(pending)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+}
+
+model InsuranceInquiry {
+  id                       String                 @id
+  userId                   String?
+  user                     User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone             String
+  patientName              String?
+  mode                     String
+  baseInsuranceId          String?
+  complementaryInsuranceId String?
+  franchisePercent         Int                    @default(30)
+  visitFee                 Int                    @default(0)
+  depositAmount            Int                    @default(0)
+  status                   InsuranceInquiryStatus @default(pending)
+  createdAt                DateTime               @default(now())
+  resolvedAt               DateTime?
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+}
+
+model Reminder {
+  id           String         @id
+  userId       String?
+  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookingId    String?
+  booking      Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  patientPhone String
+  patientName  String?
+  doctorName   String?
+  day          String?
+  timeLabel    String?
+  typeLabel    String?
+  optionId     String?
+  optionLabel  String?
+  status       ReminderStatus @default(active)
+  notified     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+
+  @@index([userId])
+  @@index([bookingId])
+}
+
+model DoctorReview {
+  id           String       @id
+  userId       String?
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone String
+  doctorId     String
+  doctorName   String
+  doctorKind   String
+  rating       Int
+  comment      String
+  status       ReviewStatus @default(pending)
+  createdAt    DateTime     @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Complaint {
+  id           String          @id
+  userId       String?
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone String
+  patientName  String
+  subject      String
+  message      String
+  status       ComplaintStatus @default(new)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model PartnerRequest {
+  id           String               @id
+  type         String
+  typeLabel    String?
+  patientName  String
+  patientPhone String
+  specialty    String?
+  city         String?
+  description  String?
+  notes        String?
+  status       PartnerRequestStatus @default(new)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([status])
 }

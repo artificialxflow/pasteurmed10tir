@@ -2,6 +2,7 @@
  * پرداخت mock — پاستور پلاس
  */
 import { PasteurStorage, type Booking } from './storage';
+import { createBookingApi } from './operations/client';
 import { planIdToWalletKinds } from './wallet';
 
 export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip';
@@ -95,6 +96,53 @@ export const PaymentFlow = {
     return amount.toLocaleString('fa-IR') + ' تومان';
   },
 
+  async completePaymentAsync(pending: PendingPayment): Promise<CompletedPayment> {
+    const completed: CompletedPayment = {
+      ...pending,
+      status: 'paid',
+      paidAt: new Date().toISOString(),
+    };
+
+    if (pending.kind === 'booking') {
+      const { booking } = await createBookingApi({
+        doctorId: pending.doctorId,
+        doctorName: pending.doctorName,
+        specialty: pending.specialty,
+        type: pending.type,
+        typeLabel: pending.typeLabel,
+        day: pending.day,
+        timeValue: pending.timeValue,
+        timeLabel: pending.timeLabel,
+        patientName: pending.patientName,
+        patientPhone: pending.patientPhone,
+        amount: pending.amount,
+        isDeposit: true,
+        depositNonRefundable: true,
+        referralCode: pending.referralCode,
+      });
+      PasteurStorage.setSessionLastBooking(booking as Booking);
+      const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
+      profile.visits += 1;
+      PasteurStorage.saveClubProfile(pending.patientPhone, profile);
+      if (pending.referralCode) {
+        PasteurStorage.saveCommission({
+          referralCode: pending.referralCode,
+          sourceType: 'booking',
+          sourceLabel: pending.typeLabel as string | undefined,
+          customerName: pending.patientName,
+          customerPhone: pending.patientPhone,
+          amount: pending.amount,
+        });
+      }
+    } else {
+      return this.completePayment(pending);
+    }
+
+    PasteurStorage.setLastPayment(completed);
+    PasteurStorage.clearPendingPayment();
+    return completed;
+  },
+
   completePayment(pending: PendingPayment): CompletedPayment {
     const completed: CompletedPayment = {
       ...pending,
@@ -103,6 +151,7 @@ export const PaymentFlow = {
     };
 
     if (pending.kind === 'booking') {
+      // legacy sync path — prefer completePaymentAsync
       const booking: Booking = PasteurStorage.saveBooking({
         id: PasteurStorage.generateId(),
         doctorId: pending.doctorId as string | undefined,

@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
-import { PasteurStorage } from "@/lib/storage";
+import { fetchAdminOps } from "@/lib/operations/client";
 import { useEffect, useState } from "react";
 
 type ReminderRow = Record<string, unknown> & {
@@ -19,7 +19,9 @@ export default function AdminRemindersPage() {
   const [items, setItems] = useState<ReminderRow[]>([]);
 
   useEffect(() => {
-    setItems(PasteurStorage.getReminders() as ReminderRow[]);
+    void fetchAdminOps<{ items: ReminderRow[] }>("/api/admin/operations/reminders")
+      .then((data) => setItems(data.items))
+      .catch(() => setItems([]));
   }, []);
 
   return (

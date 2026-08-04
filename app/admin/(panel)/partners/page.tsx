@@ -2,8 +2,8 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
-import { useEffect, useState } from "react";
+import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { useCallback, useEffect, useState } from "react";
 
 type PartnerRequest = Record<string, unknown> & {
   id: string;
@@ -27,17 +27,19 @@ const statusMeta: Record<string, { label: string; tone: "success" | "warn" | "da
 export default function AdminPartnersPage() {
   const [items, setItems] = useState<PartnerRequest[]>([]);
 
-  function reload() {
-    setItems(PasteurStorage.getPartnerRequests() as PartnerRequest[]);
-  }
-
-  useEffect(() => {
-    reload();
+  const reload = useCallback(async () => {
+    const data = await fetchAdminOps<{ items: PartnerRequest[] }>(
+      "/api/admin/operations/partners",
+    );
+    setItems(data.items);
   }, []);
 
+  useEffect(() => {
+    void reload().catch(() => setItems([]));
+  }, [reload]);
+
   function updateStatus(id: string, status: string) {
-    PasteurStorage.updatePartnerRequest(id, { status });
-    reload();
+    void patchAdminOps("/api/admin/operations/partners", { id, status }).then(() => reload());
   }
 
   return (

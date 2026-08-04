@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
+import { postPublicOps } from "@/lib/operations/client";
 import { FormEvent, useState } from "react";
 
 export function ComplaintsPage({ variant = "web" }: { variant?: "web" | "app" }) {
@@ -14,17 +14,12 @@ export function ComplaintsPage({ variant = "web" }: { variant?: "web" | "app" })
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    PasteurStorage.initPatientDomainIfNeeded();
-    PasteurStorage.saveComplaint({
-      id: PasteurStorage.generateId(),
+    void postPublicOps("/api/operations/complaints", {
       name: name.trim(),
       phone: phone.trim(),
       subject: subject.trim(),
       message: message.trim(),
-      status: "new",
-      createdAt: new Date().toISOString(),
-    });
-    setDone(true);
+    }).then(() => setDone(true));
   }
 
   if (done) {

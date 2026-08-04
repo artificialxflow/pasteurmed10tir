@@ -2,20 +2,22 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import type { Complaint } from "@/lib/patient";
-import { PasteurStorage } from "@/lib/storage";
-import { useEffect, useState } from "react";
+import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { useCallback, useEffect, useState } from "react";
 
 export default function AdminComplaintsPage() {
   const [items, setItems] = useState<Complaint[]>([]);
 
-  function reload() {
-    setItems(PasteurStorage.getComplaints());
-  }
+  const reload = useCallback(async () => {
+    const data = await fetchAdminOps<{ items: Complaint[] }>(
+      "/api/admin/operations/complaints",
+    );
+    setItems(data.items);
+  }, []);
 
   useEffect(() => {
-    PasteurStorage.initPatientDomainIfNeeded();
-    reload();
-  }, []);
+    void reload().catch(() => setItems([]));
+  }, [reload]);
 
   return (
     <AdminTable headers={["نام", "موضوع", "وضعیت", "عملیات"]} empty="شکایتی نیست.">
@@ -37,8 +39,10 @@ export default function AdminComplaintsPage() {
               type="button"
               className="text-cyan-800"
               onClick={() => {
-                PasteurStorage.updateComplaintStatus(c.id, "reviewing");
-                reload();
+                void patchAdminOps("/api/admin/operations/complaints", {
+                  id: c.id,
+                  status: "reviewing",
+                }).then(() => reload());
               }}
             >
               بررسی
@@ -47,8 +51,10 @@ export default function AdminComplaintsPage() {
               type="button"
               className="text-teal-700"
               onClick={() => {
-                PasteurStorage.updateComplaintStatus(c.id, "closed");
-                reload();
+                void patchAdminOps("/api/admin/operations/complaints", {
+                  id: c.id,
+                  status: "closed",
+                }).then(() => reload());
               }}
             >
               بستن

@@ -58,3 +58,18 @@ SESSION_SECRET=...
 4. On Runflare: file persists after redeploy (disk mounted at `/app/public/uploads`)
 
 Run seed first: `npm run db:seed:phase2`
+
+---
+
+## Phase 3 — Clinical operations
+
+| # | Flow | Steps | Expected |
+|---|------|-------|----------|
+| 1 | Booking | `/dental/booking` → pay mock 200k | `/admin/bookings` shows row |
+| 2 | Consultation | `/consultation` submit | `/admin/consultations` shows row |
+| 3 | Patient approve | `/admin/patients` approve 09126723365 | franchise applies on confirm |
+| 4 | Insurance inquiry | confirm page → inquiry → `/admin/insurances` approve | payable amount updates (demo simulate or admin) |
+| 5 | IDOR | login patient A, GET `/api/operations/consultations/{id-of-B}` | 403 |
+
+Run seed: `npm run db:seed:phase3`
+

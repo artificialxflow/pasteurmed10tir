@@ -1,21 +1,23 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
-import { PasteurStorage } from "@/lib/storage";
-import { useEffect, useState } from "react";
+import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { useCallback, useEffect, useState } from "react";
 import type { DoctorReview } from "@/lib/patient";
 
 export default function AdminReviewsPage() {
   const [items, setItems] = useState<DoctorReview[]>([]);
 
-  function reload() {
-    PasteurStorage.initPatientDomainIfNeeded();
-    setItems(PasteurStorage.getDoctorReviews());
-  }
+  const reload = useCallback(async () => {
+    const data = await fetchAdminOps<{ items: DoctorReview[] }>(
+      "/api/admin/operations/reviews",
+    );
+    setItems(data.items);
+  }, []);
 
   useEffect(() => {
-    reload();
-  }, []);
+    void reload().catch(() => setItems([]));
+  }, [reload]);
 
   return (
     <AdminTable headers={["پزشک", "امتیاز", "نظر", "وضعیت", "عملیات"]} empty="نظری نیست.">
@@ -32,8 +34,10 @@ export default function AdminReviewsPage() {
               type="button"
               className="text-teal-700"
               onClick={() => {
-                PasteurStorage.updateDoctorReviewStatus(r.id, "approved");
-                reload();
+                void patchAdminOps("/api/admin/operations/reviews", {
+                  id: r.id,
+                  status: "approved",
+                }).then(() => reload());
               }}
             >
               تأیید
@@ -42,8 +46,10 @@ export default function AdminReviewsPage() {
               type="button"
               className="text-slate-600"
               onClick={() => {
-                PasteurStorage.updateDoctorReviewStatus(r.id, "hidden");
-                reload();
+                void patchAdminOps("/api/admin/operations/reviews", {
+                  id: r.id,
+                  status: "hidden",
+                }).then(() => reload());
               }}
             >
               مخفی

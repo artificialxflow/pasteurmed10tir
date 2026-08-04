@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
+import { postPublicOps } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -29,19 +30,17 @@ export function DoctorReviewForm({
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    PasteurStorage.saveDoctorReview({
-      id: PasteurStorage.generateId(),
+    void postPublicOps("/api/operations/reviews", {
       doctorId,
       doctorName,
       doctorKind,
       phone: phone.trim(),
       rating: Number(rating) || 5,
       comment: comment.trim(),
-      status: "approved",
-      createdAt: new Date().toISOString(),
+    }).then(() => {
+      setDone(true);
+      setComment("");
     });
-    setDone(true);
-    setComment("");
   }
 
   return (

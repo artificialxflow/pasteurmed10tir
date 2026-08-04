@@ -2,6 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Card } from "@/components/ui/Card";
+import { fetchAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Booking, type BookingStats } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,30 @@ type QueueCounts = {
   pendingCommissions: number;
 };
 
+function computeBookingStats(bookings: Booking[]): BookingStats {
+  const today = new Date().toLocaleDateString("fa-IR");
+  const isoToday = new Date().toISOString().slice(0, 10);
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+  const todayBookings = confirmed.filter(
+    (b) => b.dateLabel === today || b.createdAt?.startsWith(isoToday),
+  );
+  const revenue = confirmed.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const members = PasteurStorage.getMembers().filter((m) => m.status === "paid");
+  const commissions = PasteurStorage.getCommissions();
+
+  return {
+    totalBookings: confirmed.length,
+    todayVisitors: todayBookings.length,
+    revenue,
+    activeMembers: members.length,
+    commissionsTotal: commissions.reduce(
+      (sum, c) => sum + (Number(c.commissionAmount) || 0),
+      0,
+    ),
+    recentBookings: bookings.slice(0, 8),
+  };
+}
+
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<Period>("day");
   const [stats, setStats] = useState<BookingStats | null>(null);
@@ -30,20 +55,53 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    PasteurStorage.initPatientDomainIfNeeded();
-    setStats(PasteurStorage.getBookingStats());
-    const patients = PasteurStorage.listPatientProfiles();
-    const facilities = PasteurStorage.getFacilityRequests();
-    const complaints = PasteurStorage.getComplaints();
-    const commissions = PasteurStorage.getCommissions();
-    setQueue({
-      pendingPatients: patients.filter((p) => p.status !== "approved" && p.status !== "rejected")
-        .length,
-      pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending").length,
-      newComplaints: complaints.filter((c) => c.status === "new" || !c.status).length,
-      paidMembers: PasteurStorage.getMembers().filter((m) => m.status === "paid").length,
-      pendingCommissions: commissions.filter((c) => c.status !== "paid").length,
-    });
+    void (async () => {
+      PasteurStorage.initPatientDomainIfNeeded();
+
+      const facilities = PasteurStorage.getFacilityRequests();
+      const commissions = PasteurStorage.getCommissions();
+
+      try {
+        const [bookingsRes, patientsRes, complaintsRes] = await Promise.all([
+          fetchAdminOps<{ items: Booking[] }>("/api/admin/operations/bookings"),
+          fetchAdminOps<{ items: { status?: string }[] }>(
+            "/api/admin/operations/patients",
+          ),
+          fetchAdminOps<{ items: { status?: string }[] }>(
+            "/api/admin/operations/complaints",
+          ),
+        ]);
+
+        setStats(computeBookingStats(bookingsRes.items));
+        setQueue({
+          pendingPatients: patientsRes.items.filter(
+            (p) => p.status !== "approved" && p.status !== "rejected",
+          ).length,
+          pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending")
+            .length,
+          newComplaints: complaintsRes.items.filter(
+            (c) => c.status === "new" || !c.status,
+          ).length,
+          paidMembers: PasteurStorage.getMembers().filter((m) => m.status === "paid")
+            .length,
+          pendingCommissions: commissions.filter((c) => c.status !== "paid").length,
+        });
+      } catch {
+        setStats(PasteurStorage.getBookingStats());
+        const patients = PasteurStorage.listPatientProfiles();
+        const complaints = PasteurStorage.getComplaints();
+        setQueue({
+          pendingPatients: patients.filter(
+            (p) => p.status !== "approved" && p.status !== "rejected",
+          ).length,
+          pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending")
+            .length,
+          newComplaints: complaints.filter((c) => c.status === "new" || !c.status).length,
+          paidMembers: PasteurStorage.getMembers().filter((m) => m.status === "paid").length,
+          pendingCommissions: commissions.filter((c) => c.status !== "paid").length,
+        });
+      }
+    })();
   }, [period]);
 
   if (!stats) {

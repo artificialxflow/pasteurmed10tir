@@ -10,11 +10,13 @@ import {
   FormTextarea,
 } from "@/components/ui/Card";
 import { getConsultationPrice, getConsultationTypes } from "@/lib/consultationPrice";
+import { createConsultationApi, fetchPatientOps } from "@/lib/operations/client";
 import { PASTEUR_DATA } from "@/lib/data";
 import {
   isPatientApproved,
   payableFromFranchise,
   resolveFranchisePercent,
+  type PatientProfile,
 } from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
@@ -80,16 +82,26 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
 
   useEffect(() => {
     PasteurStorage.initConsultationPricingIfNeeded();
-    PasteurStorage.initPatientDomainIfNeeded();
     setConsultationTypes(getConsultationTypes());
-    const session = PasteurStorage.getPatientSession();
-    setHasComplementary(Boolean(session?.complementaryInsuranceId));
-    setPatientApproved(isPatientApproved(session));
-    setFranchisePercent(resolveFranchisePercent(session));
-    if (session) {
-      setName((prev) => prev || session.name);
-      setPhone((prev) => prev || session.phone);
-    }
+    void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
+      .then((res) => {
+        const session = res.profile;
+        if (!session) return;
+        setHasComplementary(Boolean(session.complementaryInsuranceId));
+        setPatientApproved(isPatientApproved(session));
+        setFranchisePercent(resolveFranchisePercent(session));
+        setName((prev) => prev || session.name);
+        setPhone((prev) => prev || session.phone);
+      })
+      .catch(() => {
+        const session = PasteurStorage.getPatientSession();
+        if (!session) return;
+        setHasComplementary(Boolean(session.complementaryInsuranceId));
+        setPatientApproved(isPatientApproved(session));
+        setFranchisePercent(resolveFranchisePercent(session));
+        setName((prev) => prev || session.name);
+        setPhone((prev) => prev || session.phone);
+      });
   }, []);
 
   const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === category);
@@ -125,8 +137,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       categoryId: category,
     });
 
-    PasteurStorage.saveConsultation({
-      id: PasteurStorage.generateId(),
+    void createConsultationApi({
       type: selectedType,
       typeLabel: type?.label,
       category,
@@ -143,11 +154,12 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       priceSource: pricing.source,
       hasImage: Boolean(imagePreview),
       onlineInsuranceCovered: onlineInsurance,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    });
-    PasteurStorage.addClubPoints(phone, 20, "مشاوره و ویزیت");
-    setSubmitted(true);
+    })
+      .then(() => {
+        PasteurStorage.addClubPoints(phone, 20, "مشاوره و ویزیت");
+        setSubmitted(true);
+      })
+      .catch(() => setSubmitted(false));
   }
 
   if (submitted) {

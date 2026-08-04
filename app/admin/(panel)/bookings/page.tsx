@@ -4,9 +4,10 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
-import { PasteurStorage, type Booking } from "@/lib/storage";
+import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Filter = "all" | "visit" | "treatment";
 
@@ -14,19 +15,22 @@ export default function AdminBookingsPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
+  const [error, setError] = useState("");
 
-  function reload(type: Filter = filter) {
-    let list = PasteurStorage.getBookings();
-    if (type !== "all") list = list.filter((b) => b.type === type);
-    setBookings(list);
-  }
+  const reload = useCallback(async (type: Filter = filter) => {
+    const q = type === "all" ? "" : `?type=${type}`;
+    const data = await fetchAdminOps<{ items: Booking[] }>(
+      `/api/admin/operations/bookings${q}`,
+    );
+    setBookings(data.items);
+  }, [filter]);
 
   useEffect(() => {
     void fetchAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings")
       .then((data) => setReservationFee(data.dentalReservationFee))
       .catch(() => {});
-    reload("all");
-  }, []);
+    void reload("all").catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [reload]);
 
   function cancelBooking(id: string) {
     if (
@@ -36,27 +40,30 @@ export default function AdminBookingsPage() {
     ) {
       return;
     }
-    PasteurStorage.updateBooking(id, {
-      status: "cancelled",
-      depositNonRefundable: true,
-    });
-    reload(filter);
+    void patchAdminOps("/api/admin/operations/bookings", { id, status: "cancelled" })
+      .then(() => reload(filter))
+      .catch((e) => setError(e instanceof Error ? e.message : "لغو ناموفق"));
   }
 
   function saveReservationFee() {
     void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
       dentalReservationFee: Number(reservationFee || 0),
-    }).then((data) => setReservationFee(data.dentalReservationFee));
+    })
+      .then((data) => setReservationFee(data.dentalReservationFee))
+      .catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
   function resetReservationFee() {
     void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
       dentalReservationFee: 200000,
-    }).then((data) => setReservationFee(data.dentalReservationFee));
+    })
+      .then((data) => setReservationFee(data.dentalReservationFee))
+      .catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
   return (
     <div className="space-y-6">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Card hover={false} className="p-5">
         <h2 className="mb-3 text-lg font-bold">تنظیمات بیعانه رزرو دندان</h2>
         <p className="mb-4 text-sm text-slate-600">
@@ -98,7 +105,9 @@ export default function AdminBookingsPage() {
             type="button"
             onClick={() => {
               setFilter(item.id);
-              reload(item.id);
+              void reload(item.id).catch((e) =>
+                setError(e instanceof Error ? e.message : "خطا"),
+              );
             }}
             className={cn(
               "rounded-full border px-3 py-1 text-xs font-bold",
@@ -158,7 +167,7 @@ export default function AdminBookingsPage() {
                 <button
                   type="button"
                   className="text-xs font-semibold text-red-600"
-                  onClick={() => cancelBooking(b.id)}
+                  onClick={() => cancelBooking(String(b.id))}
                 >
                   لغو
                 </button>

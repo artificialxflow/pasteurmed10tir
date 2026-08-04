@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
+import { postPublicOps } from "@/lib/operations/client";
 import { cn } from "@/lib/utils";
 import { FormEvent, useState } from "react";
 
@@ -31,8 +31,7 @@ export function PartnerRequestForm({ variant = "web", onSuccess }: Props) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const type = PARTNER_TYPES.find((t) => t.id === selectedType);
-    PasteurStorage.savePartnerRequest({
-      id: PasteurStorage.generateId(),
+    void postPublicOps("/api/operations/partners", {
       type: selectedType,
       typeLabel: type?.label || "—",
       name: name.trim(),
@@ -41,18 +40,17 @@ export function PartnerRequestForm({ variant = "web", onSuccess }: Props) {
       city: city.trim(),
       description: description.trim(),
       notes: description.trim(),
-      status: variant === "app" ? "pending" : "new",
-      createdAt: new Date().toISOString(),
+    }).then(() => {
+      setDone(true);
+      onSuccess?.();
+      if (variant === "app") {
+        setName("");
+        setPhone("");
+        setSpecialty("");
+        setDescription("");
+        setDone(false);
+      }
     });
-    setDone(true);
-    onSuccess?.();
-    if (variant === "app") {
-      setName("");
-      setPhone("");
-      setSpecialty("");
-      setDescription("");
-      setDone(false);
-    }
   }
 
   if (done && variant === "web") {

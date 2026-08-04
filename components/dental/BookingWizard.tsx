@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Badge, Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { PASTEUR_DATA, type Dentist } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatHour, normalizePhone } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -52,13 +53,15 @@ function getDoctor(id: number | null): Dentist | undefined {
   return DENTISTS.find((d) => d.id === id);
 }
 
-/** Slot check tolerant of string/number doctorId in storage. */
+/** Slot check against API occupied times (+ local draft fallback). */
 function isSlotTaken(
   doctorId: number | string,
   day: string,
   type: string,
   timeValue: number | string,
+  occupied: string[],
 ): boolean {
+  if (occupied.includes(String(timeValue))) return true;
   return PasteurStorage.getBookings().some(
     (b) =>
       b.status !== "cancelled" &&
@@ -90,6 +93,29 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [currentStep, setCurrentStep] = useState<StepName>("type");
   const [error, setError] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
+  const [reservationFee, setReservationFee] = useState(200000);
+
+  useEffect(() => {
+    void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
+      .then((data) => setReservationFee(data.dentalReservationFee))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!state.doctorId || !state.day || !state.type) {
+      setOccupiedSlots([]);
+      return;
+    }
+    const q = new URLSearchParams({
+      doctorId: String(state.doctorId),
+      day: state.day,
+      type: state.type,
+    });
+    void fetchPublic<{ timeValues: string[] }>(`/api/operations/bookings/occupied?${q}`)
+      .then((data) => setOccupiedSlots(data.timeValues))
+      .catch(() => setOccupiedSlots([]));
+  }, [state.doctorId, state.day, state.type]);
 
   useEffect(() => {
     const saved = PasteurStorage.getPendingBooking() as
@@ -181,7 +207,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       return;
     }
 
-    const amount = PasteurStorage.getDentalReservationFee();
+    const amount = reservationFee;
     PasteurStorage.setPendingPayment({
       kind: "booking",
       doctorId: doctor.id,
@@ -370,6 +396,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         <TimeStep
           doctor={doctor}
           state={state}
+          occupiedSlots={occupiedSlots}
           onSelect={(timeValue, timeLabel) => updateState({ timeValue, timeLabel })}
         />
       ) : null}
@@ -591,10 +618,12 @@ function TypeOption({
 function TimeStep({
   doctor,
   state,
+  occupiedSlots,
   onSelect,
 }: {
   doctor: Dentist | undefined;
   state: BookingState;
+  occupiedSlots: string[];
   onSelect: (timeValue: number, timeLabel: string) => void;
 }) {
   if (!doctor || !state.day || !state.type) return null;
@@ -619,7 +648,7 @@ function TimeStep({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {isVisit
           ? (daySchedule.visitHours || []).map((h) => {
-              const booked = isSlotTaken(doctor.id, state.day!, "visit", h);
+              const booked = isSlotTaken(doctor.id, state.day!, "visit", h, occupiedSlots);
               const selected = state.timeValue === h;
               return (
                 <button
@@ -642,7 +671,7 @@ function TimeStep({
             })
           : (daySchedule.treatmentSlots || []).map((slot) => {
               const booked =
-                slot.booked || isSlotTaken(doctor.id, state.day!, "treatment", slot.start);
+                slot.booked || isSlotTaken(doctor.id, state.day!, "treatment", slot.start, occupiedSlots);
               const selected = state.timeValue === slot.start;
               return (
                 <button

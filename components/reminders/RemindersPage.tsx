@@ -24,8 +24,9 @@ export function RemindersPage({ variant = "web" }: { variant?: Variant }) {
     window.setTimeout(() => setMessage(""), 2500);
   }
 
-  function reload() {
-    setReminders(PasteurStorage.getReminders() as ReminderItem[]);
+  async function reload() {
+    const items = await ReminderService.listReminders();
+    setReminders(items);
   }
 
   useEffect(() => {
@@ -35,8 +36,8 @@ export function RemindersPage({ variant = "web" }: { variant?: Variant }) {
       setLastBooking(booking);
       setShowAdd(true);
     }
-    reload();
-    const timer = window.setTimeout(() => ReminderService.checkAndNotify(), 2000);
+    void reload();
+    const timer = window.setTimeout(() => void ReminderService.checkAndNotify(), 2000);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -50,18 +51,24 @@ export function RemindersPage({ variant = "web" }: { variant?: Variant }) {
   async function saveReminder() {
     if (!lastBooking) return;
     await ReminderService.requestPermission();
-    ReminderService.createFromBooking(lastBooking, selectedOption);
+    const created = await ReminderService.createFromBooking(lastBooking, selectedOption);
+    if (!created) {
+      showMessage("برای ثبت یادآور وارد حساب شوید.");
+      return;
+    }
     PasteurStorage.clearSessionLastBooking();
     setShowAdd(false);
-    reload();
+    await reload();
     showMessage(isApp ? "یادآور ثبت شد" : "یادآور با موفقیت ثبت شد!");
   }
 
-  function deleteReminder(id: string) {
+  async function deleteReminder(id: string) {
     if (!window.confirm("یادآور حذف شود؟")) return;
-    PasteurStorage.deleteReminder(id);
-    reload();
-    if (isApp) showMessage("یادآور حذف شد");
+    const ok = await ReminderService.deleteReminder(id);
+    if (ok) {
+      await reload();
+      if (isApp) showMessage("یادآور حذف شد");
+    }
   }
 
   return (

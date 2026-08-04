@@ -405,9 +405,16 @@ STOP after phase 3.
 
 ### ✅ Phase 3 complete when / تکمیل فاز ۳
 
-- [ ] Full booking flow end-to-end
+- [x] Prisma + API for bookings, consultations, inquiries, reminders, reviews, complaints, partners
+- [x] Admin patients wired to DB
+- [x] BookingWizard + ConfirmPayment wired to API
+- [x] RemindersPage + admin dashboard wired to API
+- [x] `npm run build` OK
+- [x] `npm run db:seed:phase3` OK (local)
+- [ ] Full booking flow end-to-end (live test on pasteur.plus)
 - [ ] IDOR manually checked (two test patients)
 - [ ] Insurance approve changes payable amount
+- [ ] git commit
 
 ---
 

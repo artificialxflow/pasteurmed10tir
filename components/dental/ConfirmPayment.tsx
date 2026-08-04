@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
-import type { InsuranceMode } from "@/lib/patient";
+import type { InsuranceMode, PatientProfile } from "@/lib/patient";
 import {
   DEFAULT_VISIT_FEE_TOMAN,
   isPatientApproved,
@@ -10,10 +10,15 @@ import {
   resolveFranchisePercent,
 } from "@/lib/patient";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
+import { fetchPublic } from "@/lib/content/client";
+import {
+  createInsuranceInquiryApi,
+  fetchPatientOps,
+} from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
@@ -136,15 +141,20 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     "none",
   );
   const [note, setNote] = useState("");
+  const [profile, setProfile] = useState<PatientProfile | null>(null);
+  const [baseList, setBaseList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
+  const [compList, setCompList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
 
-  const baseList = useMemo(
-    () => PasteurStorage.getBaseInsurances().filter((i) => i.active !== false),
-    [],
-  );
-  const compList = useMemo(
-    () => PasteurStorage.getComplementaryInsurances().filter((i) => i.active !== false),
-    [],
-  );
+  useEffect(() => {
+    void fetchPublic<{ base: { id: string; name: string; active?: boolean }[]; complementary: { id: string; name: string; active?: boolean }[] }>(
+      "/api/content/insurances",
+    )
+      .then((data) => {
+        setBaseList(data.base.filter((i) => i.active !== false));
+        setCompList(data.complementary.filter((i) => i.active !== false));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     PasteurStorage.initPatientDomainIfNeeded();
@@ -153,12 +163,28 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       router.replace(app ? "/app/dental/general" : "/dental/general");
       return;
     }
-    const deposit = Number(data.amount) || PasteurStorage.getDentalReservationFee();
+    const deposit = Number(data.amount) || 200000;
     setDepositAmount(deposit);
     setPending(data);
-    const profile = PasteurStorage.getPatientProfile(String(data.patientPhone || ""));
-    if (profile?.baseInsuranceId) setBaseId(profile.baseInsuranceId);
-    if (profile?.complementaryInsuranceId) setCompId(profile.complementaryInsuranceId);
+    void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
+      .then((s) => setDepositAmount(Number(data.amount) || s.dentalReservationFee))
+      .catch(() => {});
+    void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
+      .then((res) => {
+        if (res.profile && res.profile.phone === String(data.patientPhone || "").trim()) {
+          setProfile(res.profile);
+          if (res.profile.baseInsuranceId) setBaseId(res.profile.baseInsuranceId);
+          if (res.profile.complementaryInsuranceId) setCompId(res.profile.complementaryInsuranceId);
+        }
+      })
+      .catch(() => {
+        const local = PasteurStorage.getPatientProfile(String(data.patientPhone || ""));
+        if (local) {
+          setProfile(local);
+          if (local.baseInsuranceId) setBaseId(local.baseInsuranceId);
+          if (local.complementaryInsuranceId) setCompId(local.complementaryInsuranceId);
+        }
+      });
     setReady(true);
   }, [app, router]);
 
@@ -173,15 +199,13 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       setNote("برای استعلام، نوع بیمه را انتخاب کنید.");
       return;
     }
-    const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
     if (!isPatientApproved(profile)) {
       setNote("کاربری بیمار هنوز تأیید نشده است. ابتدا در پنل ادمین تأیید شود.");
       return;
     }
     const percent = resolveFranchisePercent(profile);
     const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
-    const inquiry = PasteurStorage.saveInsuranceInquiry({
-      id: PasteurStorage.generateId(),
+    void createInsuranceInquiryApi({
       phone: String(pending.patientPhone || ""),
       patientName: String(pending.patientName || ""),
       mode,
@@ -191,18 +215,17 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       franchisePercent: percent,
       visitFee,
       depositAmount,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    });
-    setInquiryId(inquiry.id);
-    setInquiryStatus("pending");
-    setNote("درخواست استعلام ثبت شد. کارشناسان بررسی می‌کنند (نمایشی).");
+    })
+      .then(({ inquiry }) => {
+        setInquiryId(String(inquiry.id));
+        setInquiryStatus("pending");
+        setNote("درخواست استعلام ثبت شد. کارشناسان بررسی می‌کنند.");
+      })
+      .catch((e) => setNote(e instanceof Error ? e.message : "ثبت استعلام ناموفق"));
   }
 
   function simulateApprove() {
     if (!pending || !inquiryId) return;
-    PasteurStorage.updateInsuranceInquiry(inquiryId, "approved");
-    const profile = PasteurStorage.getPatientProfile(String(pending.patientPhone || ""));
     if (!isPatientApproved(profile)) {
       setNote("کاربری بیمار تأیید نشده؛ فرانشیز٪ اعمال نشد.");
       return;
@@ -246,8 +269,12 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     if (!pending || paying) return;
     setPaying(true);
     window.setTimeout(() => {
-      PaymentFlow.completePayment(pending);
-      router.push(PaymentFlow.defaultSuccessHref(pending));
+      void PaymentFlow.completePaymentAsync(pending)
+        .then(() => router.push(PaymentFlow.defaultSuccessHref(pending)))
+        .catch((e) => {
+          setNote(e instanceof Error ? e.message : "پرداخت ناموفق");
+          setPaying(false);
+        });
     }, 1500);
   };
 

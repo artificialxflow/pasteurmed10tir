@@ -4,8 +4,8 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import type { InsuranceCompany, InsuranceInquiry } from "@/lib/patient";
-import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
@@ -26,8 +26,11 @@ export default function AdminInsurancesPage() {
         setComp(data.complementary);
       })
       .catch(() => {});
-    PasteurStorage.initPatientDomainIfNeeded();
-    setInquiries(PasteurStorage.getInsuranceInquiries());
+    void fetchAdminOps<{ items: InsuranceInquiry[] }>(
+      "/api/admin/operations/insurance-inquiries",
+    )
+      .then((data) => setInquiries(data.items))
+      .catch(() => setInquiries([]));
   }
 
   useEffect(() => {
@@ -129,8 +132,10 @@ export default function AdminInsurancesPage() {
                     type="button"
                     className="text-teal-700"
                     onClick={() => {
-                      PasteurStorage.updateInsuranceInquiry(inq.id, "approved");
-                      reload();
+                      void patchAdminOps("/api/admin/operations/insurance-inquiries", {
+                        id: inq.id,
+                        status: "approved",
+                      }).then(() => reload());
                     }}
                   >
                     تأیید
@@ -139,8 +144,10 @@ export default function AdminInsurancesPage() {
                     type="button"
                     className="text-red-700"
                     onClick={() => {
-                      PasteurStorage.updateInsuranceInquiry(inq.id, "rejected");
-                      reload();
+                      void patchAdminOps("/api/admin/operations/insurance-inquiries", {
+                        id: inq.id,
+                        status: "rejected",
+                      }).then(() => reload());
                     }}
                   >
                     رد
