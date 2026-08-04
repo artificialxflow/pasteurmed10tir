@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminTable } from "@/components/admin/AdminTable";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
@@ -181,11 +182,10 @@ export default function AdminNursingServicesPage() {
             onChange={(e) => setPrice(e.target.value)}
             placeholder="برچسب قیمت پیش‌فرض"
           />
-          <FormInput
-            type="url"
+          <ImageUploadField
             value={image}
-            onChange={(e) => setImage(e.target.value)}
-            placeholder="URL تصویر (اختیاری)"
+            onChange={setImage}
+            placeholder="تصویر دسته (اختیاری)"
           />
           <FormTextarea
             value={description}

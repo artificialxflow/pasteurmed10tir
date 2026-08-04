@@ -1,9 +1,11 @@
 "use client";
 
 import { AdminTable } from "@/components/admin/AdminTable";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { inferServiceHref } from "@/lib/content/service-href";
 import { PASTEUR_DATA } from "@/lib/data";
 import type { ServiceItem } from "@/lib/storage";
 import { FormEvent, useCallback, useEffect, useState } from "react";
@@ -50,12 +52,12 @@ export default function AdminServicesPage() {
         title: String(service.title || "").trim(),
         emoji: String(service.emoji || "🧩").trim() || "🧩",
         description: String(service.description || "").trim(),
-        href: String(service.href || "").trim(),
+        href: String(service.href || "").trim() || inferServiceHref(service.title || ""),
         image: String(service.image || "/uploads/placeholder.svg").trim(),
         color: String(service.color || "teal"),
         active: service.active !== false,
       }))
-      .filter((service) => service.title && service.href);
+      .filter((service) => service.title && (service.href || inferServiceHref(service.title)));
     await putAdmin("/api/admin/content/services", { items: cleaned });
     await reload();
   }
@@ -88,7 +90,7 @@ export default function AdminServicesPage() {
           id: makeServiceId(title),
           title: title.trim(),
           emoji: emoji.trim() || "🧩",
-          href: href.trim(),
+          href: href.trim() || inferServiceHref(title),
           color,
           image: image.trim() || "/uploads/placeholder.svg",
           description: description.trim() || "مشاهده جزئیات و ثبت درخواست",
@@ -128,7 +130,10 @@ export default function AdminServicesPage() {
         <form onSubmit={addService} className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <FormInput
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (!href) setHref(inferServiceHref(e.target.value));
+            }}
             placeholder="عنوان مثل لیزر و زیبایی"
             required
           />
@@ -140,8 +145,7 @@ export default function AdminServicesPage() {
           <FormInput
             value={href}
             onChange={(e) => setHref(e.target.value)}
-            placeholder="لینک مثل /laser"
-            required
+            placeholder="لینک — خودکار از عنوان (مثل /laser)"
           />
           <FormSelect value={color} onChange={(e) => setColor(e.target.value)}>
             <option value="teal">سبز/فیروزه‌ای</option>
@@ -150,10 +154,9 @@ export default function AdminServicesPage() {
             <option value="purple">بنفش</option>
             <option value="amber">طلایی</option>
           </FormSelect>
-          <FormInput
-            type="url"
+          <ImageUploadField
             value={image}
-            onChange={(e) => setImage(e.target.value)}
+            onChange={setImage}
             placeholder="آدرس تصویر کارت"
             className="md:col-span-2"
           />

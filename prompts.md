@@ -97,6 +97,18 @@ NODE_ENV=production
 
 After adding/changing vars → **redeploy / restart** the app on Runflare.
 
+### Runflare persistent disk (images)
+
+| Field | Value |
+|-------|--------|
+| Size | 0.5–1 GB (cannot shrink later) |
+| Directory path | `/app/public/uploads` |
+| Application | pasteur (Next.js web app) |
+
+After mount → restart app → `npm run db:seed:phase2` in Runflare terminal (empty disk hides git-baked images).
+
+Optional env override: `UPLOAD_DIR=/app/public/uploads` (default matches mount path).
+
 ---
 
 ## Phase 0 — Infrastructure (YOU — no Cursor)
@@ -297,6 +309,9 @@ Tasks:
 5. Wire public pages to API (not localStorage):
    /, /laser, /nursing, /gallery, /shop/catalog, /medical/doctors (+ /app/* equivalents)
 6. Create backend-dev/TODO-v2.md + TEST-MANUAL.md phase 2 section
+7. POST /api/admin/upload — admin image upload to public/uploads (Runflare disk)
+8. ImageUploadField on admin gallery, services, shop, nursing
+9. Auto-generate service href from title (inferServiceHref)
 
 DO NOT change UI design. DO NOT break phase 1 auth.
 STOP after phase 2.
@@ -313,6 +328,8 @@ STOP after phase 2.
 - migrate 002_content + seed-phase2 از lib/data.ts
 - تصاویر Unsplash → دانلود → public/uploads — بدون CDN خارجی
 - API CRUD ادمین + صفحات عمومی از API بخوانند
+- آپلود تصویر admin → /uploads روی دیسک Runflare
+- لینک سرویس خودکار از عنوان
 - TODO-v2 + تست‌های فاز ۲ در TEST-MANUAL
 
 UI عوض نشود. auth فاز ۱ نشکند.
@@ -324,14 +341,18 @@ UI عوض نشود. auth فاز ۱ نشکند.
 |----|------|-------|----------|
 | Home | `/` | `/admin/services` edit title | Change visible on `/` |
 | Laser | `/laser` | `/admin/laser-services` add item | New item on site |
-| Gallery | `/gallery` | `/admin/gallery` | Local images load |
+| Gallery | `/gallery` | `/admin/gallery` upload file | `/uploads/` images load |
 | Nursing | `/nursing` | `/admin/nursing-services` | Price on item select |
 
 ### ✅ Phase 2 complete when / تکمیل فاز ۲
 
-- [ ] `seed-phase2` OK
-- [ ] No live Unsplash URLs in DB for core content
-- [ ] Admin CRUD reflects on public pages
+- [x] `seed-phase2` OK
+- [x] No live Unsplash URLs in DB for core content
+- [x] Admin CRUD reflects on public pages
+- [x] Image upload API + admin file picker
+- [x] Runflare disk at `/app/public/uploads` documented
+- [ ] Live deploy + disk seed on pasteur.plus
+- [ ] `git commit` done
 
 ---
 

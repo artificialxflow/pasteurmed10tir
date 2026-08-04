@@ -1,9 +1,13 @@
 import { createHash } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
+import {
+  getUploadDir,
+  PLACEHOLDER_IMAGE,
+  toPublicUploadPath,
+} from '@/lib/content/upload-path';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
-const PLACEHOLDER = '/uploads/placeholder.svg';
+const PLACEHOLDER = PLACEHOLDER_IMAGE;
 
 /** Map remote URL → local /uploads path; download when possible. */
 export async function localizeImageUrl(
@@ -21,12 +25,13 @@ export async function localizeImageUrl(
   }
 
   try {
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    const uploadDir = getUploadDir();
+    await mkdir(uploadDir, { recursive: true });
     const hash = createHash('sha1').update(trimmed).digest('hex').slice(0, 16);
     const ext = trimmed.includes('.png') ? 'png' : 'jpg';
     const filename = `${hash}.${ext}`;
-    const diskPath = path.join(UPLOAD_DIR, filename);
-    const publicPath = `/uploads/${filename}`;
+    const diskPath = path.join(uploadDir, filename);
+    const publicPath = toPublicUploadPath(filename);
 
     const res = await fetch(trimmed, { signal: AbortSignal.timeout(15000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

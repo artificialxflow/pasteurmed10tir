@@ -23,3 +23,14 @@ export async function putAdmin<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
 }
+
+export async function uploadAdminImage(file: File): Promise<{ path: string; assetId: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/admin/upload', {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  return parseJson(res);
+}

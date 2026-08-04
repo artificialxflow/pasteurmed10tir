@@ -7,6 +7,9 @@
 - [x] `scripts/seed-phase2.ts` from `lib/data.ts` + local `/uploads/` images
 - [x] Public API: `/api/content/*`
 - [x] Admin API: `/api/admin/content/*`
+- [x] Image upload API: `POST /api/admin/upload` → `/uploads/` (Runflare disk)
+- [x] Admin ImageUploadField on gallery, services, shop, nursing
+- [x] Auto service href from title (`inferServiceHref`)
 
 ## Frontend wired
 
@@ -35,9 +38,11 @@ npx prisma migrate deploy
 npm run db:seed:phase2
 ```
 
+**Persistent disk:** mount at `/app/public/uploads` (app: pasteur). After first mount, re-run seed so images land on disk.
+
 ## Done when
 
+- [x] `npm run build` OK
 - [ ] Manual tests phase 2 pass (see TEST-MANUAL.md)
-- [ ] `npm run build` OK
-- [ ] Live test on pasteur.plus
+- [ ] Live test on pasteur.plus (disk + upload)
 - [ ] git commit

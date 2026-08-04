@@ -43,10 +43,18 @@ SESSION_SECRET=...
 |----|------|-------|----------|
 | Home | `/` | `/admin/services` edit title → save | Change visible on `/` |
 | Laser | `/laser` | `/admin/laser-services` add item | New item on site |
-| Gallery | `/gallery` | `/admin/gallery` | Local `/uploads/` images load |
+| Gallery | `/gallery` | `/admin/gallery` | Upload or `/uploads/` paths load |
 | Nursing | `/nursing` | `/admin/nursing-services` | Price on item select |
-| Shop | `/shop/catalog` | `/admin/shop` add product | Product visible |
+| Shop | `/shop/catalog` | `/admin/shop` add product + image upload | Product visible |
+| Services | `/` | `/admin/services` add «لیزر» | href auto `/laser`, image upload works |
 | Medical | `/medical/doctors?specialty=internal` | `/admin/doctors` | Physicians from DB |
 | Account | `/account` | `/admin/insurances` add company | Dropdown updated |
+
+### Image upload test
+
+1. Login admin → `/admin/gallery`
+2. Click **انتخاب فایل** on before/after → pick jpg
+3. Expected: path like `/uploads/1730-abc.jpg`, preview shows, save → `/gallery` loads image
+4. On Runflare: file persists after redeploy (disk mounted at `/app/public/uploads`)
 
 Run seed first: `npm run db:seed:phase2`

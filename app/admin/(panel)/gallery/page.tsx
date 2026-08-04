@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
@@ -95,19 +96,15 @@ export default function AdminGalleryPage() {
             <option value="laser">لیزر</option>
             <option value="beauty">زیبایی</option>
           </FormSelect>
-          <FormInput
-            type="url"
+          <ImageUploadField
             value={before}
-            onChange={(e) => setBefore(e.target.value)}
-            placeholder="URL تصویر قبل"
-            required
+            onChange={setBefore}
+            placeholder="تصویر قبل — /uploads/... یا آپلود"
           />
-          <FormInput
-            type="url"
+          <ImageUploadField
             value={after}
-            onChange={(e) => setAfter(e.target.value)}
-            placeholder="URL تصویر بعد"
-            required
+            onChange={setAfter}
+            placeholder="تصویر بعد — /uploads/... یا آپلود"
           />
           <Button type="submit" className="w-full text-sm">
             افزودن

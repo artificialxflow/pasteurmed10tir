@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
@@ -241,11 +242,10 @@ export default function AdminShopPage() {
             onChange={(e) => setStock(e.target.value)}
             placeholder="موجودی"
           />
-          <FormInput
-            type="url"
+          <ImageUploadField
             value={image}
-            onChange={(e) => setImage(e.target.value)}
-            placeholder="آدرس تصویر محصول"
+            onChange={setImage}
+            placeholder="تصویر محصول — /uploads/... یا آپلود"
             className="sm:col-span-2"
           />
           <Button type="submit" className="w-full text-sm sm:col-span-2">
