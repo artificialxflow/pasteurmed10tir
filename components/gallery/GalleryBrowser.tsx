@@ -3,7 +3,7 @@
 import { EmptyState } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
 import type { GalleryItem } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
+import { fetchPublic } from "@/lib/content/client";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 
@@ -19,8 +19,9 @@ export function GalleryBrowser({ compact = false }: { compact?: boolean }) {
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
 
   useEffect(() => {
-    PasteurStorage.initGalleryIfNeeded();
-    setItems(PasteurStorage.getGallery());
+    fetchPublic<{ items: GalleryItem[] }>("/api/content/gallery")
+      .then((data) => setItems(data.items))
+      .catch(() => setItems([]));
   }, []);
 
   const filtered = useMemo(() => {

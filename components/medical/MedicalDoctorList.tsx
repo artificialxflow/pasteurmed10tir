@@ -3,27 +3,44 @@
 import { Badge } from "@/components/ui/Card";
 import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 import type { MedicalBasePath } from "./MedicalHub";
 
 function isAppMedical(basePath: MedicalBasePath): boolean {
   return basePath.startsWith("/app");
 }
 
-function filterPhysicians(specialtyId: string | null) {
-  const doctors = PASTEUR_DATA.physicians as unknown as Physician[];
-  if (!specialtyId) return doctors;
-  return doctors.filter(
-    (doctor) => doctor.specialtyId === specialtyId || String(doctor.specialtyId) === specialtyId,
-  );
-}
-
 export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   const searchParams = useSearchParams();
   const specialtyId = searchParams.get("specialty");
+  const [physicians, setPhysicians] = useState<Physician[]>([]);
+
+  useEffect(() => {
+    fetchPublic<{ items: Physician[] }>("/api/content/physicians")
+      .then((data) => setPhysicians(data.items))
+      .catch(() =>
+        setPhysicians(
+          PASTEUR_DATA.physicians.map((p) => ({
+            ...p,
+            days: [...p.days],
+          })),
+        ),
+      );
+  }, []);
+
+  const doctors = useMemo(() => {
+    if (!specialtyId) return physicians;
+    return physicians.filter(
+      (doctor) =>
+        doctor.specialtyId === specialtyId || String(doctor.specialtyId) === specialtyId,
+    );
+  }, [physicians, specialtyId]);
+
   const app = isAppMedical(basePath);
   const consultation = app ? ROUTES.app.consultation : ROUTES.web.consultation;
   const medical = app ? ROUTES.app.medical : ROUTES.web.medical;
@@ -31,7 +48,6 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
 
   const specialty =
     PASTEUR_DATA.medicalSpecialties.find((item) => item.id === specialtyId) || null;
-  const doctors = filterPhysicians(specialtyId);
 
   if (!specialty) {
     return (

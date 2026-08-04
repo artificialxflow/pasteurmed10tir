@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import type { Product } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
 import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -22,16 +23,20 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
   const [snack, setSnack] = useState("");
   const [cartCount, setCartCount] = useState(0);
 
-  const refresh = useCallback(() => {
-    PasteurStorage.initProductsIfNeeded();
-    let list = PasteurStorage.getProducts();
-    if (category !== "all") list = list.filter((p) => p.category === category);
-    const q = search.trim().toLowerCase();
-    if (q) list = list.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(q));
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.priceNum - b.priceNum);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.priceNum - a.priceNum);
-    if (sort === "stock-desc") list = [...list].sort((a, b) => b.stock - a.stock);
-    setProducts(list);
+  const refresh = useCallback(async () => {
+    try {
+      const data = await fetchPublic<{ items: Product[] }>("/api/content/products");
+      let list = data.items;
+      if (category !== "all") list = list.filter((p) => p.category === category);
+      const q = search.trim().toLowerCase();
+      if (q) list = list.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(q));
+      if (sort === "price-asc") list = [...list].sort((a, b) => a.priceNum - b.priceNum);
+      if (sort === "price-desc") list = [...list].sort((a, b) => b.priceNum - a.priceNum);
+      if (sort === "stock-desc") list = [...list].sort((a, b) => b.stock - a.stock);
+      setProducts(list);
+    } catch {
+      setProducts([]);
+    }
     setCustomerType(ShopCart.getCustomerType());
     setCartCount(ShopCart.getCartCount());
   }, [category, search, sort]);

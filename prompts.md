@@ -266,9 +266,9 @@ npm run dev
 
 ### ✅ Phase 1 complete when / تکمیل فاز ۱
 
-- [ ] Migration `001_auth` applied
-- [ ] Seed ran successfully
-- [ ] All 7 manual tests pass (local + pasteur.plus live)
+- [x] Migration `001_auth` applied
+- [x] Seed ran successfully
+- [x] All 7 manual tests pass (local + pasteur.plus live)
 - [ ] `git commit` done
 
 ---

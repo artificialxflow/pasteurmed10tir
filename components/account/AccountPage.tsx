@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import {
@@ -11,6 +12,7 @@ import {
   isPatientApproved,
   patientStatusLabel,
   payableFromFranchise,
+  type InsuranceCompany,
   type PatientProfile,
 } from "@/lib/patient";
 import { formatPrice, normalizePhone } from "@/lib/utils";
@@ -29,9 +31,8 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
-
-  const baseList = PasteurStorage.getBaseInsurances().filter((i) => i.active !== false);
-  const compList = PasteurStorage.getComplementaryInsurances().filter((i) => i.active !== false);
+  const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
+  const [compList, setCompList] = useState<InsuranceCompany[]>([]);
 
   const hydrate = useCallback((p: PatientProfile) => {
     setProfile(p);
@@ -44,8 +45,16 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   }, []);
 
   useEffect(() => {
-    PasteurStorage.initPatientDomainIfNeeded();
     PasteurStorage.hideMembershipInstallmentPlans();
+
+    fetchPublic<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
+      "/api/content/insurances",
+    )
+      .then((data) => {
+        setBaseList(data.base.filter((i) => i.active !== false));
+        setCompList(data.complementary.filter((i) => i.active !== false));
+      })
+      .catch(() => {});
 
     fetch("/api/auth/me", { credentials: "include" })
       .then(async (res) => {

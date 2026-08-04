@@ -3,9 +3,9 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
-import { type NursingItem, type NursingService } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
-import { FormEvent, useEffect, useState } from "react";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 function makeNursingId(title: string) {
   return `nursing-${Date.now()}-${String(title || "").replace(/\s+/g, "-").slice(0, 16)}`;
@@ -23,21 +23,49 @@ export default function AdminNursingServicesPage() {
   const [price, setPrice] = useState("تماس برای هماهنگی");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
+  const [error, setError] = useState("");
 
-  function reload() {
-    PasteurStorage.initNursingServicesIfNeeded();
-    const next = PasteurStorage.getNursingServices().map((s) => ({
+  const reload = useCallback(async () => {
+    const data = await fetchAdmin<{ items: NursingService[] }>("/api/admin/content/nursing");
+    const next = data.items.map((s) => ({
       ...s,
       items: (s.items || []).map((item) => ({ ...item })),
     }));
     setServices(next);
-    if (!expandedId && next.length) setExpandedId(next[0].id);
-  }
+    setExpandedId((prev) => prev || next[0]?.id || "");
+  }, []);
 
   useEffect(() => {
-    reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [reload]);
+
+  async function persist(next: NursingService[]) {
+    const cleaned = next
+      .map((service) => ({
+        ...service,
+        id: service.id || makeNursingId(service.title),
+        title: String(service.title || "").trim(),
+        emoji: String(service.emoji || "👩‍⚕️").trim() || "👩‍⚕️",
+        price: String(service.price || "تماس برای هماهنگی").trim(),
+        description: String(service.description || "").trim(),
+        image: String(service.image || "").trim() || undefined,
+        active: service.active !== false,
+        items: (service.items || [])
+          .map((item) => ({
+            ...item,
+            id: item.id || makeItemId(item.title),
+            title: String(item.title || "").trim(),
+            priceNum: Number(item.priceNum || 0),
+            price: String(item.price || "").trim() || undefined,
+            unit: String(item.unit || "").trim() || undefined,
+            active: item.active !== false,
+          }))
+          .filter((item) => item.title),
+      }))
+      .filter((service) => service.title);
+    await putAdmin("/api/admin/content/nursing", { items: cleaned });
+    await reload();
+  }
 
   function updateCategory(index: number, patch: Partial<NursingService>) {
     setServices((prev) =>
@@ -87,44 +115,19 @@ export default function AdminNursingServicesPage() {
   }
 
   function deleteCategory(index: number) {
-    const next = services.filter((_, i) => i !== index);
-    setServices(next);
-    PasteurStorage.saveNursingServices(next);
-    reload();
+    void persist(services.filter((_, i) => i !== index)).catch((e) =>
+      setError(e instanceof Error ? e.message : "حذف ناموفق"),
+    );
   }
 
   function saveAll() {
-    const cleaned = services
-      .map((service) => ({
-        ...service,
-        id: service.id || makeNursingId(service.title),
-        title: String(service.title || "").trim(),
-        emoji: String(service.emoji || "👩‍⚕️").trim() || "👩‍⚕️",
-        price: String(service.price || "تماس برای هماهنگی").trim(),
-        description: String(service.description || "").trim(),
-        image: String(service.image || "").trim() || undefined,
-        active: service.active !== false,
-        items: (service.items || [])
-          .map((item) => ({
-            ...item,
-            id: item.id || makeItemId(item.title),
-            title: String(item.title || "").trim(),
-            priceNum: Number(item.priceNum || 0),
-            price: String(item.price || "").trim() || undefined,
-            unit: String(item.unit || "").trim() || undefined,
-            active: item.active !== false,
-          }))
-          .filter((item) => item.title),
-      }))
-      .filter((service) => service.title);
-    PasteurStorage.saveNursingServices(cleaned);
-    reload();
+    void persist(services).catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
   function addCategory(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getNursingServices(),
+    void persist([
+      ...services,
       {
         id: makeNursingId(title),
         title: title.trim(),
@@ -135,23 +138,30 @@ export default function AdminNursingServicesPage() {
         active: true,
         items: [],
       },
-    ];
-    PasteurStorage.saveNursingServices(next);
-    setTitle("");
-    setEmoji("👩‍⚕️");
-    setPrice("تماس برای هماهنگی");
-    setDescription("");
-    setImage("");
-    reload();
+    ])
+      .then(() => {
+        setTitle("");
+        setEmoji("👩‍⚕️");
+        setPrice("تماس برای هماهنگی");
+        setDescription("");
+        setImage("");
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
   }
 
   function resetDefaults() {
-    PasteurStorage.resetNursingServices();
-    reload();
+    void persist(
+      PASTEUR_DATA.nursingServices.map((s) => ({
+        ...s,
+        items: s.items.map((item) => ({ ...item })),
+        active: true,
+      })),
+    ).catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Card hover={false} className="bg-white p-6">
         <h2 className="mb-4 font-bold">افزودن دسته پرستاری</h2>
         <form onSubmit={addCategory} className="grid grid-cols-1 gap-3 md:grid-cols-2">

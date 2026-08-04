@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import type { InsuranceCompany, InsuranceInquiry } from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
@@ -17,9 +18,15 @@ export default function AdminInsurancesPage() {
   const [kind, setKind] = useState<"base" | "comp">("comp");
 
   function reload() {
+    void fetchAdmin<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
+      "/api/admin/content/insurances",
+    )
+      .then((data) => {
+        setBase(data.base);
+        setComp(data.complementary);
+      })
+      .catch(() => {});
     PasteurStorage.initPatientDomainIfNeeded();
-    setBase(PasteurStorage.getBaseInsurances());
-    setComp(PasteurStorage.getComplementaryInsurances());
     setInquiries(PasteurStorage.getInsuranceInquiries());
   }
 
@@ -31,10 +38,13 @@ export default function AdminInsurancesPage() {
     e.preventDefault();
     if (!name.trim()) return;
     const item = { id: `ins-${Date.now().toString(36)}`, name: name.trim(), active: true };
-    if (kind === "base") PasteurStorage.saveBaseInsurances([...base, item]);
-    else PasteurStorage.saveComplementaryInsurances([...comp, item]);
-    setName("");
-    reload();
+    const nextBase = kind === "base" ? [...base, item] : base;
+    const nextComp = kind === "comp" ? [...comp, item] : comp;
+    void putAdmin("/api/admin/content/insurances", { base: nextBase, complementary: nextComp })
+      .then(() => {
+        setName("");
+        reload();
+      });
   }
 
   return (

@@ -3,28 +3,32 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import {
   PASTEUR_DATA,
   type ConsultationType,
   type SpecialtyTariffs,
 } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function AdminConsultationPricesPage() {
   const [types, setTypes] = useState<ConsultationType[]>([]);
   const [tariffs, setTariffs] = useState<SpecialtyTariffs>({});
+  const [error, setError] = useState("");
 
-  function reload() {
-    PasteurStorage.initConsultationPricingIfNeeded();
-    setTypes(PasteurStorage.getConsultationTypes().map((type) => ({ ...type })));
-    setTariffs({ ...PasteurStorage.getSpecialtyTariffs() });
-  }
+  const reload = useCallback(async () => {
+    const data = await fetchAdmin<{
+      consultationTypes: ConsultationType[];
+      specialtyTariffs: SpecialtyTariffs;
+    }>("/api/admin/content/consultation-pricing");
+    setTypes(data.consultationTypes.map((type) => ({ ...type })));
+    setTariffs({ ...data.specialtyTariffs });
+  }, []);
 
   useEffect(() => {
-    reload();
-  }, []);
+    void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [reload]);
 
   function updateType(index: number, priceNum: number) {
     setTypes((prev) =>
@@ -51,24 +55,29 @@ export default function AdminConsultationPricesPage() {
   }
 
   function saveAll() {
-    PasteurStorage.saveConsultationTypes(
-      types.map((type) => ({
+    void putAdmin("/api/admin/content/consultation-pricing", {
+      consultationTypes: types.map((type) => ({
         ...type,
         priceNum: Number(type.priceNum || 0),
       })),
-    );
-    PasteurStorage.saveSpecialtyTariffs(tariffs);
-    reload();
+      specialtyTariffs: tariffs,
+    })
+      .then(() => reload())
+      .catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
   function resetDefaults() {
-    PasteurStorage.resetConsultationTypes();
-    PasteurStorage.resetSpecialtyTariffs();
-    reload();
+    void putAdmin("/api/admin/content/consultation-pricing", {
+      consultationTypes: PASTEUR_DATA.consultationTypes.map((t) => ({ ...t })),
+      specialtyTariffs: { ...PASTEUR_DATA.specialtyTariffs },
+    })
+      .then(() => reload())
+      .catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div>
         <h2 className="mb-4 text-lg font-bold">قیمت پایه انواع مشاوره</h2>
         <AdminTable headers={["نوع", "شناسه", "قیمت (تومان)", "نمایش"]} empty="نوعی ثبت نشده.">

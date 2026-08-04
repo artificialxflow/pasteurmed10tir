@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState } from "@/components/ui/Card";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
-import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -26,16 +26,17 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
   const [selectedItemId, setSelectedItemId] = useState<string>("");
 
   useEffect(() => {
-    PasteurStorage.initNursingServicesIfNeeded();
-    const active = PasteurStorage.getNursingServices().filter(
-      (service) => service.active !== false,
-    );
-    setCategories(active);
-    if (active.length) {
-      setSelectedId(active[0].id);
-      const firstItems = (active[0].items || []).filter((item) => item.active !== false);
-      setSelectedItemId(firstItems[0]?.id || "");
-    }
+    fetchPublic<{ items: NursingService[] }>("/api/content/nursing")
+      .then((data) => {
+        const active = data.items.filter((service) => service.active !== false);
+        setCategories(active);
+        if (active.length) {
+          setSelectedId(active[0].id);
+          const firstItem = active[0].items?.find((i) => i.active !== false);
+          setSelectedItemId(firstItem?.id || "");
+        }
+      })
+      .catch(() => setCategories([]));
   }, []);
 
   const selectedCategory = useMemo(

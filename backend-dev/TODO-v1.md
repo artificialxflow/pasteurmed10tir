@@ -31,6 +31,6 @@ See `TEST-MANUAL.md`
 
 ## Done when
 
-- [ ] Local tests 1–5 pass
-- [ ] Live tests 6–7 on pasteur.plus pass
+- [x] Local tests 1–5 pass
+- [x] Live tests 6–7 on pasteur.plus pass
 - [ ] git commit

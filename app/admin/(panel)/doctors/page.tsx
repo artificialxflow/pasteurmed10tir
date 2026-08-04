@@ -3,7 +3,8 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
+import { fetchAdmin } from "@/lib/content/client";
+import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import { PasteurStorage } from "@/lib/storage";
 import { STATUS_LABELS } from "@/lib/status";
 import { FormEvent, useEffect, useState } from "react";
@@ -20,11 +21,15 @@ type ExtraDoctor = {
 
 export default function AdminDoctorsPage() {
   const [extra, setExtra] = useState<ExtraDoctor[]>([]);
+  const [physicians, setPhysicians] = useState<Physician[]>([]);
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
 
   function reload() {
     setExtra(PasteurStorage.getExtraDoctors() as ExtraDoctor[]);
+    void fetchAdmin<{ items: Physician[] }>("/api/admin/content/physicians")
+      .then((data) => setPhysicians(data.items))
+      .catch(() => setPhysicians([]));
   }
 
   useEffect(() => {
@@ -39,6 +44,15 @@ export default function AdminDoctorsPage() {
       days: [...d.days],
       hours: d.hours,
       status: d.status,
+      mock: false as boolean,
+    })),
+    ...physicians.map((p) => ({
+      id: p.id,
+      name: p.name,
+      specialty: p.specialty,
+      days: [...p.days],
+      hours: "—",
+      status: p.status,
       mock: false as boolean,
     })),
     ...extra,

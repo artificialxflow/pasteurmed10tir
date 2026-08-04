@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA, type LaserService } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
-import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -19,10 +19,9 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
   const [services, setServices] = useState<LaserService[]>([]);
 
   useEffect(() => {
-    PasteurStorage.initLaserServicesIfNeeded();
-    setServices(
-      PasteurStorage.getLaserServices().filter((service) => service.active !== false),
-    );
+    fetchPublic<{ items: LaserService[] }>("/api/content/laser")
+      .then((data) => setServices(data.items))
+      .catch(() => setServices([]));
   }, []);
 
   const grid = useMemo(

@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { type GalleryItem } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 export default function AdminGalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -12,45 +12,52 @@ export default function AdminGalleryPage() {
   const [category, setCategory] = useState("dental");
   const [before, setBefore] = useState("");
   const [after, setAfter] = useState("");
+  const [error, setError] = useState("");
 
-  function reload() {
-    PasteurStorage.initGalleryIfNeeded();
-    setItems(PasteurStorage.getGallery().map((g) => ({ ...g })));
-  }
+  const reload = useCallback(async () => {
+    const data = await fetchAdmin<{ items: GalleryItem[] }>("/api/admin/content/gallery");
+    setItems(data.items.map((g) => ({ ...g })));
+  }, []);
 
   useEffect(() => {
-    reload();
-  }, []);
+    void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [reload]);
+
+  async function persist(next: GalleryItem[]) {
+    await putAdmin("/api/admin/content/gallery", { items: next });
+    await reload();
+  }
 
   function addItem(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getGallery(),
+    void persist([
+      ...items,
       {
         id: Date.now(),
         title,
         category,
-        before,
-        after,
+        before: before || "/uploads/placeholder.svg",
+        after: after || "/uploads/placeholder.svg",
       },
-    ];
-    PasteurStorage.saveGallery(next);
-    setTitle("");
-    setCategory("dental");
-    setBefore("");
-    setAfter("");
-    reload();
+    ])
+      .then(() => {
+        setTitle("");
+        setCategory("dental");
+        setBefore("");
+        setAfter("");
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "افزودن ناموفق"));
   }
 
   function deleteItem(index: number) {
-    const next = PasteurStorage.getGallery();
-    next.splice(index, 1);
-    PasteurStorage.saveGallery(next);
-    reload();
+    void persist(items.filter((_, i) => i !== index)).catch((e) =>
+      setError(e instanceof Error ? e.message : "حذف ناموفق"),
+    );
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((g, i) => (
           <Card key={`${g.id}-${i}`} hover={false} className="overflow-hidden p-0">

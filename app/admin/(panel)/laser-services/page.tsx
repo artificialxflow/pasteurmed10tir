@@ -3,9 +3,9 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
-import { type LaserService } from "@/lib/data";
-import { PasteurStorage } from "@/lib/storage";
-import { FormEvent, useEffect, useState } from "react";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { PASTEUR_DATA, type LaserService } from "@/lib/data";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 function makeLaserId(title: string) {
   return `laser-${Date.now()}-${String(title || "").replace(/\s+/g, "-").slice(0, 16)}`;
@@ -17,24 +17,19 @@ export default function AdminLaserServicesPage() {
   const [emoji, setEmoji] = useState("✨");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
 
-  function reload() {
-    PasteurStorage.initLaserServicesIfNeeded();
-    setServices(PasteurStorage.getLaserServices().map((s) => ({ ...s })));
-  }
-
-  useEffect(() => {
-    reload();
+  const reload = useCallback(async () => {
+    const data = await fetchAdmin<{ items: LaserService[] }>("/api/admin/content/laser");
+    setServices(data.items.map((s) => ({ ...s })));
   }, []);
 
-  function updateRow(index: number, patch: Partial<LaserService>) {
-    setServices((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, ...patch } : item)),
-    );
-  }
+  useEffect(() => {
+    void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [reload]);
 
-  function saveAll() {
-    const cleaned = services
+  async function persist(next: LaserService[]) {
+    const cleaned = next
       .map((service) => ({
         ...service,
         id: service.id || makeLaserId(service.title),
@@ -45,20 +40,24 @@ export default function AdminLaserServicesPage() {
         active: service.active !== false,
       }))
       .filter((service) => service.title && service.price);
-    PasteurStorage.saveLaserServices(cleaned);
-    reload();
+    await putAdmin("/api/admin/content/laser", { items: cleaned });
+    await reload();
+  }
+
+  function saveAll() {
+    void persist(services).catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
   function deleteService(index: number) {
-    const next = services.filter((_, i) => i !== index);
-    PasteurStorage.saveLaserServices(next);
-    reload();
+    void persist(services.filter((_, i) => i !== index)).catch((e) =>
+      setError(e instanceof Error ? e.message : "حذف ناموفق"),
+    );
   }
 
   function addService(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getLaserServices(),
+    void persist([
+      ...services,
       {
         id: makeLaserId(title),
         title: title.trim(),
@@ -67,22 +66,31 @@ export default function AdminLaserServicesPage() {
         description: description.trim(),
         active: true,
       },
-    ];
-    PasteurStorage.saveLaserServices(next);
-    setTitle("");
-    setEmoji("✨");
-    setPrice("");
-    setDescription("");
-    reload();
+    ])
+      .then(() => {
+        setTitle("");
+        setEmoji("✨");
+        setPrice("");
+        setDescription("");
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
   }
 
   function resetDefaults() {
-    PasteurStorage.resetLaserServices();
-    reload();
+    void persist(PASTEUR_DATA.laserServices.map((s) => ({ ...s, active: true }))).catch((e) =>
+      setError(e instanceof Error ? e.message : "بازنشانی ناموفق"),
+    );
+  }
+
+  function updateRow(index: number, patch: Partial<LaserService>) {
+    setServices((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    );
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Card hover={false} className="bg-white p-6">
         <h2 className="mb-4 font-bold">افزودن خدمت لیزر</h2>
         <form onSubmit={addService} className="grid grid-cols-1 gap-3 md:grid-cols-2">

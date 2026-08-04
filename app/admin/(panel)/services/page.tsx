@@ -3,9 +3,10 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA } from "@/lib/data";
-import { PasteurStorage, type ServiceItem } from "@/lib/storage";
-import { FormEvent, useEffect, useState } from "react";
+import type { ServiceItem } from "@/lib/storage";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 const COLORS = ["teal", "blue", "rose", "purple", "amber"] as const;
 
@@ -21,15 +22,20 @@ export default function AdminServicesPage() {
   const [color, setColor] = useState("teal");
   const [image, setImage] = useState("");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
 
-  function reload() {
-    PasteurStorage.initServicesIfNeeded();
-    setServices(PasteurStorage.getServices().map((s) => ({ ...s })));
-  }
+  const reload = useCallback(async () => {
+    try {
+      const data = await fetchAdmin<{ items: ServiceItem[] }>("/api/admin/content/services");
+      setServices(data.items.map((s) => ({ ...s })));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا در بارگذاری");
+    }
+  }, []);
 
   useEffect(() => {
-    reload();
-  }, []);
+    void reload();
+  }, [reload]);
 
   function updateRow(index: number, patch: Partial<ServiceItem>) {
     setServices((prev) =>
@@ -37,68 +43,86 @@ export default function AdminServicesPage() {
     );
   }
 
-  function saveAll() {
-    const cleaned = services
+  async function persist(next: ServiceItem[]) {
+    const cleaned = next
       .map((service) => ({
         ...service,
         title: String(service.title || "").trim(),
         emoji: String(service.emoji || "🧩").trim() || "🧩",
         description: String(service.description || "").trim(),
         href: String(service.href || "").trim(),
-        image: String(service.image || "").trim(),
+        image: String(service.image || "/uploads/placeholder.svg").trim(),
         color: String(service.color || "teal"),
         active: service.active !== false,
       }))
       .filter((service) => service.title && service.href);
-    PasteurStorage.saveServices(cleaned);
-    reload();
+    await putAdmin("/api/admin/content/services", { items: cleaned });
+    await reload();
   }
 
-  function deleteService(index: number) {
-    const next = services.filter((_, i) => i !== index);
-    PasteurStorage.saveServices(next);
-    reload();
+  async function saveAll() {
+    setError("");
+    try {
+      await persist(services);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ذخیره ناموفق");
+    }
   }
 
-  function addService(e: FormEvent) {
+  async function deleteService(index: number) {
+    setError("");
+    try {
+      await persist(services.filter((_, i) => i !== index));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "حذف ناموفق");
+    }
+  }
+
+  async function addService(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getServices(),
-      {
-        id: makeServiceId(title),
-        title: title.trim(),
-        emoji: emoji.trim() || "🧩",
-        href: href.trim(),
-        color,
-        image:
-          image.trim() ||
-          "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop",
-        description: description.trim() || "مشاهده جزئیات و ثبت درخواست",
-        active: true,
-      },
-    ];
-    PasteurStorage.saveServices(next);
-    setTitle("");
-    setEmoji("");
-    setHref("");
-    setColor("teal");
-    setImage("");
-    setDescription("");
-    reload();
+    setError("");
+    try {
+      await persist([
+        ...services,
+        {
+          id: makeServiceId(title),
+          title: title.trim(),
+          emoji: emoji.trim() || "🧩",
+          href: href.trim(),
+          color,
+          image: image.trim() || "/uploads/placeholder.svg",
+          description: description.trim() || "مشاهده جزئیات و ثبت درخواست",
+          active: true,
+        },
+      ]);
+      setTitle("");
+      setEmoji("");
+      setHref("");
+      setColor("teal");
+      setImage("");
+      setDescription("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "افزودن ناموفق");
+    }
   }
 
-  function resetDefaults() {
-    PasteurStorage.saveServices(
-      PASTEUR_DATA.services.map((service) => ({
-        ...service,
-        active: true,
-      })),
-    );
-    reload();
+  async function resetDefaults() {
+    setError("");
+    try {
+      await persist(
+        PASTEUR_DATA.services.map((service) => ({
+          ...service,
+          active: true,
+        })),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "بازنشانی ناموفق");
+    }
   }
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Card hover={false} className="bg-white p-6">
         <h2 className="mb-4 font-bold">افزودن سرویس جدید</h2>
         <form onSubmit={addService} className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -149,7 +173,7 @@ export default function AdminServicesPage() {
         <h2 className="text-lg font-bold">لیست سرویس‌های صفحه اصلی</h2>
         <button
           type="button"
-          onClick={resetDefaults}
+          onClick={() => void resetDefaults()}
           className="rounded-full border-2 border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-white"
         >
           بازنشانی به پیش‌فرض
@@ -223,7 +247,7 @@ export default function AdminServicesPage() {
               <button
                 type="button"
                 className="text-xs font-bold text-red-600"
-                onClick={() => deleteService(index)}
+                onClick={() => void deleteService(index)}
               >
                 حذف
               </button>
@@ -232,7 +256,7 @@ export default function AdminServicesPage() {
         ))}
       </AdminTable>
 
-      <Button type="button" onClick={saveAll}>
+      <Button type="button" onClick={() => void saveAll()}>
         ذخیره تغییرات سرویس‌ها
       </Button>
     </div>

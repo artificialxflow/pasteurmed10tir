@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { formatToman } from "@/lib/membership";
 import {
   PasteurStorage,
@@ -37,7 +38,9 @@ export default function AdminWalletsPage() {
 
   function reload() {
     PasteurStorage.initWalletsIfNeeded();
-    setSettings(PasteurStorage.getWalletSettings());
+    void fetchAdmin<{ wallet: WalletSettings }>("/api/admin/content/settings")
+      .then((data) => setSettings(data.wallet))
+      .catch(() => setSettings(PasteurStorage.getWalletSettings()));
     setWallets(PasteurStorage.listWallets());
   }
 
@@ -50,13 +53,15 @@ export default function AdminWalletsPage() {
     : null;
 
   function saveSettings() {
-    PasteurStorage.saveWalletSettings(settings);
-    reload();
+    void putAdmin<{ wallet: WalletSettings }>("/api/admin/content/settings", {
+      wallet: settings,
+    }).then((data) => setSettings(data.wallet));
   }
 
   function resetSettings() {
-    PasteurStorage.saveWalletSettings(DEFAULT_WALLET_SETTINGS);
-    reload();
+    void putAdmin<{ wallet: WalletSettings }>("/api/admin/content/settings", {
+      wallet: DEFAULT_WALLET_SETTINGS,
+    }).then((data) => setSettings(data.wallet));
   }
 
   function updateWalletStatus(phone: string, status: WalletStatus) {

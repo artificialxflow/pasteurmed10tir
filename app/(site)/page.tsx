@@ -3,8 +3,9 @@
 import { Button } from "@/components/ui/Button";
 import { Card, Logo } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
-import { PasteurStorage, type ServiceItem } from "@/lib/storage";
+import type { ServiceItem } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -18,7 +19,9 @@ const colorBorder: Record<string, string> = {
 };
 
 function markAppView() {
-  PasteurStorage.setAppView("app");
+  if (typeof window !== "undefined") {
+    localStorage.setItem("pasteur_app_view", "app");
+  }
 }
 
 export default function HomePage() {
@@ -27,8 +30,11 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    PasteurStorage.initServicesIfNeeded();
-    setServices(PasteurStorage.getServices().filter((s) => s.active !== false));
+    fetchPublic<{ items: ServiceItem[] }>("/api/content/services")
+      .then((data) => setServices(data.items.filter((s) => s.active !== false)))
+      .catch(() => {
+        setServices(PASTEUR_DATA.services.map((s) => ({ ...s, active: true })));
+      });
   }, []);
 
   return (

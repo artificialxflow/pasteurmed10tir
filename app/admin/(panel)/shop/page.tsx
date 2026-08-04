@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { type Product } from "@/lib/data";
 import { PasteurStorage, type ShopOrder } from "@/lib/storage";
 import { FormEvent, useEffect, useState } from "react";
@@ -28,10 +29,15 @@ export default function AdminShopPage() {
   const [category, setCategory] = useState("دندانپزشکی");
   const [stock, setStock] = useState("10");
   const [image, setImage] = useState("");
+  const [error, setError] = useState("");
+
+  async function loadProducts() {
+    const data = await fetchAdmin<{ items: Product[] }>("/api/admin/content/products");
+    setProducts(data.items.map((p) => ({ ...p })));
+  }
 
   function reload() {
-    PasteurStorage.initProductsIfNeeded();
-    setProducts(PasteurStorage.getProducts().map((p) => ({ ...p })));
+    void loadProducts().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
     setOrders(PasteurStorage.getShopOrders());
   }
 
@@ -39,14 +45,19 @@ export default function AdminShopPage() {
     reload();
   }, []);
 
+  async function persistProducts(next: Product[]) {
+    await putAdmin("/api/admin/content/products", { items: next });
+    await loadProducts();
+  }
+
   const revenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const lowStock = products.filter((product) => Number(product.stock || 0) <= 3).length;
   const pending = orders.filter((order) => order.status === "pending").length;
 
   function addProduct(e: FormEvent) {
     e.preventDefault();
-    const next = [
-      ...PasteurStorage.getProducts(),
+    void persistProducts([
+      ...products,
       {
         id: Date.now(),
         name: name.trim(),
@@ -54,25 +65,23 @@ export default function AdminShopPage() {
         priceNum: parsePrice(price),
         category,
         stock: parseInt(stock, 10) || 0,
-        image:
-          image.trim() ||
-          "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop",
+        image: image.trim() || "/uploads/placeholder.svg",
       },
-    ];
-    PasteurStorage.saveProducts(next);
-    setName("");
-    setPrice("");
-    setCategory("دندانپزشکی");
-    setStock("10");
-    setImage("");
-    reload();
+    ])
+      .then(() => {
+        setName("");
+        setPrice("");
+        setCategory("دندانپزشکی");
+        setStock("10");
+        setImage("");
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "افزودن ناموفق"));
   }
 
   function deleteProduct(index: number) {
-    const next = PasteurStorage.getProducts();
-    next.splice(index, 1);
-    PasteurStorage.saveProducts(next);
-    reload();
+    void persistProducts(products.filter((_, i) => i !== index)).catch((e) =>
+      setError(e instanceof Error ? e.message : "حذف ناموفق"),
+    );
   }
 
   function updateOrderStatus(id: string, status: string) {
@@ -82,6 +91,7 @@ export default function AdminShopPage() {
 
   return (
     <div className="space-y-8">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card hover={false} className="p-5">
           <p className="text-2xl font-bold text-teal-700">

@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
+import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PasteurStorage, type Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -21,8 +22,9 @@ export default function AdminBookingsPage() {
   }
 
   useEffect(() => {
-    PasteurStorage.initSettingsIfNeeded();
-    setReservationFee(PasteurStorage.getDentalReservationFee());
+    void fetchAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings")
+      .then((data) => setReservationFee(data.dentalReservationFee))
+      .catch(() => {});
     reload("all");
   }, []);
 
@@ -42,15 +44,15 @@ export default function AdminBookingsPage() {
   }
 
   function saveReservationFee() {
-    PasteurStorage.saveSettings({
+    void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
       dentalReservationFee: Number(reservationFee || 0),
-    });
-    setReservationFee(PasteurStorage.getDentalReservationFee());
+    }).then((data) => setReservationFee(data.dentalReservationFee));
   }
 
   function resetReservationFee() {
-    PasteurStorage.resetSettings();
-    setReservationFee(PasteurStorage.getDentalReservationFee());
+    void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
+      dentalReservationFee: 200000,
+    }).then((data) => setReservationFee(data.dentalReservationFee));
   }
 
   return (

@@ -56,3 +56,126 @@ model AdminUser {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+model Service {
+  id          String  @id
+  title       String
+  emoji       String  @default("🧩")
+  description String  @default("")
+  href        String
+  image       String
+  color       String  @default("teal")
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+}
+
+model LaserService {
+  id          String  @id
+  title       String
+  emoji       String  @default("✨")
+  price       String
+  priceNum    Int?
+  description String?
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+}
+
+model NursingService {
+  id          String        @id
+  title       String
+  emoji       String
+  price       String
+  description String        @default("")
+  image       String?
+  active      Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  items       NursingItem[]
+}
+
+model NursingItem {
+  id        String         @id
+  serviceId String
+  service   NursingService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  title     String
+  priceNum  Int
+  price     String?
+  unit      String?
+  active    Boolean        @default(true)
+  sortOrder Int            @default(0)
+
+  @@index([serviceId])
+}
+
+model Physician {
+  id          Int      @id
+  name        String
+  specialty   String
+  specialtyId String?
+  image       String
+  days        String[]
+  status      String   @default("available")
+}
+
+model GalleryItem {
+  id       Int    @id
+  category String
+  title    String
+  before   String
+  after    String
+}
+
+model Product {
+  id       Int    @id
+  name     String
+  category String
+  price    String
+  priceNum Int
+  stock    Int    @default(0)
+  image    String
+}
+
+model BaseInsurance {
+  id     String  @id
+  name   String
+  active Boolean @default(true)
+}
+
+model ComplementaryInsurance {
+  id     String  @id
+  name   String
+  active Boolean @default(true)
+}
+
+model ConsultationType {
+  id       String @id
+  label    String
+  emoji    String
+  desc     String
+  priceNum Int?
+  price    String?
+}
+
+model SiteSettings {
+  id                     String @id @default("default")
+  dentalReservationFee   Int    @default(200000)
+  walletRegularCap       Int    @default(15000000)
+  walletMembershipVipCap Int    @default(30000000)
+  walletShopVipCap       Int    @default(20000000)
+  walletGraceMonths      Int    @default(1)
+  walletInstallmentMin   Int    @default(4)
+  walletInstallmentMax   Int    @default(6)
+}
+
+model SpecialtyTariff {
+  id      String @id @default("default")
+  tariffs Json
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  path      String
+  mime      String
+  filename  String
+  sourceUrl String?
+  createdAt DateTime @default(now())
+}
