@@ -1,5 +1,6 @@
 import { PASTEUR_DATA, type NursingService } from '@/lib/data';
 import { localizeImageUrl } from '@/lib/content/localize-url';
+import { ensurePlaceholder, syncSeedAssetsToUploadDir } from '@/lib/content/seed-assets';
 import {
   DEFAULT_BASE_INSURANCES,
   DEFAULT_COMPLEMENTARY_INSURANCES,
@@ -11,7 +12,9 @@ const prisma = new PrismaClient();
 
 async function main() {
   const cache = new Map<string, string>();
-  console.log('Phase 2 seed — localizing images…');
+  const synced = await syncSeedAssetsToUploadDir();
+  await ensurePlaceholder();
+  console.log(`Phase 2 seed — synced ${synced} bundled files to upload dir…`);
 
   await prisma.nursingItem.deleteMany();
   await prisma.nursingService.deleteMany();

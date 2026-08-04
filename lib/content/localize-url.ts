@@ -2,14 +2,16 @@ import { createHash } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import {
+  copyBundledImageForUrl,
+  ensurePlaceholder,
+  PLACEHOLDER,
+} from '@/lib/content/seed-assets';
+import {
   getUploadDir,
-  PLACEHOLDER_IMAGE,
   toPublicUploadPath,
 } from '@/lib/content/upload-path';
 
-const PLACEHOLDER = PLACEHOLDER_IMAGE;
-
-/** Map remote URL → local /uploads path; download when possible. */
+/** Map remote URL → local /uploads path; bundled copy, then download fallback. */
 export async function localizeImageUrl(
   url: string,
   cache: Map<string, string>,
@@ -24,9 +26,16 @@ export async function localizeImageUrl(
     return trimmed;
   }
 
+  const uploadDir = getUploadDir();
+  await mkdir(uploadDir, { recursive: true });
+
+  const bundled = await copyBundledImageForUrl(trimmed, uploadDir);
+  if (bundled) {
+    cache.set(trimmed, bundled);
+    return bundled;
+  }
+
   try {
-    const uploadDir = getUploadDir();
-    await mkdir(uploadDir, { recursive: true });
     const hash = createHash('sha1').update(trimmed).digest('hex').slice(0, 16);
     const ext = trimmed.includes('.png') ? 'png' : 'jpg';
     const filename = `${hash}.${ext}`;
@@ -40,6 +49,7 @@ export async function localizeImageUrl(
     cache.set(trimmed, publicPath);
     return publicPath;
   } catch {
+    await ensurePlaceholder(uploadDir);
     cache.set(trimmed, PLACEHOLDER);
     return PLACEHOLDER;
   }

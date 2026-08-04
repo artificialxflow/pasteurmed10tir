@@ -305,6 +305,7 @@ Tasks:
 2. scripts/seed-phase2.ts — seed from lib/data.ts defaults
 3. Replace Unsplash URLs: download images, save under public/uploads/ or storage,
    store local paths in DB (no external CDN in production)
+   On Runflare (no outbound internet): bundled copies in scripts/seed-assets/uploads/
 4. Admin CRUD API for each entity — match existing admin pages under app/admin/(panel)/
 5. Wire public pages to API (not localStorage):
    /, /laser, /nursing, /gallery, /shop/catalog, /medical/doctors (+ /app/* equivalents)

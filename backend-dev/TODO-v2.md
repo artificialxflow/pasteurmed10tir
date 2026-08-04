@@ -38,7 +38,7 @@ npx prisma migrate deploy
 npm run db:seed:phase2
 ```
 
-**Persistent disk:** mount at `/app/public/uploads` (app: pasteur). After first mount, re-run seed so images land on disk.
+**Persistent disk:** mount at `/app/public/uploads` (app: pasteur). After deploy run `npm run db:seed:phase2` — copies bundled images from `scripts/seed-assets/uploads/` (no internet needed).
 
 ## Done when
 
