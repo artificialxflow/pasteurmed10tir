@@ -1,393 +1,336 @@
 # چک‌لیست تست امنیتی Kali — Pasteur Plus
 
-هدف: تست امنیتی **سبک** روی staging لایو، بدون حمله سنگین و بدون نوشتن کد روی Kali.
-
-سایت هدف (مرحله توسعه / staging):
-
-```text
-https://pasteur.plus
-```
-
-چک‌لیست smoke دستی UI: `MANUAL-SMOKE-CHECKLIST.md`  
+**آخرین به‌روزرسانی وضعیت:** ۲۰۲۶-۰۸-۰۵  
+سایت هدف: `https://pasteur.plus`  
+Smoke دستی UI: `MANUAL-SMOKE-CHECKLIST.md` → **همه موارد سبز گزارش شده**  
 قبل از لانچ عمومی: `backend-dev/GO-LIVE.md`  
-راهنمای کلی فاز: `prompts.md` → بخش Phase +
+رمزهای ادمین: فقط در `ADMIN-CREDENTIALS.local.md` و فایل‌های local/gitignored — روی UI نیست.
 
 ---
 
-## قوانین ایمنی (حتماً بخوانید)
+## وضعیت کلی این دور
 
-1. فقط روی **همین دامنه/پروژه خودتان** تست کنید.
-2. روی لایو: **Automated Scan نرم** — نه Full Active Scan سنگین، نه fuzz دیوانه‌وار، نه DoS.
-3. دادهٔ واقعی بیمار را خراب نکنید؛ از اکانت‌های تست استفاده کنید.
-4. `npm run reset-all` یا پاک کردن دیتابیس را از Kali اجرا **نکنید**.
-5. روی Kali **کد ننویسید** — فقط تست و گرفتن گزارش.
-6. خروجی ZAP/Burp را در پوشه `reports/` ذخیره کنید (در ریپو اگر لازم است؛ راز/کوکی داخل گزارش نگذارید).
+| وضعیت | معنی |
+|--------|------|
+| ✅ انجام شد + نتیجه OK | دیگر لازم نیست تکرار شود مگر بعد از تغییر بزرگ / قبل از Go-Live |
+| 🟡 انجام‌شده با نکته / نیازمند تأیید بعد از deploy اصلاحات | مشکل بحرانی فعلی نیست |
+| ⬜ باقی مانده — روی Kali یا مرورگر انجام شود | اولویت جلسه بعد |
+| ⛔ عمداً نکنید / مربوط به Go-Live بعدی | SMS واقعی، حذف DEV_OTP، اسکن سنگین و… |
+
+**حکم فعلی امنیت staging:** قبول مشروط سبز.
+
+- یافتهٔ High قبلی (افشای credential در `/admin/login`) رفع و تأیید شده است.
+- APIهای ادمین بدون نشست همگی `401` بودند.
+- `POST /api/admin/upload` بدون نشست `401` بود و آپلود انجام نشد.
+- صفحات `/admin/bookings` و `/admin/access` بدون نشست دادهٔ حساس نشان ندادند، ولی سابقاً با `HTTP 200` و prerender/cache برگشتند.
+- در کد پروژه اصلاحات بعدی اعمال شده (نیاز به **deploy** و تأیید مجدد روی لایو): `proxy.ts` برای ریدایرکت بدون session، `force-dynamic` روی ادمین، `poweredByHeader: false`، security headers پایه.
+- تست نقش `ops`، بررسی cookie/session و ZAP سبک هنوز باقی است.
 
 ---
 
-## حساب‌های تست
+# الف) انجام‌شده — با نتیجه
 
-| نقش | مسیر | داده |
-|-----|------|------|
-| بیمار | `/account` | `09126723365` / OTP `00000` |
-| superadmin | `/admin/login` | `admin` + رمز از `ADMIN-CREDENTIALS.local.md` |
-| ops | `/admin/login` | `ops` + رمز از همان فایل |
-| content | `/admin/login` | `content` + رمز از همان فایل |
-| finance | `/admin/login` | `finance` + رمز از همان فایل |
+## الف-۰ — پیش‌نیاز محصول / اصلاح کد
 
-**بررسی افشای credential روی لاگین (واجب):**
+| کار | نتیجه | توضیح |
+|-----|--------|--------|
+| `MANUAL-SMOKE-CHECKLIST.md` کامل دستی | ✅ OK | همه موارد سبز گزارش شده‌اند |
+| حذف باکس «حساب‌های نمونه» از `/admin/login` | ✅ OK | کد: `app/admin/login/page.tsx` |
+| خالی کردن پیش‌فرض username/password در فرم | ✅ OK | فیلدها `value=""` |
+| Rotate رمز admin/ops/content/finance | ✅ OK | Seed + فایل local |
+| پاک‌سازی رمز قدیمی از docs عمومی | ✅ OK | رمز فقط در local/gitignored |
+| تأیید عدم رمز قدیمی در HTML عمومی | ✅ OK | grep خروجی خالی |
+
+---
+
+## الف-۱ — افشای credential در HTML عمومی
+
+**دستور تأیید (انجام‌شده روی Kali):**
 
 ```bash
 curl -fsSL https://pasteur.plus/admin/login | \
-  grep -Ei 'pasteur1403|ops1403|content1403|finance1403|حساب‌های نمونه'
+  grep -Ei 'pasteur1403|ops1403|content1403|finance1403'
 ```
 
-انتظار: هیچ خروجی‌ای. اگر چیزی برگشت، بحرانی است.
+| نتیجه | ارزیابی |
+|--------|----------|
+| خروجی خالی | ✅ OK — رمزهای قدیمی در HTML عمومی نیستند |
 
-> تا قبل از Go-Live عمومی، `DEV_OTP_*` روی Runflare باید بماند. حذف فقط طبق `GO-LIVE.md`.
+**نکته:** grep گسترده‌تر روی `admin` / `رمز` / `password` ممکن است کل HTML لاگین را برگرداند. این یافتهٔ امنیتی نیست (برچسب فرم و مسیر `/admin/login`). معیار: وجود **مقدار واقعی password**.
 
----
-
-## ابزارهای پیشنهادی روی Kali
-
-| ابزار | کاربرد این چک‌لیست |
-|--------|---------------------|
-| OWASP ZAP (`zaproxy`) | اسکن خودکار سبک صفحات |
-| browser معمولی / Firefox | تست نقش ops و لاگین |
-| `curl` | API بدون لاگین → 401/403 |
-| Burp Suite (اختیاری) | پروکسی لاگین و بررسی cookie/header |
-| ffuf / nuclei (اختیاری خیلی سبک) | فقط مسیرهای شناخته‌شده — نه bruteforce کور |
+یافتهٔ قبلی «نمایش حساب‌های نمونه روی لاگین» → **بسته / رفع‌شده**.
 
 ---
 
-## ترتیب پیشنهادی (~۴۵–۶۰ دقیقه)
+## الف-۲ — API ادمین بدون نشست
+
+**دستور تأیید (با مسیر کامل ابزارها در صورت خرابی PATH):**
+
+```bash
+for path in \
+  /api/admin/me \
+  /api/admin/operations/bookings \
+  /api/admin/operations/patients \
+  /api/admin/commerce/wallets \
+  /api/admin/commerce/club
+do
+  echo
+  echo "===== $path ====="
+  /usr/bin/curl -sS -D - -o /tmp/pasteur_api_body.txt \
+    -w '\nHTTP %{http_code}\n' \
+    "https://pasteur.plus$path"
+  echo "--- BODY ---"
+  /usr/bin/cat /tmp/pasteur_api_body.txt
+  echo
+done
+```
+
+| Endpoint | HTTP | Body خلاصه | ارزیابی |
+|----------|------|-------------|----------|
+| `/api/admin/me` | `401` | `{"session":null}` | ✅ OK |
+| `/api/admin/operations/bookings` | `401` | خطای ورود نشده | ✅ OK |
+| `/api/admin/operations/patients` | `401` | خطای ورود نشده | ✅ OK |
+| `/api/admin/commerce/wallets` | `401` | خطای ورود نشده | ✅ OK |
+| `/api/admin/commerce/club` | `401` | خطای ورود نشده | ✅ OK |
+
+**یادداشت cosmetic:** اگر در response املای «وارد نشدهاید» بدون نیم‌فاصله دیدید، در سورس فعلی پروژه متن صحیح `وارد نشده‌اید.` است — پس از redeploy بررسی شود. شدت: Low.
+
+---
+
+## الف-۳ — آپلود ادمین بدون نشست
+
+```bash
+/usr/bin/curl -sS -D - -o /tmp/pasteur_upload_body.txt \
+  -w '\nHTTP %{http_code}\n' \
+  -X POST \
+  https://pasteur.plus/api/admin/upload
+
+/usr/bin/cat /tmp/pasteur_upload_body.txt
+```
+
+| Endpoint | HTTP | ارزیابی |
+|----------|------|----------|
+| `POST /api/admin/upload` | `401` | ✅ OK — بدون نشست آپلود نشد |
+
+---
+
+## الف-۴ — صفحات ادمین بدون نشست (قبل از اصلاح proxy/cache)
+
+**مشاهدهٔ پیش از اصلاح کد روی لایو:**
 
 ```text
-۱) آماده‌سازی Kali
-۲) curl بدون لاگین (API ادمین)
-۳) تست نقش ops در مرورگر
-۴) ZAP Automated Scan نرم روی pasteur.plus
-۵) (اختیاری) Burp — بررسی cookie و access
-۶) (اختیاری) یک چک IDOR سبک اگر دو بیمار تست دارید
-۷) پر کردن گزارش انتها
+HTTP/2 200
+x-nextjs-cache: HIT
+x-nextjs-prerender: 1
+cache-control: s-maxage=31536000
+x-powered-by: Next.js
 ```
+
+بررسی HTML با markerهای حساس (شماره موبایل، نام بیمار، کیف، wallet، مدیریت نقش، …) → **چیزی پیدا نشد**.
+
+| صفحه | HTTP (قبلی) | داده حساس | ارزیابی |
+|------|-------------|-----------|----------|
+| `/admin/bookings` | `200` | دیده نشد | 🟡 OK مشروط (قبل از deploy اصلاحات) |
+| `/admin/access` | `200` | دیده نشد | 🟡 OK مشروط (قبل از deploy اصلاحات) |
+
+**اصلاحات کد اعمال‌شده در ریپو (نیازمند deploy + تأیید مجدد):**
+
+- `proxy.ts`: بدون cookie معتبر `pasteur_admin_session` → ریدایرکت به `/admin/login`
+- `app/admin/layout.tsx`: `dynamic = "force-dynamic"`, `revalidate = 0`
+- `next.config.ts`: `poweredByHeader: false` + security headers پایه
+- هدر `Cache-Control: no-store…` روی پاسخ‌های `/admin/*` در proxy
+
+**بعد از deploy این را روی Kali تکرار کنید:**
+
+```bash
+/usr/bin/curl -sSI https://pasteur.plus/admin/bookings | /usr/bin/head -n 25
+/usr/bin/curl -sSI https://pasteur.plus/admin/access | /usr/bin/head -n 25
+```
+
+انتظار مطلوب پس از deploy: `302`/`307` به `/admin/login` (نه HTML داشبورد با cache طولانی).
+
+| تأیید بعد از deploy | نتیجه |
+|---------------------|--------|
+| `/admin/bookings` بدون نشست → ریدایرکت لاگین | ⬜ |
+| `/admin/access` بدون نشست → ریدایرکت لاگین | ⬜ |
+| نبود `x-powered-by: Next.js` (یا کاهش fingerprint) | ⬜ |
 
 ---
 
-# بخش ۱ — آماده‌سازی
+## الف-۵ — نکتهٔ محیط Kali (باگ سایت نیست)
 
-### ۱.۱ شبکه و زمان
-
-- [ ] Kali به اینترنت وصل است
-- [ ] `https://pasteur.plus` در مرورگر باز می‌شود
+در چند اجرای اولیه `curl`/`cat`/`grep` به‌خاطر خراب شدن `PATH` پیدا نمی‌شدند. ابزارها در `/usr/bin/` بودند. تست‌های API نهایتاً با مسیر کامل انجام و **تمام** شدند (دیگر «حلقه ناتمام» نیست).
 
 ```bash
-curl -I https://pasteur.plus
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+hash -r
+# یا مستقیم:
+/usr/bin/curl …
 ```
 
-**انتظار:** پاسخ HTTP (مثلاً `200` یا `307`/`308`) — نه timeout دائمی.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۱.۲ هدف اسکن را مشخص کنید
-
-الان دو حالت دارید:
-
-| حالت | هدف | توصیه |
-|------|-----|--------|
-| A — لایو Runflare | `https://pasteur.plus` | همین چک‌لیست — **اسکن نرم** |
-| B — لوکال بعد `npm run start` | `http://localhost:3000` | طبق `prompts.md` — اسکن کامل‌تر مجازتر است |
-
-برای این فایل پیش‌فرض = **حالت A (لایو نرم)**.
+Paste کردن متن فارسی گزارش داخل shell → `command not found` بی‌ربط به سایت است.
 
 ---
 
-# بخش ۲ — API بدون لاگین (مهم‌ترین تست سریع)
+# ب) باقی‌مانده — برای انجام روی Kali / مرورگر
 
-در ترمینال Kali، این دستورها را یکی‌یکی بزنید.
+> بخش API و upload بدون لاگین انجام و OK شد.  
+> بعد از **deploy** اصلاحات ادمین، ابتدا تأیید کوتاه الف-۴ را بزنید، سپس موارد زیر.
 
-### ۲.۱ `/api/admin/me` بدون کوکی
-
-```bash
-curl -s -o /tmp/pasteur_admin_me.txt -w "%{http_code}" \
-  https://pasteur.plus/api/admin/me
-echo
-cat /tmp/pasteur_admin_me.txt
-```
-
-**انتظار:** `401` یا `403` — نه `200` با دادهٔ ادمین.
-
-کد دریافتی: _______________
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۲.۲ لیست رزروهای ادمین بدون لاگین
-
-```bash
-curl -s -o /tmp/pasteur_bookings.txt -w "%{http_code}" \
-  https://pasteur.plus/api/admin/operations/bookings
-echo
-cat /tmp/pasteur_bookings.txt
-```
-
-**انتظار:** `401` / `403` — نه لیست رزروها.
-
-کد دریافتی: _______________
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۲.۳ بیماران / کیف / باشگاه ادمین بدون لاگین
-
-```bash
-curl -s -w "\nHTTP %{http_code}\n" \
-  https://pasteur.plus/api/admin/operations/patients
-
-curl -s -w "\nHTTP %{http_code}\n" \
-  https://pasteur.plus/api/admin/commerce/wallets
-
-curl -s -w "\nHTTP %{http_code}\n" \
-  https://pasteur.plus/api/admin/commerce/club
-```
-
-**انتظار:** همه `401` یا `403`.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۲.۴ آپلود ادمین بدون لاگین
-
-```bash
-curl -s -w "\nHTTP %{http_code}\n" \
-  -X POST https://pasteur.plus/api/admin/upload
-```
-
-**انتظار:** `401` / `403` / `400` بدون آپلود موفق. نباید فایل جدید روی سرور ساخته شود.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۲.۵ صفحات ادمین بدون لاگین (ریدایرکت)
-
-```bash
-curl -sI https://pasteur.plus/admin/bookings | head -n 20
-curl -sI https://pasteur.plus/admin/access | head -n 20
-```
-
-**انتظار:** ریدایرکت به لاگین (`/admin/login`) یا عدم دسترسی — نه HTML کامل داشبورد.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
+> **دستور به AI روی Kali:** فقط بخش ب (+ تأیید الف-۴ بعد از deploy). رمز و مقدار cookie را در گزارش عمومی ننویس.
 
 ---
 
-# بخش ۳ — تست نقش ops (Browser)
+## ب-۱) تست نقش ops در مرورگر — ⬜ باقی / اولویت بالا
 
-### ۳.۱ ورود ops
+رمز از `ADMIN-CREDENTIALS.local.md` (نه در چت/گزارش commit‌شده).
 
-1. مرورگر: `https://pasteur.plus/admin/login`
-2. ورود با: `ops` و رمز از `ADMIN-CREDENTIALS.local.md`
-3. بروید به: `/admin/bookings` (**رزروها**)
+1. مرورگر ناشناس → `https://pasteur.plus/admin/login`
+2. ورود با `ops` + رمز فایل local
+3. `https://pasteur.plus/admin/bookings`
+4. `https://pasteur.plus/admin/access`
 
-**انتظار:** لیست رزروها دیده می‌شود.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۳.۲ ممنوع بودن سطح دسترسی
-
-1. مستقیم بروید به: `https://pasteur.plus/admin/access`
-
-**انتظار:** ممنوع / خطای دسترسی / ریدایرکت — صفحه مدیریت نقش‌ها باز نشود.
-
-- [ ] OK
-- [ ] FAIL — توضیح: _______________
-
-### ۳.۳ (اختیاری) نقش content
-
-1. خروج → ورود با `content` و رمز از `ADMIN-CREDENTIALS.local.md`
-2. سعی کنید `/admin/access` و ترجیحاً بخش‌های مالی حساس را باز کنید
-
-**انتظار:** فقط منوهای مجاز content؛ `access` ممنوع.
-
-- [ ] OK
-- [ ] FAIL
-- [ ] SKIP
+| # | کار | انتظار | نتیجه |
+|---|-----|--------|--------|
+| ب-۱-a | ops → `/admin/bookings` | لیست رزروها دیده شود | ⬜ |
+| ب-۱-b | ops → `/admin/access` | ممنوع / بدون مدیریت نقش | ⬜ |
+| ب-۱-c | content → `/admin/access` (اختیاری) | ممنوع | ⬜ / SKIP |
 
 ---
 
-# بخش ۴ — OWASP ZAP (اسکن نرم روی لایو)
+## ب-۲) بررسی cookie / session — ⬜ باقی
 
-### ۴.۱ باز کردن ZAP
+بعد از لاگین `ops` یا `admin`: DevTools → Cookies → `pasteur.plus`
+
+نام مورد انتظار cookie ادمین: `pasteur_admin_session` (فقط نام؛ مقدار را ننویسید).
+
+| فلگ | بهتر است | مشاهده |
+|-----|----------|---------|
+| HttpOnly | ✅ روشن | ⬜ |
+| Secure | ✅ روشن (HTTPS) | ⬜ |
+| SameSite | حداقل `Lax` | ⬜ |
+
+| مورد | انتظار |
+|------|--------|
+| پسورد در URL | نباشد |
+| لاگین | POST + body |
+
+---
+
+## ب-۳) OWASP ZAP — اسکن سبک — ⬜ باقی
 
 ```bash
 zaproxy &
-# یا از منوی Kali: OWASP ZAP
 ```
 
-### ۴.۲ Automated Scan نرم
+1. Automated Scan روی `https://pasteur.plus` — فقط سبک  
+2. Full Active / SQLMap / brute force ممنوع  
+3. اگر سایت کند شد → Stop  
+4. گزارش: `~/reports/zap-pasteur-plus-YYYYMMDD.html`  
+5. قبل از اشتراک: cookie/token/بیمار/رمز را mask کنید  
 
-1. Quick Start → **Automated Scan**
-2. URL: `https://pasteur.plus`
-3. گزینه‌های تهاجمی کامل را روشن نکنید اگر زنگ خطر / بار سنگین می‌دهد
-4. اسکن را اجرا کنید و صبر کنید تا تمام شود
+| موضوع | اولویت |
+|--------|---------|
+| افشای credential / داده حساس | Critical/High |
+| دسترسی بدون مجوز به API | High |
+| Cookie ناامن | High |
+| CORS خطرناک | High |
+| debug / stack / dir listing | High |
+| XSS/SQLi با confidence بالا | High/Critical |
+| نبود header | Low/Medium |
 
-**نکته لایو:** اگر سایت کند شد یا خطای زیاد دیدید، Stop کنید. هدف پیدا کردن باگ آشکار است، نه خراب کردن سرویس.
+| # | کار | نتیجه |
+|---|-----|--------|
+| ب-۳-a | اسکن تمام / Stop عمدی | ⬜ |
+| ب-۳-b | مسیر گزارش | ⬜ |
+| ب-۳-c | خلاصه High/Critical | ⬜ |
 
-- [ ] اسکن شروع شد
-- [ ] اسکن تمام شد / متوقف شد عمدی
-- [ ] SKIP
+---
 
-### ۴.۳ ذخیره گزارش
+## ب-۴) اختیاری — Burp / IDOR — ⬜ SKIP مگر وقت اضافه
 
-1. Report → Generate HTML Report (یا معادل UI نسخه ZAP شما)
-2. ذخیره در ماشین Kali، سپس کپی به پروژه اگر خواستید:
+- Burp: Replay با ops روی access باید ممنوع بماند  
+- IDOR: فقط با دو بیمار تست؛ یک شماره → SKIP  
+
+---
+
+## ب-۵) ممنوع همین الان — ⛔
+
+- اسکن سنگین بدون نظارت روی لایو  
+- brute force لاگین  
+- `reset-all` روی DB لایو  
+- حذف `DEV_OTP_*` (هنوز staging)  
+- اکانت SMS واقعی الزام این دور نیست → `GO-LIVE.md`
+
+---
+
+# ج) قالب گزارش برای فرستادن به Cursor
 
 ```text
-reports/zap-pasteur-plus-YYYYMMDD.html
-```
-
-- [ ] گزارش ذخیره شد → مسیر: _______________
-- [ ] SKIP
-
-### ۴.۴ مرور یافته‌ها (دستی)
-
-حداقل این‌ها را در گزارش چک کنید:
-
-| موضوع | اولویت توجه |
-|--------|-------------|
-| Missing security headers | متوسط — یادداشت کنید |
-| Cookie بدون HttpOnly/Secure (اگر هست) | بالا |
-| XSS انعکاسی واضح روی فرم‌ها | بالا |
-| Path/dir listing حساس | بالا |
-| SQL injection با اطمینان بالا روی لایو | بسیار بالا — فوراً گزارش |
-| هشدارهای informational صرف | پایین — لازم نیست همه را الان درست کنید |
-
-یافته‌های مهم را پایین بنویسید:
-
-1. _______________
-2. _______________
-3. _______________
-
----
-
-# بخش ۵ — Burp Suite (اختیاری / پیشرفته‌تر)
-
-فقط اگر با Burp راحت هستید.
-
-### ۵.۱ Proxy لاگین ادمین
-
-1. Burp → Proxy روی مرورگر
-2. لاگین `admin` یا `ops`
-3. درخواست `POST /api/admin/login` را ببینید
-4. کوکی session را در پاسخ پیدا کنید
-
-چک‌ها:
-
-- [ ] پسورد در URL query نیست (باید در body باشد)
-- [ ] بعد از لاگین، درخواست‌های `/api/admin/*` کوکی دارند
-- [ ] درخواست `/api/admin/me` با کوکی معتبر `200` می‌دهد
-- [ ] همان درخواست بعد از پاک کردن کوکی `401/403` می‌دهد
-
-### ۵.۲ تلاش دسترسی ops به access از طریق Replay
-
-1. با کوکی `ops` درخواست صفحه یا API مربوط به access را Replay کنید
-2. **انتظار:** همچنان ممنوع
-
-- [ ] OK
-- [ ] FAIL
-- [ ] SKIP
-
----
-
-# بخش ۶ — IDOR سبک (اختیاری)
-
-فقط اگر **دو حساب بیمار تست** دارید (نه استفاده از شماره واقعی دیگران).
-
-مثال مفهومی از `TEST-MANUAL.md`:
-
-1. با بیمار A لاگین کنید
-2. یک consultation / booking از بیمار B را حدس نزنید کورکورانه؛ اگر ID واقعی B را از ادمین برای تست ساختید:
-3. درخواست بیمار A به API مربوط به ID بیمار B باید `403` بدهد
-
-نمونه‌های مسیر (بسته به وجود ID واقعی تست):
-
-```text
-GET /api/operations/consultations/{id-of-B}
-GET /api/commerce/wallet?phone={phone-of-B}
-```
-
-**انتظار:** `403` — نه دادهٔ بیمار دیگر.
-
-- [ ] OK
-- [ ] FAIL
-- [ ] SKIP (فقط یک بیمار تست دارید)
-
-> اگر فقط `09126723365` دارید، این بخش را SKIP کنید. IDOR کامل را بعداً با دو شماره تست انجام دهید.
-
----
-
-# بخش ۷ — چیزهایی که الان روی لایو انجام ندهید
-
-- [ ] Full Active Scan بدون نظارت روی پروداکشن شلوغ
-- [ ] Password spray / brute force روی `/admin/login`
-- [ ] SQLMap سنگین روی همهٔ پارامترها
-- [ ] آپلود بدافزار واقعی برای تست
-- [ ] اجرای `reset-all` روی دیتابیس لایو
-- [ ] حذف `DEV_OTP_*` قبل از اتمام Go-Live واقعی
-
----
-
-# بخش ۸ — قبل از لانچ عمومی (یادآوری — نه همین دور)
-
-وقتی خواستید سایت برای عموم باز شود:
-
-1. `DEV_OTP_*` را از Runflare حذف کنید
-2. `SESSION_SECRET` قوی تنظیم شود
-3. SMS واقعی و درگاه پرداخت واقعی
-4. یک دور دیگر ZAP + تست لاگین واقعی بدون کد `00000`
-5. جزئیات: `backend-dev/GO-LIVE.md`
-
-- [ ] هنوز نوبتش نیست (مرحله فعلی: staging)
-- [ ] انجام شد
-
----
-
-# قالب گزارش برای فرستادن به Cursor / تیم
-
-```text
-تاریخ/ساعت تست Kali: ……
+تاریخ/ساعت Kali: ۲۰۲۶-۰۸-۰۵ (+ ادامه: …)
 هدف: https://pasteur.plus
-نسخه/ابزار: ZAP …… | Burp …… | Kali ……
+ابزار: Kali + /usr/bin/curl | مرورگر | ZAP: هنوز / انجام شد
+PATH issue: وجود داشت؛ با مسیر کامل ابزارها دور زده شد (باگ سایت نیست).
 
-۲.۱ /api/admin/me بدون لاگین: HTTP … — OK/FAIL
-۲.۲ admin bookings بدون لاگین: HTTP … — OK/FAIL
-۲.۳ patients/wallets/club بدون لاگین: OK/FAIL
-۲.۴ upload بدون لاگین: HTTP … — OK/FAIL
-۲.۵ ریدایرکت /admin/*: OK/FAIL
+۱) Credential exposure:
+  grep رمزهای قدیمی روی /admin/login → خروجی خالی.
+  نتیجه: OK — یافته High بسته شد.
 
-۳.۱ ops → رزروها: OK/FAIL
-۳.۲ ops → /admin/access ممنوع: OK/FAIL
-۳.۳ content (اختیاری): OK/FAIL/SKIP
+۲) API بدون لاگین:
+  /api/admin/me: 401 — OK — {"session":null}
+  /api/admin/operations/bookings: 401 — OK
+  /api/admin/operations/patients: 401 — OK
+  /api/admin/commerce/wallets: 401 — OK
+  /api/admin/commerce/club: 401 — OK
 
-۴ ZAP: انجام شد / SKIP — مسیر گزارش: …
-یافته‌های مهم ZAP:
-1) …
-2) …
+۳) Upload بدون لاگین:
+  POST /api/admin/upload: 401 — OK
 
-۵ Burp: SKIP / خلاصه: …
-۶ IDOR: SKIP / OK / FAIL — …
+۴) صفحات ادمین بدون لاگین:
+  قبل از اصلاح: HTTP 200 + prerender/cache، داده حساس نبود — OK مشروط
+  بعد از deploy اصلاحات (تأیید شود):
+    /admin/bookings headers: …
+    /admin/access headers: …
+    redirect به login؟ بله/خیر
 
-مشکلات بحرانی (اگر هست):
-1) …
-2) …
+۵) باقی‌مانده این جلسه / جلسه بعد:
+  - ops مرورگر: bookings … | access …
+  - cookie flags: HttpOnly … Secure … SameSite …
+  - ZAP: … | High/Critical: …
+
+۶) مشکلات بحرانی جدید (اگر هست):
+  1) …
 ```
 
 ---
 
-## مسیرهای مفید برای یادآوری
+# د) مسیر کلی پروژه
+
+```text
+✅ Smoke دستی UI
+✅ رفع credential + rotate + deploy + تأیید HTML
+✅ API ادمین + upload بدون لاگین → 401
+🟡 صفحات ادمین بدون session — داده نشت نکرد؛ اصلاح proxy/cache در کد (نیاز deploy+verify)
+⬜ ب-۱ ops مرورگر
+⬜ ب-۲ cookie/session
+⬜ ب-۳ ZAP سبک
+⬜ رفع هر High/Critical جدید
+⬜ بعداً: SMS + درگاه + GO-LIVE.md + حذف DEV_OTP
+```
+
+---
+
+## قوانین ایمنی
+
+1. فقط دامنه `pasteur.plus`  
+2. اسکن لایو = نرم  
+3. داده بیمار واقعی را خراب نکنید  
+4. روی Kali کد اپ ننویسید — فقط تست  
+5. گزارش ZAP را از secret تمیز کنید  
+
+---
+
+## مسیرهای مفید
 
 | مورد | URL |
 |------|-----|
@@ -397,16 +340,11 @@ GET /api/commerce/wallet?phone={phone-of-B}
 | رزروها | `/admin/bookings` |
 | سطح دسترسی | `/admin/access` |
 | API منِ ادمین | `/api/admin/me` |
-| API رزرو ادمین | `/api/admin/operations/bookings` |
+| Cookie ادمین (نام) | `pasteur_admin_session` |
 
----
+## حساب‌های تست (بدون رمز در این فایل)
 
-## جمع‌بندی موفقیت این دور
-
-اگر این‌ها سبز باشد، تست Kali سبک برای staging کافی است:
-
-1. APIهای ادمین بدون لاگین باز نیستند  
-2. `ops` به `/admin/access` راه ندارد  
-3. ZAP باگ بحرانی واضح (XSS/SQLi مطمئن / نشت داده) گزارش نکرده یا موارد را ثبت کرده‌اید  
-
-بعد از آن برگردید به تکمیل `MANUAL-SMOKE-CHECKLIST.md` اگر هنوز باز است، سپس برنامه‌ریزی Go-Live.
+| نقش | شناسه | رمز |
+|-----|--------|-----|
+| بیمار | `09126723365` | OTP `00000` تا وقتی DEV_OTP فعال است |
+| admin / ops / content / finance | همان usernameها | `ADMIN-CREDENTIALS.local.md` |
