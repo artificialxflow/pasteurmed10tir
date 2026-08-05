@@ -3,12 +3,15 @@ import {
   DEFAULT_ADMIN_USERS,
   type AdminPermission,
 } from '@/lib/adminAccess';
+import { resolveAdminPasswords } from '@/lib/admin-credentials';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const passwords = resolveAdminPasswords(DEFAULT_ADMIN_USERS.map((u) => u.username));
+
   for (const role of DEFAULT_ADMIN_ROLES) {
     await prisma.adminRole.upsert({
       where: { id: role.id },
@@ -27,7 +30,8 @@ async function main() {
   }
 
   for (const user of DEFAULT_ADMIN_USERS) {
-    const passwordHash = await bcrypt.hash(user.password, 10);
+    const password = passwords[user.username];
+    const passwordHash = await bcrypt.hash(password, 10);
     await prisma.adminUser.upsert({
       where: { username: user.username },
       create: {
