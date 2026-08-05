@@ -518,9 +518,10 @@ After reset-all works, backend is ready for staging deploy.
 
 ### ✅ Phase 5 complete when / تکمیل فاز ۵
 
-- [ ] reset-all works
-- [ ] TEST-MANUAL.md complete for all phases
+- [x] reset-all works
+- [x] TEST-MANUAL.md complete for all phases
 - [ ] Staging deploy on Runflare with `pasteur_prod` DATABASE_URL
+- [ ] `git commit` done
 
 ---
 

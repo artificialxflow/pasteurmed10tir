@@ -1,5 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { createCommission } from '@/lib/commerce/commission-service';
+import { addClubPoints, incrementClubVisits } from '@/lib/club/service';
 import { generateOperationId, mapBooking } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
       amount,
     });
   }
+
+  await addClubPoints(patientPhone, 50, 'رزرو نوبت');
+  await incrementClubVisits(patientPhone);
 
   return NextResponse.json({ booking: mapBooking(row) }, { status: 201 });
 }

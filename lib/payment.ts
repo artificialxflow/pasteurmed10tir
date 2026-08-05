@@ -125,9 +125,7 @@ export const PaymentFlow = {
         referralCode: pending.referralCode,
       });
       PasteurStorage.setSessionLastBooking(booking as Booking);
-      const profile = PasteurStorage.addClubPoints(pending.patientPhone, 50, 'رزرو نوبت');
-      profile.visits += 1;
-      PasteurStorage.saveClubProfile(pending.patientPhone, profile);
+      // Club points + visits persisted in booking API (Phase 5)
     } else if (pending.planId === 'shop-vip') {
       await completeShopVipPaymentApi({
         patientName: pending.patientName,

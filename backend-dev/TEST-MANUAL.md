@@ -92,3 +92,25 @@ Referral codes (seed): `PLUS100`, `PLUS200`, `EQUIPVIP`
 
 Run seed: `npm run db:seed:phase4`
 
+---
+
+## Phase 5 — Club, cleanup & deploy prep
+
+| # | Flow | Steps | Expected |
+|---|------|-------|----------|
+| 1 | Club load | `/club` → enter `09126723365` → مشاهده امتیاز | Points/history from DB (seed ≈ 55) |
+| 2 | Brush | click «مسواک زدم» | +5 points; امروز count increments |
+| 3 | Cooldown | click brush again immediately | message about 8h wait; button disabled |
+| 4 | Daily cap | (simulate / wait) 3 brushes same day | daily max message |
+| 5 | Instagram | CTA visible | opens `instagram.com/pastor.beauty.tbz` |
+| 6 | Redeem | redeem a reward when points enough | points decrease; history shows دریافت |
+| 7 | Admin club | `/admin/club` | rows from DB |
+| 8 | Membership modal | `/dental/membership` open preview → click backdrop | modal closes |
+| 9 | Doctors alert | `/admin/doctors` add mock doctor | inline teal message, no `window.alert` |
+| 10 | Reset | `npx tsx scripts/reset-all.ts --confirm` then login admin | data wiped; admin/pasteur1403 still works |
+
+Booking → club: pay mock booking → `/club` visits +50 points.
+
+Run seed: `npm run db:seed:phase5`
+
+

@@ -849,8 +849,17 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
       {/* Contract modal */}
       {contractOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[88vh] w-full max-w-2xl overflow-auto rounded-[1.25rem] border border-sky-200 bg-white p-6">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setContractOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-2xl overflow-auto rounded-[1.25rem] border border-sky-200 bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold">پیش‌نمایش قرارداد عضویت</h2>
               <button
@@ -931,8 +940,17 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
       {/* Quick membership modal (web) */}
       {quick.open && quick.tier ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-[1.25rem] border border-sky-200 bg-white p-6">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setQuick((q) => ({ ...q, open: false }))}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-[1.25rem] border border-sky-200 bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <h2 className="mb-4 text-xl font-bold">
               عضویت {membershipPlans.find((m) => m.id === quick.tier)?.name}
             </h2>

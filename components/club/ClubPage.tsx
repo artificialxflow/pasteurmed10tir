@@ -7,11 +7,16 @@ import {
   FormInput,
   FormLabel,
 } from "@/components/ui/Card";
+import {
+  getClubProfileApi,
+  postClubBrushApi,
+  postClubRedeemApi,
+} from "@/lib/club/client";
 import { PASTEUR_DATA, type ClubReward } from "@/lib/data";
-import { PasteurStorage, type ClubProfile } from "@/lib/storage";
+import { PasteurStorage, type BrushStatus, type ClubProfile } from "@/lib/storage";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Variant = "web" | "app";
 
@@ -26,7 +31,18 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
   const [phone, setPhone] = useState("");
   const [currentPhone, setCurrentPhone] = useState("");
   const [profile, setProfile] = useState<ClubProfile | null>(null);
+  const [brushStatus, setBrushStatus] = useState<BrushStatus | null>(null);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    void fetch("/api/auth/me", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as { user?: { phone?: string } };
+        if (data.user?.phone) setPhone(digitsOnly(data.user.phone));
+      })
+      .catch(() => undefined);
+  }, []);
 
   function showMessage(text: string) {
     setMessage(text);
@@ -40,24 +56,22 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
       return;
     }
     setCurrentPhone(digits);
-    setProfile({ ...PasteurStorage.getClubProfile(digits) });
+    void getClubProfileApi(digits)
+      .then((data) => {
+        setProfile({ ...data.profile });
+        setBrushStatus(data.brushStatus);
+      })
+      .catch((e: Error) => showMessage(e.message || "خطا در دریافت باشگاه"));
   }
 
   function redeem(reward: ClubReward) {
     if (!currentPhone || !profile) return;
-    const fresh = PasteurStorage.getClubProfile(currentPhone);
-    if (fresh.points < reward.points) return;
-    fresh.points -= reward.points;
-    fresh.redeemed = Array.isArray(fresh.redeemed) ? fresh.redeemed : [];
-    fresh.redeemed.push({ ...reward, date: new Date().toISOString() });
-    fresh.history.unshift({
-      points: -reward.points,
-      reason: `دریافت: ${reward.title}`,
-      date: new Date().toISOString(),
-    });
-    PasteurStorage.saveClubProfile(currentPhone, fresh);
-    setProfile({ ...fresh });
-    showMessage(`پاداش «${reward.title}» با موفقیت فعال شد!`);
+    void postClubRedeemApi(currentPhone, { ...reward })
+      .then((data) => {
+        setProfile({ ...data.profile });
+        showMessage(`پاداش «${reward.title}» با موفقیت فعال شد!`);
+      })
+      .catch((e: Error) => showMessage(e.message || "دریافت پاداش ناموفق"));
   }
 
   function recordBrush() {
@@ -65,17 +79,16 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
       showMessage("ابتدا شماره موبایل باشگاه را وارد کنید.");
       return;
     }
-    const result = PasteurStorage.recordBrush(currentPhone);
-    if (!result.ok) {
-      showMessage(result.error);
-      return;
-    }
-    setProfile({ ...result.profile });
-    showMessage("مسواک شما ثبت شد! +۵ امتیاز");
+    void postClubBrushApi(currentPhone)
+      .then((data) => {
+        setProfile({ ...data.profile });
+        setBrushStatus(data.brushStatus);
+        showMessage("مسواک شما ثبت شد! +۵ امتیاز");
+      })
+      .catch((e: Error) => showMessage(e.message || "ثبت مسواک ناموفق"));
   }
 
   const tier = profile ? PasteurStorage.getClubTier(profile.points) : null;
-  const brushStatus = profile ? PasteurStorage.getBrushStatus(profile) : null;
   const isApp = variant === "app";
 
   return (

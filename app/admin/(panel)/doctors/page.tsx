@@ -24,6 +24,7 @@ export default function AdminDoctorsPage() {
   const [physicians, setPhysicians] = useState<Physician[]>([]);
   const [name, setName] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [message, setMessage] = useState("");
 
   function reload() {
     setExtra(PasteurStorage.getExtraDoctors() as ExtraDoctor[]);
@@ -60,9 +61,10 @@ export default function AdminDoctorsPage() {
 
   function addDoctor(e: FormEvent) {
     e.preventDefault();
+    const doctorName = name.trim();
     PasteurStorage.saveExtraDoctor({
       id: Date.now(),
-      name: name.trim(),
+      name: doctorName,
       specialty: specialty.trim(),
       days: ["شنبه"],
       hours: "۹ تا ۱۷",
@@ -72,11 +74,13 @@ export default function AdminDoctorsPage() {
     setName("");
     setSpecialty("");
     reload();
-    window.alert(`پزشک «${name.trim()}» ثبت شد. (نسخه نمایشی)`);
+    setMessage(`پزشک «${doctorName}» ثبت شد. (نسخه نمایشی)`);
+    window.setTimeout(() => setMessage(""), 3000);
   }
 
   return (
     <div className="space-y-8">
+      {message ? <p className="text-sm font-bold text-teal-700">{message}</p> : null}
       <AdminTable headers={["نام", "تخصص", "روزها", "ساعات", "وضعیت"]} empty="پزشکی ثبت نشده.">
         {dentists.map((d) => {
           const statusKey =

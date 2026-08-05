@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { generateCommerceId, mapCommission } from '@/lib/commerce/mappers';
+import { addReferralClubPoints } from '@/lib/club/service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 
 export async function findVisitorByCode(code?: string | null) {
@@ -39,6 +40,12 @@ export async function createCommission(data: {
       amount: baseAmount,
       status: 'pending',
     },
+  });
+
+  await addReferralClubPoints({
+    visitorPhone: visitor.phone,
+    customerPhone: String(data.customerPhone || ''),
+    customerName: data.customerName,
   });
 
   return mapCommission(row);

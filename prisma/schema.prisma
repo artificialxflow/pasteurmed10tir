@@ -29,6 +29,7 @@ model User {
   members            Member[]
   wallets            Wallet[]
   shopOrders         ShopOrder[]
+  clubProfile        ClubProfile?
 }
 
 model PatientProfile {
@@ -628,4 +629,36 @@ model InstallmentPlan {
   @@index([source])
   @@index([status])
   @@index([linkedRequestId])
+}
+
+// —— Phase 5: Club / loyalty ——
+
+model ClubProfile {
+  phone          String            @id
+  userId         String?           @unique
+  user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  points         Int               @default(0)
+  visits         Int               @default(0)
+  referrals      Int               @default(0)
+  referredPhones String[]          @default([])
+  redeemed       Json              @default("[]")
+  brushHistory   String[]          @default([])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  history        ClubHistoryItem[]
+
+  @@index([userId])
+  @@index([points])
+}
+
+model ClubHistoryItem {
+  id           String      @id
+  profilePhone String
+  profile      ClubProfile @relation(fields: [profilePhone], references: [phone], onDelete: Cascade)
+  points       Int
+  reason       String
+  createdAt    DateTime    @default(now())
+
+  @@index([profilePhone])
+  @@index([createdAt])
 }
