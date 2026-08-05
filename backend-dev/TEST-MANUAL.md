@@ -5,8 +5,8 @@
 | # | Path | Steps | Expected | ✓ |
 |---|------|-------|----------|---|
 | 1 | `/account` | موبایل 09126723365 → دریافت کد → کد 00000 + نام → ورود | پنل کاربری | [x] |
-| 2 | `/admin/login` | admin / pasteur1403 | داشبورد `/admin` | [x] |
-| 3 | `/admin/login` | ops / ops1403 | رزروها ✅ — `/admin/access` ❌ | [x] |
+| 2 | `/admin/login` | admin + رمز از `ADMIN-CREDENTIALS.local.md` | داشبورد `/admin` | [x] |
+| 3 | `/admin/login` | ops + رمز از همان فایل | رزروها ✅ — `/admin/access` ❌ | [x] |
 | 4 | `/admin/bookings` | بدون login | redirect به login | [x] |
 | 5 | `/account` | refresh بعد login | هنوز logged in | [x] |
 
@@ -15,7 +15,7 @@
 | # | URL | Steps | Expected | ✓ |
 |---|-----|-------|----------|---|
 | 6 | `https://pasteur.plus/account` | همان فاز 1 | ورود OK | [x] |
-| 7 | `https://pasteur.plus/admin/login` | admin / pasteur1403 | داشبورد | [x] |
+| 7 | `https://pasteur.plus/admin/login` | admin + رمز از فایل محلی | داشبورد | [x] |
 
 ## Env required on server
 
@@ -26,14 +26,12 @@ DATABASE_URL=...internal...
 SESSION_SECRET=...
 ```
 
-## Admin sample accounts
+## Admin accounts
 
-| User | Password | Role |
-|------|----------|------|
-| admin | pasteur1403 | superadmin |
-| ops | ops1403 | ops |
-| content | content1403 | content |
-| finance | finance1403 | finance |
+Usernames: `admin`, `ops`, `content`, `finance`  
+Passwords: **only** in gitignored `ADMIN-CREDENTIALS.local.json` / `.md` (see `ADMIN-CREDENTIALS.example.json`). Never on `/admin/login` UI.
+
+After rotating passwords, run `npx prisma db seed` against the target DB.
 
 ---
 
@@ -107,7 +105,7 @@ Run seed: `npm run db:seed:phase4`
 | 7 | Admin club | `/admin/club` | rows from DB |
 | 8 | Membership modal | `/dental/membership` open preview → click backdrop | modal closes |
 | 9 | Doctors alert | `/admin/doctors` add mock doctor | inline teal message, no `window.alert` |
-| 10 | Reset | `npx tsx scripts/reset-all.ts --confirm` then login admin | data wiped; admin/pasteur1403 still works |
+| 10 | Reset | `npx tsx scripts/reset-all.ts --confirm` then login admin | data wiped; AdminUser rows kept (same passwords) |
 
 Booking → club: pay mock booking → `/club` visits +50 points.
 
