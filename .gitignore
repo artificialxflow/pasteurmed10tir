@@ -34,6 +34,12 @@ yarn-error.log*
 .env*
 !.env.example
 
+# private admin credentials (never commit)
+ADMIN-CREDENTIALS.local.json
+ADMIN-CREDENTIALS.local.md
+ADMIN-CREDENTIALS.local.*
+!ADMIN-CREDENTIALS.example.json
+
 # vercel
 .vercel
 
