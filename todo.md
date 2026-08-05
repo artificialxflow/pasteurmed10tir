@@ -202,7 +202,7 @@
 
 ## فاز ۸ — پنل ادمین (فرانت mock)
 
-- [x] لاگین — `/admin/login` (`admin` / `pasteur1403`)
+- [x] لاگین — `/admin/login` (رمزها فقط در `ADMIN-CREDENTIALS.local.md`)
 - [x] داشبورد — `/admin`
 - [x] رزروها — `/admin/bookings`
 - [x] مشاوره‌ها — `/admin/consultations`
