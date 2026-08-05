@@ -22,7 +22,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 
 Dev patient OTP (when `DEV_OTP_*` set): phone `09126723365`, code `00000`.  
-Admin: `admin` / `pasteur1403`.
+Admin passwords: copy `ADMIN-CREDENTIALS.example.json` → `ADMIN-CREDENTIALS.local.json`, set strong values, then `npm run db:seed`. Never put passwords on `/admin/login` UI.
 
 ## Useful scripts
 
