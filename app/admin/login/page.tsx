@@ -10,8 +10,8 @@ import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("pasteur1403");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -83,16 +83,9 @@ export default function AdminLoginPage() {
             ورود
           </Button>
         </form>
-        <div className="mt-5 rounded-xl border border-cyan-100 bg-cyan-50/70 p-3 text-xs leading-6 text-slate-600">
-          <p className="font-bold text-cyan-900">حساب‌های نمونه:</p>
-          <p>admin / pasteur1403 — مدیر کل</p>
-          <p>ops / ops1403 — منشی</p>
-          <p>content / content1403 — محتوا</p>
-          <p>finance / finance1403 — مالی</p>
-        </div>
         <Link
           href={ROUTES.web.home}
-          className="mt-4 block text-center text-sm text-teal-700 hover:underline"
+          className="mt-6 block text-center text-sm text-teal-700 hover:underline"
         >
           بازگشت به سایت
         </Link>
