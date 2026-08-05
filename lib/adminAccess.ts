@@ -137,11 +137,16 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
   },
 ];
 
+/**
+ * Role/user shells for localStorage prototype + seed metadata.
+ * Real passwords are NOT stored here — see ADMIN-CREDENTIALS.local.json
+ * (gitignored) or ADMIN_PASSWORD_* env vars consumed by prisma/seed.ts.
+ */
 export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-admin',
     username: 'admin',
-    password: 'pasteur1403',
+    password: '',
     displayName: 'مدیر کل',
     roleId: 'superadmin',
     active: true,
@@ -149,7 +154,7 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-ops',
     username: 'ops',
-    password: 'ops1403',
+    password: '',
     displayName: 'منشی',
     roleId: 'ops',
     active: true,
@@ -157,7 +162,7 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-content',
     username: 'content',
-    password: 'content1403',
+    password: '',
     displayName: 'مدیر محتوا',
     roleId: 'content',
     active: true,
@@ -165,7 +170,7 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-finance',
     username: 'finance',
-    password: 'finance1403',
+    password: '',
     displayName: 'مالی',
     roleId: 'finance',
     active: true,
