@@ -192,8 +192,8 @@ Tasks:
 3. lib/prisma.ts — singleton client
 
 4. prisma/seed.ts:
-   - admin / pasteur1403 → superadmin
-   - ops / ops1403, content / content1403, finance / finance1403
+   - admin → superadmin (password from ADMIN-CREDENTIALS.local.json)
+   - ops, content, finance (same file)
    - dev patient: phone 09126723365, name "کاربر تست"
 
 5. API routes (app/api/):
@@ -235,7 +235,7 @@ No real SMS/email during build phase.
 
 کارها:
 - Prisma + جداول User, AdminRole, AdminUser, PatientProfile
-- seed: admin/pasteur1403 + ops/content/finance + بیمار dev با 09126723365
+- seed: admin roles/users from ADMIN-CREDENTIALS.local.json + بیمار dev با 09126723365
 - API: OTP ساختگی (00000) — روی local **و** Runflare وقتی DEV_OTP_* در env باشد
 - حتی با NODE_ENV=production روی سرور زنده OTP mock کار کند
 - GO-LIVE.md: قبل لانچ DEV_OTP حذف شود
@@ -259,22 +259,22 @@ npm run dev
 | # | Path | Input | Expected |
 |---|------|-------|----------|
 | 1 | `/account` | 09126723365, code 00000, name | Profile form opens |
-| 2 | `/admin/login` | admin / pasteur1403 | Dashboard `/admin` |
-| 3 | `/admin/login` | ops / ops1403 | bookings ✅, access ❌ |
+| 2 | `/admin/login` | admin + local credentials file | Dashboard `/admin` |
+| 3 | `/admin/login` | ops + local credentials file | bookings ✅, access ❌ |
 | 4 | `/admin/bookings` (no login) | — | Redirect to login |
 | 5 | Refresh `/account` | — | Still logged in |
 | 6 | `https://pasteur.plus/account` | 09126723365, 00000 | Same on live server (Runflare env) |
-| 7 | `https://pasteur.plus/admin/login` | admin / pasteur1403 | Dashboard on live server |
+| 7 | `https://pasteur.plus/admin/login` | admin + local credentials file | Dashboard on live server |
 
 | # | مسیر | ورودی | انتظار |
 |---|------|-------|--------|
 | 1 | `/account` | 09126723365، کد 00000، نام | فرم پروفایل |
-| 2 | `/admin/login` | admin / pasteur1403 | داشبورد |
-| 3 | `/admin/login` | ops / ops1403 | رزرو ✅، access ❌ |
+| 2 | `/admin/login` | admin + فایل رمز محلی | داشبورد |
+| 3 | `/admin/login` | ops + فایل رمز محلی | رزرو ✅، access ❌ |
 | 4 | `/admin/bookings` بدون login | — | redirect |
 | 5 | refresh `/account` | — | session بماند |
 | 6 | `https://pasteur.plus/account` | 09126723365، 00000 | همان روی سرور زنده |
-| 7 | `https://pasteur.plus/admin/login` | admin / pasteur1403 | داشبورد روی سرور |
+| 7 | `https://pasteur.plus/admin/login` | admin + فایل رمز محلی | داشبورد روی سرور |
 
 ### ✅ Phase 1 complete when / تکمیل فاز ۱
 
