@@ -11,6 +11,12 @@ export interface Institute {
   shortNameFa: string;
   shortNameEn: string;
   address: string;
+  /** Google Maps place / directions URL */
+  mapUrl: string;
+  /** Embeddable Google Maps URL for iframe */
+  mapEmbedUrl: string;
+  latitude: number;
+  longitude: number;
   serviceArea: string;
   phone: string;
   phoneDigits: string;
@@ -315,6 +321,12 @@ export const PASTEUR_DATA = {
     shortNameFa: 'پاستور پلاس',
     shortNameEn: 'Pasteur Plus',
     address: 'تبریز، تقاطع خیابان قطران، خیام اول، خیابان زبردست، درمانگاه شبانه‌روزی پاستور',
+    latitude: 38.066516,
+    longitude: 46.269864,
+    mapUrl:
+      "https://www.google.com/maps/place/38%C2%B003'59.5%22N+46%C2%B016'11.5%22E/@38.066516,46.269864,16z/data=!4m4!3m3!8m2!3d38.066516!4d46.269864",
+    mapEmbedUrl:
+      'https://maps.google.com/maps?q=38.066516,46.269864&z=16&hl=fa&output=embed',
     serviceArea: 'تبریز و حومه',
     phone: '۰۴۱۳۴۴۴۹۳۱۳',
     phoneDigits: '04134449313',
