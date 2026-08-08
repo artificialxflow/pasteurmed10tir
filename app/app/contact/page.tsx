@@ -47,6 +47,24 @@ export default function AppContactPage() {
         <p className="mb-2 font-bold">📍 آدرس درمانگاه</p>
         <p className="text-sm text-slate-500">{i.address}</p>
         <p className="mt-2 text-xs text-slate-500">محدوده خدمات: {i.serviceArea}</p>
+        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+          <iframe
+            title="موقعیت درمانگاه پاستور پلاس روی نقشه"
+            src={i.mapEmbedUrl}
+            className="h-44 w-full"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
+        <a
+          href={i.mapUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 block text-center text-sm font-bold text-cyan-800 underline-offset-4 hover:underline"
+        >
+          مسیریابی در گوگل‌مپ
+        </a>
       </Card>
 
       <div className="grid grid-cols-2 gap-2">
