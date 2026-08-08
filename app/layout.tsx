@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     shortcut: ["/logo.png?v=20260731"],
   },
   other: {
-    enamad: "10168687",
+    enamad: "10209334",
   },
   openGraph: {
     type: "website",
