@@ -177,8 +177,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         </p>
         <p className="mt-2 text-sm text-slate-600">
           {variant === "app"
-            ? "کارشناسان ظرف ۲۴ ساعت پاسخ می‌دهند."
-            : "کارشناسان ما ظرف ۲۴ ساعت برای هماهنگی مشاوره یا ویزیت پاسخ می‌دهند."}
+            ? "کارشناسان ظرف ۶ ساعت پاسخ می‌دهند."
+            : "کارشناسان ما ظرف ۶ ساعت برای هماهنگی مشاوره یا ویزیت پاسخ می‌دهند."}
         </p>
         <p className="mt-3 text-xs font-bold text-teal-700">+۲۰ امتیاز باشگاه ثبت شد</p>
       </Card>
