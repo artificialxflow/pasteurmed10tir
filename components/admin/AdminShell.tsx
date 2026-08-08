@@ -176,6 +176,11 @@ export function AdminShell({
       });
   }, [router, pathname]);
 
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+    router.push(ROUTES.admin.login);
+  }
+
   if (!ready || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
@@ -224,10 +229,7 @@ export function AdminShell({
           <button
             type="button"
             className="w-full rounded-xl border border-red-200 bg-white px-3 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50"
-            onClick={async () => {
-              await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
-              router.push(ROUTES.admin.login);
-            }}
+            onClick={handleLogout}
           >
             خروج
           </button>
@@ -237,15 +239,30 @@ export function AdminShell({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b border-cyan-100/80 bg-white/90 px-4 py-4 backdrop-blur-md sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-bold text-cyan-700 lg:hidden">
                 {session.displayName} · {session.roleName}
               </p>
               <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{heading}</h1>
             </div>
-            <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800">
-              دسترسی بر اساس نقش
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800 sm:inline-flex">
+                دسترسی بر اساس نقش
+              </span>
+              <Link
+                href={ROUTES.web.home}
+                className="rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-xs font-bold text-cyan-800 transition hover:bg-cyan-50 lg:hidden"
+              >
+                سایت
+              </Link>
+              <button
+                type="button"
+                className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50 lg:hidden"
+                onClick={handleLogout}
+              >
+                خروج
+              </button>
+            </div>
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {flatLinks.map((l) => (
