@@ -2,7 +2,9 @@
 
 @font-face {
   font-family: "BYekan";
-  src: url("/fonts/BYekan.ttf") format("truetype");
+  src:
+    url("/fonts/BYekan+.ttf") format("truetype"),
+    url("/fonts/BYekan.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -10,8 +12,20 @@
 
 @font-face {
   font-family: "BYekan";
-  src: url("/fonts/BYekan-Bold.ttf") format("truetype");
+  src:
+    url("/fonts/BYekan+%20Bold.ttf") format("truetype"),
+    url("/fonts/BYekan-Bold.ttf") format("truetype");
   font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BYekan";
+  src:
+    url("/fonts/BYekan+%20Bold.ttf") format("truetype"),
+    url("/fonts/BYekan-Bold.ttf") format("truetype");
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
@@ -60,7 +74,34 @@ body {
     linear-gradient(180deg, #f8fdff 0%, var(--color-surface) 42%, #f8fafc 100%);
   color: var(--foreground);
   font-family: "BYekan", Tahoma, sans-serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+h1 {
+  font-weight: 800;
+}
+
+h2,
+h3 {
+  font-weight: 700;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* Web mobile bottom nav */
