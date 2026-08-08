@@ -9,17 +9,16 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 const navItems = [
-  { href: ROUTES.web.home, label: "صفحه اصلی", id: "home" },
+  { href: ROUTES.web.home, label: "خانه", id: "home" },
   { href: ROUTES.web.shop, label: "تجهیزات", id: "shop" },
   { href: ROUTES.web.gallery, label: "گالری", id: "gallery" },
   { href: ROUTES.web.club, label: "باشگاه", id: "club" },
   { href: ROUTES.web.dental, label: "دندانپزشکی", id: "dental" },
-  { href: ROUTES.web.consultation, label: "مشاوره و ویزیت", id: "consultation" },
-  { href: ROUTES.web.account, label: "پنل کاربری", id: "account" },
+  { href: ROUTES.web.consultation, label: "مشاوره", id: "consultation" },
+  { href: ROUTES.web.account, label: "کاربری", id: "account" },
   { href: ROUTES.web.help, label: "آموزش", id: "help" },
-  { href: ROUTES.web.contact, label: "تماس با ما", id: "contact" },
+  { href: ROUTES.web.contact, label: "تماس", id: "contact" },
   { href: ROUTES.web.partners, label: "همکاری", id: "partners" },
-  { href: ROUTES.admin.login, label: "پنل ادمین", id: "admin" },
 ];
 
 const bottomNav = [
@@ -41,7 +40,6 @@ function activeId(pathname: string) {
   if (pathname.startsWith("/gallery")) return "gallery";
   if (pathname.startsWith("/contact")) return "contact";
   if (pathname.startsWith("/partners")) return "partners";
-  if (pathname.startsWith("/admin")) return "admin";
   return "";
 }
 
@@ -84,23 +82,25 @@ export function SiteHeader() {
           </Link>
 
           <nav
-            className="hidden max-w-[min(100%,52rem)] flex-wrap items-center justify-end gap-1 rounded-full border border-slate-100 bg-slate-50/80 p-1 lg:flex"
+            className="hidden min-w-0 flex-1 items-center justify-end lg:flex"
             aria-label="منوی اصلی"
           >
-            {navItems.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={cn(
-                  "rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors xl:px-3 xl:text-sm",
-                  active === item.id
-                    ? "border border-cyan-300 bg-cyan-100 text-cyan-800"
-                    : "text-slate-600 hover:bg-white hover:text-cyan-700",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto rounded-full border border-cyan-100/80 bg-gradient-to-l from-slate-50 to-cyan-50/50 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)]">
+              {navItems.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={cn(
+                    "shrink-0 rounded-full px-2 py-1.5 text-[0.7rem] font-bold tracking-tight transition-all xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
+                    active === item.id
+                      ? "border border-cyan-300 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
+                      : "text-slate-600 hover:bg-white/90 hover:text-cyan-800",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </nav>
 
           <button
