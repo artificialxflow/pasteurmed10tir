@@ -196,6 +196,14 @@ export function SiteFooter() {
         <div>
           <p className="mb-3 font-bold text-slate-900">تماس</p>
           <p className="text-sm leading-7 text-slate-600">{institute.address}</p>
+          <a
+            href={institute.mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-block text-xs font-bold text-cyan-800 underline-offset-4 hover:underline"
+          >
+            موقعیت روی گوگل‌مپ
+          </a>
           <p className="mt-2 text-sm font-bold text-primary-dark">
             <a href={`tel:${institute.phoneDigits}`}>{institute.phone}</a>
           </p>
