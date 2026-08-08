@@ -204,8 +204,30 @@ export function SiteFooter() {
           </Link>
         </div>
       </div>
-      <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-500">
-        © پاستور پلاس — pasteur.plus
+      <div className="border-t border-slate-100 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row sm:gap-6">
+          <p className="order-2 text-center text-xs text-slate-500 sm:order-1 sm:text-right">
+            © پاستور پلاس — pasteur.plus
+          </p>
+          {/* اینماد: بدون rel=noopener/noreferrer طبق راهنمای enamad */}
+          <a
+            referrerPolicy="origin"
+            target="_blank"
+            href="https://trustseal.enamad.ir/?id=770078&Code=xt2h10Wh3qSFB90zBOrIUnSfOJ5MhY3l"
+            className="order-1 inline-flex shrink-0 items-center justify-center sm:order-2"
+            title="نماد اعتماد الکترونیکی"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- اینماد الزام به img رسمی خود دارد */}
+            <img
+              referrerPolicy="origin"
+              src="https://trustseal.enamad.ir/logo.aspx?id=770078&Code=xt2h10Wh3qSFB90zBOrIUnSfOJ5MhY3l"
+              alt="نماد اعتماد الکترونیکی"
+              className="h-14 w-auto cursor-pointer sm:h-16"
+              style={{ cursor: "pointer" }}
+              {...{ code: "xt2h10Wh3qSFB90zBOrIUnSfOJ5MhY3l" }}
+            />
+          </a>
+        </div>
       </div>
     </footer>
   );
