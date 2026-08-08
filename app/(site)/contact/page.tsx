@@ -74,10 +74,25 @@ export default function ContactPage() {
               <p className="mt-2 leading-8 text-slate-600">{institute.address}</p>
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+            <iframe
+              title="موقعیت درمانگاه پاستور پلاس روی نقشه"
+              src={institute.mapEmbedUrl}
+              className="h-56 w-full sm:h-72"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button href={`tel:${institute.phoneDigits}`}>تماس فوری</Button>
             <Button href={whatsappUrl} variant="accent">
               ارسال واتساپ
+            </Button>
+            <Button href={institute.mapUrl} variant="outline">
+              مسیریابی در گوگل‌مپ
             </Button>
             <Link
               href={ROUTES.web.partners}
