@@ -130,6 +130,11 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   async function save(e: FormEvent) {
     e.preventDefault();
     if (!profile) return;
+    const nid = nationalId.trim();
+    if (!nid) {
+      setMessage("کد ملی الزامی است.");
+      return;
+    }
     const percent = clampFranchisePercent(Number(franchise));
     setMessage("");
     try {
@@ -139,7 +144,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          nationalId: nationalId.trim() || undefined,
+          nationalId: nid,
           baseInsuranceId: baseId || undefined,
           complementaryInsuranceId: compId || undefined,
           franchisePercent: percent,
@@ -275,8 +280,15 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <FormLabel>کد ملی (اختیاری)</FormLabel>
-            <FormInput value={nationalId} onChange={(e) => setNationalId(e.target.value)} />
+            <FormLabel>کد ملی</FormLabel>
+            <FormInput
+              value={nationalId}
+              onChange={(e) => setNationalId(e.target.value)}
+              required
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="۱۰ رقم"
+            />
           </div>
           <div>
             <FormLabel>فرانشیز (درصد)</FormLabel>
