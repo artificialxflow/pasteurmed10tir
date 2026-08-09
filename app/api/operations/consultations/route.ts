@@ -50,5 +50,25 @@ export async function POST(request: Request) {
     },
   });
 
+  void import('@/lib/sms/client').then(async ({ sendConsultationSms, isSmsConfigured }) => {
+    if (!isSmsConfigured()) return;
+    try {
+      const recent = await prisma.consultation.count({
+        where: {
+          patientPhone,
+          createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+          id: { not: row.id },
+        },
+      });
+      if (recent > 0) {
+        console.info('[sms] consultation skipped (recent duplicate)', patientPhone);
+        return;
+      }
+      await sendConsultationSms(patientPhone, row.id);
+    } catch (e) {
+      console.error('[sms] consultation', e);
+    }
+  });
+
   return NextResponse.json({ item: mapConsultation(row) }, { status: 201 });
 }
