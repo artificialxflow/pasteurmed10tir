@@ -46,8 +46,10 @@ export async function PATCH(request: Request) {
     where: { userId: user.id },
     data: {
       status,
-      reviewNote: body?.reviewNote?.trim() || null,
       reviewedAt: new Date(),
+      ...(body?.reviewNote !== undefined
+        ? { reviewNote: body.reviewNote.trim() || null }
+        : {}),
     },
   });
 
