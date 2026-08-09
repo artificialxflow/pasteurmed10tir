@@ -9,9 +9,11 @@ type FacilityRequest = Record<string, unknown> & {
   id?: string;
   name?: string;
   phone?: string;
+  nationalId?: string;
   amount?: string | number;
   description?: string;
   status?: string;
+  zohalStatus?: string;
 };
 
 export default function AdminFacilitiesPage() {
@@ -35,21 +37,28 @@ export default function AdminFacilitiesPage() {
       .catch((e: Error) => setError(e.message));
   }
 
+  function zohalLabel(s?: string) {
+    if (s === "passed") return "زحل: تأیید";
+    if (s === "failed") return "زحل: رد شاهکار";
+    if (s === "error") return "زحل: خطا";
+    if (s === "skipped") return "زحل: —";
+    return s ? `زحل: ${s}` : "زحل: —";
+  }
+
   return (
     <div className="space-y-4">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <AdminTable
-        headers={["نام", "موبایل", "مبلغ تقریبی", "توضیحات", "وضعیت", "عملیات"]}
+        headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "وضعیت", "عملیات"]}
         empty="درخواست تسهیلاتی ثبت نشده است."
       >
         {items.map((r) => (
           <tr key={String(r.id)} className="border-t border-slate-100">
             <td className="px-4 py-3">{String(r.name || "—")}</td>
             <td className="px-4 py-3">{String(r.phone || "—")}</td>
+            <td className="px-4 py-3 font-mono text-xs">{String(r.nationalId || "—")}</td>
             <td className="px-4 py-3">{String(r.amount || "—")}</td>
-            <td className="max-w-xs truncate px-4 py-3 text-xs">
-              {String(r.description || "—")}
-            </td>
+            <td className="px-4 py-3 text-xs">{zohalLabel(r.zohalStatus)}</td>
             <td className="px-4 py-3">
               <AdminBadge tone={r.status === "approved" ? "success" : "warn"}>
                 {r.status === "approved"
