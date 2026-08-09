@@ -2,9 +2,11 @@ import { jsonError } from '@/lib/auth/api-utils';
 import { createCommission } from '@/lib/commerce/commission-service';
 import { addClubPoints, incrementClubVisits } from '@/lib/club/service';
 import { generateOperationId, mapBooking } from '@/lib/operations/mappers';
+import { nextAppointmentAt } from '@/lib/operations/appointment-time';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
+import { isSmsConfigured, sendBookingSms } from '@/lib/sms/client';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -47,6 +49,7 @@ export async function POST(request: Request) {
   const referralCode = body.referralCode ? String(body.referralCode) : null;
   const patientName = String(body.patientName || '').trim() || null;
   const amount = Number(body.amount || 0);
+  const appointmentAt = nextAppointmentAt(day, timeValue);
 
   const row = await prisma.booking.create({
     data: {
@@ -69,6 +72,7 @@ export async function POST(request: Request) {
       dateLabel:
         body.dateLabel ? String(body.dateLabel) : new Date().toLocaleDateString('fa-IR'),
       referralCode,
+      appointmentAt,
     },
   });
 
@@ -85,6 +89,15 @@ export async function POST(request: Request) {
 
   await addClubPoints(patientPhone, 50, 'رزرو نوبت');
   await incrementClubVisits(patientPhone);
+
+  if (isSmsConfigured()) {
+    const timeLabel =
+      row.timeLabel || (row.day ? `${row.day} ${row.timeValue ?? ''}` : '—');
+    const serviceLabel = row.typeLabel || row.specialty || 'نوبت دندانپزشکی';
+    void sendBookingSms(patientPhone, timeLabel, serviceLabel).catch((e) =>
+      console.error('[sms] booking', e),
+    );
+  }
 
   return NextResponse.json({ booking: mapBooking(row) }, { status: 201 });
 }
