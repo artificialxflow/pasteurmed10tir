@@ -53,30 +53,53 @@ async function callInquiry(
   }
 }
 
+async function callInquiryFirstOk(
+  methods: string[],
+  payload: Record<string, unknown>,
+): Promise<ZohalResult> {
+  let last: ZohalResult = { ok: false, error: 'متد زحل یافت نشد.' };
+  for (const method of methods) {
+    const result = await callInquiry(method, payload);
+    if (result.ok) return result;
+    last = result;
+    // 404 / unknown method → try next slug
+    const msg = result.error.toLowerCase();
+    const retryable =
+      msg.includes('404') ||
+      msg.includes('not found') ||
+      msg.includes('یافت نشد') ||
+      msg.includes('unknown');
+    if (!retryable) return result;
+  }
+  return last;
+}
+
 export async function zohalShahkar(nationalCode: string, mobile: string): Promise<ZohalResult> {
-  return callInquiry('shahkar', {
+  return callInquiryFirstOk(['shahkar'], {
     national_code: nationalCode,
     mobile,
   });
 }
 
 export async function zohalNationalIdentity(nationalCode: string): Promise<ZohalResult> {
-  return callInquiry('national_identity_inquiry', {
-    national_code: nationalCode,
-  });
+  return callInquiryFirstOk(
+    ['national_identity_inquiry', 'national-identity', 'identity_inquiry'],
+    { national_code: nationalCode },
+  );
 }
 
-/** Method name may vary in panel — try common slug */
 export async function zohalCreditInquiry(nationalCode: string): Promise<ZohalResult> {
-  return callInquiry('credit_inquiry', {
-    national_code: nationalCode,
-  });
+  return callInquiryFirstOk(
+    ['credit_inquiry', 'credit-scoring', 'credit_score', 'person_credit'],
+    { national_code: nationalCode },
+  );
 }
 
 export async function zohalBouncedCheque(nationalCode: string): Promise<ZohalResult> {
-  return callInquiry('bounced_cheque', {
-    national_code: nationalCode,
-  });
+  return callInquiryFirstOk(
+    ['bounced_cheque', 'returned_cheque', 'cheque_inquiry', 'bounced-cheques'],
+    { national_code: nationalCode },
+  );
 }
 
 export function shahkarMatched(data: unknown): boolean | null {
