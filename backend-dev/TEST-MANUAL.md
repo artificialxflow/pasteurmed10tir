@@ -111,4 +111,18 @@ Booking → club: pay mock booking → `/club` visits +50 points.
 
 Run seed: `npm run db:seed:phase5`
 
+---
+
+## Phase 6 — SMS OTP + یادآور + Zohal (todo-v6)
+
+| # | Path | Steps | Expected | ✓ |
+|---|------|-------|----------|---|
+| 1 | `/account` | ورود با `DEV_OTP` (هنوز فعال) | OK | [ ] |
+| 2 | `/account` | شماره واقعی غیر-DEV → دریافت SMS کد ۵ رقمی | OTP می‌آید؛ ورود موفق | [ ] |
+| 3 | فرم مشاوره | ثبت موفق | SMS با کد پیگیری | [ ] |
+| 4 | رزرو نوبت | تأیید | SMS زمان + خدمت | [ ] |
+| 5 | تسهیلات | بدون کد ملی / کد نامعتبر | رد | [ ] |
+| 6 | Cron | `POST /api/cron/sms-reminders` + Bearer CRON_SECRET | JSON sent24/sent2 | [ ] |
+
+تا وقتی SMS پایدار نشده، `DEV_OTP_*` حذف نشود.
 
