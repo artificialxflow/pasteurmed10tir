@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       credit: credit.ok ? credit.data : { error: credit.error },
       bouncedCheque: bounced.ok ? bounced.data : { error: bounced.error },
       shahkarMatched: matched,
-    };
+    } as Prisma.InputJsonValue;
 
     if (!shahkar.ok) {
       zohalStatus = 'error';
