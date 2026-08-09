@@ -91,12 +91,23 @@ export async function POST(request: Request) {
   await incrementClubVisits(patientPhone);
 
   if (isSmsConfigured()) {
-    const timeLabel =
-      row.timeLabel || (row.day ? `${row.day} ${row.timeValue ?? ''}` : '—');
-    const serviceLabel = row.typeLabel || row.specialty || 'نوبت دندانپزشکی';
-    void sendBookingSms(patientPhone, timeLabel, serviceLabel).catch((e) =>
-      console.error('[sms] booking', e),
-    );
+    const recent = await prisma.booking.count({
+      where: {
+        patientPhone,
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) },
+        id: { not: row.id },
+      },
+    });
+    if (recent > 0) {
+      console.info('[sms] booking skipped (recent duplicate)', patientPhone);
+    } else {
+      const timeLabel =
+        row.timeLabel || (row.day ? `${row.day} ${row.timeValue ?? ''}` : '—');
+      const serviceLabel = row.typeLabel || row.specialty || 'نوبت دندانپزشکی';
+      void sendBookingSms(patientPhone, timeLabel, serviceLabel).catch((e) =>
+        console.error('[sms] booking', e),
+      );
+    }
   }
 
   return NextResponse.json({ booking: mapBooking(row) }, { status: 201 });
