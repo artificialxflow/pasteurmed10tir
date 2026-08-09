@@ -163,9 +163,11 @@ export function mapFacilityRequest(row: FacilityRequest) {
     id: row.id,
     name: row.name,
     phone: row.phone,
+    nationalId: row.nationalId ?? undefined,
     amount: row.amount,
     description: row.description ?? undefined,
     status: row.status,
+    zohalStatus: row.zohalStatus ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
 }
