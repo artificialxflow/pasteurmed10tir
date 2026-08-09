@@ -14,30 +14,40 @@ type FacilityRequest = Record<string, unknown> & {
   description?: string;
   status?: string;
   zohalStatus?: string;
+  zohalSummary?: string;
+  zohalShahkarMatched?: boolean | null;
 };
 
 export default function AdminFacilitiesPage() {
   const [items, setItems] = useState<FacilityRequest[]>([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   function reload() {
-    void fetchAdminCommerce<{ items: FacilityRequest[] }>("/api/admin/commerce/facilities")
+    return fetchAdminCommerce<{ items: FacilityRequest[] }>("/api/admin/commerce/facilities")
       .then((data) => setItems(data.items))
       .catch((e: Error) => setError(e.message));
   }
 
   useEffect(() => {
-    reload();
+    void reload();
   }, []);
 
   function updateStatus(id: string | undefined, status: string) {
-    if (!id) return;
+    if (!id || busyId) return;
+    setError("");
+    setSuccess("");
+    setBusyId(id);
     void patchAdminCommerce("/api/admin/commerce/facilities", { id, status })
       .then(() => reload())
-      .catch((e: Error) => setError(e.message));
+      .then(() => setSuccess("وضعیت درخواست به‌روز شد."))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
   }
 
-  function zohalLabel(s?: string) {
+  function zohalLabel(r: FacilityRequest) {
+    const s = r.zohalStatus;
     if (s === "passed") return "زحل: تأیید";
     if (s === "failed") return "زحل: رد شاهکار";
     if (s === "error") return "زحل: خطا";
@@ -47,20 +57,43 @@ export default function AdminFacilitiesPage() {
 
   return (
     <div className="space-y-4">
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {error ? (
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+          {success}
+        </p>
+      ) : null}
+      <p className="text-sm leading-7 text-slate-600">
+        درخواست تسهیلات پس از استعلام زحل (شاهکار، هویت، اعتبار، چک برگشتی) اینجا قابل تأیید یا رد است.
+      </p>
       <AdminTable
-        headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "وضعیت", "عملیات"]}
+        headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "خلاصه استعلام", "وضعیت", "عملیات"]}
         empty="درخواست تسهیلاتی ثبت نشده است."
       >
         {items.map((r) => (
-          <tr key={String(r.id)} className="border-t border-slate-100">
+          <tr key={String(r.id)} className="border-t border-slate-100 align-top">
             <td className="px-4 py-3">{String(r.name || "—")}</td>
-            <td className="px-4 py-3">{String(r.phone || "—")}</td>
+            <td className="px-4 py-3 font-mono text-xs">{String(r.phone || "—")}</td>
             <td className="px-4 py-3 font-mono text-xs">{String(r.nationalId || "—")}</td>
             <td className="px-4 py-3">{String(r.amount || "—")}</td>
-            <td className="px-4 py-3 text-xs">{zohalLabel(r.zohalStatus)}</td>
+            <td className="px-4 py-3 text-xs font-medium">{zohalLabel(r)}</td>
+            <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
+              {r.zohalSummary || "—"}
+            </td>
             <td className="px-4 py-3">
-              <AdminBadge tone={r.status === "approved" ? "success" : "warn"}>
+              <AdminBadge
+                tone={
+                  r.status === "approved"
+                    ? "success"
+                    : r.status === "rejected"
+                      ? "danger"
+                      : "warn"
+                }
+              >
                 {r.status === "approved"
                   ? "تأیید شده"
                   : r.status === "rejected"
@@ -71,6 +104,7 @@ export default function AdminFacilitiesPage() {
             <td className="px-4 py-3">
               <FormSelect
                 className="py-1 text-xs"
+                disabled={busyId === r.id}
                 value={String(r.status || "pending")}
                 onChange={(e) => updateStatus(r.id ? String(r.id) : undefined, e.target.value)}
               >
