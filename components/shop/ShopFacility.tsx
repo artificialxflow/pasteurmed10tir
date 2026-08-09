@@ -14,6 +14,7 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
   const [isVip, setIsVip] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [nationalId, setNationalId] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
@@ -32,9 +33,14 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("نام و موبایل را کامل وارد کنید");
       return;
     }
+    if (nationalId.replace(/\D/g, "").length !== 10) {
+      setMessage("کد ملی ۱۰ رقمی الزامی است");
+      return;
+    }
     void createFacilityRequestApi({
       name: name.trim(),
       phone: phone.trim(),
+      nationalId: nationalId.trim(),
       amount: amount.trim(),
       description: note.trim(),
     })
@@ -85,6 +91,17 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
           required
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
+        />
+      </div>
+      <div>
+        <FormLabel>کد ملی</FormLabel>
+        <FormInput
+          required
+          inputMode="numeric"
+          maxLength={10}
+          value={nationalId}
+          onChange={(e) => setNationalId(e.target.value)}
+          placeholder="برای اعتبارسنجی الزامی است"
         />
       </div>
       <div>
