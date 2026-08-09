@@ -159,6 +159,29 @@ export function mapCommission(row: Commission) {
 }
 
 export function mapFacilityRequest(row: FacilityRequest) {
+  const payload = row.zohalPayload;
+  let zohalSummary: string | undefined;
+  let zohalShahkarMatched: boolean | null | undefined;
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const p = payload as Record<string, unknown>;
+    if (typeof p.shahkarMatched === 'boolean') zohalShahkarMatched = p.shahkarMatched;
+    const parts: string[] = [];
+    if (typeof p.shahkarMatched === 'boolean') {
+      parts.push(p.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
+    }
+    if (p.credit && typeof p.credit === 'object') {
+      const c = p.credit as Record<string, unknown>;
+      if (c.error) parts.push(`اعتبار: خطا`);
+      else parts.push('اعتبار: دریافت شد');
+    }
+    if (p.bouncedCheque && typeof p.bouncedCheque === 'object') {
+      const b = p.bouncedCheque as Record<string, unknown>;
+      if (b.error) parts.push('چک: خطا');
+      else parts.push('چک: دریافت شد');
+    }
+    if (parts.length) zohalSummary = parts.join(' · ');
+  }
+
   return {
     id: row.id,
     name: row.name,
@@ -168,6 +191,8 @@ export function mapFacilityRequest(row: FacilityRequest) {
     description: row.description ?? undefined,
     status: row.status,
     zohalStatus: row.zohalStatus ?? undefined,
+    zohalShahkarMatched,
+    zohalSummary,
     createdAt: row.createdAt.toISOString(),
   };
 }
