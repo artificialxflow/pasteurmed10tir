@@ -47,6 +47,18 @@ model PatientProfile {
   updatedAt                DateTime      @updatedAt
 }
 
+model OtpChallenge {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}
+
 model AdminRole {
   id          String      @id
   name        String
@@ -252,6 +264,9 @@ model Booking {
   status               BookingStatus @default(confirmed)
   dateLabel            String?
   referralCode         String?
+  appointmentAt        DateTime?
+  reminder24Sent       Boolean       @default(false)
+  reminder2Sent        Boolean       @default(false)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   reminders            Reminder[]
@@ -260,6 +275,7 @@ model Booking {
   @@index([patientPhone])
   @@index([status])
   @@index([doctorId, day, type])
+  @@index([appointmentAt])
 }
 
 model Consultation {
@@ -597,15 +613,18 @@ model Commission {
 }
 
 model FacilityRequest {
-  id          String                @id
-  name        String
-  phone       String
-  amount      String                @default("")
-  amountNum   Int                   @default(0)
-  description String?
-  status      FacilityRequestStatus @default(pending)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  id           String                @id
+  name         String
+  phone        String
+  nationalId   String?
+  amount       String                @default("")
+  amountNum    Int                   @default(0)
+  description  String?
+  status       FacilityRequestStatus @default(pending)
+  zohalStatus  String?
+  zohalPayload Json?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
   @@index([phone])
   @@index([status])
