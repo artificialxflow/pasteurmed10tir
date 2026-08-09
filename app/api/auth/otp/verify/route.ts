@@ -1,5 +1,5 @@
 import { mapDbToPatientProfile } from '@/lib/auth/patient-db';
-import { validateDevOtpCode, validateDevOtpSend } from '@/lib/auth/otp';
+import { verifyOtpCode } from '@/lib/auth/otp-service';
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { setPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -20,11 +20,8 @@ export async function POST(request: Request) {
   if (!name) return jsonError('نام را وارد کنید.');
   if (!code) return jsonError('کد تأیید را وارد کنید.');
 
-  const sendCheck = validateDevOtpSend(phone);
-  if (!sendCheck.ok) return jsonError(sendCheck.error, 503);
-
-  const codeCheck = validateDevOtpCode(code);
-  if (!codeCheck.ok) return jsonError(codeCheck.error);
+  const check = await verifyOtpCode(phone, code);
+  if (!check.ok) return jsonError(check.error);
 
   const user = await prisma.user.upsert({
     where: { phone },
