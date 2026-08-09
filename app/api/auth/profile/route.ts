@@ -3,6 +3,7 @@ import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { getPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { clampFranchisePercent } from '@/lib/patient';
+import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import { NextResponse } from 'next/server';
 
 type Body = {
@@ -31,6 +32,13 @@ export async function PATCH(request: Request) {
     body.franchisePercent ?? user.profile.franchisePercent,
   );
 
+  const nationalId = normalizeNationalId(
+    body.nationalId !== undefined ? String(body.nationalId) : user.profile.nationalId || '',
+  );
+  if (!nationalId || !isValidNationalId(nationalId)) {
+    return jsonError('کد ملی معتبر الزامی است.');
+  }
+
   const insuranceChanged =
     (body.baseInsuranceId !== undefined &&
       body.baseInsuranceId !== user.profile.baseInsuranceId) ||
@@ -47,7 +55,7 @@ export async function PATCH(request: Request) {
   await prisma.patientProfile.update({
     where: { userId: user.id },
     data: {
-      nationalId: body.nationalId?.trim() || null,
+      nationalId,
       baseInsuranceId: body.baseInsuranceId || null,
       complementaryInsuranceId: body.complementaryInsuranceId || null,
       franchisePercent,
