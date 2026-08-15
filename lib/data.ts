@@ -385,6 +385,15 @@ export const PASTEUR_DATA = {
       image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&h=400&fit=crop',
       color: 'amber',
     },
+    {
+      id: 'surgery',
+      title: 'جراحی',
+      emoji: '🔪',
+      description: 'مشاوره پیش از عمل و بررسی نیاز به جراحی',
+      href: '/medical/specialty',
+      image: 'https://images.unsplash.com/photo-1551190822-a933c784bdaf?w=600&h=400&fit=crop',
+      color: 'blue',
+    },
   ],
 
   stats: [

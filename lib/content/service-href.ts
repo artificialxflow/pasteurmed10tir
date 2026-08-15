@@ -1,6 +1,7 @@
 const HREF_RULES: { pattern: RegExp; href: string }[] = [
   { pattern: /لیزر|laser/i, href: '/laser' },
   { pattern: /دندان|dental/i, href: '/dental' },
+  { pattern: /جراح|surgery/i, href: '/medical/specialty' },
   { pattern: /پرستار|nursing/i, href: '/nursing' },
   { pattern: /پزشک|medical|doctor/i, href: '/medical' },
   { pattern: /فروش|shop|محصول/i, href: '/shop' },
