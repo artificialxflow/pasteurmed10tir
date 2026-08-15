@@ -10,6 +10,7 @@ import {
   resolveFranchisePercent,
 } from "@/lib/patient";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
+import { startZibalPaymentApi } from "@/lib/payment/zibal-client";
 import { fetchPublic } from "@/lib/content/client";
 import {
   createInsuranceInquiryApi,
@@ -268,20 +269,14 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
   const onPay = () => {
     if (!pending || paying) return;
     setPaying(true);
-    window.setTimeout(() => {
-      void PaymentFlow.completePaymentAsync(pending)
-        .then(() => router.push(PaymentFlow.defaultSuccessHref(pending)))
-        .catch((e) => {
-          setNote(e instanceof Error ? e.message : "پرداخت ناموفق");
-          setPaying(false);
-        });
-    }, 1500);
-  };
-
-  const onFail = () => {
-    if (!pending) return;
-    PaymentFlow.markPaymentFailed(pending);
-    router.push(`${basePath}/failed`);
+    void startZibalPaymentApi({ pending, basePath })
+      .then(({ redirectUrl }) => {
+        window.location.href = redirectUrl;
+      })
+      .catch((e) => {
+        setNote(e instanceof Error ? e.message : 'اتصال به درگاه ناموفق');
+        setPaying(false);
+      });
   };
 
   const onCancel = () => {
@@ -379,15 +374,12 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
 
       {!app ? (
         <Card className="mb-6 border-blue-200 bg-blue-50 p-4 text-sm leading-7 text-blue-800" hover={false}>
-          🔒 اتصال امن به درگاه پرداخت — نسخه نمایشی فرانت.
+          🔒 پرداخت امن از طریق درگاه زیبال — پس از تأیید، به بانک منتقل می‌شوید.
         </Card>
       ) : null}
 
       <Button onClick={onPay} disabled={paying} className="mb-3 w-full py-3 text-base">
-        {paying ? "در حال اتصال به درگاه..." : app ? "پرداخت موفق (نمایشی)" : "شبیه‌سازی پرداخت موفق"}
-      </Button>
-      <Button variant="danger" onClick={onFail} disabled={paying} className="mb-2 w-full">
-        {app ? "پرداخت ناموفق" : "شبیه‌سازی پرداخت ناموفق"}
+        {paying ? "در حال اتصال به درگاه..." : "پرداخت و انتقال به درگاه"}
       </Button>
       {!app ? (
         <button

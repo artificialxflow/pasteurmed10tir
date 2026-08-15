@@ -681,3 +681,23 @@ model ClubHistoryItem {
   @@index([profilePhone])
   @@index([createdAt])
 }
+
+model PaymentIntent {
+  id            String    @id
+  trackId       String?   @unique
+  amountRial    Int
+  amountToman   Int
+  status        String    @default("pending")
+  payload       Json
+  resultPayload Json?
+  successPath   String
+  failPath      String
+  basePath      String    @default("/dental")
+  refNumber     String?
+  failureReason String?
+  createdAt     DateTime  @default(now())
+  paidAt        DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}

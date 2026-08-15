@@ -2,6 +2,11 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import {
+  applyPaymentResultToStorage,
+  fetchZibalPaymentResultApi,
+  getPaymentIntentIdFromSearch,
+} from "@/lib/payment/zibal-client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
@@ -18,6 +23,17 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const intentId = getPaymentIntentIdFromSearch(window.location.search);
+    if (intentId) {
+      void fetchZibalPaymentResultApi(intentId)
+        .then((result) => {
+          applyPaymentResultToStorage(result.payment as Record<string, unknown>);
+          setPayment(result.payment as LastPayment);
+        })
+        .catch(() => setPayment(PasteurStorage.getLastPayment()))
+        .finally(() => setReady(true));
+      return;
+    }
     setPayment(PasteurStorage.getLastPayment());
     setReady(true);
   }, []);
@@ -37,7 +53,7 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
 
   let title = "پرداخت با موفقیت انجام شد!";
   let desc = "اطلاعات شما ثبت شد و کارشناسان پاستور پلاس پیگیری می‌کنند.";
-  let badge = "پرداخت نمایشی با موفقیت ثبت شد.";
+  let badge = "پرداخت با موفقیت ثبت شد.";
   let primaryLabel = "رزرو جدید";
   let primaryHref = `${basePath}/general`;
   let showReminder = false;
@@ -146,6 +162,16 @@ export function PaymentFailed({ basePath }: { basePath: DentalBasePath }) {
   const [payment, setPayment] = useState<LastPayment>(null);
 
   useEffect(() => {
+    const intentId = getPaymentIntentIdFromSearch(window.location.search);
+    if (intentId) {
+      void fetchZibalPaymentResultApi(intentId)
+        .then((result) => {
+          applyPaymentResultToStorage(result.payment as Record<string, unknown>);
+          setPayment(result.payment as LastPayment);
+        })
+        .catch(() => setPayment(PasteurStorage.getLastPayment()));
+      return;
+    }
     setPayment(PasteurStorage.getLastPayment());
   }, []);
 
