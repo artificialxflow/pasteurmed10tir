@@ -1,5 +1,5 @@
 /**
- * پرداخت mock — پاستور پلاس
+ * پرداخت — پاستور پلاس (زیبال + fallback mock)
  */
 import { PasteurStorage, type Booking } from './storage';
 import {

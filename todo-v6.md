@@ -1,184 +1,121 @@
 # TODO v6 — SMS + Zohal + Go-Live prep
 
 سایت: `https://pasteur.plus`  
-تاریخ شروع برنامه: ۱۴۰۵ / ۲۰۲۶-۰۸  
-آخرین به‌روزرسانی وضعیت: ۲۰۲۶-۰۸-۰۹
+آخرین به‌روزرسانی: ۲۰۲۶-۰۸-۰۹
 
-پیش‌نیاز انجام‌شده:
+پیش‌نیاز:
 
-- [x] پترن‌های هاست ایران / payamak-panel تأیید شده‌اند
-- [x] Body IDها در `.env.local` و Runflare ست شده‌اند
-- [x] `ZOHAL_TOKEN` / `ZOHAL_BASE_URL` در env ست شده‌اند
-- [x] `DEV_OTP_*` هنوز برای تست نگه داشته شود تا SMS پایدار شود
-- [x] Deploy کد SMS/OTP/Zohal روی Runflare
-- [x] OTP واقعی روی لایو: پیامک کد تأیید رسید و ورود انجام شد
+- [x] پترن‌های SMS تأیید + env روی Runflare
+- [x] Zohal env روی سرور
+- [x] Deploy + OTP واقعی لایو
+- [x] تسهیلات + زحل لایو تست شد
+- [x] تأیید کاربری `/admin/patients` لایو تست شد
+- [x] `DEV_OTP_*` عمداً هنوز روی سرور مانده تا Go-Live بند ۴
 
-**نام‌گذاری:** این فایل جدا از `backend-dev/TODO-v5.md` (باشگاه/فاز ۵) است.
-
-مستندات پنل SMS: https://docs.payamak-panel.com/  
-Base REST پیشنهادی: `https://rest.payamak-panel.com`
+جزئیات اجرایی Go-Live: **`backend-dev/GO-LIVE.md`**
 
 ---
 
-## Body ID مرجع (پترن‌های تأیید‌شده)
+## Body ID مرجع
 
-| کاربرد | env | bodyId | متغیرها |
-|--------|-----|--------|---------|
-| OTP ورود | `SMS_OTP_BODY_ID` | `514428` | `{0}` = کد |
-| یادآور ۲۴س / فردا | `SMS_REMINDER_24H_BODY_ID` | `514430` | `{0}` زمان، `{1}` خدمت |
-| یادآور ۲ ساعت | `SMS_REMINDER_2H_BODY_ID` | `514431` | `{0}` زمان، `{1}` خدمت |
-| تأیید رزرو | `SMS_BOOKING_BODY_ID` | `514432` | `{0}` زمان، `{1}` خدمت |
-| ثبت مشاوره | `SMS_CONSULTATION_BODY_ID` | `514436` | `{0}` کد پیگیری |
+| کاربرد | env | bodyId |
+|--------|-----|--------|
+| OTP | `SMS_OTP_BODY_ID` | `514428` |
+| یادآور ۲۴س | `SMS_REMINDER_24H_BODY_ID` | `514430` |
+| یادآور ۲س | `SMS_REMINDER_2H_BODY_ID` | `514431` |
+| رزرو | `SMS_BOOKING_BODY_ID` | `514432` |
+| مشاوره | `SMS_CONSULTATION_BODY_ID` | `514436` |
 
-سایر env لازم:
+---
+
+## باقی‌مانده تا تکمیل کامل
 
 ```text
-SMS_USERNAME=
-SMS_API_KEY=
-SMS_BASE_URL=https://rest.payamak-panel.com
-CRON_SECRET=          # در .env.local/.env.production تولید شد → در پنل Runflare هم ست کنید
-ZOHAL_TOKEN=
-ZOHAL_BASE_URL=https://service.zohal.io/api/v0/services
+Runflare: SESSION_SECRET جدید + CRON_SECRET
+  → تست SMS مشاوره/رزرو (C)
+  → تست cron (D)
+  → رگرسیون DEV یک‌بار (B)
+  → حذف DEV_OTP_* (F)
 ```
 
----
+### Runflare / Go-Live (اقدام فوری انسان)
 
-## ترتیب باقی‌مانده (لایو / دستی)
+- [ ] کپی `SESSION_SECRET` جدید از `.env.production` به پنل Runflare
+- [ ] کپی `CRON_SECRET` از `.env.production` به پنل Runflare
+- [ ] زمان‌بندی `POST /api/cron/sms-reminders` هر ۱۰–۱۵ دقیقه
+- [ ] تست cron تا HTTP 200 شود (الان بدون env روی سرور → 503)
 
-```text
-Deploy UX (G+E)
-  → تست دستی G روی /admin/patients
-  → تست لایو C (مشاوره + رزرو SMS)
-  → ست CRON روی Runflare + تست D
-  → تست لایو E (تسهیلات / زحل)
-  → رگرسیون DEV_OTP
-  → پایداری F (DEV هنوز حذف نشود)
-```
+### فاز C — SMS تراکنشی (تست لایو)
 
----
+- [x] کد آماده و دیپلوی شده
+- [ ] مشاوره لایو → SMS
+- [ ] رزرو لایو → SMS
 
-## اسپرینت — چک‌لیست کارها
+### فاز D — یادآور
 
-### ۱) فاز G — پنل ادمین تأیید کاربری (`/admin/patients`)
+- [x] کد + راهنما + `CRON_SECRET` در فایل لوکال
+- [ ] فعال روی Runflare (بالا)
 
-- [x] لودینگ روی دکمه هنگام ذخیره + جلوگیری از دابل‌کلیک
-- [x] غیرفعال / برجسته کردن دکمه‌ای که وضعیت فعلی ردیف است
-- [x] پیام موفقیت / خطای واضح بعد از ذخیره
-- [x] نمایش **کد ملی** در جدول
-- [x] نمایش/ویرایش **یادداشت بررسی** (`reviewNote`) + دکمه ذخیره یادداشت
-- [x] API: پاک نکردن `reviewNote` وقتی در PATCH ارسال نشده
-- [ ] تست لایو دکمه‌ها روی pasteur.plus بعد از deploy
-- [ ] Deploy UX فاز G
+### فاز B — رگرسیون
 
-### ۲) فاز C — پیامک تراکنشی
+- [x] OTP واقعی لایو
+- [ ] یک‌بار `09126723365` / `00000` قبل از حذف DEV
 
-- [x] کد مشاوره `514436` + کد رزرو `514432` + بدون rollback + ضداسپم مشاوره
-- [x] ضداسپم رزرو (ری‌تری ۲ دقیقه‌ای)
-- [ ] ثبت مشاوره لایو → SMS برسد
-- [ ] ثبت رزرو لایو → SMS برسد
-- [ ] تأیید: قطع SMS تراکنش وب را خراب نکند
+### فاز F — حذف DEV
 
-### ۳) فاز D — یادآور نوبت
-
-- [x] کد cron endpoint + فلگ‌های DB
-- [x] راهنمای CRON در `backend-dev/GO-LIVE.md`
-- [x] تولید `CRON_SECRET` در `.env.local` / `.env.production`
-- [ ] کپی `CRON_SECRET` به پنل env Runflare
-- [ ] زمان‌بندی هر ۱۰–۱۵ دقیقه `POST /api/cron/sms-reminders`
-- [ ] تست دستی یک بار با Bearer (حتی با sent=0)
-- [ ] (اختیاری) نوبت آزمایشی نزدیک برای SMS واقعی یادآور
-
-### ۴) فاز E — زحل + تسهیلات
-
-- [x] کلاینت زحل + کد ملی اجباری + شاهکار/هویت/اعتبار/چک روی تسهیلات
-- [x] ذخیره status/payload + نمایش در ادمین
-- [x] fallback چند slug برای متدهای هویت/اعتبار/چک
-- [x] خلاصه استعلام (`zohalSummary`) در mapper + ستون ادمین
-- [x] بازخورد موفقیت/خطا + قفل هنگام تغییر وضعیت در `/admin/facilities`
-- [ ] تست لایو بدون کد ملی / نامعتبر → رد
-- [ ] تست لایو شاهکار تطبیق / عدم تطبیق
-- [ ] Deploy UX تسهیلات
-
-### ۵) فاز B — OTP
-
-- [x] کد + deploy + migration + لایو OTP واقعی
-- [ ] تست رگرسیون صریح: `09126723365` / `00000`
-
-### ۶) فاز F — Go-Live prep
-
-- [ ] چند دور پایداری SMS
-- [x] سیاست: نگه‌داشتن `DEV_OTP_*` فعلاً
-- [x] داک‌ها به‌روز
-- [ ] حذف DEV فقط بعد از پایداری
+- [ ] فقط بعد از C+D طبق `GO-LIVE.md` بند ۴
 
 ---
 
-# فاز A — ✅ تمام
+# فازها (خلاصه)
 
-- [x] همه آیتم‌های زیرساخت + تست OTP واقعی تأییدشده توسط کاربر
+## A SMS lib — ✅ تمام
 
----
+## B OTP login — 🟨 تقریباً تمام (فقط رگرسیون DEV صریح)
 
-# فاز B — 🟨 تقریباً تمام
+- [x] کد، deploy، migration، OTP واقعی لایو
 
-- [x] پیاده‌سازی + لایو OTP
-- [ ] رگرسیون DEV صریح
+## C transactional SMS — 🟨 کد ✅ / تست مانده
 
----
+## D reminders — 🟨 کد ✅ / Runflare CRON مانده (لایو الان 503)
 
-# فاز C — 🟨 کد کامل / تست لایو باز
+## E Zohal — ✅ لایو تأیید شد
 
-- [x] پیاده‌سازی ارسال + ضد اسپم
-- [ ] تست لایو مشاوره/رزرو
+- [x] کد + UX ادمین
+- [x] تست واقعی از `/shop/facility` → `/admin/facilities`
+- [x] Deploy UX تسهیلات
 
----
+## F Go-Live — 🟨 در حال اجرا
 
-# فاز D — 🟨 کد + راهنما کامل / فعال‌سازی Runflare باز
+- [x] داک اجرایی به‌روز (`GO-LIVE.md`)
+- [x] `SESSION_SECRET` لوکال `.env.production` از placeholder ضعیف چرخانده شد
+- [ ] اعمال env روی Runflare + حذف DEV در انتها
 
-- [x] endpoint + داک + CRON_SECRET محلی
-- [ ] ست روی Runflare + schedule + تست
+## G Admin patients UX — ✅ لایو تأیید شد
 
----
-
-# فاز E — 🟨 کد/UX کامل / تست لایو باز
-
-- [x] پیاده‌سازی + UX ادمین + fallback slug
-- [ ] تست استعلام واقعی لایو
-
----
-
-# فاز F — 🟨 باز (DEV عمداً مانده)
-
----
-
-# فاز G — 🟨 کد کامل / deploy+تست لایو باز
-
-- [x] UX کنترل‌پذیر `/admin/patients`
-- [ ] Deploy و تست دستی دکمه‌ها
-
-**خروجی فاز G:** صف تأیید با کد ملی، یادداشت، لودینگ، بازخورد واضح.
+- [x] کد UX
+- [x] Deploy
+- [x] تست لایو (تأیید امامی۲ + پیام موفقیت)
 
 ---
 
 ## وضعیت پیشرفت
 
-| فاز | وضعیت | تاریخ | نکته |
-|-----|--------|--------|------|
-| A SMS lib | ✅ done | 2026-08-09 | تأیید |
-| B OTP login | 🟨 ~done | 2026-08-09 | فقط رگرسیون DEV |
-| C transactional SMS | 🟨 ready | 2026-08-09 | تست لایو کاربر |
-| D reminders | 🟨 ready | 2026-08-09 | CRON روی Runflare |
-| E Zohal | 🟨 ready | 2026-08-09 | تست لایو + deploy UX |
-| F Go-Live prep | 🟨 hold DEV | 2026-08-09 | بعد از پایداری |
-| G Admin patients UX | 🟨 code done | 2026-08-09 | deploy + تست دکمه‌ها |
+| فاز | وضعیت | نکته |
+|-----|--------|------|
+| A SMS lib | ✅ | |
+| B OTP | 🟨 | رگرسیون DEV قبل از حذف |
+| C SMS تراکنشی | 🟨 | تست مشاوره/رزرو |
+| D Reminders | 🟨 | CRON روی Runflare = 503 فعلاً |
+| E Zohal | ✅ | لایو OK |
+| F Go-Live | 🟨 | طبق GO-LIVE.md |
+| G Patients UX | ✅ | لایو OK |
 
 ---
 
 ## ایمنی
 
-- API key و توکن را در چت / اسکرین / commit نگذارید.
-- اگر توکنی قبلاً در `updates/` لو رفت، در پنل باطل و توکن جدید بگیرید.
-- روی لایو اسکن/تست سنگین هم‌زمان با ارسال انبوه SMS نکنید.
-- هزینه هر استعلام Zohal و هر پیامک را در تست لحاظ کنید.
-- تا پایان چند دور تست موفق، `DEV_OTP_*` را از Runflare حذف نکنید.
-- `CRON_SECRET` را در چت نفرستید؛ فقط در پنل Runflare بگذارید.
+- سکرت‌ها را در چت نگذار.
+- `.env.production` را commit نکن.
+- تا SMS تراکنشی و CRON سبز نشده، `DEV_OTP_*` را از Runflare حذف نکن.
+- اگر توکن زحل قبلاً در `updates/` بوده، بچرخان.
