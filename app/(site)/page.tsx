@@ -107,7 +107,7 @@ export default function HomePage() {
                 <div className="relative aspect-[9/14] bg-gradient-to-b from-cyan-100 via-white to-sky-50 p-6">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=720&h=900&fit=crop"
+                    src="/uploads/hero-home.jpg"
                     alt="فضای درمانگاه پاستور پلاس"
                     className="absolute inset-0 h-full w-full object-cover opacity-90"
                   />
