@@ -48,3 +48,13 @@ export async function postClubRedeemApi(phone: string, reward: Record<string, un
   });
   return parseJson<{ profile: import('@/lib/storage').ClubProfile }>(res);
 }
+
+export async function postClubPointsApi(phone: string, points: number, reason: string) {
+  const res = await fetch('/api/club/points', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, points, reason }),
+  });
+  return parseJson<{ profile: import('@/lib/storage').ClubProfile }>(res);
+}

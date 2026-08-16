@@ -1,13 +1,7 @@
 /**
- * پرداخت — پاستور پلاس (زیبال + fallback mock)
+ * پرداخت — پاستور پلاس (زیبال)
  */
-import { PasteurStorage, type Booking } from './storage';
-import {
-  completeMembershipPaymentApi,
-  completeShopVipPaymentApi,
-} from './commerce/client';
-import { createBookingApi } from './operations/client';
-import { ShopCart } from './shop';
+import { PasteurStorage } from './storage';
 
 export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip';
 
@@ -98,83 +92,6 @@ export const PaymentFlow = {
   formatPrice(amount?: number | null): string {
     if (!amount) return 'رایگان';
     return amount.toLocaleString('fa-IR') + ' تومان';
-  },
-
-  async completePaymentAsync(pending: PendingPayment): Promise<CompletedPayment> {
-    const completed: CompletedPayment = {
-      ...pending,
-      status: 'paid',
-      paidAt: new Date().toISOString(),
-    };
-
-    if (pending.kind === 'booking') {
-      const { booking } = await createBookingApi({
-        doctorId: pending.doctorId,
-        doctorName: pending.doctorName,
-        specialty: pending.specialty,
-        type: pending.type,
-        typeLabel: pending.typeLabel,
-        day: pending.day,
-        timeValue: pending.timeValue,
-        timeLabel: pending.timeLabel,
-        patientName: pending.patientName,
-        patientPhone: pending.patientPhone,
-        amount: pending.amount,
-        isDeposit: true,
-        depositNonRefundable: true,
-        referralCode: pending.referralCode,
-      });
-      PasteurStorage.setSessionLastBooking(booking as Booking);
-      // Club points + visits persisted in booking API (Phase 5)
-    } else if (pending.planId === 'shop-vip') {
-      await completeShopVipPaymentApi({
-        patientName: pending.patientName,
-        patientPhone: pending.patientPhone,
-        planName: pending.planName,
-        amount: pending.amount,
-        referralCode: pending.referralCode,
-      });
-      ShopCart.setCustomerType('vip', pending.patientPhone || '');
-    } else if (pending.kind === 'membership') {
-      await completeMembershipPaymentApi({
-        patientName: pending.patientName,
-        patientPhone: pending.patientPhone,
-        planId: pending.planId,
-        planName: pending.planName,
-        amount: pending.amount,
-        validityLabel: pending.validityLabel,
-        membershipDurationLabel: pending.membershipDurationLabel,
-        discountPercent: pending.discountPercent,
-        referralCode: pending.referralCode,
-      });
-    } else {
-      return this.completePayment(pending);
-    }
-
-    PasteurStorage.setLastPayment(completed);
-    PasteurStorage.clearPendingPayment();
-    return completed;
-  },
-
-  completePayment(pending: PendingPayment): CompletedPayment {
-    const completed: CompletedPayment = {
-      ...pending,
-      status: 'paid',
-      paidAt: new Date().toISOString(),
-    };
-    PasteurStorage.setLastPayment(completed);
-    PasteurStorage.clearPendingPayment();
-    return completed;
-  },
-
-  markPaymentFailed(pending: PendingPayment): Record<string, unknown> {
-    const failed = {
-      ...pending,
-      status: 'failed',
-      failedAt: new Date().toISOString(),
-    };
-    PasteurStorage.setLastPayment(failed);
-    return failed;
   },
 
   cancelPayment(pending?: PendingPayment | null): string {

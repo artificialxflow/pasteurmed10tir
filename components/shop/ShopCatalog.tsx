@@ -26,6 +26,7 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
   const refresh = useCallback(async () => {
     try {
       const data = await fetchPublic<{ items: Product[] }>("/api/content/products");
+      ShopCart.setProductsCache(data.items);
       let list = data.items;
       if (category !== "all") list = list.filter((p) => p.category === category);
       const q = search.trim().toLowerCase();

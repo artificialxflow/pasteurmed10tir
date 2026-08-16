@@ -26,6 +26,8 @@ async function main() {
   console.log('Resetting application data (admins preserved)...');
 
   // Order: dependents first
+  await prisma.paymentIntent.deleteMany();
+  await prisma.otpChallenge.deleteMany();
   await prisma.clubHistoryItem.deleteMany();
   await prisma.clubProfile.deleteMany();
   await prisma.walletTransaction.deleteMany();

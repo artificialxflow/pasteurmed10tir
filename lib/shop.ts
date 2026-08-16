@@ -6,7 +6,25 @@ import { PasteurStorage, type ShopCartItem } from './storage';
 
 const LAST_ORDER_TOTAL_KEY = 'pasteur_last_shop_order_total';
 
+let productsCache: Product[] = [];
+
 export const ShopCart = {
+  setProductsCache(products: Product[]): void {
+    productsCache = products;
+  },
+
+  getProductsCache(): Product[] {
+    return productsCache;
+  },
+
+  async loadProducts(): Promise<Product[]> {
+    if (productsCache.length) return productsCache;
+    const { fetchPublic } = await import('./content/client');
+    const data = await fetchPublic<{ items: Product[] }>('/api/content/products');
+    productsCache = data.items;
+    return productsCache;
+  },
+
   getCustomerType(): string {
     return PasteurStorage.getShopCustomerType();
   },
@@ -49,8 +67,7 @@ export const ShopCart = {
   },
 
   getCartTotals(): { subtotal: number; total: number; count: number } {
-    PasteurStorage.initProductsIfNeeded();
-    const products = PasteurStorage.getProducts();
+    const products = productsCache;
     return this.getCart().reduce(
       (totals, item) => {
         const product = products.find((p) => String(p.id) === String(item.id));
@@ -67,10 +84,7 @@ export const ShopCart = {
   },
 
   addToCart(productId: string | number): boolean {
-    PasteurStorage.initProductsIfNeeded();
-    const product = PasteurStorage.getProducts().find(
-      (p) => String(p.id) === String(productId),
-    );
+    const product = productsCache.find((p) => String(p.id) === String(productId));
     if (!product || product.stock <= 0) return false;
     const cart = this.getCart();
     const existing = cart.find((item) => String(item.id) === String(productId));
@@ -84,10 +98,7 @@ export const ShopCart = {
   },
 
   changeQty(productId: string | number, delta: number): void {
-    PasteurStorage.initProductsIfNeeded();
-    const product = PasteurStorage.getProducts().find(
-      (p) => String(p.id) === String(productId),
-    );
+    const product = productsCache.find((p) => String(p.id) === String(productId));
     let cart = this.getCart();
     const item = cart.find((i) => String(i.id) === String(productId));
     if (!item || !product) return;
@@ -116,16 +127,18 @@ export const ShopCart = {
     const cart = this.getCart();
     if (!cart.length) return { ok: false, message: 'سبد خالی است' };
 
-    const { fetchPublic } = await import('./content/client');
     const { createShopOrderApi } = await import('./commerce/client');
 
-    let products: Product[] = [];
-    try {
-      const data = await fetchPublic<{ items: Product[] }>('/api/content/products');
-      products = data.items;
-    } catch {
-      PasteurStorage.initProductsIfNeeded();
-      products = PasteurStorage.getProducts();
+    let products = productsCache;
+    if (!products.length) {
+      try {
+        products = await this.loadProducts();
+      } catch (e) {
+        return {
+          ok: false,
+          message: e instanceof Error ? e.message : 'دریافت محصولات ناموفق',
+        };
+      }
     }
 
     const customerType = this.getCustomerType();
@@ -135,24 +148,26 @@ export const ShopCart = {
 
     let subtotal = 0;
     let total = 0;
-    const orderItems = cart.map((item) => {
-      const product = products.find((p) => String(p.id) === String(item.id));
-      if (!product) {
-        return null;
-      }
-      const unitPrice = getPrice(product);
-      const finalUnitPrice = getFinal(product);
-      subtotal += unitPrice * item.qty;
-      total += finalUnitPrice * item.qty;
-      return {
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        qty: item.qty,
-        unitPrice,
-        finalUnitPrice,
-      };
-    }).filter(Boolean);
+    const orderItems = cart
+      .map((item) => {
+        const product = products.find((p) => String(p.id) === String(item.id));
+        if (!product) {
+          return null;
+        }
+        const unitPrice = getPrice(product);
+        const finalUnitPrice = getFinal(product);
+        subtotal += unitPrice * item.qty;
+        total += finalUnitPrice * item.qty;
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          qty: item.qty,
+          unitPrice,
+          finalUnitPrice,
+        };
+      })
+      .filter(Boolean);
 
     if (!orderItems.length) return { ok: false, message: 'سبد نامعتبر است' };
 

@@ -4,6 +4,19 @@
 > Frontend is complete (~70 routes). Replace `PasteurStorage` (localStorage mock) with API + DB.  
 > **Do not redesign UI** — wire existing pages to real backend.
 
+**Project snapshot (2026-08-16):**
+
+| Area | Status |
+|------|--------|
+| Phases 1–5 (this file) | ✅ Code + migrations `001`–`005` |
+| Phase 6 SMS + Zohal | ✅ Live (`006_sms_zohal`) — see `todo-v6.md` |
+| Phase 7 Zibal payment | ✅ Code (`007_zibal`) — live test pending |
+| Phase 8 Content fix | ✅ Surgery card (`008_surgery_service`) |
+| Go-Live ops | 🟨 CRON, SESSION, DEV_OTP removal — `GO-LIVE.md` |
+| **Phase R Real data** | ⬜ **Next** — de-fake DB + remove mock fallbacks |
+
+**Active checklist:** `todo-v6.md` · **Deploy steps:** `backend-dev/GO-LIVE.md`
+
 ---
 
 ## Prompt language — English or Persian?
@@ -20,7 +33,8 @@
 
 ## Database connections — Runflare Postgres
 
-> **Security:** This file contains real credentials. Do **not** push to a public Git repo. Prefer `.env.local` for secrets; rotate password if exposed.
+> **Security:** Prefer `.env.local` / Runflare panel for secrets — **do not commit passwords**.  
+> This file may contain example URIs; rotate credentials if ever pushed to a public repo.
 
 | URI | When to use |
 |-----|-------------|
@@ -153,11 +167,12 @@ Phase 0 — do manually before any Cursor prompt:
 
 ### ✅ Phase 0 complete when / تکمیل فاز ۰
 
-- [ ] `.env.local` exists with **remote** URI (no quotes)
+- [x] `.env.local` exists with **remote** URI (no quotes)
 - [x] Runflare panel has **internal** vars + **DEV_OTP** from `.env.production`
-- [ ] Live test: https://pasteur.plus/account with 09126723365 / 00000 (after Phase 1)
-- [ ] Neither env file is in git
-- [ ] Connection OK after Phase 1 migrate
+- [x] Live test: https://pasteur.plus/account with 09126723365 / 00000 (after Phase 1)
+- [x] Neither env file is in git
+- [x] Connection OK after Phase 1 migrate
+- [ ] `SESSION_SECRET` + `CRON_SECRET` production-strong on Runflare — `GO-LIVE.md`
 
 ---
 
@@ -281,7 +296,7 @@ npm run dev
 - [x] Migration `001_auth` applied
 - [x] Seed ran successfully
 - [x] All 7 manual tests pass (local + pasteur.plus live)
-- [ ] `git commit` done
+- [x] `git commit` done (ongoing deploys)
 
 ---
 
@@ -352,8 +367,9 @@ UI عوض نشود. auth فاز ۱ نشکند.
 - [x] Admin CRUD reflects on public pages
 - [x] Image upload API + admin file picker
 - [x] Runflare disk at `/app/public/uploads` documented
-- [ ] Live deploy + disk seed on pasteur.plus
-- [ ] `git commit` done
+- [x] Live deploy on pasteur.plus
+- [x] Surgery service card migration `008_surgery_service` (was mistaken «دندان‌سازی»)
+- [x] `git commit` done (ongoing)
 
 ---
 
@@ -376,7 +392,7 @@ Tasks:
 5. Authorization: patient A MUST NOT read patient B's booking/consultation (prevent IDOR)
 6. backend-dev/TODO-v3.md + TEST-MANUAL phase 3
 
-DO NOT change UI. Payment stays MOCK (no real gateway).
+DO NOT change UI. Payment was MOCK in original phase 3 spec — **superseded by Phase 7 (Zibal)**.
 STOP after phase 3.
 ```
 
@@ -394,7 +410,7 @@ STOP after phase 3.
 - جلوگیری از IDOR — بیمار A داده بیمار B را نبیند
 - TODO-v3 + تست فاز ۳
 
-پرداخت mock بماند.
+پرداخت: اول mock بود؛ الان Phase 7 (زیبال) — mock UI حذف شده.
 ```
 
 ### Manual tests / تست دستی
@@ -410,11 +426,11 @@ STOP after phase 3.
 - [x] BookingWizard + ConfirmPayment wired to API
 - [x] RemindersPage + admin dashboard wired to API
 - [x] `npm run build` OK
-- [x] `npm run db:seed:phase3` OK (local)
-- [ ] Full booking flow end-to-end (live test on pasteur.plus)
+- [x] `npm run db:seed:phase3` OK
+- [ ] Full booking flow end-to-end with **Zibal** on pasteur.plus (Phase 7)
 - [ ] IDOR manually checked (two test patients)
-- [ ] Insurance approve changes payable amount
-- [ ] git commit
+- [ ] Insurance approve via **admin only** (remove simulate button — Phase R)
+- [x] git commit (ongoing)
 
 ---
 
@@ -434,7 +450,7 @@ Tasks:
 3. Wire: /dental/membership, /wallet, /shop (cart, orders), commissions, facilities, /installments
 4. Wallet ceilings: regular 15M, membership VIP 30M, shop VIP 20M (max if multiple VIP)
 5. Admin: memberships, wallets, shop, commissions, facilities, installments
-6. Payment remains MOCK
+6. Payment was MOCK in original spec — **superseded by Phase 7 (Zibal)**
 7. backend-dev/TODO-v4.md + TEST-MANUAL phase 4
 
 STOP after phase 4.
@@ -451,7 +467,7 @@ STOP after phase 4.
 - migrate 004 + seed-phase4
 - membership, wallet, shop, installments → API
 - سقف کیف: عادی ۱۵M، VIP عضویت ۳۰M، VIP فروشگاه ۲۰M
-- پرداخت mock
+- پرداخت: Phase 7 زیبال
 - TODO-v4 + تست فاز ۴
 ```
 
@@ -466,8 +482,8 @@ STOP after phase 4.
 
 - [x] Wallet + shop + membership persisted in DB
 - [x] Commission on referral code (if visitor seeded)
-- [ ] Manual tests phase 4 (local + live)
-- [ ] `git commit` done
+- [ ] Manual tests phase 4 with **Zibal** (membership + shop-vip)
+- [x] `git commit` done (ongoing)
 
 ---
 
@@ -520,8 +536,9 @@ After reset-all works, backend is ready for staging deploy.
 
 - [x] reset-all works
 - [x] TEST-MANUAL.md complete for all phases
-- [ ] Staging deploy on Runflare with `pasteur_prod` DATABASE_URL
-- [ ] `git commit` done
+- [x] Production deploy on Runflare (`pasteur.plus`)
+- [x] `git commit` done (ongoing)
+- [ ] Phase R: do **not** run reset-all on live patient data without backup
 
 ---
 
@@ -561,16 +578,190 @@ Do NOT write code on Kali — test only.
 ## Overall order / ترتیب کلی
 
 ```
-Phase 0: DB + .env.local          (you)
+Phase 0: DB + .env.local          (you)                    ✅
     ↓
-Phase 1: Auth prompt → migrate → test → commit
+Phase 1–5: Auth → Content → Ops → Commerce → Club         ✅
     ↓
-Phase 2 → 3 → 4 → 5               (one prompt at a time; confirm before next)
+Phase 6: SMS + Zohal (006)                                  ✅ live
     ↓
-Kali ZAP (optional each phase)
+Phase 7: Zibal payment (007)                                ✅ code / 🟨 test
     ↓
-Runflare: internal DATABASE_URL + migrate deploy + production
+Phase 8: Content fixes (008 surgery card)                   ✅
+    ↓
+Go-Live ops: SESSION, CRON, DEV_OTP removal                 🟨  → GO-LIVE.md
+    ↓
+Phase R: Real data — de-fake DB + remove mock fallbacks      ⬜ NEXT
+    ↓
+Kali ZAP (optional) + TEST-MANUAL full pass
 ```
+
+---
+
+## Phase 6 — SMS + Zohal (post-roadmap)
+
+> Migration `006_sms_zohal` · Checklist: **`todo-v6.md`** sections A–G
+
+### ✅ Phase 6 complete when
+
+- [x] Real OTP SMS on live (non-DEV phone)
+- [x] Zohal facility inquiry on `/shop/facility` → `/admin/facilities`
+- [x] Transactional SMS code (booking, consultation, reminders)
+- [ ] Live SMS test: consultation + booking body IDs
+- [ ] `CRON_SECRET` on Runflare + cron HTTP 200
+- [ ] Remove `DEV_OTP_*` after above green
+
+---
+
+## Phase 7 — Zibal payment gateway
+
+> Migration `007_zibal` · Env: `ZIBAL_MERCHANT_ID`, `ZIBAL_SANDBOX=false`
+
+### English summary
+
+```
+PHASE 7 — Real payment (supersedes Phase 3/4 "payment mock").
+
+Implemented:
+- lib/zibal/client.ts — request + verify
+- PaymentIntent model + API routes /api/payments/zibal/*
+- ConfirmPayment → redirect to gateway; callback completes booking/membership/shop-vip
+
+Manual test:
+1. /dental/booking → confirm → pay → Zibal → success
+2. /admin/bookings shows paid booking
+3. Zibal panel shows transaction
+Optional: membership + shop-vip flows
+```
+
+### ✅ Phase 7 complete when
+
+- [x] Code + migration `007_zibal`
+- [x] `npm run build` OK
+- [x] Deploy + migrate (reported)
+- [ ] End-to-end live payment test (booking minimum)
+- [ ] Optional: membership + shop-vip live test
+
+---
+
+## Phase 8 — Content fixes (surgery homepage card)
+
+> Migration `008_surgery_service`
+
+- [x] Replace mistaken «دندان‌سازی» card with **جراحی** + surgery image
+- [x] `lib/data.ts` seed includes surgery service
+- [ ] Live homepage shows correct card after deploy/migrate
+
+---
+
+## Phase R — Real Data (de-fake → production)
+
+> **Next major work.** Full checklist also in **`todo-v6.md` → بخش C**.
+
+### Goal / هدف
+
+Remove demo/seed/mock/dev data and code fallbacks so **pasteur.plus runs on real clinic data only**.
+
+### R0 — Prepare (YOU + backup)
+
+```
+Before deleting anything on production:
+
+1. pg_dump / Runflare backup of pasteurpods_db
+2. Export admin lists: bookings, consultations, users, orders — mark TEST rows
+3. Decide: selective DELETE vs reset-all + re-seed content only (NEVER reset-all on live without approval)
+4. Test procedure on local/staging with remote DATABASE_URL first
+```
+
+| # | Task | Owner |
+|---|------|-------|
+| R0.1 | DB backup | You |
+| R0.2 | Inventory fake rows (09126723365, seed-phase3 samples) | You + admin |
+| R0.3 | Staging dry-run | Cursor + you |
+
+### R1 — Clean database (fake transactional data)
+
+| # | Task | How |
+|---|------|-----|
+| R1.1 | Remove test bookings/consultations/orders | Admin or targeted SQL |
+| R1.2 | Remove dev patient user after DEV_OTP removed | Admin `/admin/patients` or SQL |
+| R1.3 | Clear old `PaymentIntent` pending/failed | SQL or admin tool |
+| R1.4 | Update `scripts/reset-all.ts` to include `PaymentIntent`, `OtpChallenge` | Cursor |
+| R1.5 | Re-seed **content only** if needed: `db:seed:phase2` (not phase3 demo bookings) | Terminal |
+
+**NEVER** `npx tsx scripts/reset-all.ts --confirm` on production without backup + explicit approval.
+
+### R2 — Remove dev/mock UI & auth bypass
+
+| # | Task | File / area |
+|---|------|-------------|
+| R2.1 | Remove DEV_OTP env | Runflare — `GO-LIVE.md` |
+| R2.2 | Remove «شبیه‌سازی تأیید» insurance button | `ConfirmPayment.tsx` |
+| R2.3 | Insurance approve **only** via admin | `/admin/insurance-inquiries` |
+| R2.4 | Remove unused mock payment path | `lib/payment.ts` `completePaymentAsync` |
+| R2.5 | Remove demo copy | `DoctorReviewForm.tsx` |
+
+### R3 — Wire remaining PasteurStorage fallbacks to API
+
+| # | Current mock | Target API |
+|---|--------------|------------|
+| R3.1 | `ShopCart` + `initProductsIfNeeded` | `/api/content/products` only |
+| R3.2 | `ConsultationForm` club points local | `/api/club/*` |
+| R3.3 | `consultationPrice.ts` localStorage | `/api/content/consultation-pricing` |
+| R3.4 | `MedicalDoctorList` PASTEUR_DATA fallback | `/api/content/physicians` |
+| R3.5 | `admin/help` PasteurStorage | DB model or remove |
+| R3.6 | `admin/doctors` extraDoctors localStorage | DB physicians only |
+| R3.7 | `BookingWizard` local slot cache | `/api/operations/bookings/slot-check` only |
+
+**Keep (client session OK):** pending payment localStorage (pre-Zibal redirect), shop cart, app view preference.
+
+### R4 — Enter real content via admin
+
+| # | Admin path | Content |
+|---|------------|---------|
+| R4.1 | `/admin/doctors` | Real dentists + physicians |
+| R4.2 | `/admin/services` | 6 homepage cards (incl. surgery) |
+| R4.3 | `/admin/shop` | Real products + stock |
+| R4.4 | `/admin/gallery` | Real before/after (`/uploads/`) |
+| R4.5 | `/admin/insurances` | Contracted insurances |
+| R4.6 | `/admin/consultation-prices` | Real tariffs |
+| R4.7 | `/admin/memberships` | Real plans if used |
+
+### R5 — Production verification
+
+| # | Test |
+|---|------|
+| R5.1 | Full `TEST-MANUAL.md` on pasteur.plus |
+| R5.2 | Kali/ZAP — no DEV OTP bypass |
+| R5.3 | One real booking + Zibal payment + SMS |
+| R5.4 | No external Unsplash URLs in DB |
+| R5.5 | `grep PasteurStorage` — only allowed client caches |
+
+### English prompt (paste into Cursor Agent for Phase R)
+
+```
+PHASE R ONLY — Real data / de-fake. Phases 1–7 + Go-Live ops must be stable first.
+
+DO NOT run reset-all on production without user explicit approval + backup.
+
+Tasks (in order):
+1. R2: Remove ConfirmPayment simulateApprove; remove mock completePaymentAsync if unused
+2. R3: Replace PasteurStorage/PASTEUR_DATA fallbacks listed in prompts.md Phase R table with API calls
+3. R1.4: Add PaymentIntent + OtpChallenge to scripts/reset-all.ts
+4. R4: Document admin entry checklist — no code unless missing API wiring
+5. Update todo-v6.md checkboxes as each R item completes
+
+DO NOT change UI layout. DO NOT break Zibal payment flow.
+STOP after Phase R wiring; user enters real content in admin separately.
+```
+
+### ✅ Phase R complete when
+
+- [ ] No DEV_OTP on Runflare
+- [ ] No simulate insurance approve in UI
+- [ ] No PASTEUR_DATA runtime fallback on public pages
+- [ ] DB has no intentional test patients/bookings (or archived)
+- [ ] Real doctors/products/services entered in admin
+- [ ] TEST-MANUAL + one live payment pass
 
 ---
 
@@ -600,10 +791,15 @@ Schema stays the same — no Supabase migration needed.
 
 | File | Purpose |
 |------|---------|
-| `lib/storage.ts` | Current mock — replace gradually |
+| `lib/storage.ts` | Legacy mock — Phase R removes most runtime use |
 | `lib/adminAccess.ts` | Roles & permissions |
 | `lib/routes.ts` | All route paths |
-| `lib/data.ts` | Default seed data |
-| `backend-dev/GO-LIVE.md` | Remove DEV_OTP before public launch |
+| `lib/data.ts` | Default **seed** data (not production fallback after Phase R) |
+| `lib/zibal/` | Zibal payment client (Phase 7) |
+| `lib/commerce/zibal-intent-service.ts` | PaymentIntent + callback |
+| `backend-dev/GO-LIVE.md` | Runflare env, CRON, DEV_OTP, Zibal |
 | `backend-dev/TEST-MANUAL.md` | Manual test scenarios |
+| `todo-v6.md` | **Active checklist** — Go-Live + Zibal + Phase R |
+| `KALI-SECURITY-CHECKLIST.md` | Security pass after DEV_OTP removed |
+| `scripts/reset-all.ts` | Dev/staging truncate — **danger on production** |
 | `reports/` | Kali / ZAP export |

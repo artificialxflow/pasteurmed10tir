@@ -2,8 +2,8 @@
 
 import { Badge } from "@/components/ui/Card";
 import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
-import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
+import type { Physician } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -23,14 +23,7 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   useEffect(() => {
     fetchPublic<{ items: Physician[] }>("/api/content/physicians")
       .then((data) => setPhysicians(data.items))
-      .catch(() =>
-        setPhysicians(
-          PASTEUR_DATA.physicians.map((p) => ({
-            ...p,
-            days: [...p.days],
-          })),
-        ),
-      );
+      .catch(() => setPhysicians([]));
   }, []);
 
   const doctors = useMemo(() => {
@@ -46,8 +39,19 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   const medical = app ? ROUTES.app.medical : ROUTES.web.medical;
   const specialtyPage = app ? ROUTES.app.medicalSpecialty : ROUTES.web.medicalSpecialty;
 
-  const specialty =
-    PASTEUR_DATA.medicalSpecialties.find((item) => item.id === specialtyId) || null;
+  const specialty = useMemo(() => {
+    if (!specialtyId) return null;
+    const match = physicians.find(
+      (doctor) =>
+        doctor.specialtyId === specialtyId || String(doctor.specialtyId) === specialtyId,
+    );
+    if (!match) return null;
+    return {
+      id: specialtyId,
+      name: match.specialty,
+      emoji: "🔬",
+    };
+  }, [physicians, specialtyId]);
 
   if (!specialty) {
     return (

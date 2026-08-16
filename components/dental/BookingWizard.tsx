@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge, Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { PASTEUR_DATA, type Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
+import { checkBookingSlot } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatHour, normalizePhone } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -53,23 +54,9 @@ function getDoctor(id: number | null): Dentist | undefined {
   return DENTISTS.find((d) => d.id === id);
 }
 
-/** Slot check against API occupied times (+ local draft fallback). */
-function isSlotTaken(
-  doctorId: number | string,
-  day: string,
-  type: string,
-  timeValue: number | string,
-  occupied: string[],
-): boolean {
-  if (occupied.includes(String(timeValue))) return true;
-  return PasteurStorage.getBookings().some(
-    (b) =>
-      b.status !== "cancelled" &&
-      String(b.doctorId) === String(doctorId) &&
-      b.day === day &&
-      b.type === type &&
-      Number(b.timeValue) === Number(timeValue),
-  );
+/** Slot check via API occupied times (DB-backed). */
+function isSlotTaken(timeValue: number | string, occupied: string[]): boolean {
+  return occupied.includes(String(timeValue));
 }
 
 export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
@@ -202,33 +189,46 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("شماره موبایل معتبر وارد کنید.");
       return;
     }
-    if (!doctor || !state.type) {
+    if (!doctor || !state.type || !state.day || state.timeValue == null) {
       showError("اطلاعات رزرو ناقص است.");
       return;
     }
 
-    const amount = reservationFee;
-    PasteurStorage.setPendingPayment({
-      kind: "booking",
+    void checkBookingSlot({
       doctorId: doctor.id,
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      type: state.type,
-      typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
       day: state.day,
+      type: state.type,
       timeValue: state.timeValue,
-      timeLabel: state.timeLabel,
-      patientName,
-      patientPhone: state.patientPhone.trim(),
-      amount,
-      visitFee: 350000,
-      isDeposit: true,
-      paymentLabel: "بیعانه رزرو نوبت",
-      referralCode: state.referralCode,
-      onlineInsuranceCovered: state.onlineInsuranceCovered,
-    });
-    PasteurStorage.clearPendingBooking();
-    router.push(`${basePath}/confirm`);
+    })
+      .then((taken) => {
+        if (taken) {
+          showError("این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید.");
+          return;
+        }
+        const amount = reservationFee;
+        PasteurStorage.setPendingPayment({
+          kind: "booking",
+          doctorId: doctor.id,
+          doctorName: doctor.name,
+          specialty: doctor.specialty,
+          type: state.type,
+          typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
+          day: state.day,
+          timeValue: state.timeValue,
+          timeLabel: state.timeLabel,
+          patientName,
+          patientPhone: state.patientPhone.trim(),
+          amount,
+          visitFee: 350000,
+          isDeposit: true,
+          paymentLabel: "بیعانه رزرو نوبت",
+          referralCode: state.referralCode,
+          onlineInsuranceCovered: state.onlineInsuranceCovered,
+        });
+        PasteurStorage.clearPendingBooking();
+        router.push(`${basePath}/confirm`);
+      })
+      .catch(() => showError("بررسی زمان رزرو ناموفق بود. دوباره تلاش کنید."));
   };
 
   if (!hydrated) {
@@ -648,7 +648,7 @@ function TimeStep({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {isVisit
           ? (daySchedule.visitHours || []).map((h) => {
-              const booked = isSlotTaken(doctor.id, state.day!, "visit", h, occupiedSlots);
+              const booked = isSlotTaken(h, occupiedSlots);
               const selected = state.timeValue === h;
               return (
                 <button
@@ -671,7 +671,7 @@ function TimeStep({
             })
           : (daySchedule.treatmentSlots || []).map((slot) => {
               const booked =
-                slot.booked || isSlotTaken(doctor.id, state.day!, "treatment", slot.start, occupiedSlots);
+                slot.booked || isSlotTaken(slot.start, occupiedSlots);
               const selected = state.timeValue === slot.start;
               return (
                 <button

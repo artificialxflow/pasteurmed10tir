@@ -15,6 +15,7 @@
     "db:seed:phase4": "prisma generate && tsx scripts/seed-phase4.ts",
     "db:seed:phase5": "prisma generate && tsx scripts/seed-phase5.ts",
     "db:reset-all": "tsx scripts/reset-all.ts",
+    "db:clean-demo": "tsx scripts/clean-demo-data.ts",
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {

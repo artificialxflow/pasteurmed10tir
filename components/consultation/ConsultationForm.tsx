@@ -9,16 +9,21 @@ import {
   FormSelect,
   FormTextarea,
 } from "@/components/ui/Card";
-import { getConsultationPrice, getConsultationTypes } from "@/lib/consultationPrice";
+import {
+  getConsultationPrice,
+  getConsultationTypes,
+  loadConsultationPricing,
+} from "@/lib/consultationPrice";
+import { fetchPublic } from "@/lib/content/client";
+import { postClubPointsApi } from "@/lib/club/client";
 import { createConsultationApi, fetchPatientOps } from "@/lib/operations/client";
-import { PASTEUR_DATA } from "@/lib/data";
+import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import {
   isPatientApproved,
   payableFromFranchise,
   resolveFranchisePercent,
   type PatientProfile,
 } from "@/lib/patient";
-import { PasteurStorage } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -36,11 +41,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     ? (requestedType as string)
     : "text";
 
-  const selectedSpecialty = useMemo(
-    () =>
-      PASTEUR_DATA.medicalSpecialties.find((s) => s.id === requestedSpecialty) || null,
-    [requestedSpecialty],
-  );
+  const [physicians, setPhysicians] = useState<Physician[]>([]);
 
   const initialDoctorId = requestedDoctor ? Number.parseInt(requestedDoctor, 10) : null;
 
@@ -49,9 +50,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       ? (requestedCategory as string)
       : PASTEUR_DATA.consultationCategories[0]?.id || "dental";
 
-  const [consultationTypes, setConsultationTypes] = useState(() =>
-    getConsultationTypes(),
-  );
+  const [consultationTypes, setConsultationTypes] = useState(() => getConsultationTypes());
   const [selectedType, setSelectedType] = useState(initialType);
   const [category, setCategory] = useState(initialCategory);
   const [doctorId, setDoctorId] = useState<number | null>(
@@ -67,22 +66,37 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [patientApproved, setPatientApproved] = useState(false);
   const [franchisePercent, setFranchisePercent] = useState(10);
 
+  const selectedSpecialty = useMemo(() => {
+    if (!requestedSpecialty) return null;
+    const match = physicians.find(
+      (doctor) =>
+        String(doctor.specialtyId) === requestedSpecialty ||
+        doctor.specialtyId === requestedSpecialty,
+    );
+    if (!match) return null;
+    return { id: requestedSpecialty, name: match.specialty };
+  }, [physicians, requestedSpecialty]);
+
   const requiresDoctor = category === "medical-specialty" && Boolean(selectedSpecialty);
   const selectedDoctor = useMemo(
-    () => PASTEUR_DATA.physicians.find((doctor) => doctor.id === doctorId) || null,
-    [doctorId],
+    () => physicians.find((doctor) => doctor.id === doctorId) || null,
+    [physicians, doctorId],
   );
   const availableDoctors = useMemo(() => {
     if (!selectedSpecialty) return [];
-    return PASTEUR_DATA.physicians.filter(
-      (doctor) => doctor.specialtyId === selectedSpecialty.id,
+    return physicians.filter(
+      (doctor) =>
+        String(doctor.specialtyId) === selectedSpecialty.id ||
+        doctor.specialtyId === selectedSpecialty.id,
     );
-  }, [selectedSpecialty]);
+  }, [physicians, selectedSpecialty]);
   const showDoctorStep = requiresDoctor && !selectedDoctor;
 
   useEffect(() => {
-    PasteurStorage.initConsultationPricingIfNeeded();
-    setConsultationTypes(getConsultationTypes());
+    void loadConsultationPricing().then(() => setConsultationTypes(getConsultationTypes()));
+    void fetchPublic<{ items: Physician[] }>("/api/content/physicians")
+      .then((data) => setPhysicians(data.items))
+      .catch(() => setPhysicians([]));
     void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
       .then((res) => {
         const session = res.profile;
@@ -93,15 +107,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         setName((prev) => prev || session.name);
         setPhone((prev) => prev || session.phone);
       })
-      .catch(() => {
-        const session = PasteurStorage.getPatientSession();
-        if (!session) return;
-        setHasComplementary(Boolean(session.complementaryInsuranceId));
-        setPatientApproved(isPatientApproved(session));
-        setFranchisePercent(resolveFranchisePercent(session));
-        setName((prev) => prev || session.name);
-        setPhone((prev) => prev || session.phone);
-      });
+      .catch(() => {});
   }, []);
 
   const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === category);
@@ -110,10 +116,11 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     () =>
       getConsultationPrice({
         specialtyId: selectedSpecialty?.id || null,
+        specialtyName: selectedSpecialty?.name || null,
         typeId: selectedType,
         categoryId: category,
       }),
-    [selectedSpecialty?.id, selectedType, category],
+    [selectedSpecialty?.id, selectedSpecialty?.name, selectedType, category],
   );
 
   function onImageChange(file: File | null) {
@@ -133,6 +140,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     const type = consultationTypes.find((item) => item.id === selectedType);
     const pricing = getConsultationPrice({
       specialtyId: selectedSpecialty?.id || null,
+      specialtyName: selectedSpecialty?.name || null,
       typeId: selectedType,
       categoryId: category,
     });
@@ -155,10 +163,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       hasImage: Boolean(imagePreview),
       onlineInsuranceCovered: onlineInsurance,
     })
-      .then(() => {
-        PasteurStorage.addClubPoints(phone, 20, "مشاوره و ویزیت");
-        setSubmitted(true);
-      })
+      .then(() => postClubPointsApi(phone, 20, "مشاوره و ویزیت"))
+      .then(() => setSubmitted(true))
       .catch(() => setSubmitted(false));
   }
 
@@ -269,6 +275,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
           {consultationTypes.map((t) => {
             const cardPrice = getConsultationPrice({
               specialtyId: selectedSpecialty?.id || null,
+              specialtyName: selectedSpecialty?.name || null,
               typeId: t.id,
               categoryId: category,
             });

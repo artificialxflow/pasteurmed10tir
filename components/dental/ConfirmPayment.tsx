@@ -15,6 +15,7 @@ import { fetchPublic } from "@/lib/content/client";
 import {
   createInsuranceInquiryApi,
   fetchPatientOps,
+  getInsuranceInquiryApi,
 } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
@@ -167,6 +168,16 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     const deposit = Number(data.amount) || 200000;
     setDepositAmount(deposit);
     setPending(data);
+    const storedInquiryId = data.insuranceInquiryId ? String(data.insuranceInquiryId) : null;
+    if (storedInquiryId) {
+      setInquiryId(storedInquiryId);
+      const storedStatus = String(data.insuranceStatus || "");
+      if (storedStatus === "approved" || storedStatus === "rejected" || storedStatus === "pending") {
+        setInquiryStatus(storedStatus);
+      } else {
+        setInquiryStatus("pending");
+      }
+    }
     void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
       .then((s) => setDepositAmount(Number(data.amount) || s.dentalReservationFee))
       .catch(() => {});
@@ -194,6 +205,58 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     PasteurStorage.setPendingPayment(next);
   }
 
+  function applyApprovedInquiry(id: string) {
+    if (!pending) return;
+    if (!isPatientApproved(profile)) {
+      setNote("کاربری بیمار تأیید نشده؛ فرانشیز٪ اعمال نشد.");
+      return;
+    }
+    const percent = resolveFranchisePercent(profile);
+    const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
+    const payable = payableFromFranchise(visitFee, percent);
+    const next = {
+      ...pending,
+      amount: payable,
+      visitFee,
+      franchisePercent: percent,
+      insuranceInquiryId: id,
+      insuranceStatus: "approved",
+      paymentLabel: `فرانشیز ${percent}٪ از هزینه ویزیت`,
+    };
+    applyAmount(next);
+    setInquiryStatus("approved");
+    setNote(
+      `استعلام تأیید شد. هزینه ویزیت ${formatPrice(visitFee)} × ${percent}٪ = ${formatPrice(payable)}`,
+    );
+  }
+
+  useEffect(() => {
+    if (!inquiryId || inquiryStatus !== "pending" || !pending) return;
+
+    let cancelled = false;
+    const sync = () => {
+      void getInsuranceInquiryApi(inquiryId)
+        .then(({ inquiry }) => {
+          if (cancelled) return;
+          const status = String(inquiry.status || "");
+          if (status === "approved") {
+            applyApprovedInquiry(inquiryId);
+          } else if (status === "rejected") {
+            setInquiryStatus("rejected");
+            setNote("استعلام بیمه رد شد. می‌توانید با بیعانه ادامه دهید.");
+          }
+        })
+        .catch(() => {});
+    };
+
+    sync();
+    const timer = window.setInterval(sync, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [inquiryId, inquiryStatus, pending, profile]);
+
   function submitInquiry() {
     if (!pending || pending.kind !== "booking") return;
     if (mode === "none") {
@@ -218,36 +281,17 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       depositAmount,
     })
       .then(({ inquiry }) => {
-        setInquiryId(String(inquiry.id));
+        const id = String(inquiry.id);
+        setInquiryId(id);
         setInquiryStatus("pending");
         setNote("درخواست استعلام ثبت شد. کارشناسان بررسی می‌کنند.");
+        applyAmount({
+          ...pending,
+          insuranceInquiryId: id,
+          insuranceStatus: "pending",
+        });
       })
       .catch((e) => setNote(e instanceof Error ? e.message : "ثبت استعلام ناموفق"));
-  }
-
-  function simulateApprove() {
-    if (!pending || !inquiryId) return;
-    if (!isPatientApproved(profile)) {
-      setNote("کاربری بیمار تأیید نشده؛ فرانشیز٪ اعمال نشد.");
-      return;
-    }
-    const percent = resolveFranchisePercent(profile);
-    const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
-    const payable = payableFromFranchise(visitFee, percent);
-    const next = {
-      ...pending,
-      amount: payable,
-      visitFee,
-      franchisePercent: percent,
-      insuranceInquiryId: inquiryId,
-      insuranceStatus: "approved",
-      paymentLabel: `فرانشیز ${percent}٪ از هزینه ویزیت`,
-    };
-    applyAmount(next);
-    setInquiryStatus("approved");
-    setNote(
-      `استعلام تأیید شد. هزینه ویزیت ${formatPrice(visitFee)} × ${percent}٪ = ${formatPrice(payable)}`,
-    );
   }
 
   function clearInsurance() {
@@ -357,11 +401,6 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
             <Button type="button" className="text-sm" onClick={submitInquiry} disabled={mode === "none"}>
               استعلام و بررسی کارشناسان
             </Button>
-            {inquiryStatus === "pending" ? (
-              <Button type="button" variant="accent" className="text-sm" onClick={simulateApprove}>
-                شبیه‌سازی تأیید
-              </Button>
-            ) : null}
             {inquiryStatus !== "none" ? (
               <Button type="button" variant="outline" className="text-sm" onClick={clearInsurance}>
                 بازگشت به بیعانه

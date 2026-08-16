@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import type { Product } from "@/lib/data";
 import { ShopCart } from "@/lib/shop";
-import { PasteurStorage } from "@/lib/storage";
 import { normalizePhone } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -23,8 +22,7 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   const [totals, setTotals] = useState({ subtotal: 0, total: 0, count: 0 });
 
   function refresh() {
-    PasteurStorage.initProductsIfNeeded();
-    const products = PasteurStorage.getProducts();
+    const products = ShopCart.getProductsCache();
     const cart = ShopCart.getCart();
     setLines(
       cart
@@ -38,7 +36,7 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   }
 
   useEffect(() => {
-    refresh();
+    void ShopCart.loadProducts().then(() => refresh());
     const vipPhone = ShopCart.getVipPhone();
     if (vipPhone) setPhone(vipPhone);
   }, []);

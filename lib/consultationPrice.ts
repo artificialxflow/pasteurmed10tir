@@ -4,11 +4,11 @@ import {
   type ConsultationType,
   type SpecialtyTariffs,
 } from './data';
-import { PasteurStorage } from './storage';
 import { formatPrice } from './utils';
 
 export type ConsultationPriceInput = {
   specialtyId?: string | null;
+  specialtyName?: string | null;
   typeId?: string | null;
   categoryId?: string | null;
 };
@@ -20,6 +20,13 @@ export type ConsultationPriceResult = {
   source: ConsultationPriceSource;
   label: string;
 };
+
+type ConsultationPricingCache = {
+  consultationTypes: ConsultationType[];
+  specialtyTariffs: SpecialtyTariffs;
+};
+
+let pricingCache: ConsultationPricingCache | null = null;
 
 function normalizeDigits(value: string): string {
   return value
@@ -57,20 +64,23 @@ function buildPreviewLabel(
   return price;
 }
 
+export async function loadConsultationPricing(): Promise<ConsultationPricingCache> {
+  if (pricingCache) return pricingCache;
+  const { fetchPublic } = await import('./content/client');
+  const data = await fetchPublic<ConsultationPricingCache>('/api/content/consultation-pricing');
+  pricingCache = {
+    consultationTypes: data.consultationTypes.map((type) => ({ ...type })),
+    specialtyTariffs: { ...data.specialtyTariffs },
+  };
+  return pricingCache;
+}
+
 export function getConsultationTypes(): ConsultationType[] {
-  if (typeof window !== 'undefined') {
-    PasteurStorage.initConsultationPricingIfNeeded();
-    return PasteurStorage.getConsultationTypes();
-  }
-  return PASTEUR_DATA.consultationTypes.map((type) => ({ ...type }));
+  return pricingCache?.consultationTypes ?? [];
 }
 
 export function getSpecialtyTariffs(): SpecialtyTariffs {
-  if (typeof window !== 'undefined') {
-    PasteurStorage.initConsultationPricingIfNeeded();
-    return PasteurStorage.getSpecialtyTariffs();
-  }
-  return { ...PASTEUR_DATA.specialtyTariffs };
+  return pricingCache?.specialtyTariffs ?? {};
 }
 
 export function getTypePrice(typeId?: string | null): number | null {
@@ -80,14 +90,11 @@ export function getTypePrice(typeId?: string | null): number | null {
 }
 
 export function getConsultationPrice(input: ConsultationPriceInput): ConsultationPriceResult {
-  const { specialtyId, typeId, categoryId } = input;
+  const { specialtyId, specialtyName, typeId, categoryId } = input;
   const types = getConsultationTypes();
   const tariffs = getSpecialtyTariffs();
   const type = types.find((item) => item.id === typeId);
   const category = getCategoryFallback(categoryId);
-  const specialtyName = specialtyId
-    ? PASTEUR_DATA.medicalSpecialties.find((item) => item.id === specialtyId)?.name
-    : null;
 
   if (specialtyId && typeId) {
     const tariffAmount = tariffs[specialtyId]?.[typeId];

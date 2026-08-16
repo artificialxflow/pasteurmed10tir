@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
 import { postPublicOps } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { FormEvent, useMemo, useState } from "react";
@@ -81,9 +80,6 @@ export function DoctorReviewForm({
           ثبت امتیاز
         </Button>
       </form>
-      <p className="text-[11px] text-slate-400">
-        نمونه پزشکان دمو: {PASTEUR_DATA.physicians[0]?.name}
-      </p>
     </Card>
   );
 }
