@@ -115,19 +115,26 @@ export const ShopCart = {
     this.saveCart([]);
   },
 
-  async submitOrderAsync({
-    name,
-    phone,
-    address,
-  }: {
-    name: string;
-    phone: string;
-    address: string;
-  }): Promise<{ ok: boolean; message?: string; total?: number }> {
+  async buildOrderPayload(): Promise<
+    | {
+        ok: true;
+        orderItems: Array<{
+          id: number;
+          name: string;
+          category: string;
+          qty: number;
+          unitPrice: number;
+          finalUnitPrice: number;
+        }>;
+        subtotal: number;
+        discount: number;
+        total: number;
+        customerType: string;
+      }
+    | { ok: false; message: string }
+  > {
     const cart = this.getCart();
     if (!cart.length) return { ok: false, message: 'سبد خالی است' };
-
-    const { createShopOrderApi } = await import('./commerce/client');
 
     let products = productsCache;
     if (!products.length) {
@@ -151,9 +158,7 @@ export const ShopCart = {
     const orderItems = cart
       .map((item) => {
         const product = products.find((p) => String(p.id) === String(item.id));
-        if (!product) {
-          return null;
-        }
+        if (!product) return null;
         const unitPrice = getPrice(product);
         const finalUnitPrice = getFinal(product);
         subtotal += unitPrice * item.qty;
@@ -167,28 +172,113 @@ export const ShopCart = {
           finalUnitPrice,
         };
       })
-      .filter(Boolean);
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
     if (!orderItems.length) return { ok: false, message: 'سبد نامعتبر است' };
+
+    return {
+      ok: true,
+      orderItems,
+      subtotal,
+      discount: subtotal - total,
+      total,
+      customerType,
+    };
+  },
+
+  async submitOrderAsync({
+    name,
+    phone,
+    address,
+  }: {
+    name: string;
+    phone: string;
+    address: string;
+  }): Promise<{ ok: boolean; message?: string; total?: number }> {
+    const built = await this.buildOrderPayload();
+    if (!built.ok) return built;
+
+    const { createShopOrderApi } = await import('./commerce/client');
 
     try {
       await createShopOrderApi({
         customerName: name,
         customerPhone: phone,
         address,
-        customerType,
-        items: orderItems,
-        subtotal,
-        discount: subtotal - total,
-        total,
+        customerType: built.customerType,
+        items: built.orderItems,
+        subtotal: built.subtotal,
+        discount: built.discount,
+        total: built.total,
       });
     } catch (e) {
       return { ok: false, message: e instanceof Error ? e.message : 'ثبت سفارش ناموفق' };
     }
 
     this.clearCart();
-    this.setLastOrderTotal(total);
-    return { ok: true, total };
+    this.setLastOrderTotal(built.total);
+    return { ok: true, total: built.total };
+  },
+
+  async checkoutWithPaymentAsync({
+    name,
+    phone,
+    address,
+    basePath,
+    successTo,
+    returnTo,
+  }: {
+    name: string;
+    phone: string;
+    address: string;
+    basePath: string;
+    successTo?: string;
+    returnTo?: string;
+  }): Promise<{
+    ok: boolean;
+    message?: string;
+    total?: number;
+    redirectUrl?: string;
+    usedFallback?: boolean;
+  }> {
+    const built = await this.buildOrderPayload();
+    if (!built.ok) return built;
+
+    const { saveShopAddress } = await import('./shop/delivery-storage');
+    saveShopAddress(address);
+
+    const { PasteurStorage } = await import('./storage');
+    const { startZibalPaymentApi } = await import('./payment/zibal-client');
+
+    const pending = {
+      kind: 'shop-order' as const,
+      amount: built.total,
+      amountToman: built.total,
+      patientName: name,
+      patientPhone: phone,
+      address,
+      customerType: built.customerType,
+      items: built.orderItems,
+      subtotal: built.subtotal,
+      discount: built.discount,
+      successTo,
+      returnTo,
+    };
+
+    PasteurStorage.setPendingPayment(pending);
+
+    try {
+      const { redirectUrl } = await startZibalPaymentApi({ pending, basePath });
+      return { ok: true, redirectUrl, total: built.total };
+    } catch (e) {
+      PasteurStorage.clearPendingPayment();
+      const message = e instanceof Error ? e.message : 'اتصال به درگاه ناموفق';
+      if (message.includes('پیکربندی') || message.includes('503')) {
+        const fallback = await this.submitOrderAsync({ name, phone, address });
+        return { ...fallback, usedFallback: fallback.ok };
+      }
+      return { ok: false, message };
+    }
   },
 
   submitOrder(args: {

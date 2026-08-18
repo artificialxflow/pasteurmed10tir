@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
+import { flashShopCartButton } from "@/lib/shop/cart-ui";
 import { productGallery, productThumbnail } from "@/lib/shop/product-display";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -41,7 +42,10 @@ export function ShopProductDetail({
 
   function addToCart() {
     if (!product) return;
-    if (ShopCart.addToCart(product.id)) setSnack("به سبد اضافه شد");
+    if (ShopCart.addToCart(product.id)) {
+      setSnack("به سبد اضافه شد");
+      flashShopCartButton();
+    }
   }
 
   if (error) {
@@ -132,9 +136,11 @@ export function ShopProductDetail({
             <Button disabled={product.stock <= 0} onClick={addToCart} className="text-sm">
               افزودن به سبد
             </Button>
-            <Button href={routes.cart} variant="accent" className="text-sm">
-              مشاهده سبد
-            </Button>
+            <span id="shop-cart-button" className="inline-flex">
+              <Button href={routes.cart} variant="accent" className="text-sm">
+                مشاهده سبد
+              </Button>
+            </span>
             <Button href={routes.catalog} variant="ghost" className="text-sm">
               بازگشت به کاتالوگ
             </Button>

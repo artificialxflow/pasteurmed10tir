@@ -9,6 +9,7 @@ import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { type Product } from "@/lib/data";
 import { productThumbnail } from "@/lib/shop/product-display";
+import { scrollToAdminProductForm } from "@/lib/shop/cart-ui";
 import { type ShopOrder } from "@/lib/storage";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
@@ -161,6 +162,7 @@ export default function AdminShopPage() {
 
   function openCreateProduct() {
     setDraft(emptyDraft(defaultCategoryId));
+    scrollToAdminProductForm();
   }
 
   function openEditProduct(product: Product) {
@@ -482,6 +484,7 @@ export default function AdminShopPage() {
       </div>
 
       {draft ? (
+        <div id="admin-product-form">
         <Card hover={false} className="max-w-3xl bg-white p-6">
           <h2 className="mb-4 font-bold">{draft.id ? "ویرایش محصول" : "افزودن محصول"}</h2>
           <form onSubmit={saveProduct} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -567,6 +570,7 @@ export default function AdminShopPage() {
             </div>
           </form>
         </Card>
+        </div>
       ) : null}
 
       <div>

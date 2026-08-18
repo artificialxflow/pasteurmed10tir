@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import type { Product } from "@/lib/data";
+import { getSavedShopAddress, saveShopAddress } from "@/lib/shop/delivery-storage";
 import { ShopCart } from "@/lib/shop";
 import { normalizePhone } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -14,11 +16,13 @@ type CartLine = { product: Product; qty: number };
 export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   const router = useRouter();
   const routes = shopRoutes(variant);
+  const { profile } = usePatientProfile();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
+  const [paying, setPaying] = useState(false);
   const [totals, setTotals] = useState({ subtotal: 0, total: 0, count: 0 });
 
   function refresh() {
@@ -37,9 +41,16 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
 
   useEffect(() => {
     void ShopCart.loadProducts().then(() => refresh());
+    setAddress(getSavedShopAddress());
     const vipPhone = ShopCart.getVipPhone();
     if (vipPhone) setPhone(vipPhone);
   }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (profile.name?.trim()) setName(profile.name.trim());
+    if (profile.phone?.trim()) setPhone(profile.phone.trim());
+  }, [profile]);
 
   function changeQty(id: number, delta: number) {
     ShopCart.changeQty(id, delta);
@@ -58,17 +69,40 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("نام و موبایل را کامل وارد کنید");
       return;
     }
-    void ShopCart.submitOrderAsync({
+    if (address.trim().length < 5) {
+      setMessage("آدرس تحویل را وارد کنید");
+      return;
+    }
+
+    setPaying(true);
+    setMessage("");
+
+    const basePath = variant === "app" ? "/app/shop" : "/shop";
+    void ShopCart.checkoutWithPaymentAsync({
       name: name.trim(),
       phone: phone.trim(),
       address: address.trim(),
-    }).then((result) => {
-      if (!result.ok) {
-        setMessage(result.message || "خطا در ثبت سفارش");
-        return;
-      }
-      router.push(routes.success);
-    });
+      basePath,
+      successTo: routes.success,
+      returnTo: routes.cart,
+    })
+      .then((result) => {
+        if (!result.ok) {
+          setMessage(result.message || "خطا در پرداخت");
+          setPaying(false);
+          return;
+        }
+        saveShopAddress(address.trim());
+        if (result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+          return;
+        }
+        router.push(routes.success);
+      })
+      .catch(() => {
+        setMessage("خطا در اتصال به درگاه");
+        setPaying(false);
+      });
   }
 
   const discount = totals.subtotal - totals.total;
@@ -143,6 +177,9 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
 
       <form onSubmit={checkout} className="space-y-3">
         <p className="font-bold text-slate-900">اطلاعات تحویل</p>
+        {profile ? (
+          <p className="text-xs text-teal-700">نام و موبایل از پروفایل شما پر شده‌اند.</p>
+        ) : null}
         <div>
           <FormLabel>نام و نام خانوادگی</FormLabel>
           <FormInput required value={name} onChange={(e) => setName(e.target.value)} />
@@ -158,11 +195,15 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
         </div>
         <div>
           <FormLabel>آدرس / توضیحات سفارش</FormLabel>
-          <FormTextarea value={address} onChange={(e) => setAddress(e.target.value)} />
+          <FormTextarea
+            required
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
         </div>
         {message ? <p className="text-sm font-bold text-amber-800">{message}</p> : null}
-        <Button type="submit" variant="primary" className="w-full">
-          ثبت سفارش
+        <Button type="submit" variant="primary" className="w-full" disabled={paying}>
+          {paying ? "در حال انتقال به درگاه..." : "پرداخت و تکمیل سفارش"}
         </Button>
       </form>
 

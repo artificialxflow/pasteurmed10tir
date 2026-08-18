@@ -1,9 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { generateCommerceId, mapShopOrder } from '@/lib/commerce/mappers';
-import { isShopVip } from '@/lib/commerce/wallet-service';
-import { optionalPatient } from '@/lib/operations/require-patient';
-import { normalizePhoneDigits } from '@/lib/operations/phone';
-import { prisma } from '@/lib/prisma';
+import { createShopOrderRecord } from '@/lib/commerce/shop-order-service';
 import { NextResponse } from 'next/server';
 
 type OrderItem = {
@@ -28,49 +24,20 @@ export async function POST(request: Request) {
   }>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  const customerPhone = normalizePhoneDigits(String(body.customerPhone || ''));
-  const customerName = String(body.customerName || '').trim();
-  const address = String(body.address || '').trim();
-  const items = Array.isArray(body.items) ? body.items : [];
-
-  if (!customerPhone || !customerName || !address || !items.length) {
-    return jsonError('اطلاعات سفارش ناقص است.');
-  }
-
-  const session = await optionalPatient();
-  const vip = (await isShopVip(customerPhone)) || body.customerType === 'vip';
-  const customerType = vip ? 'vip' : 'regular';
-
-  // Decrease product stock best-effort
-  for (const item of items) {
-    const productId = Number(item.id);
-    const qty = Number(item.qty || 0);
-    if (!Number.isFinite(productId) || qty <= 0) continue;
-    const product = await prisma.product.findUnique({ where: { id: productId } });
-    if (!product) continue;
-    await prisma.product.update({
-      where: { id: productId },
-      data: { stock: Math.max(0, product.stock - qty) },
-    });
-  }
-
-  const row = await prisma.shopOrder.create({
-    data: {
-      id: generateCommerceId(),
-      userId:
-        session && session.phone === customerPhone ? session.userId : undefined,
-      customerType,
-      customerTypeLabel: customerType === 'vip' ? 'VIP تجهیزات' : 'عادی',
-      customerName,
-      customerPhone,
-      address,
-      items,
+  try {
+    const order = await createShopOrderRecord({
+      customerName: String(body.customerName || ''),
+      customerPhone: String(body.customerPhone || ''),
+      address: String(body.address || ''),
+      customerType: body.customerType,
+      items: Array.isArray(body.items) ? body.items : [],
       subtotal: Number(body.subtotal || 0),
       discount: Number(body.discount || 0),
       total: Number(body.total || 0),
       status: 'pending',
-    },
-  });
-
-  return NextResponse.json({ order: mapShopOrder(row) }, { status: 201 });
+    });
+    return NextResponse.json({ order }, { status: 201 });
+  } catch (e) {
+    return jsonError(e instanceof Error ? e.message : 'ثبت سفارش ناموفق.', 400);
+  }
 }

@@ -185,3 +185,24 @@ p {
     transform: none;
   }
 }
+
+@keyframes shopCartFlash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(245 158 11 / 0);
+    transform: scale(1);
+  }
+  35% {
+    box-shadow: 0 0 0 6px rgb(245 158 11 / 0.45);
+    transform: scale(1.06);
+  }
+  70% {
+    box-shadow: 0 0 0 2px rgb(245 158 11 / 0.2);
+    transform: scale(1.02);
+  }
+}
+
+#shop-cart-button.shop-cart-flash,
+#shop-cart-button.shop-cart-flash > * {
+  animation: shopCartFlash 1.4s ease;
+}

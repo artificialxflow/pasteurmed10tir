@@ -36,6 +36,7 @@ export const ROUTES = {
     shopCatalog: '/shop/catalog',
     shopCart: '/shop/cart',
     shopSuccess: '/shop/success',
+    shopFailed: '/shop/failed',
     shopFacility: '/shop/facility',
   },
   app: {
@@ -71,6 +72,7 @@ export const ROUTES = {
     shopCatalog: '/app/shop-catalog',
     shopCart: '/app/shop-cart',
     shopSuccess: '/app/shop-success',
+    shopFailed: '/app/shop-failed',
     shopFacility: '/app/shop-facility',
   },
   admin: {

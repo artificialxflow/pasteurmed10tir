@@ -5,6 +5,7 @@ import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
+import { flashShopCartButton } from "@/lib/shop/cart-ui";
 import { productThumbnail } from "@/lib/shop/product-display";
 import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
     if (ShopCart.addToCart(id)) {
       setSnack("به سبد اضافه شد");
       setCartCount(ShopCart.getCartCount());
+      flashShopCartButton();
     }
   }
 
@@ -120,9 +122,11 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
             <option value="stock-desc">بیشترین موجودی</option>
           </FormSelect>
         ) : null}
-        <Button href={routes.cart} variant="accent" className="text-sm">
-          🛒 سبد {cartCount > 0 ? `(${cartCount.toLocaleString("fa-IR")})` : ""}
-        </Button>
+        <span id="shop-cart-button" className="inline-flex">
+          <Button href={routes.cart} variant="accent" className="text-sm">
+            🛒 سبد {cartCount > 0 ? `(${cartCount.toLocaleString("fa-IR")})` : ""}
+          </Button>
+        </span>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

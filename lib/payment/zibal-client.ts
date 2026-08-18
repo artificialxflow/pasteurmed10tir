@@ -1,5 +1,6 @@
 import { PasteurStorage, type Booking } from '@/lib/storage';
 import { ShopCart } from '@/lib/shop';
+import { saveShopAddress } from '@/lib/shop/delivery-storage';
 import type { PendingPayment } from '@/lib/payment';
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -49,6 +50,12 @@ export function applyPaymentResultToStorage(payment: Record<string, unknown>): v
     PasteurStorage.clearPendingPayment();
     if (payment.planId === 'shop-vip') {
       ShopCart.setCustomerType('vip', String(payment.patientPhone || ''));
+    }
+    if (payment.kind === 'shop-order') {
+      ShopCart.clearCart();
+      const total = Number(payment.amountToman || payment.amount || 0);
+      if (total > 0) ShopCart.setLastOrderTotal(total);
+      if (payment.address) saveShopAddress(String(payment.address));
     }
     if (payment.kind === 'booking' && payment.booking) {
       PasteurStorage.setSessionLastBooking(payment.booking as Booking);
