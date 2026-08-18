@@ -9,6 +9,7 @@ import { ShopCart } from "@/lib/shop";
 import { normalizePhone } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { ShopCartSkeleton } from "./ShopProductSkeleton";
 import { shopRoutes, type ShopVariant } from "./types";
 
 type CartLine = { product: Product; qty: number };
@@ -23,6 +24,7 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
   const [paying, setPaying] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [totals, setTotals] = useState({ subtotal: 0, total: 0, count: 0 });
 
   function refresh() {
@@ -40,7 +42,9 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   }
 
   useEffect(() => {
-    void ShopCart.loadProducts().then(() => refresh());
+    void ShopCart.loadProducts()
+      .then(() => refresh())
+      .finally(() => setLoading(false));
     setAddress(getSavedShopAddress());
     const vipPhone = ShopCart.getVipPhone();
     if (vipPhone) setPhone(vipPhone);
@@ -106,6 +110,19 @@ export function ShopCartView({ variant = "web" }: { variant?: ShopVariant }) {
   }
 
   const discount = totals.subtotal - totals.total;
+
+  const shellClass = variant === "web" ? "mx-auto max-w-xl px-4 py-10 sm:px-6" : "";
+
+  if (loading) {
+    return (
+      <div className={shellClass}>
+        {variant === "web" ? (
+          <h1 className="mb-6 text-2xl font-bold text-slate-900">سبد سفارش</h1>
+        ) : null}
+        <ShopCartSkeleton />
+      </div>
+    );
+  }
 
   if (!lines.length) {
     return (

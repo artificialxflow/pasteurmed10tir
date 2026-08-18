@@ -20,6 +20,20 @@ import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
+function insuranceName(list: InsuranceCompany[], id?: string): string {
+  if (!id) return "—";
+  return list.find((i) => i.id === id)?.name || id;
+}
+
+function ProfileField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5">
+      <p className="text-xs font-bold text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-bold text-slate-900">{value || "—"}</p>
+    </div>
+  );
+}
+
 export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [phone, setPhone] = useState("");
@@ -35,6 +49,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [otpSent, setOtpSent] = useState(false);
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
+  const [editing, setEditing] = useState(false);
 
   const hydrate = useCallback((p: PatientProfile) => {
     setProfile(p);
@@ -44,6 +59,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     setBaseId(p.baseInsuranceId || "");
     setCompId(p.complementaryInsuranceId || "");
     setFranchise(String(p.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT));
+    if (p.status === "approved") setEditing(false);
   }, []);
 
   useEffect(() => {
@@ -126,6 +142,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       }
       hydrate(data.profile);
       notifyPatientAuthChanged();
+      if (data.profile.status !== "approved") setEditing(true);
       setMessage(
         data.profile.status === "approved"
           ? "وارد شدید. پروفایل شما فعال است."
@@ -165,6 +182,12 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         return;
       }
       hydrate(data.profile);
+      notifyPatientAuthChanged();
+      if (data.profile.status === "approved") {
+        setEditing(false);
+      } else {
+        setEditing(true);
+      }
       setMessage(
         data.profile.status === "approved"
           ? "پروفایل ذخیره شد."
@@ -269,16 +292,21 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     DEFAULT_VISIT_FEE_TOMAN,
     clampFranchisePercent(Number(franchise)),
   );
+  const approved = isPatientApproved(profile);
+  const showProfileView = approved && !editing;
+  const franchisePercent = clampFranchisePercent(Number(profile.franchisePercent ?? franchise));
 
   return (
     <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-6 px-4 py-10"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900">پنل کاربری</h1>
+          <h1 className="text-xl font-extrabold text-slate-900">
+            {showProfileView ? "پروفایل شخصی" : "پنل کاربری"}
+          </h1>
           <p className="mt-1 text-sm text-slate-500">{profile.phone}</p>
           <p
             className={`mt-2 text-sm font-bold ${
-              isPatientApproved(profile) ? "text-teal-700" : "text-amber-700"
+              approved ? "text-teal-700" : "text-amber-700"
             }`}
           >
             وضعیت کاربری: {patientStatusLabel(profile.status)}
@@ -289,12 +317,34 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         </Button>
       </div>
 
-      {!isPatientApproved(profile) ? (
+      {!approved ? (
         <Card hover={false} className="border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          حساب شما ثبت شده و در لیست «تأیید کاربری» ادمین قرار دارد. پس از تأیید کارشناس،
-          فرانشیز و بیمه در رزرو و مشاوره اعمال می‌شود.
+          {profile.status === "rejected" ? (
+            <>
+              درخواست قبلی رد شده است. مشخصات را اصلاح کنید و دوباره ذخیره کنید تا کارشناس
+              بررسی کند.
+              {profile.reviewNote ? (
+                <p className="mt-2 font-bold">یادداشت کارشناس: {profile.reviewNote}</p>
+              ) : null}
+            </>
+          ) : (
+            <>
+              حساب شما ثبت شده و در لیست «تأیید کاربری» ادمین قرار دارد. پس از تأیید کارشناس،
+              فرانشیز و بیمه در رزرو و مشاوره اعمال می‌شود.
+            </>
+          )}
         </Card>
-      ) : null}
+      ) : showProfileView ? (
+        <Card hover={false} className="border-teal-200 bg-teal-50/60 p-4 text-sm text-teal-900">
+          پروفایل شما توسط کارشناس تأیید شده است. کد ملی و بیمه‌ها در سامانه ثبت شده‌اند و در
+          رزرو و مشاوره اعمال می‌شوند.
+        </Card>
+      ) : (
+        <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm text-slate-700">
+          در حال ویرایش مشخصات. اگر بیمه یا فرانشیز را تغییر دهید، حساب دوباره برای بررسی کارشناس
+          در صف قرار می‌گیرد.
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-2 text-sm font-bold">
         <Link href={installmentsHref} className="text-cyan-800 underline">
@@ -310,6 +360,41 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         </Link>
       </div>
 
+      {showProfileView ? (
+        <Card hover={false} className="space-y-4 p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ProfileField label="نام" value={profile.name} />
+            <ProfileField label="موبایل" value={profile.phone} />
+            <ProfileField label="کد ملی" value={profile.nationalId || "—"} />
+            <ProfileField
+              label="فرانشیز"
+              value={`${franchisePercent.toLocaleString("fa-IR")}٪`}
+            />
+            <ProfileField
+              label="بیمه پایه"
+              value={insuranceName(baseList, profile.baseInsuranceId)}
+            />
+            <ProfileField
+              label="بیمه تکمیلی"
+              value={insuranceName(compList, profile.complementaryInsuranceId)}
+            />
+          </div>
+          <div className="rounded-xl border border-teal-100 bg-teal-50/50 p-4 text-sm text-slate-700">
+            <p className="font-bold text-slate-900">نمونه محاسبه ویزیت</p>
+            <p className="mt-2 leading-7">
+              هزینه ویزیت {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {franchisePercent}٪ →
+              مبلغ قابل پرداخت{" "}
+              <strong className="text-teal-800">
+                {formatPrice(payableFromFranchise(DEFAULT_VISIT_FEE_TOMAN, franchisePercent))}
+              </strong>
+            </p>
+          </div>
+          {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
+          <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+            ویرایش مشخصات
+          </Button>
+        </Card>
+      ) : (
       <Card hover={false} className="p-5">
         <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -366,10 +451,26 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
               → مبلغ واریزی {formatPrice(samplePayable)}.
             </p>
             {message ? <p className="mb-3 text-sm font-bold text-cyan-800">{message}</p> : null}
-            <Button type="submit">ذخیره مشخصات</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit">ذخیره مشخصات</Button>
+              {approved ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    hydrate(profile);
+                    setMessage("");
+                    setEditing(false);
+                  }}
+                >
+                  انصراف
+                </Button>
+              ) : null}
+            </div>
           </div>
         </form>
       </Card>
+      )}
     </div>
   );
 }

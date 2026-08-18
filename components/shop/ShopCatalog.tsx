@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ShopProductGridSkeleton } from "./ShopProductSkeleton";
 import { shopRoutes, type ShopVariant } from "./types";
 
 type ProductCategory = {
@@ -25,15 +26,17 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState(() => searchParams.get("cat") || "all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
   const [customerType, setCustomerType] = useState("regular");
   const [snack, setSnack] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    setLoading(true);
     try {
       const [productData, categoryData] = await Promise.all([
         fetchPublic<{ items: Product[] }>("/api/content/products"),
@@ -64,7 +67,13 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
     }
     setCustomerType(ShopCart.getCustomerType());
     setCartCount(ShopCart.getCartCount());
+    setLoading(false);
   }, [category, search, sort]);
+
+  useEffect(() => {
+    const cat = searchParams.get("cat");
+    if (cat) setCategory(cat);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("vip") === "paid") {
@@ -157,6 +166,9 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
         </p>
       ) : null}
 
+      {loading ? (
+        <ShopProductGridSkeleton count={variant === "app" ? 4 : 6} variant={variant} />
+      ) : (
       <div
         className={cn(
           "grid gap-5",
@@ -236,6 +248,7 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
           </p>
         )}
       </div>
+      )}
 
       {isVip ? (
         <Link
