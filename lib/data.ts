@@ -124,11 +124,18 @@ export interface LaserService {
 export interface Product {
   id: number;
   name: string;
+  slug?: string;
+  description?: string;
   category: string;
+  categoryId?: number | null;
+  categorySlug?: string | null;
   price: string;
   priceNum: number;
   stock: number;
   image: string;
+  images?: string[];
+  active?: boolean;
+  sortOrder?: number;
 }
 
 export interface Membership {

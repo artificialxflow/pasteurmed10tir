@@ -57,6 +57,7 @@ async function main() {
   await prisma.physician.deleteMany();
   await prisma.galleryItem.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.productCategory.deleteMany();
   await prisma.baseInsurance.deleteMany();
   await prisma.complementaryInsurance.deleteMany();
   await prisma.consultationType.deleteMany();

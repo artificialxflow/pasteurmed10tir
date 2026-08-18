@@ -3,6 +3,9 @@ import { ROUTES } from "@/lib/routes";
 export type ShopVariant = "web" | "app";
 
 export function shopRoutes(variant: ShopVariant) {
+  const product = (slug: string) =>
+    variant === "app" ? `/app/shop-product/${slug}` : `/shop/product/${slug}`;
+
   return variant === "app"
     ? {
         home: ROUTES.app.shop,
@@ -13,6 +16,7 @@ export function shopRoutes(variant: ShopVariant) {
         facility: ROUTES.app.shopFacility,
         confirm: ROUTES.app.dentalConfirm,
         root: ROUTES.app.home,
+        product,
       }
     : {
         home: ROUTES.web.shop,
@@ -23,5 +27,6 @@ export function shopRoutes(variant: ShopVariant) {
         facility: ROUTES.web.shopFacility,
         confirm: ROUTES.web.dentalConfirm,
         root: ROUTES.web.home,
+        product,
       };
 }

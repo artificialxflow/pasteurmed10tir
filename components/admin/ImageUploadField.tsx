@@ -10,6 +10,7 @@ type ImageUploadFieldProps = {
   placeholder?: string;
   className?: string;
   inputClassName?: string;
+  diskOnly?: boolean;
 };
 
 export function ImageUploadField({
@@ -18,6 +19,7 @@ export function ImageUploadField({
   placeholder,
   className,
   inputClassName,
+  diskOnly = false,
 }: ImageUploadFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -40,14 +42,24 @@ export function ImageUploadField({
 
   return (
     <div className={className}>
-      <FormInput
-        type="text"
-        dir="ltr"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder || "/uploads/... یا https://..."}
-        className={inputClassName}
-      />
+      {diskOnly ? (
+        value ? (
+          <p className="mb-1 truncate text-xs text-slate-500" dir="ltr">
+            {value}
+          </p>
+        ) : (
+          <p className="mb-1 text-xs text-slate-500">فقط آپلود فایل — مسیر /uploads/</p>
+        )
+      ) : (
+        <FormInput
+          type="text"
+          dir="ltr"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || "/uploads/..."}
+          className={inputClassName}
+        />
+      )}
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <label className="cursor-pointer text-xs font-bold text-teal-700">
           <input
@@ -67,6 +79,86 @@ export function ImageUploadField({
         ) : null}
       </div>
       {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+    </div>
+  );
+}
+
+type MultiImageUploadFieldProps = {
+  values: string[];
+  onChange: (urls: string[]) => void;
+  diskOnly?: boolean;
+  className?: string;
+};
+
+export function MultiImageUploadField({
+  values,
+  onChange,
+  diskOnly = true,
+  className,
+}: MultiImageUploadFieldProps) {
+  function removeAt(index: number) {
+    onChange(values.filter((_, i) => i !== index));
+  }
+
+  function move(index: number, delta: number) {
+    const next = [...values];
+    const target = index + delta;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  }
+
+  function addImage(path: string) {
+    if (!path) return;
+    onChange([...values, path]);
+  }
+
+  return (
+    <div className={className}>
+      <div className="space-y-2">
+        {values.map((src, index) => (
+          <div
+            key={`${src}-${index}`}
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" className="h-12 w-12 rounded-lg object-cover" />
+            <span className="flex-1 truncate text-xs text-slate-600" dir="ltr">
+              {src}
+            </span>
+            <button
+              type="button"
+              className="text-xs font-bold text-slate-600"
+              onClick={() => move(index, -1)}
+              disabled={index === 0}
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="text-xs font-bold text-slate-600"
+              onClick={() => move(index, 1)}
+              disabled={index === values.length - 1}
+            >
+              ↓
+            </button>
+            <button
+              type="button"
+              className="text-xs font-bold text-red-600"
+              onClick={() => removeAt(index)}
+            >
+              حذف
+            </button>
+          </div>
+        ))}
+      </div>
+      <ImageUploadField
+        value=""
+        onChange={addImage}
+        diskOnly={diskOnly}
+        className="mt-2"
+        placeholder="افزودن تصویر جدید"
+      />
     </div>
   );
 }

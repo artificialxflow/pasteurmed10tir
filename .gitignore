@@ -39,6 +39,7 @@ ADMIN-CREDENTIALS.local.json
 ADMIN-CREDENTIALS.local.md
 ADMIN-CREDENTIALS.local.*
 !ADMIN-CREDENTIALS.example.json
+backend-dev/TEST-FULL-WALKTHROUGH-FA.md
 
 # vercel
 .vercel

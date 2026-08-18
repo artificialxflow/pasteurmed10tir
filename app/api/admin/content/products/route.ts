@@ -1,49 +1,68 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { assignIntIds } from '@/lib/content/int-id';
+import {
+  sanitizeProductInput,
+  toProductDto,
+  type ProductInput,
+} from '@/lib/content/product-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-type ProductBody = {
-  id: number;
-  name: string;
-  category: string;
-  price: string;
-  priceNum: number;
-  stock: number;
-  image: string;
-};
-
 export async function GET() {
   const auth = await requireAdmin('shop');
   if (auth.error) return auth.error;
-  const items = await prisma.product.findMany({ orderBy: { id: 'asc' } });
-  return NextResponse.json({ items });
+
+  const items = await prisma.product.findMany({
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    include: { categoryRel: true },
+  });
+  return NextResponse.json({ items: items.map(toProductDto) });
 }
 
 export async function PUT(request: Request) {
   const auth = await requireAdmin('shop');
   if (auth.error) return auth.error;
 
-  const body = await parseJson<{ items?: ProductBody[] }>(request);
+  const body = await parseJson<{ items?: ProductInput[] }>(request);
   if (!body?.items) return jsonError('درخواست نامعتبر است.');
 
-  const cleaned = assignIntIds(
-    body.items.map((p) => ({
-      id: Number(p.id),
-      name: String(p.name || '').trim(),
-      category: String(p.category || 'پزشکی').trim(),
-      price: String(p.price || '').trim(),
-      priceNum: Number(p.priceNum || 0),
-      stock: Number(p.stock || 0),
-      image: String(p.image || '/uploads/placeholder.svg').trim(),
-    })),
-  ).filter((p) => p.name);
+  const categories = await prisma.productCategory.findMany({
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+  });
+  if (!categories.length) {
+    return jsonError('ابتدا حداقل یک دسته‌بندی تعریف کنید.');
+  }
 
-  await prisma.$transaction([
-    prisma.product.deleteMany(),
-    ...cleaned.map((p) => prisma.product.create({ data: p })),
-  ]);
+  const withIds = assignIntIds(body.items.map((p) => ({ ...p, id: Number(p.id) })));
+  const slugSet = new Set<string>();
+  const cleaned = withIds
+    .map((p) => sanitizeProductInput(p, categories, slugSet))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
-  return NextResponse.json({ items: cleaned });
+  for (const item of cleaned) {
+    if (item.images.some((img) => !img.startsWith('/uploads/'))) {
+      return jsonError('تصاویر محصول باید از مسیر /uploads/ باشند.');
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const keepIds = cleaned.map((p) => p.id);
+    await tx.product.deleteMany({
+      where: keepIds.length ? { id: { notIn: keepIds } } : {},
+    });
+    for (const p of cleaned) {
+      await tx.product.upsert({
+        where: { id: p.id },
+        create: p,
+        update: p,
+      });
+    }
+  });
+
+  const items = await prisma.product.findMany({
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    include: { categoryRel: true },
+  });
+  return NextResponse.json({ items: items.map(toProductDto) });
 }

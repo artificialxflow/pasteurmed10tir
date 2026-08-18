@@ -5,6 +5,7 @@ import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
+import { productThumbnail } from "@/lib/shop/product-display";
 import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -12,31 +13,53 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { shopRoutes, type ShopVariant } from "./types";
 
+type ProductCategory = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
 export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
   const routes = shopRoutes(variant);
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("default");
   const [customerType, setCustomerType] = useState("regular");
   const [snack, setSnack] = useState("");
   const [cartCount, setCartCount] = useState(0);
+  const [loadError, setLoadError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
-      const data = await fetchPublic<{ items: Product[] }>("/api/content/products");
-      ShopCart.setProductsCache(data.items);
-      let list = data.items;
-      if (category !== "all") list = list.filter((p) => p.category === category);
+      const [productData, categoryData] = await Promise.all([
+        fetchPublic<{ items: Product[] }>("/api/content/products"),
+        fetchPublic<{ items: ProductCategory[] }>("/api/content/product-categories"),
+      ]);
+      ShopCart.setProductsCache(productData.items);
+      setCategories(categoryData.items);
+      let list = productData.items;
+      if (category !== "all") {
+        list = list.filter(
+          (p) => p.category === category || p.categorySlug === category || String(p.categoryId) === category,
+        );
+      }
       const q = search.trim().toLowerCase();
-      if (q) list = list.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(q));
+      if (q) {
+        list = list.filter((p) =>
+          `${p.name} ${p.category} ${p.description || ""}`.toLowerCase().includes(q),
+        );
+      }
       if (sort === "price-asc") list = [...list].sort((a, b) => a.priceNum - b.priceNum);
       if (sort === "price-desc") list = [...list].sort((a, b) => b.priceNum - a.priceNum);
       if (sort === "stock-desc") list = [...list].sort((a, b) => b.stock - a.stock);
       setProducts(list);
-    } catch {
+      setLoadError("");
+    } catch (e) {
       setProducts([]);
+      setLoadError(e instanceof Error ? e.message : "بارگذاری محصولات ناموفق");
     }
     setCustomerType(ShopCart.getCustomerType());
     setCartCount(ShopCart.getCartCount());
@@ -59,6 +82,13 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
   }
 
   const isVip = customerType === "vip";
+  const categoryFilters = [
+    { id: "all", label: "همه" },
+    ...categories.map((c) => ({
+      id: c.name,
+      label: variant === "app" && c.name === "دندانپزشکی" ? "دندان" : c.name,
+    })),
+  ];
 
   const content = (
     <>
@@ -96,11 +126,7 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {[
-          { id: "all", label: "همه" },
-          { id: "دندانپزشکی", label: variant === "app" ? "دندان" : "دندانپزشکی" },
-          { id: "پزشکی", label: "پزشکی" },
-        ].map((c) => (
+        {categoryFilters.map((c) => (
           <button
             key={c.id}
             type="button"
@@ -121,6 +147,12 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
         <p className="mb-3 text-sm font-bold text-teal-700">{snack}</p>
       ) : null}
 
+      {loadError ? (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {loadError}
+        </p>
+      ) : null}
+
       <div
         className={cn(
           "grid gap-5",
@@ -131,15 +163,24 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
           products.map((p) => {
             const base = ShopCart.getProductPrice(p);
             const final = ShopCart.getFinalProductPrice(p);
+            const productHref = routes.product(p.slug || String(p.id));
             return (
               <Card key={p.id} hover={false} className="overflow-hidden p-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.image} alt={p.name} className="h-36 w-full object-cover" />
+                <Link href={productHref}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={productThumbnail(p)}
+                    alt={p.name}
+                    className="h-36 w-full object-cover"
+                  />
+                </Link>
                 <div className="p-3">
                   <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[0.65rem] font-bold text-slate-600">
                     {p.category}
                   </span>
-                  <p className="mt-2 text-sm font-bold text-slate-900">{p.name}</p>
+                  <Link href={productHref} className="mt-2 block text-sm font-bold text-slate-900">
+                    {p.name}
+                  </Link>
                   {isVip ? (
                     <>
                       <p className="mt-1 text-xs text-slate-400 line-through">{p.price}</p>
@@ -168,6 +209,12 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
                   >
                     افزودن به سبد
                   </Button>
+                  <Link
+                    href={productHref}
+                    className="mt-2 block text-center text-[0.65rem] font-bold text-slate-600 hover:text-teal-700"
+                  >
+                    جزئیات محصول
+                  </Link>
                   {isVip && variant === "web" && base !== final ? (
                     <p className="mt-1 text-center text-[0.65rem] text-amber-700">
                       ۲٪ تخفیف VIP اعمال شد
@@ -179,7 +226,9 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
           })
         ) : (
           <p className="col-span-full py-8 text-center text-sm text-slate-500">
-            محصولی یافت نشد
+            {loadError
+              ? "محصولی بارگذاری نشد. بعداً دوباره تلاش کنید."
+              : "محصولی یافت نشد. از پنل ادمین محصول فعال اضافه کنید."}
           </p>
         )}
       </div>

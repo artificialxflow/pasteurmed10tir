@@ -1,5 +1,6 @@
 import { PASTEUR_DATA, type NursingService } from '@/lib/data';
 import { localizeImageUrl } from '@/lib/content/localize-url';
+import { slugifyFa } from '@/lib/content/product-slug';
 import { ensurePlaceholder, syncSeedAssetsToUploadDir } from '@/lib/content/seed-assets';
 import {
   DEFAULT_BASE_INSURANCES,
@@ -22,6 +23,7 @@ async function main() {
   await prisma.laserService.deleteMany();
   await prisma.galleryItem.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.productCategory.deleteMany();
   await prisma.physician.deleteMany();
   await prisma.baseInsurance.deleteMany();
   await prisma.complementaryInsurance.deleteMany();
@@ -99,16 +101,31 @@ async function main() {
     });
   }
 
+  const dentistry = await prisma.productCategory.create({
+    data: { name: 'دندانپزشکی', slug: 'dentistry', sortOrder: 1, active: true },
+  });
+  const medical = await prisma.productCategory.create({
+    data: { name: 'پزشکی', slug: 'medical', sortOrder: 2, active: true },
+  });
+
   for (const p of PASTEUR_DATA.products) {
+    const image = await localizeImageUrl(p.image, cache);
+    const categoryId = p.category === 'پزشکی' ? medical.id : dentistry.id;
     await prisma.product.create({
       data: {
         id: p.id,
         name: p.name,
+        slug: `${slugifyFa(p.name)}-${p.id}`,
+        description: '',
         category: p.category,
+        categoryId,
         price: p.price,
         priceNum: p.priceNum,
         stock: p.stock,
-        image: await localizeImageUrl(p.image, cache),
+        image,
+        images: [image],
+        active: true,
+        sortOrder: p.id,
       },
     });
   }

@@ -146,14 +146,30 @@ model GalleryItem {
   after    String
 }
 
+model ProductCategory {
+  id        Int       @id @default(autoincrement())
+  name      String
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  products  Product[]
+}
+
 model Product {
-  id       Int    @id
-  name     String
-  category String
-  price    String
-  priceNum Int
-  stock    Int    @default(0)
-  image    String
+  id          Int              @id
+  name        String
+  slug        String           @unique
+  description String           @default("")
+  category    String
+  categoryId  Int?
+  categoryRel ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  price       String
+  priceNum    Int
+  stock       Int              @default(0)
+  image       String
+  images      String[]         @default([])
+  active      Boolean          @default(true)
+  sortOrder   Int              @default(0)
 }
 
 model BaseInsurance {
