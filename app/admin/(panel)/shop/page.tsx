@@ -114,6 +114,7 @@ export default function AdminShopPage() {
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<ProductCategory | null>(null);
+  const [categorySlugTouched, setCategorySlugTouched] = useState(false);
   const [error, setError] = useState("");
 
   async function loadCategories() {
@@ -208,6 +209,7 @@ export default function AdminShopPage() {
   }
 
   function openCreateCategory() {
+    setCategorySlugTouched(false);
     setCategoryDraft({
       id: 0,
       name: "",
@@ -218,6 +220,7 @@ export default function AdminShopPage() {
   }
 
   function openEditCategory(category: ProductCategory) {
+    setCategorySlugTouched(true);
     setCategoryDraft({ ...category });
   }
 
@@ -227,7 +230,7 @@ export default function AdminShopPage() {
     const item: ProductCategory = {
       ...categoryDraft,
       name: categoryDraft.name.trim(),
-      slug: categoryDraft.slug.trim() || slugifyFa(categoryDraft.name),
+      slug: categoryDraft.slug.trim() || categoryDraft.name.trim(),
     };
     if (!item.name) {
       setError("نام دسته الزامی است.");
@@ -302,7 +305,7 @@ export default function AdminShopPage() {
       <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold">دسته‌بندی محصولات</h2>
-          <Button type="button" variant="ghost" className="text-sm" onClick={openCreateCategory}>
+          <Button type="button" variant="primary" className="text-sm" onClick={openCreateCategory}>
             + دسته جدید
           </Button>
         </div>
@@ -351,21 +354,25 @@ export default function AdminShopPage() {
           <form onSubmit={saveCategory} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormInput
               value={categoryDraft.name}
-              onChange={(e) =>
+              onChange={(e) => {
+                const name = e.target.value;
                 setCategoryDraft({
                   ...categoryDraft,
-                  name: e.target.value,
-                  slug: categoryDraft.slug || slugifyFa(e.target.value),
-                })
-              }
+                  name,
+                  slug: categorySlugTouched ? categoryDraft.slug : name.trim(),
+                });
+              }}
               placeholder="نام دسته"
               required
             />
             <FormInput
               dir="ltr"
               value={categoryDraft.slug}
-              onChange={(e) => setCategoryDraft({ ...categoryDraft, slug: e.target.value })}
-              placeholder="slug"
+              onChange={(e) => {
+                setCategorySlugTouched(true);
+                setCategoryDraft({ ...categoryDraft, slug: e.target.value });
+              }}
+              placeholder="slug — پیش‌فرض همان نام دسته"
               required
             />
             <FormInput
@@ -386,7 +393,7 @@ export default function AdminShopPage() {
               <option value="0">غیرفعال</option>
             </FormSelect>
             <div className="flex gap-2 sm:col-span-2">
-              <Button type="submit" className="text-sm">
+              <Button type="submit" variant="primary" className="text-sm">
                 ذخیره دسته
               </Button>
               <Button

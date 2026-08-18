@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { notifyPatientAuthChanged } from "@/lib/auth/use-patient-profile";
 import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
@@ -31,6 +32,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [message, setMessage] = useState("");
   const [ready, setReady] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
 
@@ -83,11 +85,13 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: digits }),
       });
-      const data = (await res.json()) as { error?: string; message?: string };
+      const data = (await res.json()) as { error?: string; message?: string; mode?: string };
       if (!res.ok) {
         setMessage(data.error || "ارسال کد ناموفق بود.");
+        setOtpSent(false);
         return;
       }
+      setOtpSent(true);
       setMessage(data.message || "کد ارسال شد.");
     } catch {
       setMessage("خطا در ارتباط با سرور.");
@@ -121,7 +125,12 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         return;
       }
       hydrate(data.profile);
-      setMessage("وارد شدید.");
+      notifyPatientAuthChanged();
+      setMessage(
+        data.profile.status === "approved"
+          ? "وارد شدید. پروفایل شما فعال است."
+          : "وارد شدید. حساب در سامانه ثبت شد — کارشناس در «تأیید کاربری» ادمین بررسی می‌کند.",
+      );
     } catch {
       setMessage("خطا در ارتباط با سرور.");
     }
@@ -170,6 +179,8 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setProfile(null);
     setOtpCode("");
+    setOtpSent(false);
+    notifyPatientAuthChanged();
     setMessage("خارج شدید.");
   }
 
@@ -189,6 +200,14 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         <p className="mb-6 text-sm text-slate-600">
           مشخصات، بیمه پایه و تکمیلی و فرانشیز را در پنل کاربری مدیریت کنید.
         </p>
+        <Card hover={false} className="mb-4 border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-6 text-slate-600">
+          <p className="font-bold text-slate-800">مراحل ورود / ثبت‌نام</p>
+          <ol className="mt-2 list-decimal space-y-1 pr-4">
+            <li>نام و موبایل را وارد کنید</li>
+            <li>«دریافت کد» — پیامک یا کد تست</li>
+            <li>کد را بنویسید و «ورود به پنل کاربری» را بزنید (بدون این مرحله حساب ساخته نمی‌شود)</li>
+          </ol>
+        </Card>
         <Card hover={false} className="space-y-3 p-5">
           <form onSubmit={login} className="space-y-3">
             <div>
@@ -225,7 +244,18 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
                 </Button>
               </div>
             </div>
-            {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
+            {message ? (
+              <p
+                className={`text-sm font-bold ${otpSent && !profile ? "text-teal-800" : "text-cyan-800"}`}
+              >
+                {message}
+              </p>
+            ) : null}
+            {otpSent && !profile ? (
+              <p className="text-xs font-bold text-amber-800">
+                حالا کد را وارد کنید و دکمه «ورود به پنل کاربری» را بزنید.
+              </p>
+            ) : null}
             <Button type="submit" className="w-full">
               ورود به پنل کاربری
             </Button>
@@ -258,6 +288,13 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
           خروج
         </Button>
       </div>
+
+      {!isPatientApproved(profile) ? (
+        <Card hover={false} className="border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          حساب شما ثبت شده و در لیست «تأیید کاربری» ادمین قرار دارد. پس از تأیید کارشناس،
+          فرانشیز و بیمه در رزرو و مشاوره اعمال می‌شود.
+        </Card>
+      ) : null}
 
       <div className="flex flex-wrap gap-2 text-sm font-bold">
         <Link href={installmentsHref} className="text-cyan-800 underline">

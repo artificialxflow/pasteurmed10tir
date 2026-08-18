@@ -1,6 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/ui/Card";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -46,8 +47,12 @@ function activeId(pathname: string) {
 export function SiteHeader() {
   const pathname = usePathname();
   const active = activeId(pathname);
+  const { profile: patientProfile } = usePatientProfile();
   const [open, setOpen] = useState(false);
   const menuId = useId();
+  const accountLabel = patientProfile
+    ? patientProfile.name.split(/\s+/)[0] || "کاربری"
+    : "کاربری";
 
   useEffect(() => {
     setOpen(false);
@@ -95,9 +100,14 @@ export function SiteHeader() {
                     active === item.id
                       ? "border border-cyan-300 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
                       : "text-slate-600 hover:bg-white/90 hover:text-cyan-800",
+                    item.id === "account" && patientProfile && active !== item.id
+                      ? "border border-teal-200 bg-teal-50 text-teal-800"
+                      : "",
                   )}
                 >
-                  {item.label}
+                  {item.id === "account" && patientProfile
+                    ? `${accountLabel} ✓`
+                    : item.label}
                 </Link>
               ))}
             </div>
@@ -141,9 +151,12 @@ export function SiteHeader() {
                     active === item.id
                       ? "bg-cyan-50 text-cyan-800"
                       : "text-slate-700 hover:bg-slate-50",
+                    item.id === "account" && patientProfile ? "text-teal-800" : "",
                   )}
                 >
-                  {item.label}
+                  {item.id === "account" && patientProfile
+                    ? `${accountLabel} ✓`
+                    : item.label}
                 </Link>
               ))}
             </div>

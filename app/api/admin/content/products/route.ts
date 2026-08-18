@@ -13,11 +13,29 @@ export async function GET() {
   const auth = await requireAdmin('shop');
   if (auth.error) return auth.error;
 
-  const items = await prisma.product.findMany({
-    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-    include: { categoryRel: true },
-  });
-  return NextResponse.json({ items: items.map(toProductDto) });
+  try {
+    const items = await prisma.product.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      include: { categoryRel: true },
+    });
+    return NextResponse.json({ items: items.map(toProductDto) });
+  } catch (e) {
+    console.error('[products GET]', e);
+    const msg = String(e instanceof Error ? e.message : e);
+    if (
+      msg.includes('ProductCategory') ||
+      msg.includes('does not exist') ||
+      msg.includes('column') ||
+      msg.includes('P2021') ||
+      msg.includes('P2022')
+    ) {
+      return jsonError(
+        'احتمالاً migration فروشگاه اجرا نشده. روی سرور: npx prisma migrate deploy',
+        500,
+      );
+    }
+    return jsonError('خطا در بارگذاری محصولات.', 500);
+  }
 }
 
 export async function PUT(request: Request) {

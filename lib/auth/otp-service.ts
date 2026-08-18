@@ -36,7 +36,12 @@ export async function requestOtp(
   if (isDevPhone) {
     const check = validateDevOtpSend(phone);
     if (!check.ok) return { ok: false, error: check.error, status: 400 };
-    return { ok: true, message: 'کد تأیید ارسال شد (حالت توسعه).', mode: 'dev' };
+    return {
+      ok: true,
+      message:
+        'کد برای این شماره از قبل مشخص است. کد را وارد کنید و «ورود به پنل کاربری» را بزنید تا حساب ساخته شود.',
+      mode: 'dev',
+    };
   }
 
   if (!isSmsConfigured()) {
@@ -83,7 +88,7 @@ export async function requestOtp(
     return { ok: false, error: sent.error || 'ارسال پیامک ناموفق بود.', status: 502 };
   }
 
-  return { ok: true, message: 'کد تأیید پیامک شد.', mode: 'sms' };
+  return { ok: true, message: 'کد تأیید پیامک شد. کد را وارد کنید و «ورود به پنل کاربری» را بزنید.', mode: 'sms' };
 }
 
 export async function verifyOtpCode(
