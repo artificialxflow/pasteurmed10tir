@@ -13,6 +13,7 @@ type Period = "day" | "week" | "month";
 
 type QueueCounts = {
   pendingPatients: number;
+  pendingInsuranceInquiries: number;
   pendingFacilities: number;
   newComplaints: number;
   paidMembers: number;
@@ -48,6 +49,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<BookingStats | null>(null);
   const [queue, setQueue] = useState<QueueCounts>({
     pendingPatients: 0,
+    pendingInsuranceInquiries: 0,
     pendingFacilities: 0,
     newComplaints: 0,
     paidMembers: 0,
@@ -62,7 +64,7 @@ export default function AdminDashboardPage() {
       const commissions = PasteurStorage.getCommissions();
 
       try {
-        const [bookingsRes, patientsRes, complaintsRes] = await Promise.all([
+        const [bookingsRes, patientsRes, complaintsRes, insuranceRes] = await Promise.all([
           fetchAdminOps<{ items: Booking[] }>("/api/admin/operations/bookings"),
           fetchAdminOps<{ items: { status?: string }[] }>(
             "/api/admin/operations/patients",
@@ -70,12 +72,18 @@ export default function AdminDashboardPage() {
           fetchAdminOps<{ items: { status?: string }[] }>(
             "/api/admin/operations/complaints",
           ),
+          fetchAdminOps<{ items: { status?: string }[] }>(
+            "/api/admin/operations/insurance-inquiries",
+          ),
         ]);
 
         setStats(computeBookingStats(bookingsRes.items));
         setQueue({
           pendingPatients: patientsRes.items.filter(
             (p) => p.status !== "approved" && p.status !== "rejected",
+          ).length,
+          pendingInsuranceInquiries: insuranceRes.items.filter(
+            (i) => i.status === "pending" || !i.status,
           ).length,
           pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending")
             .length,
@@ -94,6 +102,7 @@ export default function AdminDashboardPage() {
           pendingPatients: patients.filter(
             (p) => p.status !== "approved" && p.status !== "rejected",
           ).length,
+          pendingInsuranceInquiries: 0,
           pendingFacilities: facilities.filter((f) => !f.status || f.status === "pending")
             .length,
           newComplaints: complaints.filter((c) => c.status === "new" || !c.status).length,
@@ -111,9 +120,21 @@ export default function AdminDashboardPage() {
   const shortcuts = [
     {
       href: ROUTES.admin.patients,
-      label: "تأیید کاربری / فرانشیز",
+      label: "بیماران — تأیید کاربری / فرانشیز",
       count: queue.pendingPatients,
       tone: "text-amber-700",
+    },
+    {
+      href: ROUTES.admin.insurances,
+      label: "استعلام‌های بیمه (پرداخت)",
+      count: queue.pendingInsuranceInquiries,
+      tone: "text-orange-700",
+    },
+    {
+      href: ROUTES.admin.access,
+      label: "کارکنان پنل (سطح دسترسی)",
+      count: null as number | null,
+      tone: "text-indigo-700",
     },
     {
       href: ROUTES.admin.facilities,
@@ -173,7 +194,9 @@ export default function AdminDashboardPage() {
           {shortcuts.map((item) => (
             <Link key={item.href} href={item.href}>
               <Card hover className="p-4 transition hover:border-teal-200">
-                <p className={`text-2xl font-bold ${item.tone}`}>{item.count}</p>
+                <p className={`text-2xl font-bold ${item.tone}`}>
+                  {item.count == null ? "→" : item.count}
+                </p>
                 <p className="mt-1 text-xs font-bold text-slate-600">{item.label}</p>
               </Card>
             </Link>

@@ -16,6 +16,9 @@ export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
     status: (profile?.status ?? 'pending') as PatientStatus,
     reviewedAt: profile?.reviewedAt?.toISOString(),
     reviewNote: profile?.reviewNote ?? undefined,
+    zohalStatus: (profile?.zohalStatus as PatientProfile['zohalStatus']) ?? undefined,
+    shahkarMatched: profile?.shahkarMatched ?? undefined,
+    zohalCheckedAt: profile?.zohalCheckedAt?.toISOString(),
     createdAt: profile?.createdAt.toISOString() ?? user.createdAt.toISOString(),
     updatedAt: profile?.updatedAt.toISOString() ?? user.updatedAt.toISOString(),
   };

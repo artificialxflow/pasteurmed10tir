@@ -10,6 +10,8 @@ export type InsuranceCompany = {
 
 export type PatientStatus = 'pending' | 'approved' | 'rejected';
 
+export type ZohalStatus = 'skipped' | 'pending' | 'passed' | 'failed' | 'error';
+
 export type PatientProfile = {
   phone: string;
   name: string;
@@ -23,6 +25,9 @@ export type PatientProfile = {
   status: PatientStatus;
   reviewedAt?: string;
   reviewNote?: string;
+  zohalStatus?: ZohalStatus;
+  shahkarMatched?: boolean | null;
+  zohalCheckedAt?: string;
   createdAt: string;
   updatedAt: string;
 };

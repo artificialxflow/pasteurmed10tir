@@ -73,7 +73,11 @@ export async function zibalRequest(input: {
   });
 
   if (data.result !== 100 || !data.trackId) {
-    throw new ZibalError(data.message || 'ایجاد تراکنش در زیبال ناموفق بود.', data.result);
+    const raw = data.message || 'ایجاد تراکنش در زیبال ناموفق بود.';
+    const friendly = /invalid ip/i.test(raw)
+      ? 'درگاه پرداخت موقتاً در دسترس نیست. چند دقیقه دیگر تلاش کنید یا با پشتیبانی pasteur.plus تماس بگیرید.'
+      : raw;
+    throw new ZibalError(friendly, data.result);
   }
 
   return data;

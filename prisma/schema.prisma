@@ -43,6 +43,10 @@ model PatientProfile {
   status                   PatientStatus @default(pending)
   reviewedAt               DateTime?
   reviewNote               String?
+  zohalStatus              String?
+  zohalPayload             Json?
+  shahkarMatched           Boolean?
+  zohalCheckedAt           DateTime?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
 }

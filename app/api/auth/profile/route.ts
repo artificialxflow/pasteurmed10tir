@@ -4,6 +4,10 @@ import { getPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { clampFranchisePercent } from '@/lib/patient';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
+import {
+  mergePatientStatusAfterZohal,
+  runPatientShahkarVerification,
+} from '@/lib/zohal/patient-verify';
 import { NextResponse } from 'next/server';
 
 type Body = {
@@ -51,6 +55,19 @@ export async function PATCH(request: Request) {
     status = 'pending';
   }
 
+  const zohal = await runPatientShahkarVerification(nationalId, user.phone);
+  status = mergePatientStatusAfterZohal(status, zohal);
+
+  let reviewedAt = user.profile.reviewedAt;
+  let reviewNote = user.profile.reviewNote;
+  if (zohal.status === 'approved' || zohal.status === 'rejected') {
+    reviewedAt = zohal.reviewedAt ?? new Date();
+    reviewNote = zohal.reviewNote ?? null;
+  } else if (insuranceChanged && status === 'pending') {
+    reviewedAt = null;
+    reviewNote = null;
+  }
+
   await prisma.user.update({ where: { id: user.id }, data: { name } });
   await prisma.patientProfile.update({
     where: { userId: user.id },
@@ -60,6 +77,12 @@ export async function PATCH(request: Request) {
       complementaryInsuranceId: body.complementaryInsuranceId || null,
       franchisePercent,
       status,
+      reviewedAt,
+      reviewNote,
+      zohalStatus: zohal.zohalStatus,
+      zohalPayload: zohal.zohalPayload,
+      shahkarMatched: zohal.shahkarMatched,
+      zohalCheckedAt: zohal.zohalCheckedAt,
     },
   });
 

@@ -9,7 +9,11 @@ export function isZibalConfigured(): boolean {
 }
 
 export function getSiteUrl(): string {
-  const url = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').trim();
+  const url = (
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'http://localhost:3000'
+  ).trim();
   return url.replace(/\/$/, '');
 }
 

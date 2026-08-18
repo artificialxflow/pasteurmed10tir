@@ -63,6 +63,19 @@ export async function patchAdminOps<T>(path: string, body: unknown): Promise<T> 
   });
 }
 
+export async function postAdminOps<T>(path: string, body: unknown): Promise<T> {
+  return fetchAdminOps<T>(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteAdminOps<T = { ok: boolean }>(path: string): Promise<T> {
+  const res = await fetch(path, { method: 'DELETE', credentials: 'include' });
+  return parseJson<T>(res);
+}
+
 export async function checkBookingSlot(params: {
   doctorId: string | number;
   day: string;

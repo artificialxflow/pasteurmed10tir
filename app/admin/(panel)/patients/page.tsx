@@ -2,30 +2,62 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
+import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { fetchPublic } from "@/lib/content/client";
 import {
   patientStatusLabel,
   resolveFranchisePercent,
+  type InsuranceCompany,
   type PatientProfile,
   type PatientStatus,
 } from "@/lib/patient";
-import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import {
+  deleteAdminOps,
+  fetchAdminOps,
+  patchAdminOps,
+} from "@/lib/operations/client";
+import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
-const STATUS_ACTIONS: { status: PatientStatus; label: string; variant?: "primary" | "outline" | "danger" }[] =
-  [
-    { status: "approved", label: "تأیید", variant: "primary" },
-    { status: "rejected", label: "رد", variant: "danger" },
-    { status: "pending", label: "در بررسی", variant: "outline" },
-  ];
+const STATUS_ACTIONS: {
+  status: PatientStatus;
+  label: string;
+  variant?: "primary" | "outline" | "danger";
+}[] = [
+  { status: "approved", label: "تأیید", variant: "primary" },
+  { status: "rejected", label: "رد", variant: "danger" },
+  { status: "pending", label: "در بررسی", variant: "outline" },
+];
+
+type StatusFilter = "all" | PatientStatus;
+
+const emptyEditForm = {
+  name: "",
+  nationalId: "",
+  franchisePercent: "30",
+  baseInsuranceId: "",
+  complementaryInsuranceId: "",
+};
+
+function insuranceName(list: InsuranceCompany[], id?: string): string {
+  if (!id) return "—";
+  return list.find((i) => i.id === id)?.name || id;
+}
 
 export default function AdminPatientsPage() {
   const [items, setItems] = useState<PatientProfile[]>([]);
+  const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
+  const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busyPhone, setBusyPhone] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
+  const [editPhone, setEditPhone] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(emptyEditForm);
 
   const reload = useCallback(async () => {
     const data = await fetchAdminOps<{ items: PatientProfile[] }>(
@@ -46,10 +78,32 @@ export default function AdminPatientsPage() {
 
   useEffect(() => {
     setLoading(true);
+    void fetchPublic<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
+      "/api/content/insurances",
+    )
+      .then((data) => {
+        setBaseList(data.base.filter((i) => i.active !== false));
+        setCompList(data.complementary.filter((i) => i.active !== false));
+      })
+      .catch(() => {});
+
     void reload()
       .catch((e) => setError(e instanceof Error ? e.message : "خطا در بارگذاری"))
       .finally(() => setLoading(false));
   }, [reload]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((p) => {
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        p.phone.includes(q) ||
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.nationalId || "").includes(q)
+      );
+    });
+  }, [items, search, statusFilter]);
 
   async function setStatus(phone: string, status: PatientStatus) {
     if (busyPhone) return;
@@ -91,6 +145,83 @@ export default function AdminPatientsPage() {
     }
   }
 
+  async function recheckZohal(phone: string) {
+    if (busyPhone) return;
+    setError("");
+    setSuccess("");
+    setBusyPhone(phone);
+    try {
+      await patchAdminOps("/api/admin/operations/patients", { phone, recheckZohal: true });
+      await reload();
+      setSuccess(`استعلام زحل برای ${phone} انجام شد.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "استعلام ناموفق بود.");
+    } finally {
+      setBusyPhone(null);
+    }
+  }
+
+  function openEdit(p: PatientProfile) {
+    setEditPhone(p.phone);
+    setEditForm({
+      name: p.name || "",
+      nationalId: p.nationalId || "",
+      franchisePercent: String(resolveFranchisePercent(p)),
+      baseInsuranceId: p.baseInsuranceId || "",
+      complementaryInsuranceId: p.complementaryInsuranceId || "",
+    });
+  }
+
+  async function saveEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editPhone || busyPhone) return;
+    setError("");
+    setSuccess("");
+    setBusyPhone(editPhone);
+    try {
+      await patchAdminOps("/api/admin/operations/patients", {
+        phone: editPhone,
+        name: editForm.name.trim(),
+        nationalId: editForm.nationalId.trim(),
+        franchisePercent: Number(editForm.franchisePercent),
+        baseInsuranceId: editForm.baseInsuranceId || null,
+        complementaryInsuranceId: editForm.complementaryInsuranceId || null,
+      });
+      await reload();
+      setSuccess(`مشخصات ${editPhone} به‌روز شد.`);
+      setEditPhone(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ذخیره ناموفق بود.");
+    } finally {
+      setBusyPhone(null);
+    }
+  }
+
+  async function removePatient(phone: string, name: string) {
+    if (busyPhone) return;
+    if (
+      !window.confirm(
+        `بیمار «${name || phone}» و تمام پروفایلش از دیتابیس حذف شود؟ این عمل برگشت‌پذیر نیست.`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    setBusyPhone(phone);
+    try {
+      await deleteAdminOps(
+        `/api/admin/operations/patients?phone=${encodeURIComponent(phone)}`,
+      );
+      await reload();
+      setSuccess(`بیمار ${phone} حذف شد.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "حذف ناموفق بود.");
+    } finally {
+      setBusyPhone(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {error ? (
@@ -105,7 +236,7 @@ export default function AdminPatientsPage() {
       ) : null}
       <p className="text-sm leading-7 text-slate-600">
         این صف معادل «پنل کاربری» بیماران است: پروفایل، کد ملی، بیمه تکمیلی و درصد فرانشیز.
-        پس از تأیید، همان درصد روی هزینه ویزیت (وب و اپ) اعمال می‌شود.{" "}
+        با استعلام زحل (شاهکار) تأیید خودکار انجام می‌شود؛ در غیر این صورت تأیید دستی ممکن است.{" "}
         <Link
           href="/admin/insurances"
           className="font-bold text-teal-700 underline-offset-2 hover:underline"
@@ -113,6 +244,25 @@ export default function AdminPatientsPage() {
           استعلام بیمه پرداخت →
         </Link>
       </p>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[12rem] flex-1">
+          <FormLabel>جستجو (موبایل / نام / کد ملی)</FormLabel>
+          <FormInput value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div>
+          <FormLabel>فیلتر وضعیت</FormLabel>
+          <FormSelect
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          >
+            <option value="all">همه</option>
+            <option value="pending">در بررسی</option>
+            <option value="approved">تأیید شده</option>
+            <option value="rejected">رد شده</option>
+          </FormSelect>
+        </div>
+      </div>
 
       {loading ? <p className="text-sm text-slate-500">در حال بارگذاری…</p> : null}
 
@@ -122,13 +272,15 @@ export default function AdminPatientsPage() {
           "موبایل",
           "کد ملی",
           "فرانشیز٪",
+          "بیمه پایه",
           "بیمه تکمیلی",
+          "زحل",
           "وضعیت",
           "یادداشت / عملیات",
         ]}
         empty={loading ? "…" : "هنوز پروفایل بیماری ثبت نشده است."}
       >
-        {items.map((p) => {
+        {filtered.map((p) => {
           const busy = busyPhone === p.phone;
           return (
             <tr key={p.phone} className="border-t border-slate-100 align-top">
@@ -138,7 +290,15 @@ export default function AdminPatientsPage() {
               <td className="px-4 py-3">
                 {resolveFranchisePercent(p).toLocaleString("fa-IR")}٪
               </td>
-              <td className="px-4 py-3">{p.complementaryInsuranceId || "—"}</td>
+              <td className="px-4 py-3 text-xs">
+                {insuranceName(baseList, p.baseInsuranceId)}
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {insuranceName(compList, p.complementaryInsuranceId)}
+              </td>
+              <td className="px-4 py-3 text-xs font-medium">
+                {zohalStatusLabel(p.zohalStatus, p.shahkarMatched)}
+              </td>
               <td className="px-4 py-3">
                 <AdminBadge
                   tone={
@@ -190,6 +350,33 @@ export default function AdminPatientsPage() {
                     >
                       ذخیره یادداشت
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="px-3 py-1.5 text-xs"
+                      disabled={busy || Boolean(busyPhone)}
+                      onClick={() => openEdit(p)}
+                    >
+                      ویرایش
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="px-3 py-1.5 text-xs"
+                      disabled={busy || Boolean(busyPhone) || !p.nationalId}
+                      onClick={() => void recheckZohal(p.phone)}
+                    >
+                      استعلام زحل
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      className="px-3 py-1.5 text-xs"
+                      disabled={busy || Boolean(busyPhone)}
+                      onClick={() => void removePatient(p.phone, p.name)}
+                    >
+                      حذف
+                    </Button>
                   </div>
                 </div>
               </td>
@@ -197,6 +384,96 @@ export default function AdminPatientsPage() {
           );
         })}
       </AdminTable>
+
+      {editPhone ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <Card hover={false} className="w-full max-w-lg space-y-4 p-5">
+            <h3 className="font-extrabold text-slate-900">ویرایش بیمار — {editPhone}</h3>
+            <form onSubmit={saveEdit} className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FormLabel>نام</FormLabel>
+                <FormInput
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <FormLabel>کد ملی</FormLabel>
+                <FormInput
+                  value={editForm.nationalId}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, nationalId: e.target.value }))
+                  }
+                  required
+                  inputMode="numeric"
+                  maxLength={10}
+                />
+              </div>
+              <div>
+                <FormLabel>فرانشیز (درصد)</FormLabel>
+                <FormInput
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={editForm.franchisePercent}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, franchisePercent: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <FormLabel>بیمه پایه</FormLabel>
+                <FormSelect
+                  value={editForm.baseInsuranceId}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, baseInsuranceId: e.target.value }))
+                  }
+                >
+                  <option value="">—</option>
+                  {baseList.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
+              <div>
+                <FormLabel>بیمه تکمیلی</FormLabel>
+                <FormSelect
+                  value={editForm.complementaryInsuranceId}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      complementaryInsuranceId: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">—</option>
+                  {compList.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="submit" disabled={Boolean(busyPhone)}>
+                  ذخیره
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditPhone(null)}
+                  disabled={Boolean(busyPhone)}
+                >
+                  انصراف
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }

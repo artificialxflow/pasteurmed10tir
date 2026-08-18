@@ -1,5 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#0891b2",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pasteur.plus"),
@@ -19,7 +23,6 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Clinique Pasteur", url: "https://pasteur.plus" }],
   manifest: "/manifest.webmanifest",
-  themeColor: "#0891b2",
   icons: {
     icon: [
       { url: "/icon.png?v=20260731", type: "image/png", sizes: "any" },

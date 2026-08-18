@@ -19,8 +19,9 @@ import {
 } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
@@ -144,8 +145,37 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
   );
   const [note, setNote] = useState("");
   const [profile, setProfile] = useState<PatientProfile | null>(null);
+  const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [baseList, setBaseList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
   const [compList, setCompList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
+
+  const refreshProfile = useCallback(async (patientPhone?: string) => {
+    setRefreshingProfile(true);
+    try {
+      const res = await fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me");
+      if (res.profile && (!patientPhone || res.profile.phone === patientPhone.trim())) {
+        setProfile(res.profile);
+        if (res.profile.baseInsuranceId) setBaseId(res.profile.baseInsuranceId);
+        if (res.profile.complementaryInsuranceId) {
+          setCompId(res.profile.complementaryInsuranceId);
+        }
+        return res.profile;
+      }
+    } catch {
+      const local = patientPhone
+        ? PasteurStorage.getPatientProfile(String(patientPhone))
+        : null;
+      if (local) {
+        setProfile(local);
+        if (local.baseInsuranceId) setBaseId(local.baseInsuranceId);
+        if (local.complementaryInsuranceId) setCompId(local.complementaryInsuranceId);
+        return local;
+      }
+    } finally {
+      setRefreshingProfile(false);
+    }
+    return null;
+  }, []);
 
   useEffect(() => {
     void fetchPublic<{ base: { id: string; name: string; active?: boolean }[]; complementary: { id: string; name: string; active?: boolean }[] }>(
@@ -181,24 +211,30 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
       .then((s) => setDepositAmount(Number(data.amount) || s.dentalReservationFee))
       .catch(() => {});
-    void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
-      .then((res) => {
-        if (res.profile && res.profile.phone === String(data.patientPhone || "").trim()) {
-          setProfile(res.profile);
-          if (res.profile.baseInsuranceId) setBaseId(res.profile.baseInsuranceId);
-          if (res.profile.complementaryInsuranceId) setCompId(res.profile.complementaryInsuranceId);
-        }
-      })
-      .catch(() => {
-        const local = PasteurStorage.getPatientProfile(String(data.patientPhone || ""));
-        if (local) {
-          setProfile(local);
-          if (local.baseInsuranceId) setBaseId(local.baseInsuranceId);
-          if (local.complementaryInsuranceId) setCompId(local.complementaryInsuranceId);
-        }
-      });
+    void refreshProfile(String(data.patientPhone || ""));
     setReady(true);
-  }, [app, router]);
+  }, [app, router, refreshProfile]);
+
+  useEffect(() => {
+    function onFocus() {
+      if (!pending) return;
+      void refreshProfile(String(pending.patientPhone || ""));
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [pending, refreshProfile]);
+
+  useEffect(() => {
+    if (!pending || isPatientApproved(profile)) return;
+    const timer = window.setInterval(() => {
+      void refreshProfile(String(pending.patientPhone || ""));
+    }, 20000);
+    return () => window.clearInterval(timer);
+  }, [pending, profile, refreshProfile]);
 
   function applyAmount(next: PendingPayment) {
     setPending(next);
@@ -264,7 +300,9 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       return;
     }
     if (!isPatientApproved(profile)) {
-      setNote("کاربری بیمار هنوز تأیید نشده است. ابتدا در پنل ادمین تأیید شود.");
+      setNote(
+        "کاربری بیمار هنوز تأیید نشده. ابتدا پروفایل را در /account تکمیل کنید؛ سپس کارشناس در /admin/patients تأیید می‌کند (یا شاهکار خودکار).",
+      );
       return;
     }
     const percent = resolveFranchisePercent(profile);
@@ -354,7 +392,36 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
 
       {pending.kind === "booking" ? (
         <Card hover={false} className="mb-6 space-y-3 border-cyan-100 p-5">
-          <h2 className="font-extrabold text-slate-900">بیمه پایه / تکمیلی</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-extrabold text-slate-900">بیمه پایه / تکمیلی</h2>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-xs"
+              disabled={refreshingProfile}
+              onClick={() => void refreshProfile(String(pending.patientPhone || ""))}
+            >
+              {refreshingProfile ? "…" : "بروزرسانی وضعیت کاربری"}
+            </Button>
+          </div>
+          {!isPatientApproved(profile) ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">
+              تأیید کاربری:{" "}
+              <Link href="/account" className="font-bold underline">
+                تکمیل پروفایل
+              </Link>
+              {" · "}
+              کارشناس:{" "}
+              <Link href="/admin/patients" className="font-bold underline">
+                /admin/patients
+              </Link>
+              . استعلام پرداخت بیمه جداگانه در{" "}
+              <Link href="/admin/insurances" className="font-bold underline">
+                /admin/insurances
+              </Link>{" "}
+              تأیید می‌شود.
+            </p>
+          ) : null}
           <p className="text-xs leading-6 text-slate-500">
             اکثر بیمه‌های تکمیلی به‌صورت آنلاین طرف قرارداد هستند. پس از استعلام و تأیید کارشناسان،
             فقط فرانشیز پرداخت می‌شود.

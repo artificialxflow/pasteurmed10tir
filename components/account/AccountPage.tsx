@@ -17,6 +17,7 @@ import {
   type PatientProfile,
 } from "@/lib/patient";
 import { formatPrice, normalizePhone } from "@/lib/utils";
+import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
@@ -50,6 +51,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const hydrate = useCallback((p: PatientProfile) => {
     setProfile(p);
@@ -163,6 +165,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     }
     const percent = clampFranchisePercent(Number(franchise));
     setMessage("");
+    setSaving(true);
     try {
       const res = await fetch("/api/auth/profile", {
         method: "PATCH",
@@ -185,16 +188,35 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       notifyPatientAuthChanged();
       if (data.profile.status === "approved") {
         setEditing(false);
+        setMessage(
+          data.profile.zohalStatus === "passed"
+            ? "پروفایل ذخیره شد. استعلام شاهکار موفق — حساب شما تأیید شد."
+            : "پروفایل ذخیره شد و تأیید شد.",
+        );
+      } else if (data.profile.status === "rejected") {
+        setEditing(true);
+        setMessage(
+          data.profile.zohalStatus === "failed"
+            ? "کد ملی با موبایل شما تطبیق ندارد. کد ملی را اصلاح کنید و دوباره ذخیره کنید."
+            : data.profile.reviewNote || "درخواست رد شد. مشخصات را اصلاح کنید.",
+        );
+      } else if (data.profile.zohalStatus === "error") {
+        setEditing(true);
+        setMessage(
+          "پروفایل ذخیره شد. خطا در استعلام زحل — کارشناس به‌صورت دستی بررسی می‌کند.",
+        );
       } else {
         setEditing(true);
+        setMessage(
+          data.profile.zohalStatus === "skipped"
+            ? "پروفایل ذخیره شد و برای بررسی کارشناس در صف قرار گرفت."
+            : "پروفایل ذخیره شد. در حال بررسی…",
+        );
       }
-      setMessage(
-        data.profile.status === "approved"
-          ? "پروفایل ذخیره شد."
-          : "پروفایل ذخیره شد و برای بررسی کارشناس در صف قرار گرفت.",
-      );
     } catch {
       setMessage("خطا در ارتباط با سرور.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -323,14 +345,25 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             <>
               درخواست قبلی رد شده است. مشخصات را اصلاح کنید و دوباره ذخیره کنید تا کارشناس
               بررسی کند.
+              {profile.zohalStatus === "failed" ? (
+                <p className="mt-2 font-bold">
+                  علت: کد ملی با شماره موبایل {profile.phone} در سامانه شاهکار تطبیق ندارد.
+                </p>
+              ) : null}
               {profile.reviewNote ? (
                 <p className="mt-2 font-bold">یادداشت کارشناس: {profile.reviewNote}</p>
               ) : null}
             </>
           ) : (
             <>
-              حساب شما ثبت شده و در لیست «تأیید کاربری» ادمین قرار دارد. پس از تأیید کارشناس،
-              فرانشیز و بیمه در رزرو و مشاوره اعمال می‌شود.
+              حساب شما ثبت شده است.
+              {profile.zohalStatus === "error" ? (
+                <> خطا در استعلام خودکار — کارشناس به‌صورت دستی بررسی می‌کند.</>
+              ) : profile.zohalStatus === "skipped" ? (
+                <> در لیست «تأیید کاربری» ادمین قرار دارد.</>
+              ) : (
+                <> استعلام شاهکار در حال انجام یا بررسی است.</>
+              )}
             </>
           )}
         </Card>
@@ -377,6 +410,10 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             <ProfileField
               label="بیمه تکمیلی"
               value={insuranceName(compList, profile.complementaryInsuranceId)}
+            />
+            <ProfileField
+              label="استعلام شاهکار"
+              value={zohalStatusLabel(profile.zohalStatus, profile.shahkarMatched)}
             />
           </div>
           <div className="rounded-xl border border-teal-100 bg-teal-50/50 p-4 text-sm text-slate-700">
@@ -452,7 +489,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             </p>
             {message ? <p className="mb-3 text-sm font-bold text-cyan-800">{message}</p> : null}
             <div className="flex flex-wrap gap-2">
-              <Button type="submit">ذخیره مشخصات</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "در حال ذخیره و استعلام…" : "ذخیره مشخصات"}
+              </Button>
               {approved ? (
                 <Button
                   type="button"

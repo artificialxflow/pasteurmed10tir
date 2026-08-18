@@ -4,16 +4,21 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import {
   ALL_ADMIN_PERMISSIONS,
   ADMIN_PERMISSION_META,
-  DEFAULT_ADMIN_ROLES,
-  DEFAULT_ADMIN_USERS,
   type AdminPermission,
   type AdminRole,
   type AdminUser,
 } from "@/lib/adminAccess";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
-import { PasteurStorage } from "@/lib/storage";
+import {
+  deleteAdminOps,
+  fetchAdminOps,
+  patchAdminOps,
+  postAdminOps,
+} from "@/lib/operations/client";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+
+type ApiUser = Omit<AdminUser, "password"> & { password?: string };
 
 const emptyUserForm = {
   id: "",
@@ -26,25 +31,33 @@ const emptyUserForm = {
 
 export default function AdminAccessPage() {
   const [roles, setRoles] = useState<AdminRole[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState("superadmin");
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  function reload() {
-    PasteurStorage.initAdminAccessIfNeeded();
-    const nextRoles = PasteurStorage.getAdminRoles();
-    const nextUsers = PasteurStorage.getAdminUsers();
-    setRoles(nextRoles);
-    setUsers(nextUsers);
-    if (!nextRoles.some((role) => role.id === selectedRoleId)) {
-      setSelectedRoleId(nextRoles[0]?.id || "superadmin");
+  async function reload() {
+    const [rolesRes, usersRes, meRes] = await Promise.all([
+      fetchAdminOps<{ items: AdminRole[] }>("/api/admin/access/roles"),
+      fetchAdminOps<{ items: ApiUser[] }>("/api/admin/access/users"),
+      fetchAdminOps<{ session: { userId: string } | null }>("/api/admin/me"),
+    ]);
+    setRoles(rolesRes.items);
+    setUsers(usersRes.items);
+    setCurrentUserId(meRes.session?.userId ?? null);
+    if (!rolesRes.items.some((role) => role.id === selectedRoleId)) {
+      setSelectedRoleId(rolesRes.items[0]?.id || "superadmin");
     }
   }
 
   useEffect(() => {
-    reload();
+    void reload()
+      .catch((e) => setError(e instanceof Error ? e.message : "خطا در بارگذاری"))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -58,20 +71,14 @@ export default function AdminAccessPage() {
     window.setTimeout(() => setMessage(""), 2500);
   }
 
-  function persistRoles(nextRoles: AdminRole[]) {
-    const safe = PasteurStorage.ensureAccessPermissionCoverage(nextRoles, users);
-    PasteurStorage.saveAdminRoles(safe);
-    reload();
-    // refresh session permissions if role changed for current user
-    const session = PasteurStorage.getAdminSession();
-    if (session) PasteurStorage.setAdminSession(session);
-  }
-
-  function persistUsers(nextUsers: AdminUser[]) {
-    PasteurStorage.saveAdminUsers(nextUsers);
-    const safe = PasteurStorage.ensureAccessPermissionCoverage(roles, nextUsers);
-    PasteurStorage.saveAdminRoles(safe);
-    reload();
+  async function saveRolePermissions(nextRoles: AdminRole[]) {
+    const role = nextRoles.find((r) => r.id === selectedRoleId);
+    if (!role) return;
+    await patchAdminOps("/api/admin/access/roles", {
+      id: role.id,
+      permissions: role.permissions,
+    });
+    await reload();
   }
 
   function togglePermission(permission: AdminPermission) {
@@ -88,8 +95,9 @@ export default function AdminAccessPage() {
         : [...role.permissions, permission];
       return { ...role, permissions };
     });
-    persistRoles(next);
-    flash("مجوزهای نقش ذخیره شد.");
+    void saveRolePermissions(next)
+      .then(() => flash("مجوزهای نقش ذخیره شد."))
+      .catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
   function selectAllPermissions() {
@@ -99,7 +107,7 @@ export default function AdminAccessPage() {
         ? { ...role, permissions: [...ALL_ADMIN_PERMISSIONS] }
         : role,
     );
-    persistRoles(next);
+    void saveRolePermissions(next);
   }
 
   function clearPermissions() {
@@ -111,31 +119,31 @@ export default function AdminAccessPage() {
     const next = roles.map((role) =>
       role.id === selectedRole.id ? { ...role, permissions: [] } : role,
     );
-    persistRoles(next);
+    void saveRolePermissions(next);
   }
 
-  function addRole(e: FormEvent) {
+  async function addRole(e: FormEvent) {
     e.preventDefault();
     const form = new FormData(e.target as HTMLFormElement);
     const name = String(form.get("name") || "").trim();
     const description = String(form.get("description") || "").trim();
     if (!name) return;
-    const id = `role-${Date.now().toString(36)}`;
-    persistRoles([
-      ...roles,
-      {
-        id,
+    try {
+      const { role } = await postAdminOps<{ role: AdminRole }>("/api/admin/access/roles", {
         name,
         description,
         permissions: ["dashboard"],
-      },
-    ]);
-    setSelectedRoleId(id);
-    (e.target as HTMLFormElement).reset();
-    flash("نقش جدید اضافه شد.");
+      });
+      await reload();
+      setSelectedRoleId(role.id);
+      (e.target as HTMLFormElement).reset();
+      flash("نقش جدید اضافه شد.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "افزودن نقش ناموفق");
+    }
   }
 
-  function deleteRole(roleId: string) {
+  async function deleteRole(roleId: string) {
     if (roleId === "superadmin") {
       flash("نقش مدیر کل قابل حذف نیست.");
       return;
@@ -145,16 +153,21 @@ export default function AdminAccessPage() {
       return;
     }
     if (!window.confirm("این نقش حذف شود؟")) return;
-    persistRoles(roles.filter((role) => role.id !== roleId));
-    flash("نقش حذف شد.");
+    try {
+      await deleteAdminOps(`/api/admin/access/roles?id=${encodeURIComponent(roleId)}`);
+      await reload();
+      flash("نقش حذف شد.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حذف نقش ناموفق");
+    }
   }
 
-  function startEditUser(user: AdminUser) {
+  function startEditUser(user: ApiUser) {
     setEditingUserId(user.id);
     setUserForm({
       id: user.id,
       username: user.username,
-      password: user.password,
+      password: "",
       displayName: user.displayName,
       roleId: user.roleId,
       active: user.active !== false,
@@ -166,86 +179,71 @@ export default function AdminAccessPage() {
     setUserForm({ ...emptyUserForm, roleId: roles[0]?.id || "ops" });
   }
 
-  function saveUser(e: FormEvent) {
+  async function saveUser(e: FormEvent) {
     e.preventDefault();
     const username = userForm.username.trim().toLowerCase();
     const displayName = userForm.displayName.trim() || username;
     const password = userForm.password.trim();
-    if (!username || !password || !userForm.roleId) {
-      flash("نام کاربری، رمز و نقش الزامی است.");
+    if (!username || !userForm.roleId) {
+      flash("نام کاربری و نقش الزامی است.");
       return;
     }
-    const duplicate = users.some(
-      (user) =>
-        user.username.trim().toLowerCase() === username && user.id !== editingUserId,
-    );
-    if (duplicate) {
-      flash("این نام کاربری قبلاً ثبت شده است.");
+    if (!editingUserId && !password) {
+      flash("رمز عبور الزامی است.");
       return;
     }
 
-    if (editingUserId) {
-      const next = users.map((user) =>
-        user.id === editingUserId
-          ? {
-              ...user,
-              username,
-              password,
-              displayName,
-              roleId: userForm.roleId,
-              active: userForm.active,
-            }
-          : user,
-      );
-      persistUsers(next);
-      flash("کاربر به‌روزرسانی شد.");
-    } else {
-      persistUsers([
-        ...users,
-        {
-          id: `user-${Date.now().toString(36)}`,
+    try {
+      if (editingUserId) {
+        await patchAdminOps("/api/admin/access/users", {
+          id: editingUserId,
+          username,
+          displayName,
+          roleId: userForm.roleId,
+          active: userForm.active,
+          ...(password ? { password } : {}),
+        });
+        flash("کاربر به‌روزرسانی شد.");
+      } else {
+        await postAdminOps("/api/admin/access/users", {
           username,
           password,
           displayName,
           roleId: userForm.roleId,
           active: userForm.active,
-        },
-      ]);
-      flash("کاربر جدید اضافه شد.");
+        });
+        flash("کاربر جدید اضافه شد.");
+      }
+      await reload();
+      resetUserForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ذخیره کاربر ناموفق");
     }
-    resetUserForm();
   }
 
-  function deleteUser(userId: string) {
+  async function deleteUser(userId: string) {
     const target = users.find((user) => user.id === userId);
     if (!target) return;
-    if (target.username === "admin") {
-      flash("کاربر admin قابل حذف نیست.");
-      return;
-    }
-    const session = PasteurStorage.getAdminSession();
-    if (session?.userId === userId) {
+    if (currentUserId === userId) {
       flash("نمی‌توانید کاربر فعلی واردشده را حذف کنید.");
       return;
     }
     if (!window.confirm(`کاربر «${target.displayName}» حذف شود؟`)) return;
-    persistUsers(users.filter((user) => user.id !== userId));
-    flash("کاربر حذف شد.");
-  }
-
-  function resetDefaults() {
-    if (!window.confirm("نقش‌ها و کاربران به پیش‌فرض نمونه بازنشانی شوند؟")) return;
-    PasteurStorage.saveAdminRoles(
-      DEFAULT_ADMIN_ROLES.map((role) => ({ ...role, permissions: [...role.permissions] })),
-    );
-    PasteurStorage.saveAdminUsers(DEFAULT_ADMIN_USERS.map((user) => ({ ...user })));
-    reload();
-    resetUserForm();
-    flash("پیش‌فرض‌ها بازنشانی شد.");
+    try {
+      await deleteAdminOps(`/api/admin/access/users?id=${encodeURIComponent(userId)}`);
+      await reload();
+      flash("کاربر حذف شد.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حذف کاربر ناموفق");
+    }
   }
 
   function roleName(roleId: string) {
     return roles.find((role) => role.id === roleId)?.name || roleId;
+  }
+
+  if (loading) {
+    return <p className="text-slate-500">در حال بارگذاری…</p>;
   }
 
   return (
@@ -254,15 +252,22 @@ export default function AdminAccessPage() {
         <div>
           <h2 className="text-lg font-extrabold text-slate-900">سطح دسترسی کاربران</h2>
           <p className="mt-1 max-w-2xl text-sm leading-7 text-slate-500">
-            نقش‌ها و مجوزهای منوی پنل را اینجا مدیریت کنید. این نسخه نمایشی است و در
-            localStorage مرورگر ذخیره می‌شود (بدون بک‌اند).
+            نقش‌ها و مجوزهای منوی پنل را اینجا مدیریت کنید. تغییرات در دیتابیس ذخیره
+            می‌شوند و برای همه سرورها معتبر است.
           </p>
         </div>
-        <Button type="button" variant="outline" className="text-sm" onClick={resetDefaults}>
-          بازنشانی پیش‌فرض
-        </Button>
       </div>
 
+      <Card hover={false} className="border-teal-200 bg-teal-50/70 p-4 text-sm text-teal-900">
+        تغییرات در دیتابیس — ادمین جدید از همین صفحه ساخته می‌شود و با `/admin/login` در
+        هر مرورگر قابل ورود است. برای seed اولیه: `npx prisma db seed` + env رمزها.
+      </Card>
+
+      {error ? (
+        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {error}
+        </p>
+      ) : null}
       {message ? (
         <p className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-bold text-cyan-900">
           {message}
@@ -312,7 +317,7 @@ export default function AdminAccessPage() {
                     type="button"
                     variant="danger"
                     className="text-xs"
-                    onClick={() => deleteRole(selectedRole.id)}
+                    onClick={() => void deleteRole(selectedRole.id)}
                   >
                     حذف نقش
                   </Button>
@@ -385,11 +390,11 @@ export default function AdminAccessPage() {
               />
             </div>
             <div>
-              <FormLabel>رمز عبور</FormLabel>
+              <FormLabel>{editingUserId ? "رمز عبور جدید (اختیاری)" : "رمز عبور"}</FormLabel>
               <FormInput
                 value={userForm.password}
                 onChange={(e) => setUserForm((prev) => ({ ...prev, password: e.target.value }))}
-                required
+                required={!editingUserId}
               />
             </div>
             <div>
@@ -429,7 +434,7 @@ export default function AdminAccessPage() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-lg font-extrabold text-slate-900">کاربران پنل</h3>
+        <h3 className="mb-3 text-lg font-extrabold text-slate-900">کاربران پنل (کارکنان)</h3>
         <AdminTable
           headers={["نام", "نام کاربری", "نقش", "وضعیت", "عملیات"]}
           empty="هنوز کاربری ثبت نشده است."
@@ -458,7 +463,7 @@ export default function AdminAccessPage() {
                   <button
                     type="button"
                     className="text-xs font-bold text-red-700"
-                    onClick={() => deleteUser(user.id)}
+                    onClick={() => void deleteUser(user.id)}
                   >
                     حذف
                   </button>
