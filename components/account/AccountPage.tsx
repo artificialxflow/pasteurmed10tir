@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountDashboard } from "@/components/account/AccountDashboard";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { notifyPatientAuthChanged } from "@/lib/auth/use-patient-profile";
@@ -17,23 +18,8 @@ import {
   type PatientProfile,
 } from "@/lib/patient";
 import { formatPrice, normalizePhone } from "@/lib/utils";
-import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-
-function insuranceName(list: InsuranceCompany[], id?: string): string {
-  if (!id) return "—";
-  return list.find((i) => i.id === id)?.name || id;
-}
-
-function ProfileField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5">
-      <p className="text-xs font-bold text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-bold text-slate-900">{value || "—"}</p>
-    </div>
-  );
-}
 
 export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [profile, setProfile] = useState<PatientProfile | null>(null);
@@ -315,15 +301,14 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     clampFranchisePercent(Number(franchise)),
   );
   const approved = isPatientApproved(profile);
-  const showProfileView = approved && !editing;
-  const franchisePercent = clampFranchisePercent(Number(profile.franchisePercent ?? franchise));
+  const showDashboard = approved && !editing;
 
   return (
     <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-6 px-4 py-10"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">
-            {showProfileView ? "پروفایل شخصی" : "پنل کاربری"}
+            {showDashboard ? "پنل من" : editing && approved ? "ویرایش مشخصات" : "پنل کاربری"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">{profile.phone}</p>
           <p
@@ -367,148 +352,118 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             </>
           )}
         </Card>
-      ) : showProfileView ? (
-        <Card hover={false} className="border-teal-200 bg-teal-50/60 p-4 text-sm text-teal-900">
-          پروفایل شما توسط کارشناس تأیید شده است. کد ملی و بیمه‌ها در سامانه ثبت شده‌اند و در
-          رزرو و مشاوره اعمال می‌شوند.
-        </Card>
-      ) : (
+      ) : showDashboard ? null : (
         <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm text-slate-700">
           در حال ویرایش مشخصات. اگر بیمه یا فرانشیز را تغییر دهید، حساب دوباره برای بررسی کارشناس
           در صف قرار می‌گیرد.
         </Card>
       )}
 
-      <div className="flex flex-wrap gap-2 text-sm font-bold">
-        <Link href={installmentsHref} className="text-cyan-800 underline">
-          اقساط من
-        </Link>
-        <span className="text-slate-300">|</span>
-        <Link href={helpHref} className="text-cyan-800 underline">
-          آموزش سامانه
-        </Link>
-        <span className="text-slate-300">|</span>
-        <Link href={complaintsHref} className="text-cyan-800 underline">
-          ثبت شکایت
-        </Link>
-      </div>
-
-      {showProfileView ? (
-        <Card hover={false} className="space-y-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ProfileField label="نام" value={profile.name} />
-            <ProfileField label="موبایل" value={profile.phone} />
-            <ProfileField label="کد ملی" value={profile.nationalId || "—"} />
-            <ProfileField
-              label="فرانشیز"
-              value={`${franchisePercent.toLocaleString("fa-IR")}٪`}
-            />
-            <ProfileField
-              label="بیمه پایه"
-              value={insuranceName(baseList, profile.baseInsuranceId)}
-            />
-            <ProfileField
-              label="بیمه تکمیلی"
-              value={insuranceName(compList, profile.complementaryInsuranceId)}
-            />
-            <ProfileField
-              label="استعلام شاهکار"
-              value={zohalStatusLabel(profile.zohalStatus, profile.shahkarMatched)}
-            />
-          </div>
-          <div className="rounded-xl border border-teal-100 bg-teal-50/50 p-4 text-sm text-slate-700">
-            <p className="font-bold text-slate-900">نمونه محاسبه ویزیت</p>
-            <p className="mt-2 leading-7">
-              هزینه ویزیت {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {franchisePercent}٪ →
-              مبلغ قابل پرداخت{" "}
-              <strong className="text-teal-800">
-                {formatPrice(payableFromFranchise(DEFAULT_VISIT_FEE_TOMAN, franchisePercent))}
-              </strong>
-            </p>
-          </div>
-          {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
-          <Button type="button" variant="outline" onClick={() => setEditing(true)}>
-            ویرایش مشخصات
-          </Button>
-        </Card>
+      {showDashboard ? (
+        <AccountDashboard
+          profile={profile}
+          variant={variant}
+          message={message}
+          onEditProfile={() => {
+            setEditing(true);
+            setMessage("");
+          }}
+        />
       ) : (
-      <Card hover={false} className="p-5">
-        <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <FormLabel>نام</FormLabel>
-            <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
+        <>
+          <div className="flex flex-wrap gap-2 text-sm font-bold">
+            <Link href={installmentsHref} className="text-cyan-800 underline">
+              اقساط من
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link href={helpHref} className="text-cyan-800 underline">
+              آموزش سامانه
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link href={complaintsHref} className="text-cyan-800 underline">
+              ثبت شکایت
+            </Link>
           </div>
-          <div>
-            <FormLabel>کد ملی</FormLabel>
-            <FormInput
-              value={nationalId}
-              onChange={(e) => setNationalId(e.target.value)}
-              required
-              inputMode="numeric"
-              maxLength={10}
-              placeholder="۱۰ رقم"
-            />
-          </div>
-          <div>
-            <FormLabel>فرانشیز (درصد)</FormLabel>
-            <FormInput
-              type="number"
-              min={0}
-              max={100}
-              value={franchise}
-              onChange={(e) => setFranchise(e.target.value)}
-            />
-          </div>
-          <div>
-            <FormLabel>بیمه پایه</FormLabel>
-            <FormSelect value={baseId} onChange={(e) => setBaseId(e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
-              {baseList.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
-          <div>
-            <FormLabel>بیمه تکمیلی</FormLabel>
-            <FormSelect value={compId} onChange={(e) => setCompId(e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
-              {compList.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
-          <div className="sm:col-span-2">
-            <p className="mb-3 text-xs leading-6 text-slate-500">
-              پس از تأیید کارشناس، فقط همین درصد از هزینه ویزیت پرداخت می‌شود. مثال: ویزیت{" "}
-              {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {clampFranchisePercent(Number(franchise))}٪
-              → مبلغ واریزی {formatPrice(samplePayable)}.
-            </p>
-            {message ? <p className="mb-3 text-sm font-bold text-cyan-800">{message}</p> : null}
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={saving}>
-                {saving ? "در حال ذخیره و استعلام…" : "ذخیره مشخصات"}
-              </Button>
-              {approved ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    hydrate(profile);
-                    setMessage("");
-                    setEditing(false);
-                  }}
-                >
-                  انصراف
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </form>
-      </Card>
+
+          <Card hover={false} className="p-5">
+            <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FormLabel>نام</FormLabel>
+                <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
+              </div>
+              <div>
+                <FormLabel>کد ملی</FormLabel>
+                <FormInput
+                  value={nationalId}
+                  onChange={(e) => setNationalId(e.target.value)}
+                  required
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="۱۰ رقم"
+                />
+              </div>
+              <div>
+                <FormLabel>فرانشیز (درصد)</FormLabel>
+                <FormInput
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={franchise}
+                  onChange={(e) => setFranchise(e.target.value)}
+                />
+              </div>
+              <div>
+                <FormLabel>بیمه پایه</FormLabel>
+                <FormSelect value={baseId} onChange={(e) => setBaseId(e.target.value)}>
+                  <option value="">— انتخاب کنید —</option>
+                  {baseList.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
+              <div>
+                <FormLabel>بیمه تکمیلی</FormLabel>
+                <FormSelect value={compId} onChange={(e) => setCompId(e.target.value)}>
+                  <option value="">— انتخاب کنید —</option>
+                  {compList.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="mb-3 text-xs leading-6 text-slate-500">
+                  پس از تأیید کارشناس، فقط همین درصد از هزینه ویزیت پرداخت می‌شود. مثال: ویزیت{" "}
+                  {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز{" "}
+                  {clampFranchisePercent(Number(franchise))}٪ → مبلغ واریزی{" "}
+                  {formatPrice(samplePayable)}.
+                </p>
+                {message ? <p className="mb-3 text-sm font-bold text-cyan-800">{message}</p> : null}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "در حال ذخیره و استعلام…" : "ذخیره مشخصات"}
+                  </Button>
+                  {approved ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        hydrate(profile);
+                        setMessage("");
+                        setEditing(false);
+                      }}
+                    >
+                      بازگشت به پنل
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </form>
+          </Card>
+        </>
       )}
     </div>
   );

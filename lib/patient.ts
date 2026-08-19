@@ -178,6 +178,18 @@ export function patientStatusLabel(status?: PatientStatus | string): string {
   return 'در حال بررسی';
 }
 
+export function insuranceInquiryStatusLabel(status?: InsuranceInquiryStatus | string): string {
+  if (status === 'approved') return 'تأیید شده';
+  if (status === 'rejected') return 'رد شده';
+  return 'در انتظار بررسی';
+}
+
+export function bookingStatusLabel(status?: string): string {
+  if (status === 'confirmed') return 'تأیید شده';
+  if (status === 'cancelled') return 'لغو شده';
+  return 'در انتظار';
+}
+
 export function installmentSourceLabel(source: InstallmentSource | string): string {
   if (source === 'credit' || source === 'wallet') return 'اعتبار';
   if (source === 'facility') return 'تسهیلات';

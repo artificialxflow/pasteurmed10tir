@@ -121,6 +121,16 @@ export async function getInsuranceInquiryApi(id: string) {
   );
 }
 
+export type MyActivityResponse = {
+  bookings: Array<Record<string, unknown>>;
+  insuranceInquiries: Array<Record<string, unknown>>;
+  consultations: Array<Record<string, unknown>>;
+};
+
+export async function fetchMyActivityApi() {
+  return fetchPatientOps<MyActivityResponse>('/api/operations/my-activity');
+}
+
 export async function getConsultationApi(id: string) {
   return fetchPatientOps<{ item: Record<string, unknown> }>(
     `/api/operations/consultations/${encodeURIComponent(id)}`,

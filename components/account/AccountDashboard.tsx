@@ -1,0 +1,330 @@
+"use client";
+
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { fetchPublic } from "@/lib/content/client";
+import { fetchMyActivityApi } from "@/lib/operations/client";
+import {
+  bookingStatusLabel,
+  DEFAULT_VISIT_FEE_TOMAN,
+  insuranceInquiryStatusLabel,
+  isPatientApproved,
+  patientStatusLabel,
+  payableFromFranchise,
+  resolveFranchisePercent,
+  type InsuranceCompany,
+  type PatientProfile,
+} from "@/lib/patient";
+import { ROUTES } from "@/lib/routes";
+import { formatPrice } from "@/lib/utils";
+import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+function insuranceName(list: InsuranceCompany[], id?: string): string {
+  if (!id) return "—";
+  return list.find((i) => i.id === id)?.name || id;
+}
+
+function StatusBadge({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "success" | "warn" | "danger" | "info";
+}) {
+  const tones = {
+    success: "border-teal-200 bg-teal-50 text-teal-900",
+    warn: "border-amber-200 bg-amber-50 text-amber-900",
+    danger: "border-rose-200 bg-rose-50 text-rose-900",
+    info: "border-cyan-200 bg-cyan-50 text-cyan-900",
+  };
+  return (
+    <div className={`rounded-xl border p-3 ${tones[tone]}`}>
+      <p className="text-xs font-bold opacity-80">{label}</p>
+      <p className="mt-1 text-sm font-extrabold">{value}</p>
+    </div>
+  );
+}
+
+function ActivityRow({
+  title,
+  meta,
+  status,
+  tone,
+}: {
+  title: string;
+  meta: string;
+  status: string;
+  tone: "success" | "warn" | "danger" | "info";
+}) {
+  const badgeTone = {
+    success: "text-teal-700",
+    warn: "text-amber-700",
+    danger: "text-rose-700",
+    info: "text-cyan-800",
+  };
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 py-3 last:border-0">
+      <div>
+        <p className="text-sm font-bold text-slate-900">{title}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{meta}</p>
+      </div>
+      <span className={`text-xs font-bold ${badgeTone[tone]}`}>{status}</span>
+    </div>
+  );
+}
+
+export function AccountDashboard({
+  profile,
+  variant,
+  onEditProfile,
+  message,
+}: {
+  profile: PatientProfile;
+  variant: "web" | "app";
+  onEditProfile: () => void;
+  message?: string;
+}) {
+  const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
+  const [compList, setCompList] = useState<InsuranceCompany[]>([]);
+  const [activity, setActivity] = useState<Awaited<ReturnType<typeof fetchMyActivityApi>> | null>(
+    null,
+  );
+  const [activityError, setActivityError] = useState("");
+
+  const dentalHref = variant === "app" ? ROUTES.app.dentalGeneral : ROUTES.web.dentalGeneral;
+  const consultationHref = variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation;
+  const shopHref = variant === "app" ? ROUTES.app.shop : ROUTES.web.shop;
+  const clubHref = variant === "app" ? ROUTES.app.club : ROUTES.web.club;
+  const installmentsHref =
+    variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
+
+  useEffect(() => {
+    void fetchPublic<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
+      "/api/content/insurances",
+    )
+      .then((data) => {
+        setBaseList(data.base.filter((i) => i.active !== false));
+        setCompList(data.complementary.filter((i) => i.active !== false));
+      })
+      .catch(() => {});
+
+    void fetchMyActivityApi()
+      .then(setActivity)
+      .catch((e) => setActivityError(e instanceof Error ? e.message : "خطا در بارگذاری"));
+  }, []);
+
+  const franchisePercent = resolveFranchisePercent(profile);
+  const lastInquiry = activity?.insuranceInquiries?.[0];
+  const hasInsuranceRegistered = Boolean(
+    profile.baseInsuranceId || profile.complementaryInsuranceId,
+  );
+
+  const inquiryBadge = useMemo(() => {
+    if (!lastInquiry) {
+      return { label: "استعلام رزرو", value: "هنوز ثبت نشده", tone: "info" as const };
+    }
+    const st = String(lastInquiry.status || "");
+    if (st === "approved") {
+      return { label: "آخرین استعلام رزرو", value: "تأیید شده", tone: "success" as const };
+    }
+    if (st === "rejected") {
+      return { label: "آخرین استعلام رزرو", value: "رد شده", tone: "danger" as const };
+    }
+    return { label: "آخرین استعلام رزرو", value: "در انتظار کارشناس", tone: "warn" as const };
+  }, [lastInquiry]);
+
+  const shahkarTone =
+    profile.zohalStatus === "passed" || profile.shahkarMatched === true
+      ? "success"
+      : profile.zohalStatus === "failed" || profile.shahkarMatched === false
+        ? "danger"
+        : "warn";
+
+  const userTone = isPatientApproved(profile)
+    ? "success"
+    : profile.status === "rejected"
+      ? "danger"
+      : "warn";
+
+  return (
+    <div className="space-y-6">
+      <Card hover={false} className="border-teal-200 bg-teal-50/50 p-4 text-sm text-teal-900">
+        سلام {profile.name.split(/\s+/)[0] || "بیمار"} — پنل شما فعال است. برای رزرو دیگر نیازی به
+        وارد کردن دوباره نام و موبایل نیست.
+      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <StatusBadge
+          label="کاربری"
+          value={patientStatusLabel(profile.status)}
+          tone={userTone}
+        />
+        <StatusBadge
+          label="کد ملی (شاهکار)"
+          value={zohalStatusLabel(profile.zohalStatus, profile.shahkarMatched)}
+          tone={shahkarTone}
+        />
+        <StatusBadge
+          label="بیمه ثبت‌شده"
+          value={
+            hasInsuranceRegistered
+              ? `${insuranceName(compList, profile.complementaryInsuranceId) !== "—" ? insuranceName(compList, profile.complementaryInsuranceId) : insuranceName(baseList, profile.baseInsuranceId)} · ${franchisePercent}٪`
+              : "ثبت نشده"
+          }
+          tone={hasInsuranceRegistered ? "info" : "warn"}
+        />
+        <StatusBadge label={inquiryBadge.label} value={inquiryBadge.value} tone={inquiryBadge.tone} />
+      </div>
+
+      <Card hover={false} className="p-4">
+        <p className="mb-3 text-sm font-extrabold text-slate-900">دسترسی سریع</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href={dentalHref}>
+            <Button type="button" className="text-sm">
+              رزرو نوبت
+            </Button>
+          </Link>
+          <Link href={consultationHref}>
+            <Button type="button" variant="outline" className="text-sm">
+              مشاوره
+            </Button>
+          </Link>
+          <Link href={shopHref}>
+            <Button type="button" variant="outline" className="text-sm">
+              فروشگاه
+            </Button>
+          </Link>
+          <Link href={clubHref}>
+            <Button type="button" variant="outline" className="text-sm">
+              باشگاه
+            </Button>
+          </Link>
+          <Link href={installmentsHref}>
+            <Button type="button" variant="outline" className="text-sm">
+              اقساط
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <Card hover={false} className="p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-extrabold text-slate-900">مشخصات ثبت‌شده</p>
+          <Button type="button" variant="outline" className="text-xs" onClick={onEditProfile}>
+            ویرایش مشخصات
+          </Button>
+        </div>
+        <div className="grid gap-2 text-sm sm:grid-cols-2">
+          <p>
+            <span className="text-slate-500">نام:</span>{" "}
+            <span className="font-bold">{profile.name}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">موبایل:</span>{" "}
+            <span className="font-bold font-mono text-xs">{profile.phone}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">کد ملی:</span>{" "}
+            <span className="font-bold font-mono text-xs">{profile.nationalId || "—"}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">فرانشیز:</span>{" "}
+            <span className="font-bold">{franchisePercent}٪</span>
+          </p>
+        </div>
+        <p className="mt-3 text-xs leading-6 text-slate-500">
+          نمونه ویزیت {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {franchisePercent}٪ →{" "}
+          <strong className="text-teal-800">
+            {formatPrice(payableFromFranchise(DEFAULT_VISIT_FEE_TOMAN, franchisePercent))}
+          </strong>
+          . «تأیید استعلام رزرو» جدا از پروفایل است و در مرحله پرداخت رزرو انجام می‌شود.
+        </p>
+      </Card>
+
+      {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
+
+      {activityError ? (
+        <p className="text-sm text-rose-600">{activityError}</p>
+      ) : !activity ? (
+        <p className="text-sm text-slate-500">در حال بارگذاری فعالیت‌ها…</p>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card hover={false} className="p-4">
+            <p className="mb-2 text-sm font-extrabold text-slate-900">رزروهای اخیر</p>
+            {activity.bookings.length === 0 ? (
+              <p className="text-xs text-slate-500">هنوز رزروی ثبت نشده است.</p>
+            ) : (
+              activity.bookings.map((b) => {
+                const st = String(b.status || "");
+                const tone =
+                  st === "confirmed" ? "success" : st === "cancelled" ? "danger" : "warn";
+                return (
+                  <ActivityRow
+                    key={String(b.id)}
+                    title={String(b.doctorName || "رزرو دندانپزشکی")}
+                    meta={`${String(b.day || "—")} ${String(b.timeLabel || "")} · ${new Date(String(b.createdAt)).toLocaleDateString("fa-IR")}`}
+                    status={bookingStatusLabel(st)}
+                    tone={tone}
+                  />
+                );
+              })
+            )}
+          </Card>
+
+          <Card hover={false} className="p-4">
+            <p className="mb-2 text-sm font-extrabold text-slate-900">استعلام‌های بیمه (رزرو)</p>
+            {activity.insuranceInquiries.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                استعلامی ثبت نشده. در صفحه تأیید رزرو (`/dental/confirm`) درخواست دهید.
+              </p>
+            ) : (
+              activity.insuranceInquiries.map((q) => {
+                const st = String(q.status || "");
+                const tone =
+                  st === "approved" ? "success" : st === "rejected" ? "danger" : "warn";
+                const visitFee = Number(q.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
+                const pct = Number(q.franchisePercent) || franchisePercent;
+                return (
+                  <ActivityRow
+                    key={String(q.id)}
+                    title={`استعلام · ${String(q.mode || "—")}`}
+                    meta={`${new Date(String(q.createdAt)).toLocaleDateString("fa-IR")} · فرانشیز ${pct}٪ → ${formatPrice(payableFromFranchise(visitFee, pct))}`}
+                    status={insuranceInquiryStatusLabel(st)}
+                    tone={tone}
+                  />
+                );
+              })
+            )}
+          </Card>
+
+          <Card hover={false} className="p-4 lg:col-span-2">
+            <p className="mb-2 text-sm font-extrabold text-slate-900">مشاوره‌های اخیر</p>
+            {activity.consultations.length === 0 ? (
+              <p className="text-xs text-slate-500">درخواست مشاوره‌ای ثبت نشده است.</p>
+            ) : (
+              <div className="grid gap-0 sm:grid-cols-2">
+                {activity.consultations.map((c) => {
+                  const st = String(c.status || "");
+                  const tone = st === "answered" ? "success" : "warn";
+                  return (
+                    <ActivityRow
+                      key={String(c.id)}
+                      title={String(c.typeLabel || c.categoryLabel || "مشاوره")}
+                      meta={`${String(c.doctorName || c.specialtyLabel || "—")} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
+                      status={st === "answered" ? "پاسخ داده شد" : "در انتظار"}
+                      tone={tone}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}

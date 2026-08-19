@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Badge, Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { PASTEUR_DATA, type Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { checkBookingSlot } from "@/lib/operations/client";
@@ -82,6 +83,9 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [hydrated, setHydrated] = useState(false);
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
+  const { profile: sessionProfile } = usePatientProfile();
+
+  const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
 
   useEffect(() => {
     void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
@@ -124,6 +128,15 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
     }
     setHydrated(true);
   }, [doctorFromQuery, steps]);
+
+  useEffect(() => {
+    if (!hydrated || !sessionProfile) return;
+    setState((prev) => ({
+      ...prev,
+      patientName: prev.patientName.trim() || sessionProfile.name || "",
+      patientPhone: prev.patientPhone.trim() || sessionProfile.phone || "",
+    }));
+  }, [hydrated, sessionProfile]);
 
   const doctor = getDoctor(state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
@@ -426,6 +439,12 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             </Card>
           ) : null}
           <form className="space-y-4" onSubmit={submitBooking}>
+            {identityLocked ? (
+              <Card hover={false} className="border-teal-100 bg-teal-50/60 p-3 text-xs leading-6 text-teal-900">
+                نام و موبایل از پروفایل شما ({sessionProfile?.name} · {sessionProfile?.phone})
+                استفاده می‌شود.
+              </Card>
+            ) : null}
             <div>
               <FormLabel>نام و نام خانوادگی</FormLabel>
               <FormInput
@@ -433,6 +452,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 onChange={(e) => updateState({ patientName: e.target.value.trimStart() })}
                 placeholder="مثال: علی احمدی"
                 required
+                readOnly={identityLocked}
+                className={identityLocked ? "bg-slate-100" : undefined}
               />
             </div>
             <div>
@@ -443,6 +464,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 onChange={(e) => updateState({ patientPhone: e.target.value.trim() })}
                 placeholder="۰۹۱۲۱۲۳۴۵۶۷"
                 required
+                readOnly={identityLocked}
+                className={identityLocked ? "bg-slate-100" : undefined}
               />
             </div>
             <div>
