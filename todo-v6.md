@@ -119,8 +119,8 @@ Runflare: SESSION_SECRET + CRON_SECRET
 
 - [ ] backup کامل DB پروداکشن (Runflare / pg_dump)
 - [ ] لیست رکوردهای seed/demo در ادمین (رزرو تست، مشاوره تست، بیمار `09126723365`)
-- [ ] تصمیم: **پاک‌سازی انتخابی** vs **`reset-all` + re-seed محتوا**
-- [ ] staging/لوکال: یک‌بار `reset-all --confirm` + seed فقط محتوا — بدون بیمار فیک
+- [ ] تصمیم: **پاک‌سازی انتخابی** (`db:clean-demo`) vs **`db:wipe-production --confirm`** (همه فیک + فقط admin)
+- [ ] staging/لوکال: `reset-all --confirm` برای dev؛ production: `wipe-for-production --confirm`
 
 ## R1 — پاک‌سازی DB (تراکنش‌ها و کاربران فیک)
 
@@ -129,8 +129,10 @@ Runflare: SESSION_SECRET + CRON_SECRET
 - [ ] پاک `PaymentIntent` قدیمی / pending (جدول `007`)
 - [x] اسکریپت `scripts/clean-demo-data.ts` (+ `npm run db:clean-demo`)
 - [ ] اجرای `npm run db:clean-demo -- --confirm` روی DB در دسترس (بعد از backup)
-- [x] `reset-all.ts`: اضافه کردن `PaymentIntent` + `OtpChallenge` به اسکریپت (کد — فاز بعد)
-- [ ] **هرگز** `reset-all --confirm` روی پروداکشن بدون backup + تأیید کتبی
+- [x] `reset-all.ts`: `PaymentIntent`, `OtpChallenge`, **`Dentist`** — `scripts/lib/wipe-app-data.ts`
+- [x] `scripts/wipe-for-production.ts` (+ `npm run db:wipe-production`) — فقط user `admin` می‌ماند
+- [ ] اجرای `npm run db:wipe-production -- --confirm` روی production (بعد از backup)
+- [ ] **هرگز** wipe بدون backup + تأیید کتبی
 
 ## R2 — حذف mock/dev در کد (UI و auth)
 
@@ -150,6 +152,8 @@ Runflare: SESSION_SECRET + CRON_SECRET
 | `admin/help` | `PasteurStorage.getHelpItems` | DB یا حذف صفحه mock |
 | `admin/doctors` | ~~extraDoctors localStorage~~ | فقط DB + ادمین |
 | `BookingWizard` | ~~slot check hybrid~~ | فقط API slot-check + occupied |
+| `GET /api/content/dentists` | ~~PASTEUR_DATA fallback~~ | فقط DB |
+| صفحه اصلی services | ~~PASTEUR_DATA initial~~ | فقط API (خالی اگر DB خالی) |
 | pending payment | localStorage تا redirect زیبال | OK نگه دار (session کوتاه) |
 | shop cart | localStorage | OK (سبد client-side) |
 
@@ -159,6 +163,8 @@ Runflare: SESSION_SECRET + CRON_SECRET
 - [x] `MedicalSpecialtyList` / `MedicalDoctorList` → `/api/content/physicians`
 - [x] `admin/doctors` extraDoctors حذف — فقط DB
 - [x] `BookingWizard` slot check → API (occupied + slot-check)
+- [x] `/api/content/dentists` — بدون fallback `PASTEUR_DATA`
+- [x] صفحه اصلی — services فقط از API
 - [ ] `admin/help` PasteurStorage → DB یا حذف (فاز بعد)
 - [ ] `grep PasteurStorage` → فقط موارد مجاز (cart, pending pay, app view)
 

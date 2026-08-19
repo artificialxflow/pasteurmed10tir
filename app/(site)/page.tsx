@@ -25,16 +25,12 @@ function markAppView() {
 }
 
 export default function HomePage() {
-  const [services, setServices] = useState<ServiceItem[]>(
-    PASTEUR_DATA.services.map((s) => ({ ...s, active: true })),
-  );
+  const [services, setServices] = useState<ServiceItem[]>([]);
 
   useEffect(() => {
     fetchPublic<{ items: ServiceItem[] }>("/api/content/services")
       .then((data) => setServices(data.items.filter((s) => s.active !== false)))
-      .catch(() => {
-        setServices(PASTEUR_DATA.services.map((s) => ({ ...s, active: true })));
-      });
+      .catch(() => setServices([]));
   }, []);
 
   return (

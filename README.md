@@ -33,7 +33,8 @@ Admin passwords: copy `ADMIN-CREDENTIALS.example.json` → `ADMIN-CREDENTIALS.lo
 | `npm run db:seed` | Auth seed (admins + dev patient) |
 | `npm run db:seed:phase2` … `phase5` | Content / ops / commerce / club seeds |
 | `npm run db:reset-all` | Wrapper for reset script (still needs `--confirm`) |
-| `npx tsx scripts/reset-all.ts --confirm` | Wipe app data; **keep AdminRole/AdminUser** |
+| `npm run db:wipe-production -- --confirm` | **Production:** wipe all data; keep only `admin` user |
+| `npx tsx scripts/reset-all.ts --confirm` | Dev/staging wipe; **keep all AdminUser rows** |
 
 ## Runflare deploy
 
