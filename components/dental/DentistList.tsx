@@ -2,25 +2,33 @@
 
 import { Badge, Card, EmptyState, FormInput, FormLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { PASTEUR_DATA, type Dentist } from "@/lib/data";
+import { fetchPublic } from "@/lib/content/client";
+import type { Dentist } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
-const DENTISTS = PASTEUR_DATA.dentists as unknown as Dentist[];
-
 export function DentistList({ basePath }: { basePath: DentalBasePath }) {
   const [query, setQuery] = useState("");
+  const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [loading, setLoading] = useState(true);
   const app = isAppDental(basePath);
   const bookingBase = `${basePath}/booking`;
 
-  const dentists = useMemo(() => {
+  useEffect(() => {
+    void fetchPublic<{ items: Dentist[] }>("/api/content/dentists")
+      .then((data) => setDentists(data.items))
+      .catch(() => setDentists([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
     const q = query.trim();
-    return DENTISTS.filter((d) => !q || d.name.includes(q));
-  }, [query]);
+    return dentists.filter((d) => !q || d.name.includes(q));
+  }, [dentists, query]);
 
   if (app) {
     return (
@@ -36,10 +44,12 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
           placeholder="جستجوی نام پزشک..."
         />
         <div className="space-y-3">
-          {dentists.length === 0 ? (
+          {loading ? (
+            <p className="py-8 text-center text-sm text-slate-500">در حال بارگذاری...</p>
+          ) : filtered.length === 0 ? (
             <EmptyState title="پزشکی یافت نشد" />
           ) : (
-            dentists.map((d) => {
+            filtered.map((d) => {
               const inactive = d.status === "inactive";
               const inner = (
                 <>
@@ -115,10 +125,12 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
       </div>
 
       <div className="space-y-4">
-        {dentists.length === 0 ? (
+        {loading ? (
+          <p className="py-12 text-center text-slate-500">در حال بارگذاری...</p>
+        ) : filtered.length === 0 ? (
           <EmptyState title="دندانپزشکی یافت نشد." />
         ) : (
-          dentists.map((d) => {
+          filtered.map((d) => {
             const inactive = d.status === "inactive";
             return (
               <Card

@@ -1,8 +1,9 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import {
-  mapPhysician,
-  normalizePhysicianBody,
-  type PhysicianBody,
+  dentistToDbInput,
+  mapDentist,
+  normalizeDentistBody,
+  type DentistBody,
 } from '@/lib/content/doctor-mappers';
 import { assignIntIds } from '@/lib/content/int-id';
 import { requireAdmin } from '@/lib/content/require-admin';
@@ -12,38 +13,27 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const auth = await requireAdmin('doctors');
   if (auth.error) return auth.error;
-  const items = await prisma.physician.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
-  return NextResponse.json({ items: items.map(mapPhysician) });
+  const items = await prisma.dentist.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
+  return NextResponse.json({ items: items.map(mapDentist) });
 }
 
 export async function PUT(request: Request) {
   const auth = await requireAdmin('doctors');
   if (auth.error) return auth.error;
 
-  const body = await parseJson<{ items?: PhysicianBody[] }>(request);
+  const body = await parseJson<{ items?: DentistBody[] }>(request);
   if (!body?.items) return jsonError('درخواست نامعتبر است.');
 
   const cleaned = assignIntIds(
     body.items
-      .map((item) => normalizePhysicianBody(item))
+      .map((item) => normalizeDentistBody(item))
       .filter((item) => item.name),
   );
 
   await prisma.$transaction([
-    prisma.physician.deleteMany(),
+    prisma.dentist.deleteMany(),
     ...cleaned.map((item, index) =>
-      prisma.physician.create({
-        data: {
-          id: item.id,
-          name: item.name,
-          specialty: item.specialty,
-          specialtyId: item.specialtyId || null,
-          image: item.image,
-          days: item.days,
-          status: item.status || 'available',
-          sortOrder: index,
-        },
-      }),
+      prisma.dentist.create({ data: dentistToDbInput(item, index) }),
     ),
   ]);
 

@@ -164,7 +164,7 @@ Runflare: SESSION_SECRET + CRON_SECRET
 
 ## R4 — محتوای واقعی از ادمین
 
-- [ ] پزشکان/دندانپزشکان واقعی → `/admin/doctors`
+- [x] پزشکان/دندانپزشکان واقعی → `/admin/doctors` (migration `011_dentists` + CRUD دندانپزشک + متخصص)
 - [ ] سرویس‌های صفحه اصلی → `/admin/services` (۶ کارت شامل جراحی)
 - [ ] محصولات فروشگاه → `/admin/shop`
 - [ ] گالری → `/admin/gallery` (تصاویر `/uploads/`)

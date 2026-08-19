@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Badge, Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
-import { PASTEUR_DATA, type Dentist } from "@/lib/data";
+import type { Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { checkBookingSlot } from "@/lib/operations/client";
 import { PasteurStorage } from "@/lib/storage";
@@ -12,8 +12,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
-
-const DENTISTS = PASTEUR_DATA.dentists as unknown as Dentist[];
 
 type StepName = "type" | "doctor" | "day" | "time" | "info";
 type BookingType = "visit" | "treatment" | null;
@@ -50,9 +48,9 @@ const INITIAL_STATE: BookingState = {
   onlineInsuranceCovered: false,
 };
 
-function getDoctor(id: number | null): Dentist | undefined {
+function findDoctor(dentists: Dentist[], id: number | null): Dentist | undefined {
   if (id == null) return undefined;
-  return DENTISTS.find((d) => d.id === id);
+  return dentists.find((d) => d.id === id);
 }
 
 /** Slot check via API occupied times (DB-backed). */
@@ -83,6 +81,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [hydrated, setHydrated] = useState(false);
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
+  const [dentists, setDentists] = useState<Dentist[]>([]);
   const { profile: sessionProfile } = usePatientProfile();
 
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
@@ -91,6 +90,12 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
     void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
       .then((data) => setReservationFee(data.dentalReservationFee))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    void fetchPublic<{ items: Dentist[] }>("/api/content/dentists")
+      .then((data) => setDentists(data.items))
+      .catch(() => setDentists([]));
   }, []);
 
   useEffect(() => {
@@ -138,7 +143,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
     }));
   }, [hydrated, sessionProfile]);
 
-  const doctor = getDoctor(state.doctorId);
+  const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
 
   const saveDraft = useCallback(
@@ -328,7 +333,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       {currentStep === "doctor" ? (
         <div className="space-y-3">
           <p className="mb-1 text-sm text-slate-600">دندانپزشک مورد نظر را انتخاب کنید:</p>
-          {DENTISTS.map((d) => {
+          {dentists.map((d) => {
             const selected = state.doctorId === d.id;
             const inactive = d.status === "inactive";
             return (

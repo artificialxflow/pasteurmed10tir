@@ -1,4 +1,5 @@
 import { PASTEUR_DATA, type NursingService } from '@/lib/data';
+import { dentistToDbInput, normalizeDentistBody } from '@/lib/content/doctor-mappers';
 import { localizeImageUrl } from '@/lib/content/localize-url';
 import { slugifyFa } from '@/lib/content/product-slug';
 import { ensurePlaceholder, syncSeedAssetsToUploadDir } from '@/lib/content/seed-assets';
@@ -25,6 +26,7 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
   await prisma.physician.deleteMany();
+  await prisma.dentist.deleteMany();
   await prisma.baseInsurance.deleteMany();
   await prisma.complementaryInsurance.deleteMany();
   await prisma.consultationType.deleteMany();
@@ -130,7 +132,8 @@ async function main() {
     });
   }
 
-  for (const p of PASTEUR_DATA.physicians) {
+  for (let pi = 0; pi < PASTEUR_DATA.physicians.length; pi++) {
+    const p = PASTEUR_DATA.physicians[pi];
     await prisma.physician.create({
       data: {
         id: p.id,
@@ -140,6 +143,27 @@ async function main() {
         image: await localizeImageUrl(p.image, cache),
         days: [...p.days],
         status: p.status,
+        sortOrder: pi,
+      },
+    });
+  }
+
+  for (let di = 0; di < PASTEUR_DATA.dentists.length; di++) {
+    const d = PASTEUR_DATA.dentists[di];
+    const normalized = normalizeDentistBody({
+      id: d.id,
+      name: d.name,
+      specialty: d.specialty,
+      image: await localizeImageUrl(d.image, cache),
+      days: [...d.days],
+      hours: d.hours,
+      status: d.status,
+      schedule: d.schedule,
+    });
+    await prisma.dentist.create({
+      data: {
+        ...dentistToDbInput(normalized, di),
+        image: normalized.image,
       },
     });
   }

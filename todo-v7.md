@@ -233,3 +233,4 @@
 | دو تأیید جدا | `/admin/patients` (کاربری) ≠ `/admin/insurances` (استعلام پرداخت) |
 | env جدید | `SITE_URL` (server) برای callback زیibal — اختیاری اگر `NEXT_PUBLIC_SITE_URL` درست است |
 | migrate | `010_patient_zohal` قبل از deploy v7 روی Runflare |
+| migrate v8 | `011_dentists` — جدول `Dentist` + CRUD در `/admin/doctors`؛ seed: `npm run db:seed:phase2` |

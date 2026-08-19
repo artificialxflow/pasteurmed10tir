@@ -1,7 +1,8 @@
+import { mapPhysician } from '@/lib/content/doctor-mappers';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const items = await prisma.physician.findMany({ orderBy: { id: 'asc' } });
-  return NextResponse.json({ items });
+  const items = await prisma.physician.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
+  return NextResponse.json({ items: items.map(mapPhysician) });
 }
