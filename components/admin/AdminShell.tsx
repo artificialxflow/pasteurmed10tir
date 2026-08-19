@@ -16,11 +16,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 type NavItem = { href: string; label: string; permission: AdminPermission };
 
-type NavGroup = { title: string; items: NavItem[] };
+type NavGroup = { title: string; items: NavItem[]; collapsible?: boolean };
 
 const navGroups: NavGroup[] = [
   {
     title: "عملیات",
+    collapsible: false,
     items: [
       { href: ROUTES.admin.dashboard, label: "داشبورد", permission: "dashboard" },
       { href: ROUTES.admin.bookings, label: "رزروها", permission: "bookings" },
@@ -31,6 +32,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "محتوا و خدمات",
+    collapsible: true,
     items: [
       { href: ROUTES.admin.services, label: "سرویس‌ها", permission: "services" },
       { href: ROUTES.admin.laserServices, label: "لیزر", permission: "laserServices" },
@@ -42,6 +44,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "مالی",
+    collapsible: true,
     items: [
       { href: ROUTES.admin.memberships, label: "عضویت‌ها", permission: "memberships" },
       { href: ROUTES.admin.wallets, label: "کیف اعتبار", permission: "wallets" },
@@ -54,6 +57,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "رشد و همکاری",
+    collapsible: true,
     items: [
       { href: ROUTES.admin.club, label: "باشگاه", permission: "club" },
       { href: ROUTES.admin.visitors, label: "ویزیتورها", permission: "visitors" },
@@ -65,6 +69,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "امنیت",
+    collapsible: true,
     items: [{ href: ROUTES.admin.access, label: "سطح دسترسی", permission: "access" }],
   },
 ];
@@ -101,6 +106,16 @@ function titleFromPath(pathname: string) {
   return titles[pathname] || "پنل ادمین";
 }
 
+function findCollapsibleGroupForPath(groups: NavGroup[], pathname: string): string | null {
+  for (const group of groups) {
+    if (group.collapsible === false) continue;
+    if (group.items.some((item) => item.href === pathname)) {
+      return group.title;
+    }
+  }
+  return null;
+}
+
 function NavLink({
   item,
   pathname,
@@ -124,6 +139,69 @@ function NavLink({
   );
 }
 
+function SidebarNavGroup({
+  group,
+  pathname,
+  open,
+  onToggle,
+}: {
+  group: NavGroup;
+  pathname: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const hasActiveChild = group.items.some((item) => item.href === pathname);
+
+  if (group.collapsible === false) {
+    return (
+      <div>
+        <p className="mb-1.5 px-3 text-[11px] font-extrabold tracking-wide text-slate-400">
+          {group.title}
+        </p>
+        <div className="space-y-0.5">
+          {group.items.map((item) => (
+            <NavLink key={item.href} item={item} pathname={pathname} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-transparent transition-colors">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-right text-[11px] font-extrabold tracking-wide transition-colors",
+          open || hasActiveChild
+            ? "bg-cyan-50/80 text-cyan-900"
+            : "text-slate-400 hover:bg-slate-50 hover:text-slate-600",
+        )}
+      >
+        <span>{group.title}</span>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 text-[10px] text-slate-400 transition-transform duration-200",
+            open && "rotate-180",
+          )}
+        >
+          ▼
+        </span>
+      </button>
+      {open ? (
+        <div className="mt-0.5 space-y-0.5 border-r-2 border-cyan-100 pr-1 mr-2">
+          {group.items.map((item) => (
+            <NavLink key={item.href} item={item} pathname={pathname} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AdminShell({
   title,
   children,
@@ -135,6 +213,7 @@ export function AdminShell({
   const pathname = usePathname();
   const [session, setSession] = useState<AdminSession | null>(null);
   const [ready, setReady] = useState(false);
+  const [openGroupTitle, setOpenGroupTitle] = useState<string | null>(null);
   const heading = title || titleFromPath(pathname);
 
   const visibleGroups = useMemo(() => {
@@ -151,6 +230,11 @@ export function AdminShell({
     () => visibleGroups.flatMap((group) => group.items),
     [visibleGroups],
   );
+
+  useEffect(() => {
+    const activeGroup = findCollapsibleGroupForPath(visibleGroups, pathname);
+    setOpenGroupTitle(activeGroup);
+  }, [pathname, visibleGroups]);
 
   useEffect(() => {
     fetch("/api/admin/me", { credentials: "include" })
@@ -205,18 +289,17 @@ export function AdminShell({
             <p className="text-xs font-bold text-cyan-800">{session.roleName}</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
           {visibleGroups.map((group) => (
-            <div key={group.title}>
-              <p className="mb-1.5 px-3 text-[11px] font-extrabold tracking-wide text-slate-400">
-                {group.title}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavLink key={item.href} item={item} pathname={pathname} />
-                ))}
-              </div>
-            </div>
+            <SidebarNavGroup
+              key={group.title}
+              group={group}
+              pathname={pathname}
+              open={openGroupTitle === group.title}
+              onToggle={() =>
+                setOpenGroupTitle((prev) => (prev === group.title ? null : group.title))
+              }
+            />
           ))}
         </nav>
         <div className="border-t border-cyan-50 p-4">
