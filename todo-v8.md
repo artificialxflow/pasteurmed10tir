@@ -14,12 +14,12 @@
 
 | موضوع | وضعیت |
 |--------|--------|
-| Deploy + migrate `010` + `011` | ✅ |
+| Deploy + migrate `010` + `011` + `012` + `013` | ✅ Runflare |
 | `db:wipe-production --confirm` | ✅ — فقط `admin` |
 | CRUD دندانپزشک/متخصص | ✅ کد |
 | Sidebar آکاردئون ادمین (دسکتاپ) | ✅ کد |
 | داده واقعی از ادمین | 🟨 در حال پر کردن |
-| لغو/ویرایش رزرو (ادمین + بیمار) | ✅ فاز ۱ — لغو بیمار + ستون موبایل ادمین |
+| لغو/ویرایش رزرو (ادمین + بیمار) | ✅ فاز ۱ — لغو + مودال ویرایش ادمین |
 | قیمت مشاوره خالی بعد از wipe | ✅ فاز ۲.۱ |
 | پورسانت ویزیتور — پیش‌فرض ۵٪ + بدون ویرایش | ✅ فاز ۲.۲ |
 | آیکون/کارت سرویس صفحه اصلی | ✅ فاز ۳ — empty state + fallback تصویر |
@@ -43,7 +43,7 @@
 |-----------|--------|-----|
 | `010_patient_zohal` | زحل پروفایل | ✅ deploy |
 | `011_dentists` | جدول Dentist | ✅ deploy |
-| جدید (فاز ۱) | لغو رزرو بیمار | ⬜ در صورت نیاز |
+| جدید (فاز ۱) | لغو رزرو بیمار + ویرایش ادمین | ✅ بدون migration |
 | **`012_membership_zohal`** (پیشنهادی) | `MembershipApplication`: zohal + workflow تأیید/رد وام | ✅ فاز ۴.۳ |
 | **`013_support_tickets`** (پیشنهادی) | `SupportTicket` + `SupportMessage` — thread دوطرفه | ✅ فاز ۸ |
 
@@ -51,29 +51,37 @@
 
 # فاز ۰ — بعد از wipe: محتوای واقعی + smoke (P0)
 
-**هدف:** سایت و ادمین قابل استفاده باشد.
+**هدف:** سایت و ادمین قابل استفاده باشد — **بدون `db:seed:phase2`**.
 
 **گزارش:** `06/01` — رزرو خالی طبیعی تا داده واقعی؛ مشاوره لیزل (`0936522555`) نمونه live.
 
-### ۰.۱ — پر کردن محتوا (دستی از ادمین)
+**وضعیت smoke (۲۰۲۶-۰۸-۲۲):** APIها خالی/حداقل (`services=[]`, `consultationTypes` تا seed ادمین)؛ فازهای ۱–۵ و ۸ smoke API ✅.
 
-- [ ] `/admin/services` — کارت‌های صفحه اصلی (emoji + تصویر `/uploads/` + href + رنگ)
-- [ ] `/admin/doctors` — دندانپزشک + متخصص
-- [ ] `/admin/insurances` — بیمه پایه و مکمل
-- [ ] `/admin/consultation-prices` — «بازگشت به پیش‌فرض» یا تعریف دستی + **ذخیره**
-- [ ] `/admin/bookings` — بیعانه (مثلاً ۲۰۰٬۰۰۰)
-- [ ] `/admin/gallery` — در صورت نیاز
-- [ ] `/admin/shop` — دسته + محصول
-- [ ] `/admin/visitors` — ویزیتور با **درصد پورسانت دلخواه** (فعلاً تا fix فاز ۲ با دقت مقدار را قبل از ثبت عوض کنید)
-- [ ] (اختیاری) پاکسازی تصاویر seed در `public/uploads`
+### ۰.۱ — پر کردن محتوا (گام‌به‌گام از ادمین)
+
+ورود: `https://pasteur.plus/admin/login` → `admin`
+
+| # | مسیر | گام‌ها | وضعیت |
+|---|------|--------|--------|
+| 1 | `/admin/services` | **افزودن کارت** → emoji + عنوان + توضیح + href + رنگ + تصویر (`/uploads/…`) → **ذخیره** → تکرار برای هر سرویس صفحه اصلی | ⬜ |
+| 2 | `/admin/doctors` | تب **دندانپزشکان** → افزودن/ویرایش (نام، روزها، ساعت، تصویر) → **ذخیره** → تب **متخصصین** همین کار | ⬜ |
+| 3 | `/admin/insurances` | بیمه **پایه** + **مکمل** + درصد فرانشیز → ذخیره | ⬜ |
+| 4 | `/admin/consultation-prices` | **ایجاد انواع پیش‌فرض** (یا wizard دستی) → قیمت هر نوع + تعرفه تخصص → **ذخیره همه** | 🟨 seed smoke OK |
+| 5 | `/admin/bookings` | تنظیم **مبلغ بیعانه** (مثلاً ۲۰۰٬۰۰۰) → ذخیره | ⬜ |
+| 6 | `/admin/visitors` | فرم بالای جدول → نام + کد معرف + **درصد پورسانت** → ثبت | 🟨 ۱ ویزیتور در DB |
+| 7 | `/admin/gallery` | (اختیاری) آیتم قبل/بعد | ⬜ |
+| 8 | `/admin/shop` | (اختیاری) دسته + محصول | ⬜ |
+| 9 | `public/uploads` | (اختیاری) حذف تصاویر seed قدیمی | ⬜ |
+
+**چک بعد از هر گام:** صفحه عمومی مربوطه (مثلاً `/` برای services، `/dental/general` برای پزشکان).
 
 ### ۰.۲ — smoke
 
-- [ ] `/` — کارت سرویس + emoji/تصویر
+- [ ] `/` — کارت سرویس + emoji/تصویر (یا empty state تا گام ۱)
 - [ ] `/dental/general` + `/dental/booking`
-- [ ] `/admin/consultation-prices` — جدول پر
+- [x] `/admin/consultation-prices` — empty state + «ایجاد انواع پیش‌فرض»
 - [ ] `/admin/consultations` — درخواست live
-- [ ] `/admin/visitors` — ثبت کد معرف + فعال‌سازی
+- [x] `/admin/visitors` — ثبت/ویرایش پورسانت
 - [ ] `MANUAL-SMOKE-CHECKLIST.md` — CRUD پزشکان
 
 **Done when:** مسیر اصلی بیمار + پنل ادمین با داده واقعی مرکز کار کند.
@@ -85,34 +93,34 @@
 **گزارش:** `06/01` بند ۱.
 
 **وضعیت فعلی:**
-- ادمین: فقط **لغو** (`/admin/bookings`)
-- بیمار: فقط **نمایش** در `/account`
-- API بیمار برای `PATCH booking` **ندارد**
+- ادمین: **لغو** + **ویرایش** (`/admin/bookings`)
+- بیمار: **لغو** در `/account`
+- API بیمار: `PATCH /api/operations/bookings/[id]`
 
 ### ۱.۱ — API
 
-- [ ] `PATCH /api/operations/bookings/[id]` — بیمار: لغو با چک `patientPhone` / `userId`
-- [ ] پیام بیعانه غیرقابل استرداد (`depositNonRefundable`)
-- [ ] (اختیاری) `PATCH /api/admin/operations/bookings` — ویرایش روز/ساعت/پزشک/وضعیت
-- [ ] slot occupied بعد از لغو/ویرایش
+- [x] `PATCH /api/operations/bookings/[id]` — بیمار: لغو با چک `patientPhone` / `userId`
+- [x] پیام بیعانه غیرقابل استرداد (`depositNonRefundable`)
+- [x] `PATCH /api/admin/operations/bookings` — ویرایش روز/ساعت/پزشک/وضعیت
+- [x] slot occupied بعد از لغو/ویرایش (`status !== cancelled` در slot-check)
 
 ### ۱.۲ — UI ادمین
 
-- [ ] پیام تأیید لغو واضح‌تر
-- [ ] ستون **موبایل** مراجع
-- [ ] مودال/فرم **ویرایش** رزرو
+- [x] پیام تأیید لغو واضح‌تر
+- [x] ستون **موبایل** مراجع
+- [x] مودال/فرم **ویرایش** رزرو
 
 ### ۱.۳ — UI بیمار
 
-- [ ] دکمه **لغو نوبت** در «رزروهای اخیر» (`/account`)
-- [ ] پیام «بیعانه قابل استرداد نیست»
+- [x] دکمه **لغو نوبت** در «رزروهای اخیر» (`/account`)
+- [x] پیام «بیعانه قابل استرداد نیست»
 - [ ] (بعداً) درخواست تغییر زمان
 
 ### ۱.۴ — تست
 
-- [ ] لغو از account → admin
-- [ ] لغو از admin → slot آزاد
-- [ ] smoke بند ۲
+- [x] لغو از account → admin
+- [x] لغو از admin → slot آزاد
+- [x] smoke بند ۲ (`MANUAL-SMOKE-CHECKLIST` v8.۴)
 
 **Done when:** بیمار و ادمین رزرو فعال را لغو کنند؛ ادمین در صورت نیاز ویرایش کند.
 
@@ -126,11 +134,11 @@
 
 **علت خالی:** `ConsultationType` بعد از wipe خالی است.
 
-- [ ] empty state: «انواع مشاوره تعریف نشده — پس از wipe…»
-- [ ] دکمه **«ایجاد انواع پیش‌فرض»** (بدون `db:seed:phase2` کامل)
-- [ ] wizard افزودن نوع (id, label, emoji, priceNum)
-- [ ] وقتی `types.length === 0` — جدول تعرفه پیام راهنما ندهد (ستون خالی گیج‌کننده)
-- [ ] smoke: `/consultation` مبلغ درست
+- [x] empty state: «انواع مشاوره تعریف نشده — پس از wipe…»
+- [x] دکمه **«ایجاد انواع پیش‌فرض»** (بدون `db:seed:phase2` کامل)
+- [x] wizard افزودن نوع (id, label, emoji, priceNum)
+- [x] وقتی `types.length === 0` — جدول تعرفه پیام راهنما ندهد (ستون خالی گیج‌کننده)
+- [x] smoke: `/consultation` مبلغ درست (API smoke ۲۰۲۶-۰۸-۲۲)
 
 ### ۲.۲ — ویزیتور (`/admin/visitors`)
 
@@ -138,14 +146,14 @@
 
 **اسکرین:** ویزیتور `CD` / `09064684849` / `5%` / غیرفعال — فرم پایین با فیلد «۵».
 
-- [ ] **حذف hardcode پیش‌فرض ۵٪** — فیلد خالی یا placeholder «مثلاً ۵»
-- [ ] **FormLabel** واضح: «درصد پورسانت (٪)»
-- [ ] **ویرایش inline** `commissionRate` (+ نام/تماس در صورت نیاز) در جدول
-- [ ] دکمه **ذخیره** per-row یا «ذخیره همه»
-- [ ] فرم افزودن **بالای** جدول (موبایل بدون اسکرول طولانی)
-- [ ] پیام موفق: «ویزیتور X با پورسانت Y٪ ثبت شد»
-- [ ] validation: نام + کد معرف اجباری؛ درصد ۰–۱۰۰
-- [ ] smoke: کد در رزرو → `/admin/commissions`
+- [x] **حذف hardcode پیش‌فرض ۵٪** — فیلد خالی یا placeholder «مثلاً ۵»
+- [x] **FormLabel** واضح: «درصد پورسانت (٪)»
+- [x] **ویرایش inline** `commissionRate` (+ نام/تماس در صورت نیاز) در جدول
+- [x] دکمه **ذخیره** per-row یا «ذخیره همه»
+- [x] فرم افزودن **بالای** جدول (موبایل بدون اسکرول طولانی)
+- [x] پیام موفق: «ویزیتور X با پورسانت Y٪ ثبت شد»
+- [x] validation: نام + کد معرف اجباری؛ درصد ۰–۱۰۰
+- [x] smoke: کد در رزرو → `/admin/commissions`
 
 **Done when:** ادمین درصد را آزادانه set/edit کند؛ ۵٪ فقط پیشنهاد نباشد مگر کاربر بخواهد.
 
@@ -155,9 +163,9 @@
 
 **گزارش:** `06/01` بند ۴.
 
-- [ ] `/` وقتی services خالی: کارت «از /admin/services اضافه کنید»
+- [x] `/` وقتی services خالی: کارت «از /admin/services اضافه کنید»
 - [ ] ادمین services: emoji + image اجباری یا placeholder
-- [ ] fallback تصویر شکسته (`/uploads/` 404)
+- [x] fallback تصویر شکسته (`/uploads/` 404)
 
 **Done when:** سکشن سرویس خالی بی‌صدا نباشد.
 
@@ -173,7 +181,7 @@
 |------------|--------|------------|----------|---------|
 | **`/admin/facilities`** | `FacilityRequest` | ✅ submit + خلاصه در جدول | ✅ dropdown | **الان کار می‌کند** — تسهیلات تجهیزات |
 | **`/admin/installments`** | `InstallmentPlan` | ❌ | ❌ | فقط **لیست read-only** طرح‌های فعال (`GET` only) |
-| **`/admin/memberships`** | `MembershipApplication` | ❌ | ❌ | فرم **`loanAmount`** — فقط نمایش، بدون workflow |
+| **`/admin/memberships`** | `MembershipApplication` | ✅ credit-check + خلاصه | ✅ dropdown تأیید/رد | فاز ۴.۳ — migration `012` |
 
 **کار فوری (بدون کد):** اگر منظور **تسهیلات تجهیزات** است → از **`/admin/facilities`** استفاده کنید، نه `/admin/installments`.
 
@@ -195,17 +203,17 @@
 |------------|-----|
 | `/admin/facilities` | ✅ استعلام + تأیید/رد + ساخت `InstallmentPlan` |
 | `/admin/patients` | ✅ شاهkar + تأیید کاربری |
-| `/admin/memberships` | ⬜ باید: زحل + تأیید/رد **وام** |
+| `/admin/memberships` | ✅ استعلام + تأیید/رد **وام** |
 | `/admin/installments` | 🟨 گزارش اقساط جاری — نه inbox درخواست |
 
 ---
 
 ### ۴.۲ — UX بیمار (راهنما + زحل)
 
-- [ ] `/account`: بلوک «اعتبارسنجی بانکی» + لینک `/shop/facility` (تسهیلات) و `/dental/membership` (وام درمانی)
-- [ ] `/shop/facility`: توضیح «استعلام اعتبار از زحل»
-- [ ] `/dental/membership`: بعد از submit — «درخواست ثبت شد؛ پس از بررسی اعتبار با شما تماس می‌گیریم»
-- [ ] `/installments`: توضیح تفاوت «طرح فعال» vs «درخواست در انتظار»
+- [x] `/account`: بلوک «اعتبارسنجی بانکی» + لینک `/shop/facility` (تسهیلات) و `/dental/membership` (وام درمانی)
+- [x] `/shop/facility`: توضیح «استعلام اعتبار از زحل»
+- [x] `/dental/membership`: بعد از submit — «درخواست ثبت شد؛ پس از بررسی اعتبار با شما تماس می‌گیریم»
+- [x] `/installments`: توضیح تفاوت «طرح فعال» vs «درخواست در انتظار»
 - [ ] `ZOHAL_TOKEN` روی Runflare + restart
 
 ---
@@ -218,25 +226,25 @@
 
 #### ۴.۳.۱ — Schema (migration `012_membership_zohal`)
 
-- [ ] `MembershipApplication`: `zohalStatus`, `zohalPayload` (Json), `shahkarMatched`, `zohalCheckedAt`
-- [ ] `reviewedAt`, `reviewNote` (اختیاری)
-- [ ] `status`: `pending` | `approved` | `rejected` (هماهنگ با facilities)
+- [x] `MembershipApplication`: `zohalStatus`, `zohalPayload` (Json), `shahkarMatched`, `zohalCheckedAt`
+- [x] `reviewedAt`, `reviewNote` (اختیاری)
+- [x] `status`: `pending` | `approved` | `rejected` (هماهنگ با facilities)
 
 #### ۴.۳.۲ — API ادمین
 
-- [ ] `GET /api/admin/commerce/membership-applications` — لیست با map زحل (یا گسترش `/api/admin/commerce/members`)
-- [ ] `POST /api/admin/commerce/membership-applications/[id]/credit-check` — `zohalShahkar` + `zohalCreditInquiry` + `zohalNationalIdentity` + `zohalBouncedCheque` (reuse از `facilities/route.ts`)
-- [ ] `PATCH /api/admin/commerce/membership-applications/[id]` — `status: approved|rejected` + یادداشت
-- [ ] helper `mapMembershipApplication` — `zohalSummary` مثل `mapFacilityRequest`
+- [x] `GET /api/admin/commerce/members` — لیست applications + map زحل
+- [x] `POST /api/admin/commerce/membership-applications/[id]/credit-check` — زحل chain
+- [x] `PATCH /api/admin/commerce/membership-applications/[id]` — `status: approved|rejected` + یادداشت
+- [x] helper `mapMembershipApplication` — `zohalSummary` مثل `mapFacilityRequest`
 - [ ] بعد از **approved**: (طبق تصمیم کسب‌وکار) ایجاد `InstallmentPlan` یا flag «وام تأیید» — **نه** auto بدون قانون
 
 #### ۴.۳.۳ — UI `/admin/memberships`
 
-- [ ] جدول «فرم‌های پیشنهاد» → ستون‌های **کد ملی**، **مبلغ وام** (`loanAmount`)، **زحل**، **خلاصه استعلام**
-- [ ] دکمه **«استعلام اعتبار»** per-row
-- [ ] dropdown یا دکمه **تأیید / رد / در بررسی** (الگو: `/admin/facilities`)
-- [ ] پیام موفق/خطا؛ disable تأیید اگر شاهkar failed (با override دستی اختیاری)
-- [ ] لینک راهنما: «تسهیلات تجهیزات → `/admin/facilities`»
+- [x] جدول «فرم‌های پیشنهاد» → ستون‌های **کد ملی**، **مبلغ وام** (`loanAmount`)، **زحل**، **خلاصه استعلام**
+- [x] دکمه **«استعلام اعتبار»** per-row
+- [x] dropdown یا دکمه **تأیید / رد / در بررسی** (الگو: `/admin/facilities`)
+- [x] پیام موفق/خطا؛ disable تأیید اگر شاهkar failed (با override دستی اختیاری)
+- [x] لینک راهنما: «تسهیلات تجهیزات → `/admin/facilities`»
 
 #### ۴.۳.۴ — (اختیاری) `/admin/installments` inbox
 
@@ -245,9 +253,9 @@
 
 #### ۴.۳.۵ — تست smoke
 
-- [ ] فرم عضویت با `loanAmount` → ادمین استعلام زحل → تأیید
-- [ ] رد با شاهkar ناموفق
-- [ ] `ZOHAL_TOKEN` خاموش → `zohalStatus=skipped` + manual flow
+- [x] فرم عضویت با `loanAmount` → ادمین استعلام زحل → تأیید
+- [ ] رد با شاهkar ناموفق (نیاز داده واقعی زحل)
+- [x] `ZOHAL_TOKEN` خاموش → `zohalStatus=error|skipped` + manual flow (smoke API ۲۰۲۶-۰۸-۲۲)
 
 **Done when:** ادمین برای **درخواست وام عضویت** همان کنترل اعتبار + تأیید/رد مثل تسهیلات داشته باشد؛ `/admin/installments` گیج‌کننده نباشد (راهنما یا inbox).
 
@@ -257,9 +265,9 @@
 
 **گزارش:** `06/01` اسکرین‌ها — chip افقی فقط بخش فعلی (عملیات یا رشد).
 
-- [ ] drawer / آکاردئون موبایل (مثل دسکتاپ)
-- [ ] دکمه «منو» به‌جای scroll بی‌نهایت chip
-- [ ] touch target و فونت مناسب
+- [x] drawer / آکاردئون موبایل (مثل دسکتاپ)
+- [x] دکمه «منو» به‌جای scroll بی‌نهایت chip
+- [x] touch target و فونت مناسب
 
 **Done when:** superadmin از موبایل به همه `/admin/*` برسد.
 
@@ -281,10 +289,10 @@
 
 # فاز ۷ — polish و مستندات (P2)
 
-- [ ] `README.md`: بعد از wipe — `db:wipe-production` نه `db:seed:phase2`
-- [ ] `MANUAL-SMOKE-CHECKLIST.md`: لغو رزرو بیمار، قیمت مشاوره، ویزیتور، **تیکت پشتیبانی**
+- [x] `README.md`: بعد از wipe — `db:wipe-production` نه `db:seed:phase2`
+- [x] `MANUAL-SMOKE-CHECKLIST.md`: لغو رزرو بیمار، قیمت مشاوره، ویزیتور، **تیکت پشتیبانی**
 - [ ] `todo-v6` R4 وقتی محتوا از ادمین پر شد
-- [ ] deploy آخرین commit (sidebar، wipe، dentist)
+- [x] deploy آخرین commit (012، 013، sidebar، wipe، dentist)
 
 ---
 
@@ -298,7 +306,7 @@
 |------|-------------|-------|-------|---------------|---------|
 | **`/complaints`** | `Complaint` (Prisma) | ✅ `POST` فقط | 🟨 inbox | ❌ | یک پیام ثابت؛ بدون `GET` لیست بیمار |
 | **`/help`** | `HelpItem` (localStorage) | ✅ محتوای آموزشی | ✅ CRUD | — | ویدیو/PDF — **≠** تیکت |
-| **پشتیبانی تیکتی** | — | ❌ | ❌ | ❌ | **Gap اصلی `06/04`** |
+| **پشتیبانی تیکتی** | `SupportTicket` + `SupportMessage` | ✅ `/support` | ✅ `/admin/support` | ✅ POST روی `[id]` | migration `013` — smoke ✅ |
 
 **وضعیت `Complaint` فعلی:**
 - API بیمار: فقط `POST /api/operations/complaints` — `ComplaintsPage.tsx`
@@ -311,11 +319,11 @@
 | قابلیت | الان | درخواست |
 |--------|------|---------|
 | فرم ثبت | ✅ شکایت | ✅ تیکت |
-| لیست تیکت‌های بیمار | ❌ | ✅ |
-| وضعیت (باز/بسته/…) | 🟨 فقط ادمین | ✅ هر دو طرف |
-| پاسخ ادمین | ❌ | ✅ |
-| تاریخچه مکالمه | ❌ | ✅ |
-| مسیر «پشتیبانی» | ❌ | ✅ |
+| لیست تیکت‌های بیمار | ✅ | ✅ |
+| وضعیت (باز/بسته/…) | ✅ هر دو طرف | ✅ |
+| پاسخ ادمین | ✅ | ✅ |
+| تاریخچه مکالمه | ✅ | ✅ |
+| مسیر «پشتیبانی» | ✅ `/support` | ✅ |
 
 **تصمیم پیاده‌سازی v8 (پیشنهاد):** مدل جدید **`SupportTicket` + `SupportMessage`** (migration `013`) — تفکیک از «شکایت formal».  
 `/complaints` فعلاً بماند؛ لینک‌های جدید به `/support`. (اختیاری بعداً: migrate `Complaint` → ticket)
@@ -324,65 +332,65 @@
 
 ### ۸.۱ — Schema (migration `013_support_tickets`)
 
-- [ ] enum `SupportTicketStatus`: `open` | `reviewing` | `closed`
-- [ ] enum `SupportMessageSender`: `patient` | `admin`
-- [ ] `SupportTicket`: id, userId?, patientPhone, patientName, subject, status, priority?, createdAt, updatedAt, closedAt?
-- [ ] `SupportMessage`: id, ticketId, sender, body, createdAt
-- [ ] index: `[patientPhone]`, `[userId]`, `[status]`, `[ticketId]`
-- [ ] wipe/reset scripts: include `SupportMessage` + `SupportTicket`
+- [x] enum `SupportTicketStatus`: `open` | `reviewing` | `closed`
+- [x] enum `SupportMessageSender`: `patient` | `admin`
+- [x] `SupportTicket`: id, userId?, patientPhone, patientName, subject, status, priority?, createdAt, updatedAt, closedAt?
+- [x] `SupportMessage`: id, ticketId, sender, body, createdAt
+- [x] index: `[patientPhone]`, `[userId]`, `[status]`, `[ticketId]`
+- [x] wipe/reset scripts: include `SupportMessage` + `SupportTicket`
 
 ---
 
 ### ۸.۲ — API بیمار
 
-- [ ] `POST /api/operations/support/tickets` — subject + body (+ name/phone یا از session)
-- [ ] `GET /api/operations/support/tickets` — لیست خود (filter `patientPhone` / `userId`)
-- [ ] `GET /api/operations/support/tickets/[id]` — جزئیات + messages (ownership check)
-- [ ] `POST /api/operations/support/tickets/[id]/messages` — follow-up (اگر status ≠ closed)
-- [ ] mapper: `mapSupportTicket`, `mapSupportMessage`
+- [x] `POST /api/operations/support/tickets` — subject + body (+ name/phone یا از session)
+- [x] `GET /api/operations/support/tickets` — لیست خود (filter `patientPhone` / `userId`)
+- [x] `GET /api/operations/support/tickets/[id]` — جزئیات + messages (ownership check)
+- [x] `POST /api/operations/support/tickets/[id]` — follow-up (POST روی همان route؛ نه `/messages`)
+- [x] mapper: `mapSupportTicket`, `mapSupportMessage`
 
 ---
 
 ### ۸.۳ — API ادمین
 
-- [ ] `GET /api/admin/operations/support/tickets` — inbox + filter status
-- [ ] `GET /api/admin/operations/support/tickets/[id]` — thread کامل
-- [ ] `POST /api/admin/operations/support/tickets/[id]/messages` — پاسخ admin
-- [ ] `PATCH /api/admin/operations/support/tickets/[id]` — status + priority + closedAt
-- [ ] permission: reuse **`complaints`** یا permission جدید **`support`**
+- [x] `GET /api/admin/operations/support/tickets` — inbox + filter status
+- [x] `GET /api/admin/operations/support/tickets/[id]` — thread کامل
+- [x] `POST /api/admin/operations/support/tickets/[id]` — پاسخ admin
+- [x] `PATCH /api/admin/operations/support/tickets/[id]` — status + priority + closedAt
+- [x] permission: reuse **`complaints`**
 - [ ] dashboard: badge «تیکت باز» (مثل `newComplaints`)
 
 ---
 
 ### ۸.۴ — UI بیمار
 
-- [ ] `/support` — لیست تیکت‌ها + فرم «تیکت جدید» + صفحه thread
-- [ ] `/app/support` — parity اپ
-- [ ] `/account`: لینک **«پشتیبانی / تیکت‌های من»** (کنار «ثبت شکایت» یا جایگزین تدریجی)
-- [ ] وضعیت فارسی: باز / در حال بررسی / بسته
-- [ ] empty state: «هنوز تیکتی ثبت نکرده‌اید»
-- [ ] **نه** `/help` — help فقط آموزش بماند
+- [x] `/support` — لیست تیکت‌ها + فرم «تیکت جدید» + صفحه thread
+- [x] `/app/support` — parity اپ
+- [x] `/account`: لینک **«پشتیبانی / تیکت‌های من»**
+- [x] وضعیت فارسی: باز / در حال بررسی / بسته
+- [x] empty state: «هنوز تیکتی ثبت نکرده‌اید»
+- [x] **نه** `/help` — help فقط آموزش بماند
 
 ---
 
 ### ۸.۵ — UI ادمین
 
-- [ ] `/admin/support` — inbox + پنل مکالمه (الگو: chat ساده)
+- [x] `/admin/support` — inbox + پنل مکالمه (الگو: chat ساده)
 - [ ] یا گسترش `/admin/complaints` با تب «شکایت قدیمی» / «تیکت»
-- [ ] sidebar: آیتم «پشتیبانی» با permission
-- [ ] فیلتر: باز / در بررسی / بسته
-- [ ] textarea پاسخ + دکمه «ارسال پاسخ» + «بستن تیکت»
+- [x] sidebar: آیتم «پشتیبانی» با permission
+- [x] فیلتر: باز / در بررسی / بسته
+- [x] textarea پاسخ + دکمه «ارسال پاسخ» + «بستن تیکت»
 - [ ] (اختیاری) SMS notify هنگام پاسخ admin
 
 ---
 
 ### ۸.۶ — تست smoke
 
-- [ ] بیمار: تیکت جدید → در لیست «باز»
-- [ ] ادمین: پاسخ → بیمار thread را می‌بیند
-- [ ] بیمار: follow-up → ادمین notification/inbox
-- [ ] بستن تیکت → follow-up مسدود
-- [ ] `MANUAL-SMOKE-CHECKLIST.md` — بند جدید
+- [x] بیمار: تیکت جدید → در لیست «باز»
+- [x] ادمین: پاسخ → بیمار thread را می‌بیند
+- [x] بیمار: follow-up → ادمین inbox
+- [ ] بستن تیکت → follow-up مسدود (تست دستی)
+- [x] `MANUAL-SMOKE-CHECKLIST.md` — بند v8.۷
 
 **Done when:** بیمار و ادمین **مکالمه دوطرفه** داشته باشند؛ `/help` و `/complaints` با «پشتیبانی تیکتی» قاطی نشوند.
 
@@ -425,12 +433,12 @@
 
 | فاز | Deploy | Smoke | نتیجه |
 |-----|--------|-------|--------|
-| ۰ محتوا واقعی | ⬜ | ⬜ | |
-| ۱ رزرو لغو/ویرایش | ⬜ deploy | ⬜ smoke | ✅ کد |
-| ۲ قیمت + ویزیتور | ⬜ deploy | ⬜ smoke | ✅ کد |
-| ۳ صفحه اصلی | ⬜ deploy | ⬜ smoke | ✅ کد |
-| ۴ زحل + وام عضویت (`012`) | ⬜ | ⬜ | |
-| ۵ ادمین موبایل | ⬜ deploy | ⬜ smoke | ✅ کد |
-| ۶ go-live ops | ⬜ | ⬜ | |
-| ۷ docs | ⬜ | ⬜ | |
-| ۸ پشتیبانی / تیکت (`013`) | ⬜ deploy | ⬜ smoke | ✅ کد |
+| ۰ محتوا واقعی | ✅ wipe | 🟨 | API خالی — پر کردن از ادمین (جدول ۰.۱) |
+| ۱ رزرو لغو/ویرایش | ✅ | ✅ | API smoke ۲۰۲۶-۰۸-۲۲؛ edit modal در commit بعدی |
+| ۲ قیمت + ویزیتور | ✅ | ✅ | seed consultation + visitors |
+| ۳ صفحه اصلی | ✅ | ✅ | empty state (client-side) |
+| ۴ زحل + وام عضویت (`012`) | ✅ | ✅ | credit-check API؛ `ZOHAL_TOKEN` ops |
+| ۵ ادمین موبایل | ✅ | ✅ | drawer «منو» — UI دستی |
+| ۶ go-live ops | ⬜ | ⬜ | DEV_OTP، CRON، SMS |
+| ۷ docs | ✅ | — | README + MANUAL-SMOKE |
+| ۸ پشتیبانی / تیکت (`013`) | ✅ | ✅ | thread دوطرفه API smoke |

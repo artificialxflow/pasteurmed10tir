@@ -2,12 +2,12 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput } from "@/components/ui/Card";
+import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 type Filter = "all" | "visit" | "treatment";
 
@@ -16,6 +16,14 @@ export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
   const [error, setError] = useState("");
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
+  const [editForm, setEditForm] = useState({
+    day: "",
+    timeValue: "",
+    timeLabel: "",
+    doctorName: "",
+    status: "confirmed",
+  });
 
   const reload = useCallback(async (type: Filter = filter) => {
     const q = type === "all" ? "" : `?type=${type}`;
@@ -43,6 +51,35 @@ export default function AdminBookingsPage() {
     void patchAdminOps("/api/admin/operations/bookings", { id, status: "cancelled" })
       .then(() => reload(filter))
       .catch((e) => setError(e instanceof Error ? e.message : "لغو ناموفق"));
+  }
+
+  function openEdit(booking: Booking) {
+    setEditBooking(booking);
+    setEditForm({
+      day: String(booking.day || ""),
+      timeValue: String(booking.timeValue || ""),
+      timeLabel: String(booking.timeLabel || ""),
+      doctorName: String(booking.doctorName || ""),
+      status: String(booking.status || "confirmed"),
+    });
+  }
+
+  function saveEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editBooking) return;
+    void patchAdminOps("/api/admin/operations/bookings", {
+      id: editBooking.id,
+      day: editForm.day,
+      timeValue: editForm.timeValue,
+      timeLabel: editForm.timeLabel,
+      doctorName: editForm.doctorName,
+      status: editForm.status,
+    })
+      .then(() => {
+        setEditBooking(null);
+        return reload(filter);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "ویرایش ناموفق"));
   }
 
   function saveReservationFee() {
@@ -164,21 +201,86 @@ export default function AdminBookingsPage() {
               </AdminBadge>
             </td>
             <td className="px-4 py-3">
-              {b.status !== "cancelled" ? (
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="text-xs font-semibold text-red-600"
-                  onClick={() => cancelBooking(String(b.id))}
+                  className="text-xs font-semibold text-cyan-800"
+                  onClick={() => openEdit(b)}
                 >
-                  لغو
+                  ویرایش
                 </button>
-              ) : (
-                "—"
-              )}
+                {b.status !== "cancelled" ? (
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-red-600"
+                    onClick={() => cancelBooking(String(b.id))}
+                  >
+                    لغو
+                  </button>
+                ) : null}
+              </div>
             </td>
           </tr>
         ))}
       </AdminTable>
+
+      {editBooking ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <Card hover={false} className="w-full max-w-lg space-y-4 p-5">
+            <h3 className="font-extrabold text-slate-900">ویرایش رزرو — {editBooking.id}</h3>
+            <form onSubmit={saveEdit} className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <FormLabel>روز</FormLabel>
+                <FormInput
+                  value={editForm.day}
+                  onChange={(e) => setEditForm((f) => ({ ...f, day: e.target.value }))}
+                  placeholder="مثلاً sat"
+                />
+              </div>
+              <div>
+                <FormLabel>مقدار ساعت (timeValue)</FormLabel>
+                <FormInput
+                  value={editForm.timeValue}
+                  onChange={(e) => setEditForm((f) => ({ ...f, timeValue: e.target.value }))}
+                  placeholder="مثلاً 10"
+                />
+              </div>
+              <div>
+                <FormLabel>برچسب زمان</FormLabel>
+                <FormInput
+                  value={editForm.timeLabel}
+                  onChange={(e) => setEditForm((f) => ({ ...f, timeLabel: e.target.value }))}
+                  placeholder="مثلاً ۱۰:۰۰"
+                />
+              </div>
+              <div>
+                <FormLabel>نام پزشک</FormLabel>
+                <FormInput
+                  value={editForm.doctorName}
+                  onChange={(e) => setEditForm((f) => ({ ...f, doctorName: e.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <FormLabel>وضعیت</FormLabel>
+                <FormSelect
+                  value={editForm.status}
+                  onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                >
+                  <option value="pending">در انتظار</option>
+                  <option value="confirmed">تأیید</option>
+                  <option value="cancelled">لغو</option>
+                </FormSelect>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <Button type="submit">ذخیره</Button>
+                <Button type="button" variant="outline" onClick={() => setEditBooking(null)}>
+                  انصراف
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }

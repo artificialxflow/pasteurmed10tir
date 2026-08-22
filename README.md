@@ -49,18 +49,36 @@ Admin passwords: copy `ADMIN-CREDENTIALS.example.json` → `ADMIN-CREDENTIALS.lo
 
 ```bash
 npx prisma migrate deploy
-npm run db:seed          # if fresh DB
+# or: npm run db:deploy
+```
+
+**Fresh local dev** (optional seeds for testing):
+
+```bash
+npm run db:seed
 npm run db:seed:phase2
 npm run db:seed:phase3
 npm run db:seed:phase4
 npm run db:seed:phase5
 ```
 
+**Production after wipe** — do **not** run `db:seed:phase2` (or other phase seeds). Wipe keeps only `admin`; fill real content from `/admin/*` (see `todo-v8.md` فاز ۰):
+
+```bash
+npm run db:wipe-production -- --confirm
+npx prisma migrate deploy
+# redeploy app — then add services, doctors, consultation types, visitors via admin UI
+```
+
+Migrations through v8: `010_patient_zohal`, `011_dentists`, `012_membership_zohal`, `013_support_tickets`.
+
 If migrate history drifts vs live schema, see notes in `backend-dev/TODO-v4.md` / `TODO-v5.md` (`db push` + `migrate resolve --applied`).
 
 ## Manual tests
 
-See `backend-dev/TEST-MANUAL.md` (phases 1–5).
+See `MANUAL-SMOKE-CHECKLIST.md` (full walkthrough + v8 items: booking cancel, consultation prices, visitors, membership zohal, support tickets).
+
+Legacy phase notes: `backend-dev/TEST-MANUAL.md` (phases 1–5).
 
 ## Learn More
 
