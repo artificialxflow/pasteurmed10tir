@@ -63,6 +63,14 @@ export async function patchAdminCommerce<T>(path: string, body: unknown): Promis
   });
 }
 
+export async function postAdminCommerce<T>(path: string, body?: unknown): Promise<T> {
+  return fetchAdminCommerce<T>(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
 export async function getMembershipPlansApi() {
   return fetchPublicCommerce<{ items: import('@/lib/data').Membership[] }>(
     '/api/commerce/membership-plans',

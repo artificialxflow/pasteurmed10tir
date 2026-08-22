@@ -26,12 +26,19 @@ function markAppView() {
 
 export default function HomePage() {
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetchPublic<{ items: ServiceItem[] }>("/api/content/services")
       .then((data) => setServices(data.items.filter((s) => s.active !== false)))
-      .catch(() => setServices([]));
+      .catch(() => setServices([]))
+      .finally(() => setLoaded(true));
   }, []);
+
+  function serviceImageSrc(image?: string) {
+    if (!image || image.trim() === "") return "/uploads/placeholder.svg";
+    return image;
+  }
 
   return (
     <main className="flex-1">
@@ -132,6 +139,18 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+            {loaded && services.length === 0 ? (
+              <Card hover={false} className="col-span-full border-dashed border-cyan-300 bg-cyan-50/50 p-8 text-center sm:col-span-2 lg:col-span-3">
+                <p className="text-lg font-bold text-slate-900">هنوز سرویسی ثبت نشده</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  از پنل ادمین در{" "}
+                  <Link href={ROUTES.admin.services} className="font-bold text-cyan-800 underline">
+                    /admin/services
+                  </Link>{" "}
+                  کارت سرویس (emoji + تصویر + لینک) اضافه کنید.
+                </p>
+              </Card>
+            ) : null}
             {services.map((service, index) => (
               <Link
                 key={service.id}
@@ -142,10 +161,13 @@ export default function HomePage() {
                 <div className="relative h-40 overflow-hidden sm:h-48">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={service.image}
+                    src={serviceImageSrc(service.image)}
                     alt={service.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = "/uploads/placeholder.svg";
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <span className="absolute bottom-3 right-3 text-3xl" aria-hidden>

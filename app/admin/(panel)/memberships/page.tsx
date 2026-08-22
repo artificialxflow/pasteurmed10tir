@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
 import {
   fetchAdminCommerce,
+  patchAdminCommerce,
+  postAdminCommerce,
   putAdminCommerce,
 } from "@/lib/commerce/client";
+import { ROUTES } from "@/lib/routes";
 import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
 import { type Member } from "@/lib/storage";
@@ -25,6 +28,12 @@ type Application = Record<string, unknown> & {
   referralCode?: string;
   visitorName?: string;
   phone?: string;
+  nationalId?: string;
+  loanAmount?: number;
+  status?: string;
+  zohalStatus?: string;
+  zohalSummary?: string;
+  zohalShahkarMatched?: boolean | null;
 };
 
 type MemberRow = Member & { walletCeiling?: number | null };
@@ -34,6 +43,8 @@ export default function AdminMembershipsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [plans, setPlans] = useState<Membership[]>([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   async function reload() {
     try {
@@ -85,9 +96,132 @@ export default function AdminMembershipsPage() {
       .catch((e: Error) => setError(e.message));
   }
 
+  function zohalLabel(app: Application) {
+    const s = app.zohalStatus;
+    if (s === "passed") return "زحل: تأیید";
+    if (s === "failed") return "زحل: رد شاهکار";
+    if (s === "error") return "زحل: خطا";
+    if (s === "skipped") return "زحل: —";
+    return s ? `زحل: ${s}` : "زحل: —";
+  }
+
+  function runCreditCheck(id: string | undefined) {
+    if (!id || busyId) return;
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    void postAdminCommerce<{ item: Application }>(
+      `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}/credit-check`,
+    )
+      .then(() => reload())
+      .then(() => setSuccess("استعلام اعتبار انجام شد."))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
+  function updateApplicationStatus(id: string | undefined, status: string) {
+    if (!id || busyId) return;
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    void patchAdminCommerce<{ item: Application }>(
+      `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}`,
+      { status },
+    )
+      .then(() => reload())
+      .then(() => setSuccess("وضعیت درخواست به‌روز شد."))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {success ? <p className="text-sm text-teal-700">{success}</p> : null}
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold">فرم‌های پیشنهاد صدور عضویت (وام درمانی)</h2>
+          <p className="text-xs text-slate-500">
+            تسهیلات تجهیزات →{" "}
+            <a href={ROUTES.admin.facilities} className="font-bold text-cyan-800 underline">
+              /admin/facilities
+            </a>
+          </p>
+        </div>
+        <AdminTable
+          headers={[
+            "مشتری",
+            "کد ملی",
+            "مبلغ وام",
+            "طرح",
+            "زحل",
+            "خلاصه",
+            "وضعیت",
+            "عملیات",
+          ]}
+          empty="فرم عضویتی ثبت نشده است."
+        >
+          {applications.map((app) => (
+            <tr key={String(app.id)} className="border-t border-slate-100 align-top">
+              <td className="px-4 py-3">
+                {String(app.patientName || "—")}
+                <div className="font-mono text-xs text-slate-500">{String(app.phone || "—")}</div>
+              </td>
+              <td className="px-4 py-3 font-mono text-xs">{String(app.nationalId || "—")}</td>
+              <td className="px-4 py-3">
+                {app.loanAmount
+                  ? `${Number(app.loanAmount).toLocaleString("fa-IR")} تومان`
+                  : "—"}
+              </td>
+              <td className="px-4 py-3">{String(app.planTitle || "—")}</td>
+              <td className="px-4 py-3 text-xs font-medium">{zohalLabel(app)}</td>
+              <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
+                {app.zohalSummary || "—"}
+              </td>
+              <td className="px-4 py-3">
+                <AdminBadge
+                  tone={
+                    app.status === "approved"
+                      ? "success"
+                      : app.status === "rejected"
+                        ? "danger"
+                        : "warn"
+                  }
+                >
+                  {app.status === "approved"
+                    ? "تأیید"
+                    : app.status === "rejected"
+                      ? "رد"
+                      : "در بررسی"}
+                </AdminBadge>
+              </td>
+              <td className="px-4 py-3 space-y-2">
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-cyan-800"
+                  disabled={busyId === String(app.id)}
+                  onClick={() => runCreditCheck(app.id ? String(app.id) : undefined)}
+                >
+                  استعلام اعتبار
+                </button>
+                <select
+                  className="block w-full rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                  disabled={busyId === String(app.id)}
+                  value={String(app.status || "pending")}
+                  onChange={(e) =>
+                    updateApplicationStatus(app.id ? String(app.id) : undefined, e.target.value)
+                  }
+                >
+                  <option value="pending">در بررسی</option>
+                  <option value="approved">تأیید وام</option>
+                  <option value="rejected">رد</option>
+                </select>
+              </td>
+            </tr>
+          ))}
+        </AdminTable>
+      </div>
+
       <div>
         <h2 className="mb-4 text-lg font-bold">اعضا و پرداخت‌ها</h2>
         <AdminTable
@@ -112,52 +246,6 @@ export default function AdminMembershipsPage() {
                   {m.status === "paid" ? "موفق" : "در انتظار"}
                 </AdminBadge>
               </td>
-            </tr>
-          ))}
-        </AdminTable>
-      </div>
-
-      <div>
-        <h2 className="mb-4 text-lg font-bold">فرم‌های پیشنهاد صدور عضویت</h2>
-        <AdminTable
-          headers={[
-            "مشتری",
-            "طرح",
-            "پوشش",
-            "مدت عضویت",
-            "مبلغ",
-            "کد معرف",
-            "نماینده",
-            "تماس",
-          ]}
-          empty="فرم عضویتی ثبت نشده است."
-        >
-          {applications.map((app) => (
-            <tr key={String(app.id)} className="border-t border-slate-100">
-              <td className="px-4 py-3">{String(app.patientName || "—")}</td>
-              <td className="px-4 py-3">{String(app.planTitle || "—")}</td>
-              <td className="px-4 py-3">
-                <AdminBadge tone={app.tier === "vip" ? "warn" : "success"}>
-                  {String(app.tierLabel || "—")}
-                </AdminBadge>
-              </td>
-              <td className="px-4 py-3">
-                {String(app.membershipDurationLabel || app.validityLabel || "—")}
-                {app.discountPercent ? (
-                  <>
-                    <br />
-                    <span className="text-xs text-amber-700">
-                      تخفیف {Number(app.discountPercent).toLocaleString("fa-IR")}٪
-                    </span>
-                  </>
-                ) : null}
-              </td>
-              <td className="px-4 py-3">
-                {(Number(app.amountRial) || 0).toLocaleString("fa-IR")} ریال
-              </td>
-              <td className="px-4 py-3 font-mono">{String(app.referralCode || "—")}</td>
-              <td className="px-4 py-3">{String(app.visitorName || "—")}</td>
-              <td className="px-4 py-3">{String(app.phone || "—")}</td>
             </tr>
           ))}
         </AdminTable>

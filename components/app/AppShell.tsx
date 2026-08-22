@@ -17,7 +17,7 @@ const nav = [
     label: "کاربری",
     icon: "👤",
     match: (p: string) =>
-      p.includes("/account") || p.includes("/installments") || p.includes("/complaints") || p.includes("/help"),
+      p.includes("/account") || p.includes("/installments") || p.includes("/complaints") || p.includes("/support") || p.includes("/help"),
   },
 ];
 

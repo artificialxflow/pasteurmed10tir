@@ -60,6 +60,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.partners, label: "همکاری‌ها", permission: "partners" },
       { href: ROUTES.admin.reviews, label: "نظرات", permission: "reviews" },
       { href: ROUTES.admin.complaints, label: "شکایات", permission: "complaints" },
+      { href: ROUTES.admin.support, label: "پشتیبانی", permission: "complaints" },
       { href: ROUTES.admin.help, label: "آموزش", permission: "help" },
     ],
   },
@@ -92,6 +93,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.insurances]: "بیمه‌ها و استعلام",
   [ROUTES.admin.reviews]: "نظرات پزشکان",
   [ROUTES.admin.complaints]: "شکایات بیماران",
+  [ROUTES.admin.support]: "پشتیبانی / تیکت",
   [ROUTES.admin.help]: "آموزش سامانه",
   [ROUTES.admin.installments]: "اقساط کاربران",
   [ROUTES.admin.patients]: "تأیید کاربری و فرانشیز",
@@ -193,6 +195,7 @@ export function AdminShell({
   const [session, setSession] = useState<AdminSession | null>(null);
   const [ready, setReady] = useState(false);
   const [openGroupTitle, setOpenGroupTitle] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const heading = title || titleFromPath(pathname);
 
   const visibleGroups = useMemo(() => {
@@ -205,14 +208,10 @@ export function AdminShell({
       .filter((group) => group.items.length > 0);
   }, [session]);
 
-  const flatLinks = useMemo(
-    () => visibleGroups.flatMap((group) => group.items),
-    [visibleGroups],
-  );
-
   useEffect(() => {
     const activeGroup = findGroupForPath(visibleGroups, pathname);
     setOpenGroupTitle(activeGroup);
+    setMobileNavOpen(false);
   }, [pathname, visibleGroups]);
 
   useEffect(() => {
@@ -308,6 +307,13 @@ export function AdminShell({
               <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{heading}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-cyan-200 bg-white px-3 py-2 text-xs font-extrabold text-cyan-900 transition hover:bg-cyan-50 lg:hidden"
+                onClick={() => setMobileNavOpen(true)}
+              >
+                منو
+              </button>
               <span className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-800 sm:inline-flex">
                 دسترسی بر اساس نقش
               </span>
@@ -326,23 +332,44 @@ export function AdminShell({
               </button>
             </div>
           </div>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-            {flatLinks.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  "shrink-0 rounded-full border px-3.5 py-2 text-[0.8125rem] font-extrabold transition",
-                  pathname === l.href
-                    ? "border-cyan-600 bg-cyan-600 text-white"
-                    : "border-slate-200 bg-white text-slate-600",
-                )}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
         </header>
+
+        {mobileNavOpen ? (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              className="absolute inset-0 bg-slate-900/40"
+              aria-label="بستن منو"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <div className="absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-cyan-100 bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-cyan-50 px-4 py-4">
+                <p className="font-extrabold text-slate-900">منوی ادمین</p>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold"
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  بستن
+                </button>
+              </div>
+              <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
+                {visibleGroups.map((group) => (
+                  <SidebarNavGroup
+                    key={group.title}
+                    group={group}
+                    pathname={pathname}
+                    open={openGroupTitle === group.title}
+                    onToggle={() =>
+                      setOpenGroupTitle((prev) => (prev === group.title ? null : group.title))
+                    }
+                  />
+                ))}
+              </nav>
+            </div>
+          </div>
+        ) : null}
+
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

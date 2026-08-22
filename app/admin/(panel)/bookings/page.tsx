@@ -32,10 +32,10 @@ export default function AdminBookingsPage() {
     void reload("all").catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
 
-  function cancelBooking(id: string) {
+  async function cancelBooking(id: string) {
     if (
       !window.confirm(
-        "آیا از لغو این رزرو مطمئن هستید؟ بیعانه پرداخت‌شده قابل استرداد نیست.",
+        "آیا از لغو این رزرو مطمئن هستید؟\n\nبیعانه پرداخت‌شده قابل استرداد نیست.",
       )
     ) {
       return;
@@ -122,13 +122,14 @@ export default function AdminBookingsPage() {
       </div>
 
       <AdminTable
-        headers={["کد", "مراجع", "پزشک", "نوع", "زمان", "بیعانه", "وضعیت", "عملیات"]}
+        headers={["کد", "مراجع", "موبایل", "پزشک", "نوع", "زمان", "بیعانه", "وضعیت", "عملیات"]}
         empty="رزروی ثبت نشده است."
       >
         {bookings.map((b) => (
           <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50">
             <td className="px-4 py-3 font-mono text-xs">{b.id}</td>
             <td className="px-4 py-3">{b.patientName}</td>
+            <td className="px-4 py-3 font-mono text-xs">{b.patientPhone || "—"}</td>
             <td className="px-4 py-3">{b.doctorName}</td>
             <td className="px-4 py-3">{b.typeLabel}</td>
             <td className="px-4 py-3">

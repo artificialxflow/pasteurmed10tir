@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { fetchPublic } from "@/lib/content/client";
-import { fetchMyActivityApi } from "@/lib/operations/client";
+import { fetchMyActivityApi, patchPatientOps } from "@/lib/operations/client";
 import {
   bookingStatusLabel,
   DEFAULT_VISIT_FEE_TOMAN,
@@ -94,6 +94,8 @@ export function AccountDashboard({
     null,
   );
   const [activityError, setActivityError] = useState("");
+  const [cancelBusy, setCancelBusy] = useState<string | null>(null);
+  const [cancelMessage, setCancelMessage] = useState("");
 
   const dentalHref = variant === "app" ? ROUTES.app.dentalGeneral : ROUTES.web.dentalGeneral;
   const consultationHref = variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation;
@@ -150,11 +152,53 @@ export function AccountDashboard({
       ? "danger"
       : "warn";
 
+  function reloadActivity() {
+    void fetchMyActivityApi()
+      .then(setActivity)
+      .catch((e) => setActivityError(e instanceof Error ? e.message : "خطا در بارگذاری"));
+  }
+
+  function cancelBooking(id: string) {
+    if (
+      !window.confirm(
+        "آیا از لغو این نوبت مطمئن هستید؟\n\nبیعانه پرداخت‌شده قابل استرداد نیست.",
+      )
+    ) {
+      return;
+    }
+    setCancelBusy(id);
+    setCancelMessage("");
+    void patchPatientOps<{ message?: string }>(`/api/operations/bookings/${encodeURIComponent(id)}`, {
+      status: "cancelled",
+    })
+      .then((res) => {
+        setCancelMessage(res.message || "رزرو لغو شد.");
+        reloadActivity();
+      })
+      .catch((e) => setCancelMessage(e instanceof Error ? e.message : "لغو ناموفق"))
+      .finally(() => setCancelBusy(null));
+  }
+
   return (
     <div className="space-y-6">
       <Card hover={false} className="border-teal-200 bg-teal-50/50 p-4 text-sm text-teal-900">
         سلام {profile.name.split(/\s+/)[0] || "بیمار"} — پنل شما فعال است. برای رزرو دیگر نیازی به
         وارد کردن دوباره نام و موبایل نیست.
+      </Card>
+
+      <Card hover={false} className="border-cyan-100 bg-cyan-50/50 p-4 text-sm text-cyan-950">
+        <p className="font-extrabold">اعتبارسنجی بانکی</p>
+        <p className="mt-2 leading-7">
+          برای <strong>تسهیلات تجهیزات</strong> به{" "}
+          <Link href={variant === "app" ? ROUTES.app.shopFacility : ROUTES.web.shopFacility} className="underline">
+            درخواست تسهیلات
+          </Link>{" "}
+          بروید. برای <strong>وام درمانی عضویت</strong>{" "}
+          <Link href={variant === "app" ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership} className="underline">
+            فرم عضویت
+          </Link>{" "}
+          را تکمیل کنید — پس از بررسی اعتبار با شما تماس می‌گیریم.
+        </p>
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -246,6 +290,9 @@ export function AccountDashboard({
       </Card>
 
       {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
+      {cancelMessage ? (
+        <p className="text-sm font-bold text-teal-800">{cancelMessage}</p>
+      ) : null}
 
       {activityError ? (
         <p className="text-sm text-rose-600">{activityError}</p>
@@ -262,14 +309,46 @@ export function AccountDashboard({
                 const st = String(b.status || "");
                 const tone =
                   st === "confirmed" ? "success" : st === "cancelled" ? "danger" : "warn";
+                const bookingId = String(b.id);
                 return (
-                  <ActivityRow
-                    key={String(b.id)}
-                    title={String(b.doctorName || "رزرو دندانپزشکی")}
-                    meta={`${String(b.day || "—")} ${String(b.timeLabel || "")} · ${new Date(String(b.createdAt)).toLocaleDateString("fa-IR")}`}
-                    status={bookingStatusLabel(st)}
-                    tone={tone}
-                  />
+                  <div
+                    key={bookingId}
+                    className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 py-3 last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">
+                        {String(b.doctorName || "رزرو دندانپزشکی")}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {String(b.day || "—")} {String(b.timeLabel || "")} ·{" "}
+                        {new Date(String(b.createdAt)).toLocaleDateString("fa-IR")}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`text-xs font-bold ${
+                          tone === "success"
+                            ? "text-teal-700"
+                            : tone === "danger"
+                              ? "text-rose-700"
+                              : "text-amber-700"
+                        }`}
+                      >
+                        {bookingStatusLabel(st)}
+                      </span>
+                      {st !== "cancelled" ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="text-xs text-rose-700"
+                          disabled={cancelBusy === bookingId}
+                          onClick={() => cancelBooking(bookingId)}
+                        >
+                          {cancelBusy === bookingId ? "در حال لغو…" : "لغو نوبت"}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
                 );
               })
             )}

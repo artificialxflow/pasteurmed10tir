@@ -74,6 +74,10 @@ export function ShopFacility({ variant = "web" }: { variant?: ShopVariant }) {
         }
       >
         <p className="font-bold text-slate-900">{PASTEUR_DATA.shopVip.facilityTitle}</p>
+        <p className="mt-2 text-xs leading-6 text-cyan-900">
+          با ثبت درخواست، استعلام اعتبار از سرویس <strong>زحل</strong> (شاهکار، هویت، اعتبار بانکی،
+          چک برگشتی) انجام می‌شود.
+        </p>
         <ul className="mt-3 list-disc space-y-1 pr-4 text-xs text-slate-600">
           {PASTEUR_DATA.shopVip.facilityTerms.map((t) => (
             <li key={t}>{t}</li>

@@ -26,6 +26,7 @@ model User {
   reminders          Reminder[]
   doctorReviews      DoctorReview[]
   complaints         Complaint[]
+  supportTickets     SupportTicket[]
   members            Member[]
   wallets            Wallet[]
   shopOrders         ShopOrder[]
@@ -264,6 +265,17 @@ enum ComplaintStatus {
   closed
 }
 
+enum SupportTicketStatus {
+  open
+  reviewing
+  closed
+}
+
+enum SupportMessageSender {
+  patient
+  admin
+}
+
 enum PartnerRequestStatus {
   new
   reviewing
@@ -416,6 +428,36 @@ model Complaint {
   @@index([status])
 }
 
+model SupportTicket {
+  id           String              @id
+  userId       String?
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone String
+  patientName  String
+  subject      String
+  status       SupportTicketStatus @default(open)
+  priority     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  closedAt     DateTime?
+  messages     SupportMessage[]
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+}
+
+model SupportMessage {
+  id        String               @id
+  ticketId  String
+  ticket    SupportTicket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    SupportMessageSender
+  body      String
+  createdAt DateTime             @default(now())
+
+  @@index([ticketId])
+}
+
 model PartnerRequest {
   id           String               @id
   type         String
@@ -552,6 +594,12 @@ model MembershipApplication {
   referralCode             String?
   visitorName              String?
   status                   String   @default("pending")
+  zohalStatus              String?
+  zohalPayload             Json?
+  shahkarMatched           Boolean?
+  zohalCheckedAt           DateTime?
+  reviewedAt               DateTime?
+  reviewNote               String?
   source                   String?
   date                     String?
   extra                    Json?

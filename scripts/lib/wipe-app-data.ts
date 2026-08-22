@@ -20,6 +20,8 @@ export async function wipeAppData(prisma: PrismaClient): Promise<void> {
   await prisma.insuranceInquiry.deleteMany();
   await prisma.doctorReview.deleteMany();
   await prisma.complaint.deleteMany();
+  await prisma.supportMessage.deleteMany();
+  await prisma.supportTicket.deleteMany();
   await prisma.partnerRequest.deleteMany();
   await prisma.patientProfile.deleteMany();
   await prisma.user.deleteMany();

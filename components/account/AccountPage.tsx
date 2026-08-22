@@ -221,6 +221,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
 
   const helpHref = variant === "app" ? ROUTES.app.help : ROUTES.web.help;
   const complaintsHref = variant === "app" ? ROUTES.app.complaints : ROUTES.web.complaints;
+  const supportHref = variant === "app" ? ROUTES.app.support : ROUTES.web.support;
   const installmentsHref =
     variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
 
@@ -378,6 +379,10 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             <span className="text-slate-300">|</span>
             <Link href={helpHref} className="text-cyan-800 underline">
               آموزش سامانه
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link href={supportHref} className="text-cyan-800 underline">
+              پشتیبانی / تیکت
             </Link>
             <span className="text-slate-300">|</span>
             <Link href={complaintsHref} className="text-cyan-800 underline">

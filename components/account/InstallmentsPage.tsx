@@ -46,7 +46,8 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
     <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-4 px-4 py-10"}>
       <h1 className="text-xl font-extrabold text-slate-900">اقساط من</h1>
       <p className="text-sm text-slate-600">
-        مبلغ پرداخت‌شده، مانده و تاریخ سررسید بعدی — اعتبار و تسهیلات جداگانه
+        این صفحه فقط <strong>طرح‌های اقساط فعال</strong> را نشان می‌دهد. درخواست‌های در انتظار
+        بررسی اعتبار جداگانه توسط کارشناسان پیگیری می‌شوند.
       </p>
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {plans.map((plan) => {

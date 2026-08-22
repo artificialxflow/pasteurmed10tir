@@ -13,6 +13,10 @@ import type {
   Reminder,
   ReminderStatus,
   ReviewStatus,
+  SupportMessage,
+  SupportMessageSender,
+  SupportTicket,
+  SupportTicketStatus,
 } from '@prisma/client';
 
 export function generateOperationId(): string {
@@ -126,6 +130,47 @@ export function mapComplaint(row: Complaint) {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
+const supportTicketStatusLabels: Record<SupportTicketStatus, string> = {
+  open: 'باز',
+  reviewing: 'در حال بررسی',
+  closed: 'بسته',
+};
+
+export function mapSupportMessage(row: SupportMessage) {
+  return {
+    id: row.id,
+    ticketId: row.ticketId,
+    sender: row.sender,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function mapSupportTicket(
+  row: SupportTicket & { messages?: SupportMessage[] },
+  options?: { includeMessages?: boolean },
+) {
+  const messages = row.messages?.map(mapSupportMessage) ?? [];
+  return {
+    id: row.id,
+    patientName: row.patientName,
+    patientPhone: row.patientPhone,
+    subject: row.subject,
+    status: row.status,
+    statusLabel: supportTicketStatusLabels[row.status],
+    priority: row.priority ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    closedAt: row.closedAt?.toISOString(),
+    messageCount: messages.length,
+    messages: options?.includeMessages ? messages : undefined,
+    lastMessage: messages.length ? messages[messages.length - 1] : undefined,
+  };
+}
+
+export type SupportTicketStatusValue = SupportTicketStatus;
+export type SupportMessageSenderValue = SupportMessageSender;
 
 export function mapPartnerRequest(row: PartnerRequest) {
   return {

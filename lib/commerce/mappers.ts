@@ -52,6 +52,28 @@ export function mapMembershipApplication(row: MembershipApplication) {
     row.extra && typeof row.extra === 'object' && !Array.isArray(row.extra)
       ? (row.extra as Record<string, unknown>)
       : {};
+
+  const payload = row.zohalPayload;
+  let zohalSummary: string | undefined;
+  let zohalShahkarMatched: boolean | null | undefined = row.shahkarMatched ?? undefined;
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const p = payload as Record<string, unknown>;
+    if (typeof p.shahkarMatched === 'boolean') zohalShahkarMatched = p.shahkarMatched;
+    const parts: string[] = [];
+    if (typeof p.shahkarMatched === 'boolean') {
+      parts.push(p.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
+    }
+    if (p.credit && typeof p.credit === 'object') {
+      const c = p.credit as Record<string, unknown>;
+      parts.push(c.error ? 'اعتبار: خطا' : 'اعتبار: دریافت شد');
+    }
+    if (p.bouncedCheque && typeof p.bouncedCheque === 'object') {
+      const b = p.bouncedCheque as Record<string, unknown>;
+      parts.push(b.error ? 'چک: خطا' : 'چک: دریافت شد');
+    }
+    if (parts.length) zohalSummary = parts.join(' · ');
+  }
+
   return {
     ...extra,
     id: row.id,
@@ -80,6 +102,12 @@ export function mapMembershipApplication(row: MembershipApplication) {
     referralCode: row.referralCode ?? undefined,
     visitorName: row.visitorName ?? undefined,
     status: row.status,
+    zohalStatus: row.zohalStatus ?? undefined,
+    zohalShahkarMatched,
+    zohalSummary,
+    zohalCheckedAt: row.zohalCheckedAt?.toISOString(),
+    reviewedAt: row.reviewedAt?.toISOString(),
+    reviewNote: row.reviewNote ?? undefined,
     source: row.source ?? undefined,
     date: row.date ?? undefined,
     createdAt: row.createdAt.toISOString(),
