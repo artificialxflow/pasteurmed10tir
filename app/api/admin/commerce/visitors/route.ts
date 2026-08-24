@@ -30,14 +30,21 @@ export async function PUT(request: Request) {
       : null;
   if (!source) return jsonError('لیست ویزیتورها الزامی است.');
 
-  const cleaned = source.map((v, index) => ({
-    id: Number(v.id ?? index + 1),
-    name: String(v.name || ''),
-    code: String(v.code || '').trim().toUpperCase(),
-    commissionRate: Number(v.commissionRate || 0),
-    phone: String(v.phone || ''),
-    status: (String(v.status || 'active') === 'inactive' ? 'inactive' : 'active') as VisitorStatus,
-  }));
+  const cleaned = source.map((v, index) => {
+    const raw = v as Record<string, unknown>;
+    const clinical = Number(raw.commissionRateClinical ?? raw.commissionRate ?? 0);
+    const shop = Number(raw.commissionRateShop ?? raw.commissionRate ?? clinical);
+    return {
+      id: Number(raw.id ?? index + 1),
+      name: String(raw.name || ''),
+      code: String(raw.code || '').trim().toUpperCase(),
+      commissionRate: clinical,
+      commissionRateClinical: clinical,
+      commissionRateShop: shop,
+      phone: String(raw.phone || ''),
+      status: (String(raw.status || 'active') === 'inactive' ? 'inactive' : 'active') as VisitorStatus,
+    };
+  });
 
   const keepIds = cleaned.map((v) => v.id);
 
@@ -50,6 +57,8 @@ export async function PUT(request: Request) {
           name: item.name,
           code: item.code,
           commissionRate: item.commissionRate,
+          commissionRateClinical: item.commissionRateClinical,
+          commissionRateShop: item.commissionRateShop,
           phone: item.phone,
           status: item.status,
         },

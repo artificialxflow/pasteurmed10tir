@@ -22,8 +22,18 @@ export async function createCommission(data: {
   const visitor = await findVisitorByCode(data.referralCode);
   if (!visitor) return null;
 
+  const sourceType = String(data.sourceType || '');
+  const isShop = sourceType === 'shop-vip' || sourceType.startsWith('shop');
+  const clinical =
+    visitor.commissionRateClinical != null
+      ? visitor.commissionRateClinical
+      : visitor.commissionRate;
+  const shop =
+    visitor.commissionRateShop != null ? visitor.commissionRateShop : visitor.commissionRate;
+  const rate = isShop ? shop : clinical;
+
   const baseAmount = Number(data.amount || 0);
-  const commissionAmount = Math.round((baseAmount * visitor.commissionRate) / 100);
+  const commissionAmount = Math.round((baseAmount * rate) / 100);
 
   const row = await prisma.commission.create({
     data: {
@@ -31,7 +41,7 @@ export async function createCommission(data: {
       visitorId: visitor.id,
       visitorName: visitor.name,
       referralCode: visitor.code,
-      commissionRate: visitor.commissionRate,
+      commissionRate: rate,
       commissionAmount,
       sourceType: data.sourceType || null,
       sourceLabel: data.sourceLabel || null,

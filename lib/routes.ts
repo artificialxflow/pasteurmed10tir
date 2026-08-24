@@ -84,6 +84,7 @@ export const ROUTES = {
     consultations: '/admin/consultations',
     reminders: '/admin/reminders',
     services: '/admin/services',
+    dentalEducation: '/admin/dental-education',
     club: '/admin/club',
     gallery: '/admin/gallery',
     visitors: '/admin/visitors',

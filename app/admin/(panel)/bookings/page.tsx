@@ -101,6 +101,14 @@ export default function AdminBookingsPage() {
   return (
     <div className="space-y-6">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      <Card hover={false} className="border-cyan-100 bg-cyan-50/70 p-4 text-sm leading-7 text-cyan-950">
+        این صفحه فقط <strong>رزرو نوبت</strong> است (ویزیت/درمان). تأیید اینجا یعنی نوبت تأیید شده.
+        استعلام پوشش بیمه جداست →{" "}
+        <a href="/admin/insurances" className="font-bold underline">
+          /admin/insurances
+        </a>
+        .
+      </Card>
       <Card hover={false} className="p-5">
         <h2 className="mb-3 text-lg font-bold">تنظیمات بیعانه رزرو دندان</h2>
         <p className="mb-4 text-sm text-slate-600">

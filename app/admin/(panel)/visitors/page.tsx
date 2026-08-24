@@ -12,7 +12,8 @@ export default function AdminVisitorsPage() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [phone, setPhone] = useState("");
-  const [rate, setRate] = useState("");
+  const [rateClinical, setRateClinical] = useState("5");
+  const [rateShop, setRateShop] = useState("5");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -48,13 +49,14 @@ export default function AdminVisitorsPage() {
     setSuccess("");
     const trimmedName = name.trim();
     const trimmedCode = code.trim().toUpperCase();
-    const commissionRate = validateRate(rate);
+    const clinical = validateRate(rateClinical);
+    const shop = validateRate(rateShop);
     if (!trimmedName || !trimmedCode) {
       setError("نام و کد معرف الزامی است.");
       return;
     }
-    if (commissionRate === null) {
-      setError("درصد پورسانت باید بین ۰ تا ۱۰۰ باشد.");
+    if (clinical === null || shop === null) {
+      setError("درصد پورسانت بالینی و فروشگاه باید بین ۰ تا ۱۰۰ باشد.");
       return;
     }
     const nextId = Math.max(0, ...visitors.map((v) => Number(v.id) || 0)) + 1;
@@ -66,16 +68,19 @@ export default function AdminVisitorsPage() {
           name: trimmedName,
           code: trimmedCode,
           phone: phone.trim(),
-          commissionRate,
+          commissionRate: clinical,
+          commissionRateClinical: clinical,
+          commissionRateShop: shop,
           status: "active",
         },
       ],
-      `ویزیتور ${trimmedName} با پورسانت ${commissionRate}٪ ثبت شد.`,
+      `ویزیتور ${trimmedName} ثبت شد (بالینی ${clinical}٪ · فروشگاه ${shop}٪).`,
     );
     setName("");
     setCode("");
     setPhone("");
-    setRate("");
+    setRateClinical("5");
+    setRateShop("5");
   }
 
   function updateVisitorField(index: number, patch: Partial<Visitor>) {
@@ -89,8 +94,16 @@ export default function AdminVisitorsPage() {
       setError("نام و کد معرف الزامی است.");
       return;
     }
-    const rateNum = Number(v.commissionRate);
-    if (!Number.isFinite(rateNum) || rateNum < 0 || rateNum > 100) {
+    const clinical = Number(v.commissionRateClinical ?? v.commissionRate);
+    const shop = Number(v.commissionRateShop ?? v.commissionRate);
+    if (
+      !Number.isFinite(clinical) ||
+      clinical < 0 ||
+      clinical > 100 ||
+      !Number.isFinite(shop) ||
+      shop < 0 ||
+      shop > 100
+    ) {
       setError("درصد پورسانت باید بین ۰ تا ۱۰۰ باشد.");
       return;
     }
@@ -102,11 +115,13 @@ export default function AdminVisitorsPage() {
               ...item,
               name: item.name.trim(),
               code: item.code.trim().toUpperCase(),
-              commissionRate: rateNum,
+              commissionRate: clinical,
+              commissionRateClinical: clinical,
+              commissionRateShop: shop,
             }
           : item,
       ),
-      `ویزیتور ${v.name.trim()} با پورسانت ${rateNum}٪ ذخیره شد.`,
+      `ویزیتور ${v.name.trim()} ذخیره شد.`,
     );
   }
 
@@ -121,8 +136,8 @@ export default function AdminVisitorsPage() {
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {success ? <p className="text-sm text-teal-700">{success}</p> : null}
       <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm leading-7 text-slate-700">
-        درصد پورسانت روی <strong>مبلغ تراکنش معرف‌شده</strong> اعمال می‌شود (رزرو = مبلغ درگاه؛ عضویت =
-        حق عضویت). جزئیات در صفحه پورسانت‌ها.
+        دو نرخ جدا: <strong>بالینی</strong> (رزرو دندان/پزشکی · عضویت) و <strong>فروشگاه</strong>{" "}
+        (VIP فروشگاه و سفارش‌های shop). جزئیات در صفحه پورسانت‌ها.
       </Card>
 
       <Card hover={false} className="max-w-xl p-6">
@@ -130,42 +145,39 @@ export default function AdminVisitorsPage() {
         <form onSubmit={addVisitor} className="space-y-3">
           <div>
             <FormLabel>نام ویزیتور</FormLabel>
-            <FormInput
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="نام کامل"
-              required
-            />
+            <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
             <FormLabel>کد معرف</FormLabel>
-            <FormInput
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="مثل PLUS300"
-              required
-            />
+            <FormInput value={code} onChange={(e) => setCode(e.target.value)} required />
           </div>
           <div>
             <FormLabel>شماره تماس</FormLabel>
-            <FormInput
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="09xxxxxxxxx"
-            />
+            <FormInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
-          <div>
-            <FormLabel>درصد پورسانت (٪)</FormLabel>
-            <FormInput
-              type="number"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-              placeholder="مثلاً ۵"
-              min={0}
-              max={100}
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FormLabel>پورسانت بالینی (٪)</FormLabel>
+              <FormInput
+                type="number"
+                value={rateClinical}
+                onChange={(e) => setRateClinical(e.target.value)}
+                min={0}
+                max={100}
+                required
+              />
+            </div>
+            <div>
+              <FormLabel>پورسانت فروشگاه (٪)</FormLabel>
+              <FormInput
+                type="number"
+                value={rateShop}
+                onChange={(e) => setRateShop(e.target.value)}
+                min={0}
+                max={100}
+                required
+              />
+            </div>
           </div>
           <Button type="submit" className="w-full text-sm">
             ثبت ویزیتور
@@ -174,7 +186,7 @@ export default function AdminVisitorsPage() {
       </Card>
 
       <AdminTable
-        headers={["نام", "کد معرف", "تماس", "پورسانت (٪)", "وضعیت", "عملیات"]}
+        headers={["نام", "کد", "تماس", "بالینی ٪", "فروشگاه ٪", "وضعیت", "عملیات"]}
         empty="ویزیتوری ثبت نشده است."
       >
         {visitors.map((v, i) => (
@@ -205,9 +217,24 @@ export default function AdminVisitorsPage() {
                 type="number"
                 min={0}
                 max={100}
-                value={v.commissionRate}
+                value={v.commissionRateClinical ?? v.commissionRate}
                 onChange={(e) =>
-                  updateVisitorField(i, { commissionRate: Number(e.target.value || 0) })
+                  updateVisitorField(i, {
+                    commissionRateClinical: Number(e.target.value || 0),
+                    commissionRate: Number(e.target.value || 0),
+                  })
+                }
+                className="max-w-[80px] py-1 text-sm"
+              />
+            </td>
+            <td className="px-4 py-3">
+              <FormInput
+                type="number"
+                min={0}
+                max={100}
+                value={v.commissionRateShop ?? v.commissionRate}
+                onChange={(e) =>
+                  updateVisitorField(i, { commissionRateShop: Number(e.target.value || 0) })
                 }
                 className="max-w-[80px] py-1 text-sm"
               />
@@ -217,7 +244,7 @@ export default function AdminVisitorsPage() {
                 {v.status === "active" ? "فعال" : "غیرفعال"}
               </AdminBadge>
             </td>
-            <td className="px-4 py-3 space-x-2 space-x-reverse">
+            <td className="space-x-2 space-x-reverse px-4 py-3">
               <button
                 type="button"
                 className="text-xs font-semibold text-cyan-800"

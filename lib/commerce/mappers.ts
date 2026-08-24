@@ -163,6 +163,8 @@ export function mapVisitor(row: Visitor) {
     name: row.name,
     code: row.code,
     commissionRate: row.commissionRate,
+    commissionRateClinical: row.commissionRateClinical ?? row.commissionRate,
+    commissionRateShop: row.commissionRateShop ?? row.commissionRate,
     phone: row.phone,
     status: row.status,
   };

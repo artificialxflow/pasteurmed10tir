@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
     title: "محتوا و خدمات",
     items: [
       { href: ROUTES.admin.services, label: "سرویس‌ها", permission: "services" },
+      { href: ROUTES.admin.dentalEducation, label: "آموزش دندان", permission: "services" },
       { href: ROUTES.admin.laserServices, label: "لیزر", permission: "laserServices" },
       { href: ROUTES.admin.nursingServices, label: "پرستاری", permission: "nursingServices" },
       { href: ROUTES.admin.doctors, label: "پزشکان", permission: "doctors" },
@@ -76,6 +77,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.consultations]: "درخواست‌های مشاوره و ویزیت",
   [ROUTES.admin.reminders]: "یادآورهای هوشمند",
   [ROUTES.admin.services]: "مدیریت سرویس‌ها",
+  [ROUTES.admin.dentalEducation]: "کلیپ‌های آموزشی دندان",
   [ROUTES.admin.laserServices]: "مدیریت خدمات لیزر",
   [ROUTES.admin.nursingServices]: "مدیریت خدمات پرستاری",
   [ROUTES.admin.club]: "باشگاه مشتریان",

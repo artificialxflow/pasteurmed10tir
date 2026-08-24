@@ -200,6 +200,8 @@ export interface Visitor {
   name: string;
   code: string;
   commissionRate: number;
+  commissionRateClinical?: number;
+  commissionRateShop?: number;
   phone: string;
   status: VisitorStatus;
 }

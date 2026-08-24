@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { createLoanInstallmentPlan } from '@/lib/commerce/installment-service';
 import { mapMembershipApplication } from '@/lib/commerce/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -28,6 +29,31 @@ export async function PATCH(request: Request, context: RouteContext) {
       reviewedAt: new Date(),
     },
   });
+
+  if (
+    body.status === 'approved' &&
+    row.status !== 'approved' &&
+    updated.loanAmount != null &&
+    updated.loanAmount > 0
+  ) {
+    const already = await prisma.installmentPlan.findFirst({
+      where: { linkedRequestId: updated.id, source: 'loan' },
+    });
+    if (!already) {
+      const extra =
+        updated.extra && typeof updated.extra === 'object' && !Array.isArray(updated.extra)
+          ? (updated.extra as Record<string, unknown>)
+          : {};
+      const months = Number(extra.loanMonths || extra.months || 12);
+      await createLoanInstallmentPlan({
+        phone: updated.phone,
+        patientName: updated.patientName || undefined,
+        amount: updated.loanAmount,
+        months: Number.isFinite(months) ? months : 12,
+        linkedRequestId: updated.id,
+      });
+    }
+  }
 
   return NextResponse.json({ item: mapMembershipApplication(updated) });
 }

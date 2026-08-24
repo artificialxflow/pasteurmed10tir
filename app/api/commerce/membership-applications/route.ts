@@ -2,10 +2,24 @@ import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { generateCommerceId, mapMembershipApplication } from '@/lib/commerce/mappers';
 import { findVisitorByCode } from '@/lib/commerce/commission-service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
+import { requirePatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const auth = await requirePatient();
+  if (auth.error) return auth.error;
+  const phone = normalizePhoneDigits(auth.session.phone || '');
+  if (!phone) return jsonError('شماره موبایل یافت نشد.', 401);
+
+  const rows = await prisma.membershipApplication.findMany({
+    where: { phone },
+    orderBy: { createdAt: 'desc' },
+  });
+  return NextResponse.json({ items: rows.map(mapMembershipApplication) });
+}
 
 export async function POST(request: Request) {
   const body = await parseJson<Record<string, unknown>>(request);

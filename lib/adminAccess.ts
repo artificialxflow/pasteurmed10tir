@@ -65,6 +65,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'consultations', label: 'مشاوره‌ها', href: ROUTES.admin.consultations },
   { id: 'reminders', label: 'یادآورها', href: ROUTES.admin.reminders },
   { id: 'services', label: 'سرویس‌ها', href: ROUTES.admin.services },
+  { id: 'services', label: 'آموزش دندان', href: ROUTES.admin.dentalEducation },
   { id: 'laserServices', label: 'لیزر', href: ROUTES.admin.laserServices },
   { id: 'nursingServices', label: 'پرستاری', href: ROUTES.admin.nursingServices },
   { id: 'doctors', label: 'پزشکان', href: ROUTES.admin.doctors },

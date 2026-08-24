@@ -100,7 +100,7 @@ export default function HomePage() {
             <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[1.5rem] border border-cyan-200/80 bg-white shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)] lg:mr-0 lg:ml-auto lg:max-w-lg">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/uploads/hero-home.png"
+                src="/hero-home.png"
                 alt="فضای درمانگاه پاستور پلاس"
                 className="aspect-[4/5] h-auto w-full object-cover object-[center_35%]"
               />

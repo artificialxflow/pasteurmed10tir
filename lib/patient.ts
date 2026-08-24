@@ -192,7 +192,8 @@ export function bookingStatusLabel(status?: string): string {
 
 export function installmentSourceLabel(source: InstallmentSource | string): string {
   if (source === 'credit' || source === 'wallet') return 'اعتبار';
-  if (source === 'facility') return 'تسهیلات';
+  if (source === 'facility') return 'تسهیلات تجهیزات';
+  if (source === 'loan') return 'وام درمانی';
   if (source === 'membership') return 'عضویت (منسوخ)';
   return source;
 }

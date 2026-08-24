@@ -14,30 +14,30 @@
 | موضوع | v8 | v9 |
 |--------|-----|-----|
 | لغو/ویرایش رزرو، تیکت، consultation، visitors | ✅ | — |
-| عضویت + وام در یک فرم (`/dental/membership`) | 🟨 | ⬜ فاز ۲ |
-| تأیید وام ادمین → نمایش برای بیمار | ❌ gap | ⬜ فاز ۲ |
+| عضویت + وام در یک فرم (`/dental/membership`) | 🟨 | ✅ کد فاز ۲ · smoke ⬜ |
+| تأیید وام ادمین → نمایش برای بیمار | ❌ gap | ✅ کد فاز ۲ · smoke ⬜ |
 | کد ملی در درخواست وام (`07/06`) | ❌ اختیاری | ✅ کد فاز ۲.۱.۱ · smoke ⬜ |
 | `/installments` با session فعال | ❌ باگ | ✅ کد فاز ۱ · smoke ⬜ |
-| کیف: سقف vs موجودی vs تراکنش | 🟨 گیج‌کننده | ⬜ فاز ۳ |
+| کیف: سقف vs موجودی vs تراکنش | 🟨 گیج‌کننده | ✅ کد فاز ۳ · smoke ⬜ |
 | `/admin/doctors` — یک فیلد ساعات برای همه روزها | 🟨 | ✅ کد فاز ۷ · smoke ⬜ |
 | `schedule` رزرو vs فیلد `hours` ادمین | ❌ ناهم‌خوان | ✅ کد فاز ۷ · smoke ⬜ |
 | ادمین «۱۰–۲۲» → رزرو درمان اسلات **۹–۱۷** (`07/03`) | ❌ باگ smoke | ✅ کد فاز ۷ · smoke ⬜ |
 | `/dental/general` — کارت per روز (یک پزشک، چند روز) | 🟨 | ✅ کد فاز ۷.۳ · smoke ⬜ |
-| پورسانت ویزیتور — یک درصد برای همه منابع | 🟨 | ⬜ فاز ۸ |
-| پورسانت جدا: دندان/پزشکی vs فروشگاه (`07/04`) | ❌ gap | ⬜ فاز ۸ |
+| پورسانت ویزیتور — یک درصد برای همه منابع | 🟨 | ✅ کد فاز ۸ · smoke ⬜ |
+| پورسانت جدا: دندان/پزشکی vs فروشگاه (`07/04`) | ❌ gap | ✅ کد فاز ۸ · smoke ⬜ |
 | CTA «درخواست همکاری» در `/contact` (`07/05`) | 🟨 | ✅ فاز ۹ |
-| تأیید رزرو ادمین vs «در انتظار کارشناس» پنل (`07/07`) | 🟨 ابهام UX | ⬜ فاز ۱۰ |
+| تأیید رزرو ادمین vs «در انتظار کارشناس» پنل (`07/07`) | 🟨 ابهام UX | ✅ کد فاز ۱۰ · smoke ⬜ |
 | تخصص دندان — ادمین فقط «عمومی» · specialty→general بدون فیلتر (`07/08`) | ❌ gap | ✅ کد فاز ۱۱ · smoke ⬜ |
 | `/dental/specialty` (ایمپلنت) → همان دکتر عمومی | ❌ | ✅ کد فاز ۱۱ · smoke ⬜ |
 | CTA «رزرو نوبت با پزشک» در `/dental/specialty` (`07/09`) | 🟨 | ✅ فاز ۱۱.۳ |
-| کلیپ آموزشی دندان — ادمین ندارد (`07/10`) | ❌ gap | ⬜ فاز ۱۲ |
+| کلیپ آموزشی دندان — ادمین ندارد (`07/10`) | ❌ gap | ✅ کد فاز ۱۲ · smoke ⬜ |
 | باشگاه: ماموریت «عضویت طرح» + ۱۰۰ امتیاز (`07/11`) | ❌ gap | ✅ کد فاز ۱۳ · smoke ⬜ |
 | سرویس صفحه اصلی ≠ محتوای داخل (`07/12` + `07/14`) | 🟨 ابهام UX | ✅ کد فاز ۱۴ · smoke ⬜ |
 | منوی لیزر/پرستاری/پزشکان ≠ سرویس اضافه‌شده · نیاز دسته/خدمت روی سرویس (`07/15`) | ❌ gap محصول | ✅ تصمیم ۱۶ = **A** (فاز ۱۴ کافی) |
 | بارکد/QR اسکن برای دسترسی به خدمات (`07/16`) | ❌ وجود ندارد | ✅ کد فاز ۱۷ **B** · smoke ⬜ |
 | hero صفحه اصلی — قاب موبایل + عکس قدیمی (`07/13`) | 🟨 | ✅ کد فاز ۱۵ · smoke ⬜ |
-| محتوای واقعی از ادمین (فاز ۰ v8) | ⬜ | ⬜ فاز ۰ |
-| Go-live ops (فاز ۶ v8) | ⬜ | ⬜ فاز ۵ |
+| محتوای واقعی از ادمین (فاز ۰ v8) | ⬜ | ⬜ فاز ۰ (ops) |
+| Go-live ops (فاز ۶ v8) | ⬜ | ⬜ فاز ۵ (ops) |
 
 ---
 
@@ -47,11 +47,12 @@
 |-----------|--------|-----|
 | — | فاز ۱–۴، ۷ — احتمالاً بدون migration | ⬜ |
 | (در صورت نیاز) | فیلد `loanRequestStatus` جدا از `membership paid` | ⬜ بررسی |
-| `014_visitor_commission_split` (پیشنهادی) | `commissionRateClinical` + `commissionRateShop` روی `Visitor` | ⬜ فاز ۸ |
-| (در صورت ۱۰.۳) | `bookingId` روی `InsuranceInquiry` | ⬜ فاز ۱۰ |
+| `014_visitor_commission_split` | `commissionRateClinical` + `commissionRateShop` روی `Visitor` | ✅ migration آماده |
+| (در صورت ۱۰.۳) | `bookingId` روی `InsuranceInquiry` | ⬜ اختیاری — انجام نشد |
 | `015_dentist_specialty_id` | `specialtyId` روی `Dentist` | ✅ migration آماده · deploy ⬜ |
-| `016_dental_education_clips` (پیشنهادی) | مدل کلیپ آموزشی دندان + seed | ⬜ فاز ۱۲ |
-| `017_service_nested_catalog` (پیشنهادی) | دسته/آیتم وابسته به `Service` | ⬜ فاز ۱۶ |
+| `016_installment_loan_source` | enum `loan` روی InstallmentSource | ✅ migration آماده |
+| `017_dental_education_clips` | مدل کلیپ آموزشی دندان | ✅ migration آماده |
+| `017_service_nested_catalog` (پیشنهادی) | دسته/آیتم وابسته به `Service` | ❌ لغو (فاز ۱۶ A) |
 | (در صورت ۱۷.۲ C) | `patientAccessCode` / barcode روی پروفایل | ⬜ فاز ۱۷ |
 | — | فاز ۱۳–۱۵ · ۱۷.۱ A/B — بدون migration یا کم | ⬜ |
 
@@ -128,7 +129,7 @@
 - [x] `MembershipPage.tsx` — `required` روی input کد ملی وقتی `loanAmount > 0`
 - [x] `submitApplication`: `normalizeNationalId` + `isValidNationalId` — پیام «کد ملی ۱۰ رقمی معتبر الزامی است»
 - [x] `POST …/membership-applications`: اگر `loanAmount > 0` → reject 400 بدون کد ملی معتبر · ذخیره normalized
-- [ ] (بعد از ۲.۱) فرم «درخواست وام درمانی» در `/account` — همان validation
+- [x] (بعد از ۲.۱) فرم «درخواست وام درمانی» در `/account` — همان validation
 - [ ] smoke: submit با وام بدون کد ملی → خطا · با کد معتبر → ستون کد ملی در `/admin/memberships` · credit-check قابل اجرا
 
 **Done when:** درخواست با وام بدون کد ملی معتبر ثبت نشود.  
@@ -136,22 +137,22 @@
 
 ### ۲.۱ — جداسازی UX
 
-- [ ] **عضویت:** پرداخت حق عضویت — `/dental/membership` (بدون وام اجباری در همان submit)
-- [ ] **درخواست وام:** بخش در `/account` («درخواست وام درمانی») — `loanAmount` → `MembershipApplication`
-- [ ] copy: «سقف ۱۵M = اعتبار بسته عضویت» vs «وام = طرح اقساط جدا»
-- [ ] لینک از بلوک «اعتبارسنجی بانکی» به flow وام
+- [x] **عضویت:** پرداخت حق عضویت — `/dental/membership` (بدون وام اجباری در همان submit)
+- [x] **درخواست وام:** بخش در `/account` («درخواست وام درمانی») — `loanAmount` → `MembershipApplication`
+- [x] copy: «سقف ۱۵M = اعتبار بسته عضویت» vs «وام = طرح اقساط جدا»
+- [x] لینک از بلوک «اعتبارسنجی بانکی» به flow وام
 
 ### ۲.۲ — Backend: approve → طرح اقساط
 
-- [ ] `PATCH …/membership-applications/[id]` + `approved` + `loanAmount > 0` → `createMembershipInstallmentPlan` (الگو: facilities)
-- [ ] سود ۱۲٪، تعداد اقساط — از metadata / `loanAmount`
-- [ ] `rejected` — بدون plan · idempotent روی approve مجدد
+- [x] `PATCH …/membership-applications/[id]` + `approved` + `loanAmount > 0` → `createLoanInstallmentPlan`
+- [x] سود ۱۲٪، تعداد اقساط — از metadata / `loanAmount`
+- [x] `rejected` — بدون plan · idempotent روی approve مجدد
 
 ### ۲.۳ — UI بیمار
 
-- [ ] `/account` — کارت «درخواست وام من»: pending / approved / rejected
-- [ ] `/installments` — طرح وام بعد از approve
-- [ ] empty state به‌روز
+- [x] `/account` — کارت «درخواست وام من»: pending / approved / rejected
+- [x] `/installments` — طرح وام بعد از approve (`source: loan`)
+- [x] empty state به‌روز
 
 ### ۲.۴ — Smoke
 
@@ -160,7 +161,8 @@
 - [ ] `/admin/facilities` ≠ وام عضویت
 - [ ] وام بدون کد ملی → رد (`07/06`) · با کد ملی → credit-check در ادمین
 
-**Done when:** بیمار بعد از تأیید وام طرح را در «اقساط من» ببیند؛ درخواست وام همیشه کد ملی معتبر دارد.
+**Done when:** بیمار بعد از تأیید وام طرح را در «اقساط من» ببیند؛ درخواست وام همیشه کد ملی معتبر دارد.  
+**کد:** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜ بعد deploy + migrate
 
 ---
 
@@ -170,30 +172,33 @@
 
 ### ۳.۱ — UI بیمار (`/wallet`)
 
-- [ ] برچسب **سقف اعتبار** vs **موجودی**
-- [ ] «موجودی ۰ تا اولین مصرف طبیعی است»
-- [ ] لینک `/installments`
+- [x] برچسب **سقف اعتبار** vs **موجودی**
+- [x] «موجودی ۰ تا اولین مصرف طبیعی است»
+- [x] لینک `/installments`
 
 ### ۳.۲ — UI ادمین (`/admin/wallets`)
 
-- [ ] راهنما: سقف / موجودی / تراکنش
-- [ ] انواع: `upgrade` | `credit` | `debit` | `adjustment`
-- [ ] زمان ثبت تراکنش (ارتقای سقف عضویت، …)
+- [x] راهنما: سقف / موجودی / تراکنش
+- [x] انواع: `upgrade` | `credit` | `debit` | `adjustment`
+- [x] زمان ثبت تراکنش (ارتقای سقف عضویت، …)
 
 ### ۳.۳ — (اختیاری) ثبت دستی تراکنش ادمین
 
 - [ ] فرم credit/debit یا مستند «فقط از جریان سایت»
 
-**Done when:** تفاوت سقف/موجودی/وام بدون ابهام.
+**Done when:** تفاوت سقف/موجودی/وام بدون ابهام.  
+**کد:** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜
 
 ---
 
 # فاز ۴ — تسهیلات تجهیزات vs وام عضویت (P1)
 
-- [ ] `/account` — تسهیلات → `/shop/facility` · وام → فاز ۲
-- [ ] `/admin/memberships` — بنر ارجاع به `/admin/facilities`
-- [ ] `/admin/facilities` — empty state واضح
+- [x] `/account` — تسهیلات → `/shop/facility` · وام → فاز ۲
+- [x] `/admin/memberships` — بنر ارجاع به `/admin/facilities`
+- [x] `/admin/facilities` — empty state واضح
 - [ ] smoke: facility approve → plan در `/installments`
+
+**کد:** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜
 
 ---
 
@@ -310,24 +315,24 @@
 
 ### ۸.۱ — Schema + migration
 
-- [ ] `Visitor`: `commissionRateClinical` (دندان + پزشکی) · `commissionRateShop` (فروشگاه)
-- [ ] migration `014_visitor_commission_split`: migrate `commissionRate` قدیمی → `commissionRateClinical` (هر دو یا shop=0)
+- [x] `Visitor`: `commissionRateClinical` (دندان + پزشکی) · `commissionRateShop` (فروشگاه)
+- [x] migration `014_visitor_commission_split`: migrate `commissionRate` قدیمی → `commissionRateClinical`
 - [ ] (اختیاری) deprecate / حذف `commissionRate` بعد از migrate
-- [ ] seed / `lib/data.ts` — به‌روز هر دو فیلد
+- [x] seed / `lib/data.ts` — فیلدهای اختیاری روی type
 
 ### ۸.۲ — UI ادمین (`/admin/visitors`)
 
-- [ ] دو فیلد: «پورسانت دندانپزشکی/پزشکی (٪)» · «پورسانت فروشگاه (٪)»
-- [ ] ایجاد ویزیتور جدید — هر دو فیلد
-- [ ] ویرایش inline هر دو (جایگزین فیلد واحد)
-- [ ] راهنمای کوتاه: booking/membership → clinical · shop-vip → shop
+- [x] دو فیلد: «پورسانت دندانپزشکی/پزشکی (٪)» · «پورسانت فروشگاه (٪)»
+- [x] ایجاد ویزیتور جدید — هر دو فیلد
+- [x] ویرایش inline هر دو (جایگزین فیلد واحد)
+- [x] راهنمای کوتاه: booking/membership → clinical · shop-vip → shop
 
 ### ۸.۳ — Backend: `createCommission`
 
-- [ ] `sourceType` ∈ `booking` | `membership` → `commissionRateClinical`
-- [ ] `sourceType` = `shop-vip` (و بعداً `shop-order` اگر اضافه شد) → `commissionRateShop`
-- [ ] fallback: اگر نرخ ۰ — commissionAmount = ۰ (یا legacy `commissionRate` تا حذف کامل)
-- [ ] snapshot `commissionRate` روی رکورد `Commission` — همان نرخ اعمال‌شده
+- [x] `sourceType` ∈ `booking` | `membership` → `commissionRateClinical`
+- [x] `sourceType` = `shop-vip` → `commissionRateShop`
+- [x] fallback: legacy `commissionRate`
+- [x] snapshot `commissionRate` روی رکورد `Commission` — همان نرخ اعمال‌شده
 
 ### ۸.۴ — `/admin/commissions` (اختیاری v9)
 
@@ -341,7 +346,8 @@
 - [ ] پرداخت VIP تجهیزات → پورسانت 10٪ (`sourceType=shop-vip`)
 - [ ] `MANUAL-SMOKE-CHECKLIST.md` — بند v9.۸
 
-**Done when:** ادمین دو درصد جدا set کند و هر تراکنش با نرخ درست محاسبه شود.
+**Done when:** ادمین دو درصد جدا set کند و هر تراکنش با نرخ درست محاسبه شود.  
+**کد:** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜ بعد migrate deploy
 
 ---
 
@@ -394,30 +400,29 @@
 
 ### ۱۰.۱ — UX پنل بیمار (سریع)
 
-- [ ] badge: برچسب **«استعلام بیمه»** (نه فقط «استعلام رزرو») · متن «در انتظار **تأیید بیمه**»
-- [ ] badge جدید **«آخرین نوبت»** → تأیید شده / در انتظار / لغو شده (از آخرین booking)
-- [ ] راهنمای کوتاه زیر grid وضعیت: «تأیید نوبت جدا از تأیید پوشش بیمه است»
-- [ ] یکسان‌سازی copy: badge «کارشناس» vs لیست «در انتظار بررسی»
+- [x] badge: برچسب **«استعلام بیمه»** · متن «در انتظار **تأیید بیمه**»
+- [x] badge جدید **«آخرین نوبت»** → تأیید شده / در انتظار / لغو شده
+- [x] راهنمای کوتاه زیر grid وضعیت: «تأیید نوبت جدا از تأیید پوشش بیمه است»
+- [x] یکسان‌سازی copy: badge «کارشناس» vs لیست
 
 ### ۱۰.۲ — UX ادمین
 
-- [ ] `/admin/bookings`: اگر inquiry `pending` برای همان `patientPhone` → بنر «استعلام بیمه در `/admin/insurances` تأیید نشده»
-- [ ] لینک مستقیم به `/admin/insurances` (فیلتر موبایل اختیاری)
+- [x] `/admin/bookings`: بنر لینک به `/admin/insurances`
+- [x] لینک مستقیم به `/admin/insurances`
 
 ### ۱۰.۳ — (اختیاری) sync / لینک داده
 
-- [ ] `InsuranceInquiry.bookingId` + migration · پر کردن از `ConfirmPayment` هنگام submit inquiry
-- [ ] یا: PATCH booking → `confirmed` → auto-approve inquiry مرتبط (همان phone / bookingId)
-- [ ] مستند تصمیم: auto-approve vs فقط UX (مرکز ممکن است بخواهد تأیید دستی بماند)
+- [ ] `InsuranceInquiry.bookingId` — انجام نشد (فقط UX)
+- [ ] auto-approve — انجام نشد
 
 ### ۱۰.۴ — Smoke
 
 - [ ] رزرو + استعلام → admin فقط bookings تأیید → پنل: **نوبت تأیید** · **استعلام pending**
 - [ ] admin insurances تأیید → badge «تأیید شده»
-- [ ] (اگر ۱۰.۳) یک تأیید bookings → هر دو green
 - [ ] `MANUAL-SMOKE-CHECKLIST.md` — بند v9.۱۰
 
-**Done when:** بیمار/ادمین بدون ابهام بدانند نوبت تأیید شده؛ «در انتظار کارشناس» فقط استعلام بیمه است (یا با insurances برطرف شود).
+**Done when:** بیمار/ادمین بدون ابهام بدانند نوبت تأیید شده.  
+**کد (UX):** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜
 
 ---
 
@@ -505,22 +510,22 @@
 
 ### ۱۲.۱ — Schema
 
-- [ ] مدل `DentalEducationClip` (یا معادل): `id` · `title` · `level`/`tag` · `description` · `videoUrl` · `durationLabel` · `sortOrder` · `active`
-- [ ] migration `016_dental_education_clips`
-- [ ] seed از ۳ آیتم فعلی `educationCourses` (URL خالی تا ادمین پر کند)
+- [x] مدل `DentalEducationClip`
+- [x] migration `017_dental_education_clips`
+- [x] دکمه «پر کردن از پیش‌فرض‌ها» در ادمین (seed از educationCourses)
 
 ### ۱۲.۲ — Admin
 
-- [ ] `/admin/dental-education` — CRUD عنوان، برچسب خدمت، توضیح، **لینک کلیپ** (URL یا آپلود)
-- [ ] منو در `AdminShell` + permission در `adminAccess`
-- [ ] الگو: فرم شبیه `/admin/help` · persistence مثل doctors (API + Prisma)
+- [x] `/admin/dental-education` — CRUD
+- [x] منو در `AdminShell` + permission `services`
+- [x] persistence API + Prisma
 
 ### ۱۲.۳ — Public
 
-- [ ] `EducationList` از `/api/content/dental-education` (نه `PASTEUR_DATA`)
-- [ ] نمایش لینک/پخش وقتی `videoUrl` هست
-- [ ] empty state اگر لیست خالی
-- [ ] PWA `/app/dental/education` همان منبع
+- [x] `EducationList` از `/api/content/dental-education`
+- [x] نمایش لینک وقتی `videoUrl` هست
+- [x] empty state
+- [x] PWA همان منبع
 
 ### ۱۲.۴ — Smoke
 
@@ -528,7 +533,8 @@
 - [ ] ویرایش / غیرفعال / حذف → لیست عمومی به‌روز
 - [ ] `MANUAL-SMOKE-CHECKLIST.md` — بند v9.۱۲
 
-**Done when:** مرکز بتواند کلیپ آموزشی دندان را از ادمین اضافه/ویرایش کند و در `/dental/education` دیده شود.
+**Done when:** مرکز بتواند کلیپ آموزشی دندان را از ادمین اضافه/ویرایش کند.  
+**کد:** ✅ ۲۰۲۶-۰۸-۲۴ · **Smoke:** ⬜ بعد migrate
 
 ---
 

@@ -68,11 +68,15 @@ export default function AdminFacilitiesPage() {
         </p>
       ) : null}
       <p className="text-sm leading-7 text-slate-600">
-        درخواست تسهیلات پس از استعلام زحل (شاهکار، هویت، اعتبار، چک برگشتی) اینجا قابل تأیید یا رد است.
+        <strong>تسهیلات تجهیزات فروشگاه</strong> — جدا از وام درمانی عضویت. وام عضویت را در{" "}
+        <a href="/admin/memberships" className="font-bold text-teal-700 underline">
+          /admin/memberships
+        </a>{" "}
+        بررسی کنید. پس از تأیید اینجا، طرح اقساط برای بیمار در «اقساط من» ساخته می‌شود.
       </p>
       <AdminTable
         headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "خلاصه استعلام", "وضعیت", "عملیات"]}
-        empty="درخواست تسهیلاتی ثبت نشده است."
+        empty="درخواست تسهیلات تجهیزات ثبت نشده. (وام عضویت اینجا نیست — /admin/memberships)"
       >
         {items.map((r) => (
           <tr key={String(r.id)} className="border-t border-slate-100 align-top">

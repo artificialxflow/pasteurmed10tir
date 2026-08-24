@@ -75,6 +75,41 @@ export async function createFacilityInstallmentPlan(input: {
   });
 }
 
+/** Medical/membership loan after admin approve — 12% total, N months. */
+export async function createLoanInstallmentPlan(input: {
+  phone?: string | null;
+  patientName?: string;
+  amount: number;
+  months?: number;
+  linkedRequestId?: string;
+  title?: string;
+}) {
+  const phone = normalizePhoneDigits(input.phone || '');
+  if (!phone) return null;
+  const principal = Math.max(0, Number(input.amount || 0));
+  if (!principal) return null;
+  const months = Math.min(36, Math.max(3, Number(input.months || 12)));
+  const total = Math.round(principal * 1.12);
+
+  return prisma.installmentPlan.create({
+    data: {
+      id: generateCommerceId(),
+      phone,
+      patientName: input.patientName || null,
+      source: 'loan',
+      title:
+        input.title ||
+        `اقساط وام درمانی ${total.toLocaleString('fa-IR')} تومان (${months} ماه)`,
+      totalAmount: total,
+      paidAmount: 0,
+      installmentCount: months,
+      dueDates: buildDueDates(months),
+      status: 'active',
+      linkedRequestId: input.linkedRequestId || null,
+    },
+  });
+}
+
 export async function hideMembershipInstallmentPlans(phone?: string | null) {
   const key = phone ? normalizePhoneDigits(phone) : null;
   await prisma.installmentPlan.updateMany({

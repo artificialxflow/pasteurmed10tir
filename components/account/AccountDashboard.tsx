@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchMyActivityApi, patchPatientOps } from "@/lib/operations/client";
 import {
@@ -127,17 +128,29 @@ export function AccountDashboard({
 
   const inquiryBadge = useMemo(() => {
     if (!lastInquiry) {
-      return { label: "استعلام رزرو", value: "هنوز ثبت نشده", tone: "info" as const };
+      return { label: "استعلام بیمه", value: "هنوز ثبت نشده", tone: "info" as const };
     }
     const st = String(lastInquiry.status || "");
     if (st === "approved") {
-      return { label: "آخرین استعلام رزرو", value: "تأیید شده", tone: "success" as const };
+      return { label: "استعلام بیمه", value: "پوشش تأیید شد", tone: "success" as const };
     }
     if (st === "rejected") {
-      return { label: "آخرین استعلام رزرو", value: "رد شده", tone: "danger" as const };
+      return { label: "استعلام بیمه", value: "رد شده", tone: "danger" as const };
     }
-    return { label: "آخرین استعلام رزرو", value: "در انتظار کارشناس", tone: "warn" as const };
+    return { label: "استعلام بیمه", value: "در انتظار تأیید بیمه", tone: "warn" as const };
   }, [lastInquiry]);
+
+  const lastBooking = activity?.bookings?.[0];
+  const bookingBadge = useMemo(() => {
+    if (!lastBooking) {
+      return { label: "آخرین نوبت", value: "رزروی ثبت نشده", tone: "info" as const };
+    }
+    const label = bookingStatusLabel(String(lastBooking.status || ""));
+    const st = String(lastBooking.status || "");
+    const tone =
+      st === "confirmed" ? ("success" as const) : st === "cancelled" ? ("danger" as const) : ("warn" as const);
+    return { label: "آخرین نوبت", value: label, tone };
+  }, [lastBooking]);
 
   const shahkarTone =
     profile.zohalStatus === "passed" || profile.shahkarMatched === true
@@ -186,20 +199,17 @@ export function AccountDashboard({
         وارد کردن دوباره نام و موبایل نیست.
       </Card>
 
-      <Card hover={false} className="border-cyan-100 bg-cyan-50/50 p-4 text-sm text-cyan-950">
-        <p className="font-extrabold">اعتبارسنجی بانکی</p>
-        <p className="mt-2 leading-7">
-          برای <strong>تسهیلات تجهیزات</strong> به{" "}
-          <Link href={variant === "app" ? ROUTES.app.shopFacility : ROUTES.web.shopFacility} className="underline">
-            درخواست تسهیلات
-          </Link>{" "}
-          بروید. برای <strong>وام درمانی عضویت</strong>{" "}
-          <Link href={variant === "app" ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership} className="underline">
-            فرم عضویت
-          </Link>{" "}
-          را تکمیل کنید — پس از بررسی اعتبار با شما تماس می‌گیریم.
-        </p>
-      </Card>
+      <LoanRequestCard
+        phone={profile.phone}
+        name={profile.name}
+        nationalId={profile.nationalId}
+        variant={variant}
+      />
+
+      <p className="text-xs leading-6 text-slate-500">
+        توجه: <strong>تأیید نوبت</strong> در ادمین رزروها جدا از <strong>تأیید استعلام بیمه</strong> است.
+        وضعیت نوبت و بیمه را در کارت‌های زیر جدا ببینید.
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <StatusBadge
@@ -221,6 +231,7 @@ export function AccountDashboard({
           }
           tone={hasInsuranceRegistered ? "info" : "warn"}
         />
+        <StatusBadge label={bookingBadge.label} value={bookingBadge.value} tone={bookingBadge.tone} />
         <StatusBadge label={inquiryBadge.label} value={inquiryBadge.value} tone={inquiryBadge.tone} />
       </div>
 

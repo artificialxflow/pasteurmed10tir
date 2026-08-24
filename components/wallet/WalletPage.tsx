@@ -149,6 +149,21 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
             </Card>
           </div>
 
+          <Card hover={false} className="border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+            <p>
+              <strong>سقف اعتبار</strong> حداکثر مبلغ قابل استفاده از بسته عضویت است.{" "}
+              <strong>موجودی مصرف‌شده</strong> تا اولین استفاده معمولاً صفر است — طبیعی است. این کیف{" "}
+              <strong>وام درمانی نیست</strong>؛ اقساط وام را در{" "}
+              <a
+                href={isApp ? "/app/installments" : "/installments"}
+                className="font-bold text-teal-700 underline"
+              >
+                صفحه اقساط
+              </a>{" "}
+              ببینید.
+            </p>
+          </Card>
+
           <Card hover={false} className="p-5">
             <h2 className="mb-3 text-lg font-bold">نوع کاربر و سقف</h2>
             <div className="flex flex-wrap gap-2">

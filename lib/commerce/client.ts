@@ -90,6 +90,19 @@ export async function createMembershipApplicationApi(body: Record<string, unknow
   );
 }
 
+export async function createLoanApplicationApi(body: Record<string, unknown>) {
+  return postPatientCommerce<{ application: Record<string, unknown> }>(
+    '/api/commerce/membership-applications',
+    body,
+  );
+}
+
+export async function getMyMembershipApplicationsApi() {
+  return fetchPatientCommerce<{ items: Record<string, unknown>[] }>(
+    '/api/commerce/membership-applications',
+  );
+}
+
 export async function completeMembershipPaymentApi(body: Record<string, unknown>) {
   return postPublicCommerce<{ member: Record<string, unknown> }>(
     '/api/commerce/payments/membership',

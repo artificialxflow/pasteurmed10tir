@@ -89,6 +89,22 @@ export default function AdminWalletsPage() {
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      <Card hover={false} className="border-amber-200 bg-amber-50/80 p-4 text-sm leading-7 text-amber-950">
+        <p className="font-bold">راهنمای کیف</p>
+        <ul className="mt-2 list-disc space-y-1 pr-5">
+          <li>
+            <strong>سقف</strong> — حداکثر اعتبار بسته عضویت/VIP
+          </li>
+          <li>
+            <strong>موجودی مصرف‌شده</strong> — مبلغ استفاده‌شده؛ صفر تا اولین مصرف طبیعی است
+          </li>
+          <li>
+            <strong>تراکنش‌ها</strong> — انواع: upgrade (ارتقای سقف) · credit · debit · adjustment
+          </li>
+          <li>وام درمانی و تسهیلات تجهیزات در این صفحه نیستند — به اقساط / تسهیلات مراجعه کنید</li>
+        </ul>
+      </Card>
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       <div>
         <div className="mb-4">
           <h2 className="text-lg font-extrabold text-slate-900">تنظیمات سقف و بازپرداخت</h2>

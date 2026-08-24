@@ -229,7 +229,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       amountRial: total * 10,
       amountToman: total,
       medicalHistory: form.medicalHistory.trim(),
-      loanAmount: form.loanAmount.trim() || loanAmount,
+      loanAmount: null,
       dependents: form.dependents.map((d) => d.trim()).filter(Boolean),
       status: "pending",
       createdAt: new Date().toISOString(),
@@ -267,7 +267,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       amountRial: total * 10,
       amountToman: total,
       medicalHistory: form.medicalHistory.trim(),
-      loanAmount: form.loanAmount.trim() || loanAmount,
+      loanAmount: null,
       dependents: form.dependents.map((d) => d.trim()).filter(Boolean),
       status: "pending",
       createdAt: new Date().toISOString(),
@@ -509,8 +509,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               محاسبه‌گر اقساط وام درمانی
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              سود وام ۱۲٪ است؛ پیش‌پرداخت از مبلغ وام کسر شده و اقساط روی مانده محاسبه
-              می‌شود.
+              سود وام ۱۲٪ است. درخواست رسمی وام از پنل کاربری ثبت می‌شود — اینجا فقط محاسبه‌گر است.
             </p>
           </div>
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
@@ -590,6 +589,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             </p>
           </div>
         </div>
+        <p className="mt-4 text-sm text-slate-600">
+          برای ثبت درخواست وام درمانی (با کد ملی) به{" "}
+          <Link href={app ? ROUTES.app.account : ROUTES.web.account} className="font-bold text-teal-700 underline">
+            پنل کاربری
+          </Link>{" "}
+          بروید. این صفحه فقط حق عضویت را ثبت و پرداخت می‌کند.
+        </p>
       </section>
 
       {/* Coverage table */}
@@ -704,13 +710,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               />
             </div>
             <div>
-              <FormLabel>کد ملی {Number(form.loanAmount || loanAmount) > 0 ? "(الزامی برای وام)" : ""}</FormLabel>
+              <FormLabel>کد ملی</FormLabel>
               <FormInput
-                required={Number(form.loanAmount || loanAmount) > 0}
                 inputMode="numeric"
                 value={form.nationalId}
                 onChange={(e) => updateForm("nationalId", e.target.value)}
-                placeholder="۱۰ رقم"
+                placeholder="اختیاری برای عضویت"
               />
             </div>
             <div>
@@ -805,15 +810,14 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 {amountPreview}
               </div>
             </div>
-            <div>
-              <FormLabel>مبلغ وام درخواستی (تومان)</FormLabel>
-              <FormInput
-                type="number"
-                min={0}
-                value={form.loanAmount}
-                onChange={(e) => updateForm("loanAmount", e.target.value)}
-                placeholder={loanAmount}
-              />
+            <div className="md:col-span-2">
+              <div className="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-3 text-sm text-cyan-950">
+                <strong>وام درمانی جداست.</strong> این فرم فقط عضویت است. درخواست وام را از{" "}
+                <Link href={app ? ROUTES.app.account : ROUTES.web.account} className="font-bold underline">
+                  پنل کاربری
+                </Link>{" "}
+                ثبت کنید (کد ملی الزامی).
+              </div>
             </div>
           </div>
 
