@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
 import { type Visitor } from "@/lib/data";
 import { FormEvent, useEffect, useState } from "react";
@@ -213,29 +214,25 @@ export default function AdminVisitorsPage() {
               />
             </td>
             <td className="px-4 py-3">
-              <FormInput
-                type="number"
+              <DraftNumberInput
                 min={0}
                 max={100}
-                value={v.commissionRateClinical ?? v.commissionRate}
-                onChange={(e) =>
+                value={Number(v.commissionRateClinical ?? v.commissionRate) || 0}
+                onCommit={(n) =>
                   updateVisitorField(i, {
-                    commissionRateClinical: Number(e.target.value || 0),
-                    commissionRate: Number(e.target.value || 0),
+                    commissionRateClinical: n,
+                    commissionRate: n,
                   })
                 }
                 className="max-w-[80px] py-1 text-sm"
               />
             </td>
             <td className="px-4 py-3">
-              <FormInput
-                type="number"
+              <DraftNumberInput
                 min={0}
                 max={100}
-                value={v.commissionRateShop ?? v.commissionRate}
-                onChange={(e) =>
-                  updateVisitorField(i, { commissionRateShop: Number(e.target.value || 0) })
-                }
+                value={Number(v.commissionRateShop ?? v.commissionRate) || 0}
+                onCommit={(n) => updateVisitorField(i, { commissionRateShop: n })}
                 className="max-w-[80px] py-1 text-sm"
               />
             </td>

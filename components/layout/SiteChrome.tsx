@@ -202,6 +202,7 @@ export function SiteFooter() {
             <Link href={ROUTES.web.club}>باشگاه</Link>
             <Link href={ROUTES.web.account}>پنل کاربری</Link>
             <Link href={ROUTES.web.help}>آموزش سامانه</Link>
+            <Link href={ROUTES.web.support}>پشتیبانی / تیکت</Link>
             <Link href={ROUTES.web.complaints}>شکایات</Link>
             <Link href={ROUTES.web.partners}>درخواست همکاری</Link>
           </div>

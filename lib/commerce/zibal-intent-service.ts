@@ -137,7 +137,10 @@ export async function handleZibalCallback(searchParams: URLSearchParams) {
       throw new Error('مبلغ پرداخت با سفارش مطابقت ندارد.');
     }
 
-    const backendResult = await completePendingPaymentOnServer(pending);
+    const backendResult = await completePendingPaymentOnServer({
+      ...pending,
+      zibalTrackId: trackId,
+    });
     const completed = buildCompletedPaymentPayload(pending, {
       refNumber: verified.refNumber,
       trackId,

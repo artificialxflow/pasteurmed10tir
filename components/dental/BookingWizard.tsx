@@ -85,6 +85,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
   const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [dentistsLoading, setDentistsLoading] = useState(true);
   const { profile: sessionProfile } = usePatientProfile();
 
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
@@ -96,9 +97,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   }, []);
 
   useEffect(() => {
+    setDentistsLoading(true);
     void fetchPublic<{ items: Dentist[] }>("/api/content/dentists")
       .then((data) => setDentists(data.items))
-      .catch(() => setDentists([]));
+      .catch(() => setDentists([]))
+      .finally(() => setDentistsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -152,6 +155,18 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
 
+  const stepHint = STEP_LABELS[currentStep] || "";
+
+  // Heal: landed on time without type → bounce back
+  useEffect(() => {
+    if (!hydrated) return;
+    if (currentStep !== "time") return;
+    if (!state.type) {
+      setCurrentStep("type");
+      setError("");
+    }
+  }, [hydrated, currentStep, state.type]);
+
   const saveDraft = useCallback(
     (stepName: StepName, nextState: BookingState) => {
       PasteurStorage.setPendingBooking({ step: stepName, data: { ...nextState } });
@@ -187,9 +202,29 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("لطفاً روز حضور را انتخاب کنید.");
       return;
     }
-    if (currentStep === "time" && state.timeValue == null) {
-      showError("لطفاً زمان را انتخاب کنید.");
-      return;
+    if (currentStep === "time") {
+      if (!state.type) {
+        showError("ابتدا نوع خدمت را انتخاب کنید.");
+        showStep("type");
+        return;
+      }
+      if (!doctor || !state.day) {
+        showError("پزشک یا روز حضور مشخص نیست. دوباره از لیست انتخاب کنید.");
+        return;
+      }
+      const daySchedule = doctor.schedule?.[state.day];
+      const slots =
+        state.type === "visit"
+          ? daySchedule?.visitHours || []
+          : (daySchedule?.treatmentSlots || []).map((s) => s.start);
+      if (!daySchedule || slots.length === 0) {
+        showError("ساعتی برای این روز ثبت نشده است. روز دیگری انتخاب کنید یا با مرکز تماس بگیرید.");
+        return;
+      }
+      if (state.timeValue == null) {
+        showError("لطفاً زمان را انتخاب کنید.");
+        return;
+      }
     }
     if (stepIndex < steps.length - 1) {
       showStep(steps[stepIndex + 1]);
@@ -279,10 +314,10 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             <span className="font-medium text-slate-900">رزرو نوبت</span>
           </nav>
           <h1 className="mb-1 text-2xl font-bold text-slate-900">رزرو نوبت دندانپزشکی</h1>
-          <p className="mb-6 text-slate-600">انتخاب نوع خدمت: ویزیت یا شروع درمان؟</p>
+          <p className="mb-6 text-slate-600">{stepHint}</p>
         </>
       ) : (
-        <p className="text-sm text-slate-600">انتخاب نوع خدمت: ویزیت یا شروع درمان؟</p>
+        <p className="text-sm text-slate-600">{stepHint}</p>
       )}
 
       {doctor ? (
@@ -419,9 +454,12 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       {currentStep === "time" ? (
         <TimeStep
           doctor={doctor}
+          dentistsLoading={dentistsLoading}
           state={state}
           occupiedSlots={occupiedSlots}
           onSelect={(timeValue, timeLabel) => updateState({ timeValue, timeLabel })}
+          onBackToType={() => showStep("type")}
+          onBackToList={() => router.push(`${basePath}/general`)}
         />
       ) : null}
 
@@ -651,26 +689,69 @@ function TypeOption({
 
 function TimeStep({
   doctor,
+  dentistsLoading,
   state,
   occupiedSlots,
   onSelect,
+  onBackToType,
+  onBackToList,
 }: {
   doctor: Dentist | undefined;
+  dentistsLoading?: boolean;
   state: BookingState;
   occupiedSlots: string[];
   onSelect: (timeValue: number, timeLabel: string) => void;
+  onBackToType: () => void;
+  onBackToList: () => void;
 }) {
-  if (!doctor || !state.day || !state.type) return null;
-  const daySchedule = doctor.schedule[state.day];
+  if (dentistsLoading) {
+    return <p className="py-6 text-center text-sm text-slate-500">در حال بارگذاری برنامه پزشک…</p>;
+  }
+  if (!state.type) {
+    return (
+      <div className="space-y-3 py-4 text-center">
+        <p className="text-sm text-slate-600">ابتدا نوع خدمت را انتخاب کنید.</p>
+        <Button type="button" variant="outline" className="text-sm" onClick={onBackToType}>
+          بازگشت به انتخاب نوع خدمت
+        </Button>
+      </div>
+    );
+  }
+  if (!doctor) {
+    return (
+      <div className="space-y-3 py-4 text-center">
+        <p className="text-sm text-slate-600">پزشک انتخاب‌شده یافت نشد.</p>
+        <Button type="button" variant="outline" className="text-sm" onClick={onBackToList}>
+          بازگشت به لیست دندانپزشکان
+        </Button>
+      </div>
+    );
+  }
+  if (!state.day) {
+    return <p className="py-6 text-center text-sm text-slate-500">روز حضور مشخص نیست.</p>;
+  }
+
+  const daySchedule = doctor.schedule?.[state.day];
   if (!daySchedule) {
     return (
-      <p className="col-span-full py-6 text-center text-slate-500">
-        برنامه‌ای برای این روز وجود ندارد.
+      <p className="py-6 text-center text-slate-500">
+        برنامه‌ای برای روز «{state.day}» وجود ندارد. روز دیگری انتخاب کنید.
       </p>
     );
   }
 
   const isVisit = state.type === "visit";
+  const visitHours = daySchedule.visitHours || [];
+  const treatmentSlots = daySchedule.treatmentSlots || [];
+  const hasSlots = isVisit ? visitHours.length > 0 : treatmentSlots.length > 0;
+
+  if (!hasSlots) {
+    return (
+      <p className="py-6 text-center text-slate-500">
+        ساعتی برای این روز ثبت نشده است. با مرکز تماس بگیرید یا روز دیگری را انتخاب کنید.
+      </p>
+    );
+  }
 
   return (
     <div>
@@ -681,7 +762,7 @@ function TimeStep({
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {isVisit
-          ? (daySchedule.visitHours || []).map((h) => {
+          ? visitHours.map((h) => {
               const booked = isSlotTaken(h, occupiedSlots);
               const selected = state.timeValue === h;
               return (
@@ -703,9 +784,8 @@ function TimeStep({
                 </button>
               );
             })
-          : (daySchedule.treatmentSlots || []).map((slot) => {
-              const booked =
-                slot.booked || isSlotTaken(slot.start, occupiedSlots);
+          : treatmentSlots.map((slot) => {
+              const booked = slot.booked || isSlotTaken(slot.start, occupiedSlots);
               const selected = state.timeValue === slot.start;
               return (
                 <button

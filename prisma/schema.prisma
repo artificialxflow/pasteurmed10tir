@@ -509,6 +509,27 @@ enum InstallmentPlanStatus {
   hidden
 }
 
+enum InstallmentItemStatus {
+  pending
+  due
+  overdue
+  paid
+  partial
+}
+
+enum InstallmentPaymentMethod {
+  zibal
+  wallet
+  manual
+}
+
+enum InstallmentPaymentStatus {
+  pending
+  completed
+  failed
+  cancelled
+}
+
 enum WalletStatus {
   active
   suspended
@@ -716,23 +737,64 @@ model FacilityRequest {
 }
 
 model InstallmentPlan {
-  id               String                @id
+  id               String                  @id
   phone            String
   patientName      String?
   source           InstallmentSource
   title            String
   totalAmount      Int
-  paidAmount       Int                   @default(0)
+  paidAmount       Int                     @default(0)
   installmentCount Int
   dueDates         String[]
-  status           InstallmentPlanStatus @default(active)
+  status           InstallmentPlanStatus   @default(active)
   linkedRequestId  String?
-  createdAt        DateTime              @default(now())
+  createdAt        DateTime                @default(now())
+  scheduleItems    InstallmentScheduleItem[]
+  payments         InstallmentPayment[]
 
   @@index([phone])
   @@index([source])
   @@index([status])
   @@index([linkedRequestId])
+}
+
+model InstallmentScheduleItem {
+  id         String               @id
+  planId     String
+  plan       InstallmentPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  index      Int
+  dueDate    DateTime
+  amount     Int
+  paidAmount Int                  @default(0)
+  status     InstallmentItemStatus @default(pending)
+  payments   InstallmentPayment[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([planId, index])
+  @@index([planId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model InstallmentPayment {
+  id             String                    @id
+  planId         String
+  plan           InstallmentPlan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  scheduleItemId String?
+  scheduleItem   InstallmentScheduleItem?  @relation(fields: [scheduleItemId], references: [id], onDelete: SetNull)
+  amount         Int
+  method         InstallmentPaymentMethod
+  status         InstallmentPaymentStatus  @default(pending)
+  trackId        String?
+  note           String?
+  paidAt         DateTime?
+  createdAt      DateTime                  @default(now())
+
+  @@index([planId])
+  @@index([scheduleItemId])
+  @@index([status])
+  @@index([trackId])
 }
 
 // —— Phase 5: Club / loyalty ——

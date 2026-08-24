@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import {
   fetchPatientOps,
   postPatientOps,
 } from "@/lib/operations/client";
+import { ROUTES } from "@/lib/routes";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type SupportMessage = {
@@ -25,14 +27,22 @@ type SupportTicket = {
 };
 
 export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
+  const accountHref = variant === "app" ? ROUTES.app.account : ROUTES.web.account;
+  const { profile, loading: profileLoading } = usePatientProfile();
   const [items, setItems] = useState<SupportTicket[]>([]);
   const [selected, setSelected] = useState<SupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needAuth, setNeedAuth] = useState(false);
   const [error, setError] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [patientName, setPatientName] = useState("");
   const [reply, setReply] = useState("");
   const [view, setView] = useState<"list" | "new" | "thread">("list");
+
+  useEffect(() => {
+    if (profile?.name) setPatientName(profile.name);
+  }, [profile?.name]);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -41,9 +51,17 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
         "/api/operations/support/tickets",
       );
       setItems(data.items);
+      setNeedAuth(false);
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "خطا در بارگذاری");
+      const msg = e instanceof Error ? e.message : "خطا در بارگذاری";
+      if (msg.includes("وارد شوید") || msg.includes("401")) {
+        setNeedAuth(true);
+        setError("");
+      } else {
+        setNeedAuth(false);
+        setError(msg);
+      }
       setItems([]);
     } finally {
       setLoading(false);
@@ -51,8 +69,9 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
   }, []);
 
   useEffect(() => {
+    if (profileLoading) return;
     void reload();
-  }, [reload]);
+  }, [reload, profileLoading]);
 
   function openThread(id: string) {
     void fetchPatientOps<{ item: SupportTicket }>(
@@ -61,21 +80,36 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
       .then((data) => {
         setSelected(data.item);
         setView("thread");
+        setError("");
       })
       .catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }
 
   function createTicket(e: FormEvent) {
     e.preventDefault();
+    setError("");
+    if (!profile?.phone) {
+      setNeedAuth(true);
+      setError("برای ثبت تیکت ابتدا وارد حساب کاربری شوید.");
+      return;
+    }
+    const name = (patientName.trim() || profile.name || "").trim();
+    if (!name) {
+      setError("نام و نام خانوادگی الزامی است.");
+      return;
+    }
     void postPatientOps<{ item: SupportTicket }>("/api/operations/support/tickets", {
       subject: subject.trim(),
       body: body.trim(),
+      name,
+      phone: profile.phone,
     })
       .then((data) => {
         setSubject("");
         setBody("");
         setSelected(data.item);
         setView("thread");
+        setNeedAuth(false);
         void reload();
       })
       .catch((err) => setError(err instanceof Error ? err.message : "ثبت ناموفق"));
@@ -99,6 +133,8 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const shellClass =
     variant === "app" ? "space-y-4" : "mx-auto max-w-3xl space-y-6 px-4 py-10";
 
+  const nameMissing = Boolean(profile?.phone) && !(patientName.trim() || profile?.name?.trim());
+
   return (
     <div className={shellClass}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -112,7 +148,19 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
               بازگشت
             </Button>
           ) : null}
-          <Button type="button" className="text-sm" onClick={() => setView("new")}>
+          <Button
+            type="button"
+            className="text-sm"
+            onClick={() => {
+              if (needAuth || !profile?.phone) {
+                setNeedAuth(true);
+                setError("برای ثبت تیکت ابتدا وارد حساب کاربری شوید.");
+                return;
+              }
+              setView("new");
+              setError("");
+            }}
+          >
             تیکت جدید
           </Button>
         </div>
@@ -120,9 +168,36 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
 
-      {view === "new" ? (
+      {needAuth || (!profileLoading && !profile?.phone) ? (
+        <Card hover={false} className="border-dashed border-cyan-200 bg-cyan-50/50 p-6 text-center">
+          <p className="text-sm font-bold text-slate-800">برای مشاهده و ثبت تیکت وارد شوید</p>
+          <p className="mt-2 text-sm text-slate-600">
+            از پنل کاربری با موبایل وارد شوید؛ سپس می‌توانید تیکت بسازید و پاسخ‌ها را ببینید.
+          </p>
+          <Button href={accountHref} className="mt-4 text-sm">
+            ورود به حساب کاربری
+          </Button>
+        </Card>
+      ) : null}
+
+      {view === "new" && profile?.phone ? (
         <Card hover={false} className="p-5">
           <form onSubmit={createTicket} className="space-y-3">
+            {nameMissing || !profile.name?.trim() ? (
+              <div>
+                <FormLabel>نام و نام خانوادگی</FormLabel>
+                <FormInput
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  required
+                  placeholder="مثل: علی احمدی"
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                ثبت با نام {profile.name} · {profile.phone}
+              </p>
+            )}
             <div>
               <FormLabel>موضوع</FormLabel>
               <FormInput value={subject} onChange={(e) => setSubject(e.target.value)} required />
@@ -189,8 +264,8 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
         </Card>
       ) : null}
 
-      {view === "list" ? (
-        loading ? (
+      {view === "list" && !needAuth && profile?.phone ? (
+        loading || profileLoading ? (
           <p className="text-sm text-slate-500">در حال بارگذاری…</p>
         ) : items.length === 0 ? (
           <Card hover={false} className="border-dashed p-8 text-center text-sm text-slate-600">

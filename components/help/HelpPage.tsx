@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PasteurStorage } from "@/lib/storage";
 import type { HelpItem } from "@/lib/patient";
+import { ROUTES } from "@/lib/routes";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function HelpPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [items, setItems] = useState<HelpItem[]>([]);
+  const supportHref = variant === "app" ? ROUTES.app.support : ROUTES.web.support;
 
   useEffect(() => {
     PasteurStorage.initPatientDomainIfNeeded();
@@ -20,6 +23,13 @@ export function HelpPage({ variant = "web" }: { variant?: "web" | "app" }) {
         <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">آموزش سامانه</h1>
         <p className="mt-2 text-sm text-slate-600">
           کلیپ‌ها و فایل‌های PDF برای کار با اپ و سایت پاستور پلاس
+        </p>
+        <p className="mt-2 text-sm text-slate-600">
+          برای پیگیری درخواست یا مشکل، به{" "}
+          <Link href={supportHref} className="font-bold text-cyan-800 underline">
+            پشتیبانی / تیکت
+          </Link>{" "}
+          بروید.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

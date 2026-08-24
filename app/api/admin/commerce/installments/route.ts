@@ -17,6 +17,10 @@ export async function GET(request: Request) {
           status: { not: 'hidden' },
           source: { not: 'membership' },
         },
+    include: {
+      scheduleItems: { orderBy: { index: 'asc' } },
+      payments: { orderBy: { createdAt: 'desc' }, take: 20 },
+    },
     orderBy: { createdAt: 'desc' },
   });
 

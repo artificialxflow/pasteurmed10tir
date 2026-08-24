@@ -227,7 +227,82 @@ export function mapFacilityRequest(row: FacilityRequest) {
   };
 }
 
-export function mapInstallmentPlan(row: InstallmentPlan) {
+export function mapInstallmentScheduleItem(row: {
+  id: string;
+  planId: string;
+  index: number;
+  dueDate: Date;
+  amount: number;
+  paidAmount: number;
+  status: string;
+}) {
+  return {
+    id: row.id,
+    planId: row.planId,
+    index: row.index,
+    dueDate: row.dueDate.toISOString(),
+    amount: row.amount,
+    paidAmount: row.paidAmount,
+    status: row.status,
+    remaining: Math.max(0, row.amount - row.paidAmount),
+  };
+}
+
+export function mapInstallmentPayment(row: {
+  id: string;
+  planId: string;
+  scheduleItemId: string | null;
+  amount: number;
+  method: string;
+  status: string;
+  trackId: string | null;
+  note: string | null;
+  paidAt: Date | null;
+  createdAt: Date;
+}) {
+  return {
+    id: row.id,
+    planId: row.planId,
+    scheduleItemId: row.scheduleItemId ?? undefined,
+    amount: row.amount,
+    method: row.method,
+    status: row.status,
+    trackId: row.trackId ?? undefined,
+    note: row.note ?? undefined,
+    paidAt: row.paidAt?.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function mapInstallmentPlan(
+  row: InstallmentPlan & {
+    scheduleItems?: Array<{
+      id: string;
+      planId: string;
+      index: number;
+      dueDate: Date;
+      amount: number;
+      paidAmount: number;
+      status: string;
+    }>;
+    payments?: Array<{
+      id: string;
+      planId: string;
+      scheduleItemId: string | null;
+      amount: number;
+      method: string;
+      status: string;
+      trackId: string | null;
+      note: string | null;
+      paidAt: Date | null;
+      createdAt: Date;
+    }>;
+  },
+) {
+  const items = (row.scheduleItems || []).map(mapInstallmentScheduleItem);
+  const overdueAmount = items
+    .filter((i) => i.status === 'overdue' || i.status === 'partial')
+    .reduce((sum, i) => sum + i.remaining, 0);
   return {
     id: row.id,
     phone: row.phone,
@@ -241,5 +316,8 @@ export function mapInstallmentPlan(row: InstallmentPlan) {
     status: row.status,
     linkedRequestId: row.linkedRequestId ?? undefined,
     createdAt: row.createdAt.toISOString(),
+    items,
+    payments: (row.payments || []).map(mapInstallmentPayment),
+    overdueAmount,
   };
 }

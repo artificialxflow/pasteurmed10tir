@@ -4,6 +4,7 @@ import { AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import {
   buildScheduleFromDayHours,
   dayHoursFromDentist,
@@ -64,6 +65,25 @@ function applyDayHoursToDentist(dentist: Dentist, dayHours: DayHoursMap): Dentis
   };
 }
 
+function validateDayHours(dayHours: DayHoursMap): string | null {
+  for (const day of DENTIST_WEEKDAYS) {
+    const range = dayHours[day];
+    if (!range) continue;
+    if (
+      !Number.isFinite(range.start) ||
+      !Number.isFinite(range.end) ||
+      range.start < 0 ||
+      range.start > 23 ||
+      range.end < 1 ||
+      range.end > 24 ||
+      range.end <= range.start
+    ) {
+      return `بازه ساعت «${day}» نامعتبر است (از باید کمتر از تا باشد).`;
+    }
+  }
+  return null;
+}
+
 function DayHoursEditor({
   value,
   onChange,
@@ -100,42 +120,38 @@ function DayHoursEditor({
               {day}
             </label>
             <span className="text-[0.65rem] text-slate-400">{active ? "از — تا" : "—"}</span>
-            <FormInput
-              type="number"
-              min={0}
-              max={23}
-              disabled={!active}
-              className="text-xs"
-              value={active ? range.start : ""}
-              onChange={(e) => {
-                const start = Number(e.target.value);
-                onChange({
-                  ...value,
-                  [day]: {
-                    start: Number.isFinite(start) ? start : 9,
-                    end: range.end,
-                  },
-                });
-              }}
-            />
-            <FormInput
-              type="number"
-              min={1}
-              max={24}
-              disabled={!active}
-              className="text-xs"
-              value={active ? range.end : ""}
-              onChange={(e) => {
-                const end = Number(e.target.value);
-                onChange({
-                  ...value,
-                  [day]: {
-                    start: range.start,
-                    end: Number.isFinite(end) ? end : 17,
-                  },
-                });
-              }}
-            />
+            {active ? (
+              <DraftNumberInput
+                min={0}
+                max={23}
+                className="text-xs"
+                value={range.start}
+                onCommit={(start) => {
+                  onChange({
+                    ...value,
+                    [day]: { start, end: range.end },
+                  });
+                }}
+              />
+            ) : (
+              <FormInput type="text" disabled className="text-xs" value="" />
+            )}
+            {active ? (
+              <DraftNumberInput
+                min={1}
+                max={24}
+                className="text-xs"
+                value={range.end}
+                onCommit={(end) => {
+                  onChange({
+                    ...value,
+                    [day]: { start: range.start, end },
+                  });
+                }}
+              />
+            ) : (
+              <FormInput type="text" disabled className="text-xs" value="" />
+            )}
           </div>
         );
       })}
@@ -185,6 +201,11 @@ export default function AdminDoctorsPage() {
   }, [reloadDentists, reloadPhysicians]);
 
   async function persistDentists(next: Dentist[]) {
+    for (const item of next) {
+      if (!item.name?.trim()) continue;
+      const rangeError = validateDayHours(dayHoursFromDentist(item));
+      if (rangeError) throw new Error(`${item.name}: ${rangeError}`);
+    }
     const cleaned = next
       .map((item) => {
         const dayHours = dayHoursFromDentist(item);
@@ -238,6 +259,11 @@ export default function AdminDoctorsPage() {
     const summary = summarizeDayHours(dentistDayHours);
     if (!summary.days.length) {
       setError("حداقل یک روز حضور با ساعت از–تا انتخاب کنید.");
+      return;
+    }
+    const rangeError = validateDayHours(dentistDayHours);
+    if (rangeError) {
+      setError(rangeError);
       return;
     }
     void persistDentists([

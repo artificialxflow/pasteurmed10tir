@@ -84,7 +84,31 @@ export type HelpItem = {
   active?: boolean;
 };
 
-export type InstallmentSource = 'credit' | 'facility' | 'membership' | 'wallet';
+export type InstallmentSource = 'credit' | 'facility' | 'membership' | 'wallet' | 'loan';
+
+export type InstallmentScheduleItem = {
+  id: string;
+  planId: string;
+  index: number;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  status: 'pending' | 'due' | 'overdue' | 'paid' | 'partial' | string;
+  remaining: number;
+};
+
+export type InstallmentPaymentRecord = {
+  id: string;
+  planId: string;
+  scheduleItemId?: string;
+  amount: number;
+  method: string;
+  status: string;
+  trackId?: string;
+  note?: string;
+  paidAt?: string;
+  createdAt: string;
+};
 
 export type InstallmentPlan = {
   id: string;
@@ -99,6 +123,9 @@ export type InstallmentPlan = {
   status: 'active' | 'completed' | 'overdue' | 'hidden';
   linkedRequestId?: string;
   createdAt: string;
+  items?: InstallmentScheduleItem[];
+  payments?: InstallmentPaymentRecord[];
+  overdueAmount?: number;
 };
 
 export const DEFAULT_FRANCHISE_PERCENT = 10;
@@ -203,8 +230,12 @@ export function remainingInstallment(plan: InstallmentPlan): number {
 }
 
 export function nextInstallmentDue(plan: InstallmentPlan): string | null {
+  const unpaid = (plan.items || [])
+    .filter((i) => i.status !== 'paid')
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  if (unpaid[0]) return unpaid[0].dueDate;
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = (plan.dueDates || []).filter((d) => d >= today).sort();
+  const upcoming = (plan.dueDates || []).filter((d) => d.slice(0, 10) >= today).sort();
   return upcoming[0] || plan.dueDates?.[plan.dueDates.length - 1] || null;
 }
 

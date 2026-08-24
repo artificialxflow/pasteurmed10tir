@@ -76,6 +76,20 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
     return { order };
   }
 
+  if (pending.kind === 'installment') {
+    const { applyInstallmentPayment } = await import('@/lib/commerce/installment-service');
+    const plan = await applyInstallmentPayment({
+      planId: String(pending.planId || ''),
+      scheduleItemId: String(pending.scheduleItemId || ''),
+      amount: Number(pending.amount || pending.amountToman || 0),
+      method: 'zibal',
+      trackId: pending.zibalTrackId ? String(pending.zibalTrackId) : null,
+      phone: pending.patientPhone ? String(pending.patientPhone) : null,
+      note: 'پرداخت آنلاین قسط',
+    });
+    return { installmentPlan: plan };
+  }
+
   throw new Error('نوع پرداخت پشتیبانی نمی‌شود.');
 }
 
@@ -89,7 +103,9 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
   const app = basePath.includes('/app');
   let successPath = pending.successTo ? String(pending.successTo) : '';
   if (!successPath) {
-    if (pending.kind === 'shop-order') {
+    if (pending.kind === 'installment') {
+      successPath = app ? '/app/installments?paid=1' : '/installments?paid=1';
+    } else if (pending.kind === 'shop-order') {
       successPath = app ? '/app/shop/success' : '/shop/success';
     } else if (pending.planId === 'shop-vip') {
       successPath = app ? '/app/shop-catalog?vip=paid' : '/shop/catalog?vip=paid';
@@ -97,15 +113,15 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
       successPath = app ? '/app/dental/success' : '/dental/success';
     }
   }
-  return {
-    successPath,
-    failPath:
-      pending.kind === 'shop-order'
-        ? app
-          ? '/app/shop/failed'
-          : '/shop/failed'
-        : `${basePath}/failed`,
-  };
+  let failPath = '';
+  if (pending.kind === 'installment') {
+    failPath = app ? '/app/installments?paid=0' : '/installments?paid=0';
+  } else if (pending.kind === 'shop-order') {
+    failPath = app ? '/app/shop/failed' : '/shop/failed';
+  } else {
+    failPath = `${basePath}/failed`;
+  }
+  return { successPath, failPath };
 }
 
 export function buildPaymentDescription(pending: PendingPayment): string {
@@ -120,6 +136,10 @@ export function buildPaymentDescription(pending: PendingPayment): string {
   }
   if (pending.kind === 'shop-order') {
     return `سفارش تجهیزات — ${pending.patientName || 'مشتری'}`;
+  }
+  if (pending.kind === 'installment') {
+    const idx = pending.installmentIndex != null ? ` #${pending.installmentIndex}` : '';
+    return `پرداخت قسط${idx} — ${pending.patientName || 'بیمار'}`;
   }
   return 'پرداخت پاستور پلاس';
 }
