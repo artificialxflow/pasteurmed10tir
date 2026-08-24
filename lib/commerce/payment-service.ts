@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { createCommission } from '@/lib/commerce/commission-service';
 import {
   createCreditInstallmentPlan,
@@ -10,8 +9,10 @@ import {
   getOrCreateWallet,
   upgradeWalletForUser,
 } from '@/lib/commerce/wallet-service';
+import { addClubPoints } from '@/lib/club/service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { planIdToWalletKinds } from '@/lib/wallet';
+import { prisma } from '@/lib/prisma';
 
 export async function completeShopVipPayment(input: {
   patientName?: string;
@@ -149,6 +150,19 @@ export async function completeMembershipPayment(input: {
       customerPhone: phone,
       amount: input.amount,
     });
+  }
+
+  const planId = String(input.planId || 'regular');
+  if (planId === 'regular' || planId === 'vip') {
+    const alreadyAwarded = await prisma.clubHistoryItem.findFirst({
+      where: {
+        profilePhone: phone,
+        reason: { startsWith: 'عضویت طرح' },
+      },
+    });
+    if (!alreadyAwarded) {
+      await addClubPoints(phone, 100, `عضویت طرح ${input.planName || planId}`);
+    }
   }
 
   return {

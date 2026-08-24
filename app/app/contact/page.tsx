@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
-import Link from "next/link";
 
 export default function AppContactPage() {
   const i = PASTEUR_DATA.institute;
@@ -75,13 +74,6 @@ export default function AppContactPage() {
           واتساپ
         </Button>
       </div>
-
-      <Link
-        href={ROUTES.app.partners}
-        className="mt-3 block text-center text-sm font-bold text-cyan-700 underline-offset-4 hover:underline"
-      >
-        درخواست همکاری
-      </Link>
     </AppShell>
   );
 }

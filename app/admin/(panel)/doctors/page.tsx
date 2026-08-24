@@ -3,14 +3,30 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput } from "@/components/ui/Card";
-import { daysToInput, parseDaysInput } from "@/lib/content/doctor-mappers";
+import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import {
+  buildScheduleFromDayHours,
+  dayHoursFromDentist,
+  DENTIST_WEEKDAYS,
+  parseDaysInput,
+  summarizeDayHours,
+  type DayHoursMap,
+} from "@/lib/content/doctor-mappers";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA, type Dentist, type Physician } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Tab = "dentists" | "physicians";
+
+const DENTAL_SPECIALTY_OPTIONS = [
+  { id: "general", name: "دندانپزشکی عمومی" },
+  ...PASTEUR_DATA.dentalSpecialties.map((s) => ({ id: String(s.id), name: s.name })),
+];
+
+function specialtyLabel(id: string): string {
+  return DENTAL_SPECIALTY_OPTIONS.find((o) => o.id === id)?.name || "دندانپزشکی عمومی";
+}
 
 const STATUS_OPTIONS = [
   { value: "available", label: "در دسترس" },
@@ -23,6 +39,110 @@ function nextIntId(items: { id: number }[]): number {
   return max + 1;
 }
 
+function emptyDayHours(): DayHoursMap {
+  const map: DayHoursMap = {};
+  for (const day of DENTIST_WEEKDAYS) map[day] = null;
+  return map;
+}
+
+function defaultNewDayHours(): DayHoursMap {
+  const map = emptyDayHours();
+  map["شنبه"] = { start: 9, end: 17 };
+  map["دوشنبه"] = { start: 9, end: 17 };
+  map["چهارشنبه"] = { start: 9, end: 17 };
+  return map;
+}
+
+function applyDayHoursToDentist(dentist: Dentist, dayHours: DayHoursMap): Dentist {
+  const schedule = buildScheduleFromDayHours(dayHours);
+  const summary = summarizeDayHours(dayHours);
+  return {
+    ...dentist,
+    schedule,
+    days: summary.days,
+    hours: summary.hours,
+  };
+}
+
+function DayHoursEditor({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: DayHoursMap;
+  onChange: (next: DayHoursMap) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cn("space-y-2", compact ? "min-w-[16rem]" : "")}>
+      {DENTIST_WEEKDAYS.map((day) => {
+        const active = Boolean(value[day]);
+        const range = value[day] || { start: 9, end: 17 };
+        return (
+          <div
+            key={day}
+            className={cn(
+              "grid items-center gap-2",
+              compact ? "grid-cols-[4.5rem_auto_3.5rem_3.5rem]" : "grid-cols-[6rem_auto_4.5rem_4.5rem]",
+            )}
+          >
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => {
+                  onChange({
+                    ...value,
+                    [day]: e.target.checked ? { start: range.start, end: range.end } : null,
+                  });
+                }}
+              />
+              {day}
+            </label>
+            <span className="text-[0.65rem] text-slate-400">{active ? "از — تا" : "—"}</span>
+            <FormInput
+              type="number"
+              min={0}
+              max={23}
+              disabled={!active}
+              className="text-xs"
+              value={active ? range.start : ""}
+              onChange={(e) => {
+                const start = Number(e.target.value);
+                onChange({
+                  ...value,
+                  [day]: {
+                    start: Number.isFinite(start) ? start : 9,
+                    end: range.end,
+                  },
+                });
+              }}
+            />
+            <FormInput
+              type="number"
+              min={1}
+              max={24}
+              disabled={!active}
+              className="text-xs"
+              value={active ? range.end : ""}
+              onChange={(e) => {
+                const end = Number(e.target.value);
+                onChange({
+                  ...value,
+                  [day]: {
+                    start: range.start,
+                    end: Number.isFinite(end) ? end : 17,
+                  },
+                });
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function AdminDoctorsPage() {
   const [tab, setTab] = useState<Tab>("dentists");
   const [dentists, setDentists] = useState<Dentist[]>([]);
@@ -30,9 +150,8 @@ export default function AdminDoctorsPage() {
   const [error, setError] = useState("");
 
   const [dentistName, setDentistName] = useState("");
-  const [dentistSpecialty, setDentistSpecialty] = useState("دندانپزشکی عمومی");
-  const [dentistDays, setDentistDays] = useState("");
-  const [dentistHours, setDentistHours] = useState("۹ تا ۱۷");
+  const [dentistSpecialtyId, setDentistSpecialtyId] = useState("general");
+  const [dentistDayHours, setDentistDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [dentistImage, setDentistImage] = useState("");
 
   const [physicianName, setPhysicianName] = useState("");
@@ -43,7 +162,16 @@ export default function AdminDoctorsPage() {
 
   const reloadDentists = useCallback(async () => {
     const data = await fetchAdmin<{ items: Dentist[] }>("/api/admin/content/dentists");
-    setDentists(data.items.map((d) => ({ ...d, days: [...(d.days || [])], schedule: { ...(d.schedule || {}) } })));
+    setDentists(
+      data.items.map((d) => {
+        const withCopies = {
+          ...d,
+          days: [...(d.days || [])],
+          schedule: { ...(d.schedule || {}) },
+        };
+        return applyDayHoursToDentist(withCopies, dayHoursFromDentist(withCopies));
+      }),
+    );
   }, []);
 
   const reloadPhysicians = useCallback(async () => {
@@ -58,18 +186,23 @@ export default function AdminDoctorsPage() {
 
   async function persistDentists(next: Dentist[]) {
     const cleaned = next
-      .map((item) => ({
-        ...item,
-        id: Number(item.id) || nextIntId(next),
-        name: String(item.name || "").trim(),
-        specialty: String(item.specialty || "").trim() || "دندانپزشکی عمومی",
-        image: String(item.image || "").trim() || "/uploads/placeholder.svg",
-        days: Array.isArray(item.days) ? item.days.filter(Boolean) : parseDaysInput(String(item.days || "")),
-        hours: String(item.hours || "").trim() || "۹ تا ۱۷",
-        status: item.status || "available",
-        schedule: item.schedule || {},
-      }))
-      .filter((item) => item.name);
+      .map((item) => {
+        const dayHours = dayHoursFromDentist(item);
+        const patched = applyDayHoursToDentist(item, dayHours);
+        return {
+          ...patched,
+          id: Number(patched.id) || nextIntId(next),
+          name: String(patched.name || "").trim(),
+          specialty: String(patched.specialty || "").trim() || "دندانپزشکی عمومی",
+          specialtyId: patched.specialtyId?.trim() || "general",
+          image: String(patched.image || "").trim() || "/uploads/placeholder.svg",
+          status: patched.status || "available",
+        };
+      })
+      .filter((item) => item.name && item.days.length > 0);
+    if (cleaned.length !== next.filter((item) => item.name).length) {
+      throw new Error("برای هر دندانپزشک حداقل یک روز با ساعت معتبر لازم است.");
+    }
     await putAdmin("/api/admin/content/dentists", { items: cleaned });
     await reloadDentists();
   }
@@ -101,25 +234,35 @@ export default function AdminDoctorsPage() {
 
   function addDentist(e: FormEvent) {
     e.preventDefault();
+    const specialtyId = dentistSpecialtyId.trim() || "general";
+    const summary = summarizeDayHours(dentistDayHours);
+    if (!summary.days.length) {
+      setError("حداقل یک روز حضور با ساعت از–تا انتخاب کنید.");
+      return;
+    }
     void persistDentists([
       ...dentists,
-      {
-        id: nextIntId(dentists),
-        name: dentistName.trim(),
-        specialty: dentistSpecialty.trim() || "دندانپزشکی عمومی",
-        image: dentistImage.trim() || "/uploads/placeholder.svg",
-        days: parseDaysInput(dentistDays),
-        hours: dentistHours.trim() || "۹ تا ۱۷",
-        status: "available",
-        schedule: {},
-      },
+      applyDayHoursToDentist(
+        {
+          id: nextIntId(dentists),
+          name: dentistName.trim(),
+          specialty: specialtyLabel(specialtyId),
+          specialtyId,
+          image: dentistImage.trim() || "/uploads/placeholder.svg",
+          days: summary.days,
+          hours: summary.hours,
+          status: "available",
+          schedule: {},
+        },
+        dentistDayHours,
+      ),
     ])
       .then(() => {
         setDentistName("");
-        setDentistSpecialty("دندانپزشکی عمومی");
-        setDentistDays("");
-        setDentistHours("۹ تا ۱۷");
+        setDentistSpecialtyId("general");
+        setDentistDayHours(defaultNewDayHours());
         setDentistImage("");
+        setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
   }
@@ -169,9 +312,9 @@ export default function AdminDoctorsPage() {
   }
 
   function resetDentists() {
-    void persistDentists(PASTEUR_DATA.dentists.map((d) => ({ ...d, days: [...d.days], schedule: { ...d.schedule } }))).catch(
-      (e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"),
-    );
+    void persistDentists(
+      PASTEUR_DATA.dentists.map((d) => ({ ...d, days: [...d.days], schedule: { ...d.schedule } })),
+    ).catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
   function resetPhysicians() {
@@ -218,22 +361,20 @@ export default function AdminDoctorsPage() {
                 placeholder="نام مثل دکتر علی رضایی"
                 required
               />
-              <FormInput
-                value={dentistSpecialty}
-                onChange={(e) => setDentistSpecialty(e.target.value)}
-                placeholder="تخصص"
-              />
-              <FormInput
-                value={dentistDays}
-                onChange={(e) => setDentistDays(e.target.value)}
-                placeholder="روزها — شنبه، دوشنبه، ..."
-                className="md:col-span-2"
-              />
-              <FormInput
-                value={dentistHours}
-                onChange={(e) => setDentistHours(e.target.value)}
-                placeholder="ساعات — ۹ تا ۱۷"
-              />
+              <FormSelect
+                value={dentistSpecialtyId}
+                onChange={(e) => setDentistSpecialtyId(e.target.value)}
+              >
+                {DENTAL_SPECIALTY_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
+              </FormSelect>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
+                <p className="mb-2 text-sm font-bold text-slate-800">روز و ساعت حضور (جدا برای هر روز)</p>
+                <DayHoursEditor value={dentistDayHours} onChange={setDentistDayHours} />
+              </div>
               <ImageUploadField value={dentistImage} onChange={setDentistImage} className="md:col-span-2" />
               <Button type="submit" className="md:col-span-2">
                 افزودن
@@ -258,7 +399,7 @@ export default function AdminDoctorsPage() {
           </div>
 
           <AdminTable
-            headers={["نام", "تخصص", "روزها", "ساعات", "وضعیت", "تصویر", "عملیات"]}
+            headers={["نام", "تخصص", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="دندانپزشکی ثبت نشده."
           >
             {dentists.map((d, index) => (
@@ -271,25 +412,31 @@ export default function AdminDoctorsPage() {
                   />
                 </td>
                 <td className="px-4 py-3">
-                  <FormInput
+                  <FormSelect
                     className="text-xs"
-                    value={d.specialty}
-                    onChange={(e) => updateDentist(index, { specialty: e.target.value })}
-                  />
+                    value={d.specialtyId || "general"}
+                    onChange={(e) => {
+                      const specialtyId = e.target.value;
+                      updateDentist(index, {
+                        specialtyId,
+                        specialty: specialtyLabel(specialtyId),
+                      });
+                    }}
+                  >
+                    {DENTAL_SPECIALTY_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </FormSelect>
                 </td>
                 <td className="px-4 py-3">
-                  <FormInput
-                    className="text-xs"
-                    value={daysToInput(d.days || [])}
-                    onChange={(e) => updateDentist(index, { days: parseDaysInput(e.target.value) })}
+                  <DayHoursEditor
+                    compact
+                    value={dayHoursFromDentist(d)}
+                    onChange={(dayHours) => updateDentist(index, applyDayHoursToDentist(d, dayHours))}
                   />
-                </td>
-                <td className="px-4 py-3">
-                  <FormInput
-                    className="text-xs"
-                    value={d.hours || ""}
-                    onChange={(e) => updateDentist(index, { hours: e.target.value })}
-                  />
+                  <p className="mt-2 text-[0.7rem] text-slate-500">{d.hours}</p>
                 </td>
                 <td className="px-4 py-3">
                   <select
@@ -377,7 +524,7 @@ export default function AdminDoctorsPage() {
             </div>
           </div>
 
-          <AdminTable headers={["نام", "تخصص", "روزها", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
+          <AdminTable headers={["نام", "تخصص", "شناسه", "روزها", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
             {physicians.map((p, index) => (
               <tr key={p.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
@@ -397,7 +544,14 @@ export default function AdminDoctorsPage() {
                 <td className="px-4 py-3">
                   <FormInput
                     className="text-xs"
-                    value={daysToInput(p.days || [])}
+                    value={p.specialtyId || ""}
+                    onChange={(e) => updatePhysician(index, { specialtyId: e.target.value })}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="text-xs"
+                    value={(p.days || []).join("، ")}
                     onChange={(e) => updatePhysician(index, { days: parseDaysInput(e.target.value) })}
                   />
                 </td>

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
@@ -16,7 +15,7 @@ export function SpecialtyList({ basePath }: { basePath: DentalBasePath }) {
         {PASTEUR_DATA.dentalSpecialties.map((s) => (
           <Link
             key={s.id}
-            href={generalHref}
+            href={`${generalHref}?specialty=${s.id}`}
             className="rounded-2xl border border-sky-200 bg-white p-4 transition hover:border-teal-500"
           >
             <span className="text-2xl">{s.emoji}</span>
@@ -48,16 +47,13 @@ export function SpecialtyList({ basePath }: { basePath: DentalBasePath }) {
             <h2 className="mt-3 text-lg font-bold">{s.name}</h2>
             <p className="mt-2 text-sm text-slate-600">{s.description}</p>
             <Link
-              href={generalHref}
+              href={`${generalHref}?specialty=${s.id}`}
               className="mt-4 inline-block text-sm font-semibold text-teal-700 hover:underline"
             >
               رزرو نوبت ←
             </Link>
           </Card>
         ))}
-      </div>
-      <div className="mt-8 text-center">
-        <Button href={generalHref}>رزرو نوبت با پزشک</Button>
       </div>
     </div>
   );

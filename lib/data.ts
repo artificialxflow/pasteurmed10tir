@@ -74,6 +74,7 @@ export interface Dentist {
   id: number;
   name: string;
   specialty: string;
+  specialtyId?: string;
   image: string;
   days: string[];
   hours: string;
@@ -411,12 +412,12 @@ export const PASTEUR_DATA = {
   ],
 
   dentalSpecialties: [
-    { id: 1, name: 'ارتودنسی', emoji: '😁', description: 'اصلاح ناهنجاری‌های دندانی و فکی' },
-    { id: 2, name: 'ایمپلنت', emoji: '🦷', description: 'جایگزینی دندان‌های از دست رفته' },
-    { id: 3, name: 'زیبایی دندان', emoji: '✨', description: 'لمینت، بلیچینگ و طراحی لبخند' },
-    { id: 4, name: 'جراحی فک', emoji: '🔬', description: 'درمان‌های جراحی فک و صورت' },
-    { id: 5, name: 'دندانپزشکی کودکان', emoji: '👶', description: 'مراقبت تخصصی از دندان کودکان' },
-    { id: 6, name: 'درمان ریشه', emoji: '💉', description: 'عصب‌کشی و حفظ دندان طبیعی' },
+    { id: 'orthodontics', name: 'ارتودنسی', emoji: '😁', description: 'اصلاح ناهنجاری‌های دندانی و فکی' },
+    { id: 'implant', name: 'ایمپلنت', emoji: '🦷', description: 'جایگزینی دندان‌های از دست رفته' },
+    { id: 'cosmetic', name: 'زیبایی دندان', emoji: '✨', description: 'لمینت، بلیچینگ و طراحی لبخند' },
+    { id: 'oral-surgery', name: 'جراحی فک', emoji: '🔬', description: 'درمان‌های جراحی فک و صورت' },
+    { id: 'pediatric', name: 'دندانپزشکی کودکان', emoji: '👶', description: 'مراقبت تخصصی از دندان کودکان' },
+    { id: 'endodontics', name: 'درمان ریشه', emoji: '💉', description: 'عصب‌کشی و حفظ دندان طبیعی' },
   ],
 
   medicalSpecialties: [
@@ -458,6 +459,7 @@ export const PASTEUR_DATA = {
       id: 1,
       name: 'دکتر علی رضایی',
       specialty: 'دندانپزشکی عمومی',
+      specialtyId: 'general',
       image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop',
       days: ['شنبه', 'دوشنبه', 'چهارشنبه'],
       hours: '۹ تا ۱۷',
@@ -472,6 +474,7 @@ export const PASTEUR_DATA = {
       id: 2,
       name: 'دکتر مریم احمدی',
       specialty: 'ارتودنسی',
+      specialtyId: 'orthodontics',
       image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop',
       days: ['یکشنبه', 'سه‌شنبه', 'پنجشنبه'],
       hours: '۱۰ تا ۱۸',
@@ -486,6 +489,7 @@ export const PASTEUR_DATA = {
       id: 3,
       name: 'دکتر حسین محمدی',
       specialty: 'جراحی فک و صورت',
+      specialtyId: 'oral-surgery',
       image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop',
       days: ['شنبه', 'یکشنبه', 'سه‌شنبه'],
       hours: '۸ تا ۱۴',
@@ -500,6 +504,7 @@ export const PASTEUR_DATA = {
       id: 4,
       name: 'دکتر زهرا کریمی',
       specialty: 'دندانپزشکی کودکان',
+      specialtyId: 'pediatric',
       image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop',
       days: ['دوشنبه', 'چهارشنبه'],
       hours: '۱۴ تا ۲۰',
@@ -927,12 +932,14 @@ export const PASTEUR_DATA = {
     { title: 'ثبت رزرو یا پرداخت موفق', reward: '۵۰ امتیاز' },
     { title: 'ثبت مشاوره و ویزیت', reward: '۲۰ امتیاز' },
     { title: 'دعوت از دوست با کد معرف', reward: '۱۰۰ امتیاز' },
+    { title: 'عضویت در طرح‌های عضویت (عادی/VIP)', reward: '۱۰۰ امتیاز' },
   ],
 
   clubRules: [
     'امتیازها بر اساس شماره موبایل کاربر نگهداری می‌شوند.',
     'دریافت پاداش باعث کسر امتیاز همان پاداش از موجودی می‌شود.',
     'استفاده از تخفیف‌ها نیازمند هماهنگی و تایید کارشناس پاستور پلاس است.',
+    'پرداخت موفق عضویت عادی یا VIP دندان، ۱۰۰ امتیاز باشگاه ثبت می‌کند.',
   ],
 
   memberOnlyOffers: [

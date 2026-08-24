@@ -16,6 +16,7 @@ import { PASTEUR_DATA, type ClubReward } from "@/lib/data";
 import { PasteurStorage, type BrushStatus, type ClubProfile } from "@/lib/storage";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Variant = "web" | "app";
@@ -38,8 +39,8 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
     void fetch("/api/auth/me", { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) return;
-        const data = (await res.json()) as { user?: { phone?: string } };
-        if (data.user?.phone) setPhone(digitsOnly(data.user.phone));
+        const data = (await res.json()) as { profile?: { phone?: string } };
+        if (data.profile?.phone) setPhone(digitsOnly(data.profile.phone));
       })
       .catch(() => undefined);
   }, []);
@@ -102,7 +103,7 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
             </p>
           </div>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card hover={false}>
               <p className="mb-2 text-2xl">🦷</p>
               <h2 className="font-bold text-slate-900">مراجعه به مرکز</h2>
@@ -123,6 +124,19 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
               <p className="mt-2 text-sm text-slate-600">
                 ثبت هر مشاوره یا ویزیت، ۲۰ امتیاز به حساب همان موبایل اضافه می‌کند.
               </p>
+            </Card>
+            <Card hover={false}>
+              <p className="mb-2 text-2xl">🪪</p>
+              <h2 className="font-bold text-slate-900">عضویت طرح</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                پرداخت عضویت عادی یا VIP دندان، ۱۰۰ امتیاز باشگاه ثبت می‌کند.
+              </p>
+              <Link
+                href={ROUTES.web.dentalMembership}
+                className="mt-3 inline-block text-sm font-bold text-teal-700 underline-offset-2 hover:underline"
+              >
+                رفتن به فرم عضویت ←
+              </Link>
             </Card>
           </section>
         </>

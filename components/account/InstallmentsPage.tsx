@@ -24,8 +24,8 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
           setPhone(null);
           return;
         }
-        const data = (await res.json()) as { user?: { phone?: string } };
-        const p = data.user?.phone || null;
+        const data = (await res.json()) as { profile?: { phone?: string } };
+        const p = data.profile?.phone || null;
         setPhone(p);
         if (!p) return;
         const result = await getInstallmentsApi();

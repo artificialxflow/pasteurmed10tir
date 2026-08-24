@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
-import { ROUTES } from "@/lib/routes";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "تماس با ما",
@@ -86,7 +84,7 @@ export default function ContactPage() {
             />
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Button href={`tel:${institute.phoneDigits}`}>تماس فوری</Button>
             <Button href={whatsappUrl} variant="accent">
               ارسال واتساپ
@@ -94,12 +92,6 @@ export default function ContactPage() {
             <Button href={institute.mapUrl} variant="outline">
               مسیریابی در گوگل‌مپ
             </Button>
-            <Link
-              href={ROUTES.web.partners}
-              className="inline-flex items-center justify-center rounded-full border-2 border-amber-200 bg-white px-6 py-3 font-bold text-amber-800 transition-colors hover:bg-amber-50"
-            >
-              درخواست همکاری
-            </Link>
           </div>
         </Card>
       </div>

@@ -63,17 +63,20 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const searchParams = useSearchParams();
   const app = isAppDental(basePath);
   const doctorFromQuery = searchParams.get("doctor");
+  const dayFromQuery = searchParams.get("day");
 
   const steps = useMemo<StepName[]>(() => {
+    if (doctorFromQuery && dayFromQuery) return ["type", "time", "info"];
     if (doctorFromQuery) return ["type", "day", "time", "info"];
     return ["type", "doctor", "day", "time", "info"];
-  }, [doctorFromQuery]);
+  }, [doctorFromQuery, dayFromQuery]);
 
   const [state, setState] = useState<BookingState>(() => {
     const doctorId = doctorFromQuery ? parseInt(doctorFromQuery, 10) : null;
     return {
       ...INITIAL_STATE,
       doctorId: Number.isFinite(doctorId) ? doctorId : null,
+      day: dayFromQuery || null,
     };
   });
   const [currentStep, setCurrentStep] = useState<StepName>("type");
@@ -126,13 +129,16 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           doctorFromQuery && Number.isFinite(parseInt(doctorFromQuery, 10))
             ? parseInt(doctorFromQuery, 10)
             : (draft.doctorId ?? prev.doctorId),
+        day: dayFromQuery || draft.day || prev.day,
       }));
       if (saved.step && steps.includes(saved.step)) {
         setCurrentStep(saved.step);
       }
+    } else if (dayFromQuery) {
+      setState((prev) => ({ ...prev, day: dayFromQuery }));
     }
     setHydrated(true);
-  }, [doctorFromQuery, steps]);
+  }, [doctorFromQuery, dayFromQuery, steps]);
 
   useEffect(() => {
     if (!hydrated || !sessionProfile) return;

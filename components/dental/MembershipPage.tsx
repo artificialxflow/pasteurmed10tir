@@ -29,6 +29,7 @@ import {
 } from "@/lib/commerce/client";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, normalizePhone } from "@/lib/utils";
+import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -280,6 +281,15 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     if (data.patientName.length < 2 || normalizePhone(data.phone).length < 10) {
       setError("نام و شماره تماس را کامل وارد کنید.");
       return;
+    }
+    const loanNum = Number(data.loanAmount || 0);
+    if (loanNum > 0) {
+      const nid = normalizeNationalId(String(data.nationalId || ""));
+      if (!nid || !isValidNationalId(nid)) {
+        setError("برای درخواست وام، کد ملی ۱۰ رقمی معتبر الزامی است.");
+        return;
+      }
+      data.nationalId = nid;
     }
     try {
       await createMembershipApplicationApi(data as Record<string, unknown>);
@@ -694,10 +704,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               />
             </div>
             <div>
-              <FormLabel>کد ملی</FormLabel>
+              <FormLabel>کد ملی {Number(form.loanAmount || loanAmount) > 0 ? "(الزامی برای وام)" : ""}</FormLabel>
               <FormInput
+                required={Number(form.loanAmount || loanAmount) > 0}
+                inputMode="numeric"
                 value={form.nationalId}
                 onChange={(e) => updateForm("nationalId", e.target.value)}
+                placeholder="۱۰ رقم"
               />
             </div>
             <div>

@@ -97,32 +97,25 @@ export default function HomePage() {
 
           <div className="relative animate-[fadeUp_0.85s_ease-out_0.12s_both]">
             <div className="pointer-events-none absolute -inset-8 rounded-full bg-cyan-300/25 blur-3xl" />
-            <Link
-              href={ROUTES.app.home}
-              onClick={markAppView}
-              className="relative mx-auto block w-full max-w-[360px] transition duration-500 hover:-translate-y-1 lg:mr-0 lg:ml-auto"
-              aria-label="ورود به نسخه موبایل اپ"
-            >
-              <div className="overflow-hidden rounded-[2rem] border border-slate-800/90 bg-white shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)]">
-                <div className="flex h-8 items-center justify-center bg-slate-950">
-                  <span className="h-1.5 w-20 rounded-full bg-slate-600" />
-                </div>
-                <div className="relative aspect-[9/14] bg-gradient-to-b from-cyan-100 via-white to-sky-50 p-6">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/uploads/hero-home.jpg"
-                    alt="فضای درمانگاه پاستور پلاس"
-                    className="absolute inset-0 h-full w-full object-cover opacity-90"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/25 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                    <p className="text-xs font-bold text-cyan-200">پاستور پلاس</p>
-                    <p className="mt-1 text-xl font-extrabold">همراه شما در مسیر درمان</p>
-                    <p className="mt-2 text-sm text-white/80">ورود به تجربه موبایل</p>
-                  </div>
-                </div>
+            <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[1.5rem] border border-cyan-200/80 bg-white shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)] lg:mr-0 lg:ml-auto lg:max-w-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/uploads/hero-home.png"
+                alt="فضای درمانگاه پاستور پلاس"
+                className="aspect-[4/5] h-auto w-full object-cover object-[center_35%]"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-900/40 to-transparent p-5 text-white sm:p-6">
+                <p className="text-xs font-bold text-cyan-200">پاستور پلاس</p>
+                <p className="mt-1 text-lg font-extrabold sm:text-xl">همراه شما در مسیر درمان</p>
+                <Link
+                  href={ROUTES.app.home}
+                  onClick={markAppView}
+                  className="mt-3 inline-flex text-sm font-bold text-cyan-100 underline-offset-4 hover:underline"
+                >
+                  ورود به نسخه موبایل ←
+                </Link>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
       </section>

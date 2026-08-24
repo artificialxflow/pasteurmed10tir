@@ -2,15 +2,29 @@
 
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { QrCodePanel } from "@/components/admin/QrCodePanel";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import { QR_PRESET_PATHS } from "@/lib/content/qr-url";
 import { inferServiceHref } from "@/lib/content/service-href";
 import { PASTEUR_DATA } from "@/lib/data";
 import type { ServiceItem } from "@/lib/storage";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 const COLORS = ["teal", "blue", "rose", "purple", "amber"] as const;
+
+function contentAdminForHref(href?: string): { label: string; path: string } | null {
+  const path = String(href || "").trim().toLowerCase();
+  if (!path) return null;
+  if (path.startsWith("/laser")) return { label: "مدیریت لیزر", path: "/admin/laser-services" };
+  if (path.startsWith("/nursing")) return { label: "مدیریت پرستاری", path: "/admin/nursing-services" };
+  if (path.startsWith("/shop")) return { label: "مدیریت فروشگاه", path: "/admin/shop" };
+  if (path.startsWith("/dental") || path.startsWith("/medical")) {
+    return { label: "مدیریت پزشکان", path: "/admin/doctors" };
+  }
+  return null;
+}
 
 function makeServiceId(title: string) {
   return `service-${Date.now()}-${String(title || "").replace(/\s+/g, "-").slice(0, 16)}`;
@@ -122,11 +136,95 @@ export default function AdminServicesPage() {
     }
   }
 
+  const qrServices = useMemo(
+    () =>
+      services.filter(
+        (service) => service.active !== false && String(service.href || "").trim(),
+      ),
+    [services],
+  );
+
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+      <Card hover={false} className="border-amber-200 bg-amber-50/80 p-5">
+        <h2 className="mb-2 font-bold text-amber-950">این صفحه فقط کارت‌های صفحه اصلی است</h2>
+        <p className="mb-3 text-sm leading-7 text-amber-900/90">
+          افزودن سرویس اینجا فقط عنوان + لینک روی `/` می‌سازد. موارد داخل هر مسیر را از منوی محتوا
+          جداگانه مدیریت کنید:
+        </p>
+        <ul className="space-y-1.5 text-sm text-amber-950">
+          <li>
+            <span className="font-bold">/laser</span> →{" "}
+            <a className="font-bold text-teal-800 underline" href="/admin/laser-services">
+              خدمات لیزر
+            </a>
+          </li>
+          <li>
+            <span className="font-bold">/nursing</span> →{" "}
+            <a className="font-bold text-teal-800 underline" href="/admin/nursing-services">
+              خدمات پرستاری
+            </a>
+          </li>
+          <li>
+            <span className="font-bold">/shop</span> →{" "}
+            <a className="font-bold text-teal-800 underline" href="/admin/shop">
+              فروشگاه
+            </a>
+          </li>
+          <li>
+            <span className="font-bold">/dental · /medical</span> →{" "}
+            <a className="font-bold text-teal-800 underline" href="/admin/doctors">
+              پزشکان
+            </a>
+          </li>
+        </ul>
+      </Card>
+
+      <Card hover={false} className="bg-white p-6">
+        <h2 className="mb-1 font-bold text-slate-900">QR دسترسی به خدمات</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          هر QR به آدرس عمومی همان مسیر روی <span dir="ltr">pasteur.plus</span> می‌رود. PNG را
+          دانلود و چاپ کنید.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {QR_PRESET_PATHS.map((preset) => (
+            <QrCodePanel
+              key={preset.path}
+              href={preset.path}
+              label={preset.label}
+              fileName={`pasteur-${preset.path === "/" ? "home" : preset.path.slice(1).replace(/\//g, "-")}`}
+              size={140}
+              compact
+            />
+          ))}
+        </div>
+        {qrServices.length ? (
+          <>
+            <h3 className="mb-3 mt-8 text-sm font-bold text-slate-800">QR سرویس‌های ثبت‌شده</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {qrServices.map((service) => (
+                <QrCodePanel
+                  key={service.id}
+                  href={String(service.href)}
+                  label={`${service.emoji || ""} ${service.title}`.trim()}
+                  fileName={`service-${service.id}`}
+                  size={140}
+                  compact
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
+      </Card>
+
       <Card hover={false} className="bg-white p-6">
         <h2 className="mb-4 font-bold">افزودن سرویس جدید</h2>
+        <p className="mb-3 text-sm text-slate-600">
+          اینجا فقط کارت صفحه اصلی است؛ موارد داخل سرویس در منوی جداگانه (لیزر / پرستاری / فروشگاه /
+          پزشکان).
+        </p>
         <form onSubmit={addService} className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <FormInput
             value={title}
@@ -184,10 +282,12 @@ export default function AdminServicesPage() {
       </div>
 
       <AdminTable
-        headers={["عنوان", "آیکن", "توضیح", "لینک", "تصویر", "رنگ", "فعال", "عملیات"]}
+        headers={["عنوان", "آیکن", "توضیح", "لینک", "محتوای مقصد", "تصویر", "رنگ", "فعال", "عملیات"]}
         empty="سرویسی ثبت نشده است."
       >
-        {services.map((service, index) => (
+        {services.map((service, index) => {
+          const dest = contentAdminForHref(service.href);
+          return (
           <tr key={service.id} className="border-t border-slate-100">
             <td className="px-4 py-3">
               <FormInput
@@ -217,6 +317,18 @@ export default function AdminServicesPage() {
                 value={service.href || ""}
                 onChange={(e) => updateRow(index, { href: e.target.value })}
               />
+            </td>
+            <td className="px-4 py-3">
+              {dest ? (
+                <a
+                  href={dest.path}
+                  className="text-xs font-bold text-teal-700 underline underline-offset-2"
+                >
+                  {dest.label}
+                </a>
+              ) : (
+                <span className="text-xs text-slate-400">—</span>
+              )}
             </td>
             <td className="px-4 py-3">
               <FormInput
@@ -256,7 +368,8 @@ export default function AdminServicesPage() {
               </button>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </AdminTable>
 
       <Button type="button" onClick={() => void saveAll()}>

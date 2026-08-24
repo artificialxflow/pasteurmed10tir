@@ -145,15 +145,16 @@ model Physician {
 }
 
 model Dentist {
-  id        Int      @id
-  name      String
-  specialty String
-  image     String
-  days      String[]
-  hours     String   @default("")
-  status    String   @default("available")
-  schedule  Json     @default("{}")
-  sortOrder Int      @default(0)
+  id          Int      @id
+  name        String
+  specialty   String
+  specialtyId String?
+  image       String
+  days        String[]
+  hours       String   @default("")
+  status      String   @default("available")
+  schedule    Json     @default("{}")
+  sortOrder   Int      @default(0)
 }
 
 model GalleryItem {

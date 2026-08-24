@@ -37,8 +37,12 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
     void fetch("/api/auth/me", { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) return;
-        const data = (await res.json()) as { user?: { phone?: string } };
-        if (data.user?.phone) setPhone(normalizePhone(data.user.phone));
+        const data = (await res.json()) as { profile?: { phone?: string } };
+        if (data.profile?.phone) {
+          const digits = normalizePhone(data.profile.phone);
+          setPhone(digits);
+          if (digits.length >= 10) loadWallet(digits);
+        }
       })
       .catch(() => {
         const lastPayment = PasteurStorage.getLastPayment() as { patientPhone?: string } | null;
@@ -51,6 +55,7 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
         if (data.wallet) setSettings(data.wallet);
       })
       .catch(() => setSettings(DEFAULT_WALLET_SETTINGS));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount from session
   }, []);
 
   function showMessage(text: string) {

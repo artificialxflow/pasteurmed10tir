@@ -3,6 +3,7 @@ import { generateCommerceId, mapMembershipApplication } from '@/lib/commerce/map
 import { findVisitorByCode } from '@/lib/commerce/commission-service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
+import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
@@ -11,6 +12,17 @@ export async function POST(request: Request) {
   if (!body) return jsonError('درخواست نامعتبر است.');
 
   const phone = normalizePhoneDigits(String(body.phone || ''));
+  const loanAmount =
+    body.loanAmount === undefined || body.loanAmount === null ? null : Number(body.loanAmount);
+  let nationalId = body.nationalId ? normalizeNationalId(String(body.nationalId)) : '';
+  if (loanAmount != null && loanAmount > 0) {
+    if (!nationalId || !isValidNationalId(nationalId)) {
+      return jsonError('برای درخواست وام، کد ملی ۱۰ رقمی معتبر الزامی است.');
+    }
+  } else if (nationalId && !isValidNationalId(nationalId)) {
+    return jsonError('کد ملی نامعتبر است.');
+  }
+
   let visitorName = body.visitorName ? String(body.visitorName) : null;
   if (!visitorName && body.referralCode) {
     const visitor = await findVisitorByCode(String(body.referralCode));
@@ -22,7 +34,7 @@ export async function POST(request: Request) {
       id: String(body.id || generateCommerceId()),
       patientName: body.patientName ? String(body.patientName) : null,
       phone: phone || null,
-      nationalId: body.nationalId ? String(body.nationalId) : null,
+      nationalId: nationalId || null,
       age: body.age != null ? String(body.age) : null,
       job: body.job ? String(body.job) : null,
       postalCode: body.postalCode ? String(body.postalCode) : null,
@@ -58,10 +70,7 @@ export async function POST(request: Request) {
         body.amountToman === undefined || body.amountToman === null
           ? null
           : Number(body.amountToman),
-      loanAmount:
-        body.loanAmount === undefined || body.loanAmount === null
-          ? null
-          : Number(body.loanAmount),
+      loanAmount,
       referralCode: body.referralCode ? String(body.referralCode) : null,
       visitorName,
       status: String(body.status || 'pending'),

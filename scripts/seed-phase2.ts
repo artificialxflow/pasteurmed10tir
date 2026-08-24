@@ -154,6 +154,7 @@ async function main() {
       id: d.id,
       name: d.name,
       specialty: d.specialty,
+      specialtyId: d.specialtyId,
       image: await localizeImageUrl(d.image, cache),
       days: [...d.days],
       hours: d.hours,

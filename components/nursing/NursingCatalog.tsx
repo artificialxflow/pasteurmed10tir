@@ -149,7 +149,10 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
           </div>
         </Card>
       ) : (
-        <EmptyState title="خدمت پرستاری فعالی یافت نشد." />
+        <EmptyState
+          title="هنوز خدمت پرستاری ثبت نشده"
+          desc="از پنل ادمین → خدمات پرستاری آیتم اضافه کنید."
+        />
       )}
 
       {app ? (

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, EmptyState } from "@/components/ui/Card";
 import { PASTEUR_DATA, type LaserService } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ROUTES } from "@/lib/routes";
@@ -17,15 +17,25 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
   const app = variant === "app";
   const phone = PASTEUR_DATA.institute.phoneDigits;
   const [services, setServices] = useState<LaserService[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetchPublic<{ items: LaserService[] }>("/api/content/laser")
       .then((data) => setServices(data.items))
-      .catch(() => setServices([]));
+      .catch(() => setServices([]))
+      .finally(() => setLoaded(true));
   }, []);
 
-  const grid = useMemo(
-    () => (
+  const grid = useMemo(() => {
+    if (loaded && services.length === 0) {
+      return (
+        <EmptyState
+          title="هنوز خدمت لیزری ثبت نشده"
+          desc="از پنل ادمین → خدمات لیزر آیتم اضافه کنید."
+        />
+      );
+    }
+    return (
       <div className={cn(app ? "space-y-3" : "grid grid-cols-1 gap-5 sm:grid-cols-2")}>
         {services.map((service) => (
           <Card
@@ -56,9 +66,8 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
           </Card>
         ))}
       </div>
-    ),
-    [app, services],
-  );
+    );
+  }, [app, loaded, services]);
 
   if (app) {
     return (
