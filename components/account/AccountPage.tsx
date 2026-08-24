@@ -372,20 +372,35 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 text-sm font-bold">
-            <Link href={installmentsHref} className="text-cyan-800 underline">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Link
+              href={installmentsHref}
+              className="rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm font-extrabold text-teal-900 transition hover:border-teal-400"
+            >
               اقساط من
+              <span className="mt-0.5 block text-xs font-normal text-teal-800/80">
+                صورتحساب و پرداخت قسط
+              </span>
             </Link>
-            <span className="text-slate-300">|</span>
-            <Link href={helpHref} className="text-cyan-800 underline">
+            <Link
+              href={supportHref}
+              className="rounded-xl border border-cyan-200 bg-cyan-50/80 px-4 py-3 text-sm font-extrabold text-cyan-900 transition hover:border-cyan-400"
+            >
+              پشتیبانی / تیکت
+              <span className="mt-0.5 block text-xs font-normal text-cyan-800/80">
+                ثبت درخواست و پیگیری پاسخ
+              </span>
+            </Link>
+            <Link
+              href={helpHref}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300"
+            >
               آموزش سامانه
             </Link>
-            <span className="text-slate-300">|</span>
-            <Link href={supportHref} className="text-cyan-800 underline">
-              پشتیبانی / تیکت
-            </Link>
-            <span className="text-slate-300">|</span>
-            <Link href={complaintsHref} className="text-cyan-800 underline">
+            <Link
+              href={complaintsHref}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:border-slate-300"
+            >
               ثبت شکایت
             </Link>
           </div>

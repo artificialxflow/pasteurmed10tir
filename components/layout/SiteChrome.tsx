@@ -17,6 +17,7 @@ const navItems = [
   { href: ROUTES.web.dental, label: "دندانپزشکی", id: "dental" },
   { href: ROUTES.web.consultation, label: "مشاوره", id: "consultation" },
   { href: ROUTES.web.account, label: "کاربری", id: "account" },
+  { href: ROUTES.web.support, label: "پشتیبانی", id: "support" },
   { href: ROUTES.web.help, label: "آموزش", id: "help" },
   { href: ROUTES.web.contact, label: "تماس", id: "contact" },
   { href: ROUTES.web.partners, label: "همکاری", id: "partners" },
@@ -26,8 +27,8 @@ const bottomNav = [
   { href: ROUTES.web.home, label: "خانه", icon: "🏠", id: "home" },
   { href: ROUTES.web.dentalGeneral, label: "رزرو", icon: "🦷", id: "dental" },
   { href: ROUTES.web.shop, label: "تجهیزات", icon: "🛒", id: "shop" },
-  { href: ROUTES.web.club, label: "باشگاه", icon: "🎁", id: "club" },
-  { href: ROUTES.web.consultation, label: "مشاوره", icon: "💬", id: "consultation" },
+  { href: ROUTES.web.support, label: "پشتیبانی", icon: "🎫", id: "support" },
+  { href: ROUTES.web.account, label: "کاربری", icon: "👤", id: "account" },
 ];
 
 function activeId(pathname: string) {
@@ -36,7 +37,8 @@ function activeId(pathname: string) {
   if (pathname.startsWith("/shop")) return "shop";
   if (pathname.startsWith("/club")) return "club";
   if (pathname.startsWith("/consultation")) return "consultation";
-  if (pathname.startsWith("/account")) return "account";
+  if (pathname.startsWith("/support")) return "support";
+  if (pathname.startsWith("/account") || pathname.startsWith("/installments")) return "account";
   if (pathname.startsWith("/help")) return "help";
   if (pathname.startsWith("/gallery")) return "gallery";
   if (pathname.startsWith("/contact")) return "contact";
