@@ -11,6 +11,8 @@ export type ProductDto = {
   categorySlug: string | null;
   price: string;
   priceNum: number;
+  discountPercent: number;
+  size: string;
   stock: number;
   image: string;
   images: string[];
@@ -64,6 +66,8 @@ export function toProductDto(row: ProductRow): ProductDto {
     categorySlug: row.categoryRel?.slug ?? null,
     price: row.price,
     priceNum: row.priceNum,
+    discountPercent: row.discountPercent ?? 0,
+    size: row.size || '',
     stock: row.stock,
     image: images[0] || PLACEHOLDER,
     images,
@@ -91,6 +95,8 @@ export type ProductInput = {
   categoryId?: number | null;
   price: string;
   priceNum: number;
+  discountPercent?: number;
+  size?: string;
   stock: number;
   image?: string;
   images?: string[];
@@ -116,6 +122,8 @@ export function sanitizeProductInput(
   images: string[];
   active: boolean;
   sortOrder: number;
+  discountPercent: number;
+  size: string;
 } | null {
   const name = String(item.name || '').trim();
   if (!name) return null;
@@ -148,6 +156,8 @@ export function sanitizeProductInput(
     categoryId,
     price: String(item.price || '').trim(),
     priceNum: Number(item.priceNum || 0),
+    discountPercent: Math.min(100, Math.max(0, Number(item.discountPercent || 0))),
+    size: String(item.size || '').trim(),
     stock: Number(item.stock || 0),
     image,
     images,

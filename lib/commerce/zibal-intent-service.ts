@@ -151,6 +151,9 @@ export async function handleZibalCallback(searchParams: URLSearchParams) {
     if ('order' in backendResult && backendResult.order) {
       completed.orderId = (backendResult.order as { id?: string }).id;
     }
+    if ('consultation' in backendResult && backendResult.consultation) {
+      completed.consultation = backendResult.consultation;
+    }
 
     await prisma.paymentIntent.update({
       where: { id: intent.id },

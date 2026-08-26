@@ -123,6 +123,8 @@ async function main() {
         categoryId,
         price: p.price,
         priceNum: p.priceNum,
+        discountPercent: 'discountPercent' in p ? Number(p.discountPercent || 0) : 0,
+        size: 'size' in p ? String(p.size || '') : '',
         stock: p.stock,
         image,
         images: [image],

@@ -13,34 +13,26 @@ import { useEffect, useMemo, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
-type DentistDayCard = {
-  key: string;
-  dentist: Dentist;
+type ScheduleEntry = {
   day: string;
   hoursLabel: string;
 };
 
-function buildDayCards(dentists: Dentist[]): DentistDayCard[] {
-  const cards: DentistDayCard[] = [];
-  for (const dentist of dentists) {
-    const dayHours = dayHoursFromDentist(dentist);
-    const days =
-      dentist.days?.length > 0
-        ? dentist.days
-        : Object.keys(dentist.schedule || {}).filter((day) => dayHours[day]);
-    for (const day of days) {
-      const range = dayHours[day];
-      cards.push({
-        key: `${dentist.id}-${day}`,
-        dentist,
-        day,
-        hoursLabel: range
-          ? formatHoursRange(range.start, range.end)
-          : dentist.hours || "—",
-      });
-    }
-  }
-  return cards;
+function dentistScheduleEntries(dentist: Dentist): ScheduleEntry[] {
+  const dayHours = dayHoursFromDentist(dentist);
+  const days =
+    dentist.days?.length > 0
+      ? dentist.days
+      : Object.keys(dentist.schedule || {}).filter((day) => dayHours[day]);
+  return days.map((day) => {
+    const range = dayHours[day];
+    return {
+      day,
+      hoursLabel: range
+        ? formatHoursRange(range.start, range.end)
+        : dentist.hours || "—",
+    };
+  });
 }
 
 export function DentistList({ basePath }: { basePath: DentalBasePath }) {
@@ -92,18 +84,35 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
     });
   }, [dentists, query, specialtyFilter]);
 
-  const dayCards = useMemo(() => buildDayCards(filteredDentists), [filteredDentists]);
-
   const title = specialtyMeta ? `پزشکان ${specialtyMeta.name}` : "دندانپزشکان مرکز";
   const subtitle = specialtyMeta
-    ? `نوبت‌های تخصص ${specialtyMeta.name} — هر روز جدا`
-    : "هر روز حضور به‌صورت کارت جدا نمایش داده می‌شود";
+    ? `انتخاب پزشک تخصص ${specialtyMeta.name} — روز و ساعت در مرحله بعد`
+    : "هر پزشک یک‌بار نمایش داده می‌شود؛ روز و ساعت حضور در مرحله رزرو مشخص می‌شود";
   const emptyTitle = specialtyFilter ? "پزشک این تخصص ثبت نشده" : "دندانپزشکی یافت نشد.";
 
-  function renderCard(card: DentistDayCard) {
-    const { dentist: d, day, hoursLabel } = card;
+  function renderSchedule(entries: ScheduleEntry[]) {
+    if (!entries.length) {
+      return <p className="text-xs text-slate-500">روزی ثبت نشده</p>;
+    }
+    return (
+      <div className="mt-2 space-y-1">
+        {entries.map(({ day, hoursLabel }) => (
+          <div
+            key={day}
+            className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600"
+          >
+            <span className="font-medium text-slate-700">📅 {day}</span>
+            <span>🕐 {hoursLabel}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  function renderDentistCard(d: Dentist) {
     const inactive = d.status === "inactive";
-    const href = `${bookingBase}?doctor=${d.id}&day=${encodeURIComponent(day)}`;
+    const href = `${bookingBase}?doctor=${d.id}`;
+    const schedule = dentistScheduleEntries(d);
 
     if (app) {
       const inner = (
@@ -123,17 +132,14 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
             {d.medicalCouncilNumber ? (
               <p className="text-[0.7rem] text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
             ) : null}
-            <div className="mt-1 flex flex-wrap gap-2 text-[0.7rem] text-slate-500">
-              <span>📅 {day}</span>
-              <span>🕐 {hoursLabel}</span>
-            </div>
+            {renderSchedule(schedule)}
           </div>
         </>
       );
       if (inactive) {
         return (
           <div
-            key={card.key}
+            key={d.id}
             className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 opacity-55"
           >
             {inner}
@@ -142,7 +148,7 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
       }
       return (
         <Link
-          key={card.key}
+          key={d.id}
           href={href}
           className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-white p-3 transition hover:border-teal-500"
         >
@@ -153,7 +159,7 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
 
     return (
       <Card
-        key={card.key}
+        key={d.id}
         hover={!inactive}
         className={cn(
           "flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:p-5",
@@ -171,20 +177,11 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
             <h3 className="font-bold text-slate-900">{d.name}</h3>
             <Badge status={d.status} />
           </div>
-          <p className="mb-2 text-sm font-medium text-teal-700">{d.specialty}</p>
+          <p className="mb-1 text-sm font-medium text-teal-700">{d.specialty}</p>
           {d.medicalCouncilNumber ? (
-            <p className="mb-2 text-xs text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
+            <p className="mb-1 text-xs text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
           ) : null}
-          <div className="flex flex-wrap gap-3 text-xs text-slate-600">
-            <span className="flex items-center gap-1">
-              <span aria-hidden="true">📅</span>
-              {day}
-            </span>
-            <span className="flex items-center gap-1">
-              <span aria-hidden="true">🕐</span>
-              {hoursLabel}
-            </span>
-          </div>
+          {renderSchedule(schedule)}
         </div>
         {inactive ? (
           <Button className="w-full shrink-0 text-sm sm:w-auto" disabled>
@@ -222,10 +219,10 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
         <div className="space-y-3">
           {loading ? (
             <p className="py-8 text-center text-sm text-slate-500">در حال بارگذاری...</p>
-          ) : dayCards.length === 0 ? (
+          ) : filteredDentists.length === 0 ? (
             <EmptyState title={emptyTitle} />
           ) : (
-            dayCards.map(renderCard)
+            filteredDentists.map(renderDentistCard)
           )}
         </div>
       </div>
@@ -271,10 +268,10 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
       <div className="space-y-4">
         {loading ? (
           <p className="py-12 text-center text-slate-500">در حال بارگذاری...</p>
-        ) : dayCards.length === 0 ? (
+        ) : filteredDentists.length === 0 ? (
           <EmptyState title={emptyTitle} />
         ) : (
-          dayCards.map(renderCard)
+          filteredDentists.map(renderDentistCard)
         )}
       </div>
     </div>

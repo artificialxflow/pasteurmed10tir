@@ -4,6 +4,7 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField, MultiImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { slugifyFa } from "@/lib/content/product-slug";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
@@ -29,6 +30,8 @@ type ProductDraft = {
   categoryId: number;
   price: string;
   priceNum: number;
+  discountPercent: number;
+  size: string;
   stock: number;
   images: string[];
   active: boolean;
@@ -58,6 +61,8 @@ function emptyDraft(categoryId: number): ProductDraft {
     categoryId,
     price: "",
     priceNum: 0,
+    discountPercent: 0,
+    size: "",
     stock: 10,
     images: [],
     active: true,
@@ -80,6 +85,8 @@ function productToDraft(product: Product, categories: ProductCategory[]): Produc
     categoryId,
     price: product.price,
     priceNum: product.priceNum,
+    discountPercent: product.discountPercent ?? 0,
+    size: product.size || "",
     stock: product.stock,
     images: product.images?.length ? product.images : product.image ? [product.image] : [],
     active: product.active !== false,
@@ -101,6 +108,8 @@ function draftToProduct(draft: ProductDraft, categories: ProductCategory[]): Pro
     categorySlug: category?.slug || null,
     price: draft.price.trim(),
     priceNum: draft.priceNum || parsePrice(draft.price),
+    discountPercent: draft.discountPercent,
+    size: draft.size.trim(),
     stock: draft.stock,
     image: images[0],
     images,
@@ -377,12 +386,11 @@ export default function AdminShopPage() {
               placeholder="slug — پیش‌فرض همان نام دسته"
               required
             />
-            <FormInput
-              type="number"
-              value={String(categoryDraft.sortOrder)}
-              onChange={(e) =>
-                setCategoryDraft({ ...categoryDraft, sortOrder: parseInt(e.target.value, 10) || 0 })
-              }
+            <DraftNumberInput
+              min={0}
+              max={9999}
+              value={categoryDraft.sortOrder}
+              onCommit={(sortOrder) => setCategoryDraft({ ...categoryDraft, sortOrder })}
               placeholder="ترتیب"
             />
             <FormSelect
@@ -419,7 +427,7 @@ export default function AdminShopPage() {
           </Button>
         </div>
         <AdminTable
-          headers={["محصول", "دسته", "قیمت", "موجودی", "وضعیت", "عملیات"]}
+          headers={["محصول", "دسته", "قیمت", "درصد", "سایز", "موجودی", "وضعیت", "عملیات"]}
           empty="محصولی ثبت نشده است."
         >
           {products.map((p) => (
@@ -444,6 +452,12 @@ export default function AdminShopPage() {
                 {p.categoryId ? categoryNameById.get(p.categoryId) || p.category : p.category}
               </td>
               <td className="px-4 py-3">{p.price} تومان</td>
+              <td className="px-4 py-3">
+                {(p.discountPercent ?? 0) > 0
+                  ? `${Number(p.discountPercent).toLocaleString("fa-IR")}٪`
+                  : "—"}
+              </td>
+              <td className="px-4 py-3">{p.size?.trim() || "—"}</td>
               <td className="px-4 py-3">
                 <AdminBadge
                   tone={
@@ -501,13 +515,17 @@ export default function AdminShopPage() {
               placeholder="slug"
               required
             />
-            <FormInput
-              value={draft.price}
-              onChange={(e) =>
-                updateDraft({ price: e.target.value, priceNum: parsePrice(e.target.value) })
+            <DraftNumberInput
+              min={0}
+              max={999_999_999}
+              value={draft.priceNum}
+              onCommit={(priceNum) =>
+                updateDraft({
+                  priceNum,
+                  price: priceNum > 0 ? priceNum.toLocaleString("fa-IR") : draft.price,
+                })
               }
-              placeholder="قیمت نمایشی مثل ۱,۲۰۰,۰۰۰"
-              required
+              placeholder="قیمت (تومان)"
             />
             <FormSelect
               value={String(draft.categoryId)}
@@ -519,16 +537,30 @@ export default function AdminShopPage() {
                 </option>
               ))}
             </FormSelect>
-            <FormInput
-              type="number"
-              value={String(draft.stock)}
-              onChange={(e) => updateDraft({ stock: parseInt(e.target.value, 10) || 0 })}
-              placeholder="موجودی"
+            <DraftNumberInput
+              min={0}
+              max={100}
+              value={draft.discountPercent}
+              onCommit={(discountPercent) => updateDraft({ discountPercent })}
+              placeholder="درصد تخفیف"
             />
             <FormInput
-              type="number"
-              value={String(draft.sortOrder)}
-              onChange={(e) => updateDraft({ sortOrder: parseInt(e.target.value, 10) || 0 })}
+              value={draft.size}
+              onChange={(e) => updateDraft({ size: e.target.value })}
+              placeholder="سایز — مثلاً L یا ۱۰×۲۰"
+            />
+            <DraftNumberInput
+              min={0}
+              max={999_999}
+              value={draft.stock}
+              onCommit={(stock) => updateDraft({ stock })}
+              placeholder="موجودی"
+            />
+            <DraftNumberInput
+              min={0}
+              max={9999}
+              value={draft.sortOrder}
+              onCommit={(sortOrder) => updateDraft({ sortOrder })}
               placeholder="ترتیب نمایش"
             />
             <FormSelect

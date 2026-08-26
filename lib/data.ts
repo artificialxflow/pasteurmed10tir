@@ -136,6 +136,10 @@ export interface Product {
   categorySlug?: string | null;
   price: string;
   priceNum: number;
+  /** درصد تخفیف محصول (اختیاری) */
+  discountPercent?: number;
+  /** سایز / ابعاد محصول */
+  size?: string;
   stock: number;
   image: string;
   images?: string[];

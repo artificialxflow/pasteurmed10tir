@@ -4,6 +4,7 @@ import {
 } from '@/lib/commerce/payment-service';
 import { createShopOrderRecord } from '@/lib/commerce/shop-order-service';
 import { createBookingRecord } from '@/lib/operations/booking-service';
+import { createConsultationRecord } from '@/lib/operations/consultation-service';
 import type { PendingPayment } from '@/lib/payment';
 
 export async function completePendingPaymentOnServer(pending: PendingPayment) {
@@ -90,6 +91,33 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
     return { installmentPlan: plan };
   }
 
+  if (pending.kind === 'consultation') {
+    const consultation = await createConsultationRecord({
+      type: pending.type ? String(pending.type) : undefined,
+      typeLabel: pending.typeLabel ? String(pending.typeLabel) : undefined,
+      category: pending.category ? String(pending.category) : undefined,
+      categoryLabel: pending.categoryLabel ? String(pending.categoryLabel) : undefined,
+      specialty: pending.specialty ? String(pending.specialty) : undefined,
+      specialtyLabel: pending.specialtyLabel ? String(pending.specialtyLabel) : undefined,
+      doctorId:
+        pending.doctorId != null && pending.doctorId !== ''
+          ? (typeof pending.doctorId === 'number' || typeof pending.doctorId === 'string'
+              ? pending.doctorId
+              : String(pending.doctorId))
+          : undefined,
+      doctorName: pending.doctorName ? String(pending.doctorName) : undefined,
+      patientName: pending.patientName ? String(pending.patientName) : undefined,
+      patientPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      description: pending.description ? String(pending.description) : undefined,
+      estimate: pending.estimate ? String(pending.estimate) : undefined,
+      amount: Number(pending.amount || 0),
+      priceSource: pending.priceSource ? String(pending.priceSource) : undefined,
+      hasImage: Boolean(pending.hasImage),
+      onlineInsuranceCovered: Boolean(pending.onlineInsuranceCovered),
+    });
+    return { consultation };
+  }
+
   throw new Error('نوع پرداخت پشتیبانی نمی‌شود.');
 }
 
@@ -109,6 +137,8 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
       successPath = app ? '/app/shop/success' : '/shop/success';
     } else if (pending.planId === 'shop-vip') {
       successPath = app ? '/app/shop-catalog?vip=paid' : '/shop/catalog?vip=paid';
+    } else if (pending.kind === 'consultation') {
+      successPath = app ? '/app/consultation/success' : '/consultation/success';
     } else {
       successPath = app ? '/app/dental/success' : '/dental/success';
     }
@@ -118,6 +148,8 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
     failPath = app ? '/app/installments?paid=0' : '/installments?paid=0';
   } else if (pending.kind === 'shop-order') {
     failPath = app ? '/app/shop/failed' : '/shop/failed';
+  } else if (pending.kind === 'consultation') {
+    failPath = app ? '/app/consultation/failed' : '/consultation/failed';
   } else {
     failPath = `${basePath}/failed`;
   }
@@ -140,6 +172,9 @@ export function buildPaymentDescription(pending: PendingPayment): string {
   if (pending.kind === 'installment') {
     const idx = pending.installmentIndex != null ? ` #${pending.installmentIndex}` : '';
     return `پرداخت قسط${idx} — ${pending.patientName || 'بیمار'}`;
+  }
+  if (pending.kind === 'consultation') {
+    return `مشاوره و ویزیت — ${pending.patientName || 'بیمار'}`;
   }
   return 'پرداخت پاستور پلاس';
 }

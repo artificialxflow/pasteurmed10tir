@@ -2,7 +2,8 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { Card, FormLabel } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { formatToman } from "@/lib/membership";
@@ -115,61 +116,61 @@ export default function AdminWalletsPage() {
         <Card hover={false} className="grid gap-4 border-cyan-100 p-5 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <FormLabel>سقف بیمار عادی (تومان)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={0}
+              max={999_999_999_999}
               value={settings.regularCap}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, regularCap: Number(e.target.value) }))
-              }
+              onCommit={(regularCap) => setSettings((prev) => ({ ...prev, regularCap }))}
             />
           </div>
           <div>
             <FormLabel>سقف VIP عضویت (تومان)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={0}
+              max={999_999_999_999}
               value={settings.membershipVipCap}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, membershipVipCap: Number(e.target.value) }))
+              onCommit={(membershipVipCap) =>
+                setSettings((prev) => ({ ...prev, membershipVipCap }))
               }
             />
           </div>
           <div>
             <FormLabel>سقف VIP تجهیزات (تومان)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={0}
+              max={999_999_999_999}
               value={settings.shopVipCap}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, shopVipCap: Number(e.target.value) }))
-              }
+              onCommit={(shopVipCap) => setSettings((prev) => ({ ...prev, shopVipCap }))}
             />
           </div>
           <div>
             <FormLabel>فرجه (ماه)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={0}
+              max={24}
               value={settings.graceMonths}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, graceMonths: Number(e.target.value) }))
-              }
+              onCommit={(graceMonths) => setSettings((prev) => ({ ...prev, graceMonths }))}
             />
           </div>
           <div>
             <FormLabel>حداقل اقساط (ماه)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={1}
+              max={60}
               value={settings.installmentMin}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, installmentMin: Number(e.target.value) }))
+              onCommit={(installmentMin) =>
+                setSettings((prev) => ({ ...prev, installmentMin }))
               }
             />
           </div>
           <div>
             <FormLabel>حداکثر اقساط (ماه)</FormLabel>
-            <FormInput
-              type="number"
+            <DraftNumberInput
+              min={1}
+              max={60}
               value={settings.installmentMax}
-              onChange={(e) =>
-                setSettings((prev) => ({ ...prev, installmentMax: Number(e.target.value) }))
+              onCommit={(installmentMax) =>
+                setSettings((prev) => ({ ...prev, installmentMax }))
               }
             />
           </div>

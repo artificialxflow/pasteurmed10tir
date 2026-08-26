@@ -10,6 +10,7 @@ type DraftNumberInputProps = {
   max?: number;
   disabled?: boolean;
   className?: string;
+  placeholder?: string;
   /** Allow empty while focused; on blur empty reverts to previous value. */
   allowEmptyWhileEditing?: boolean;
 };
@@ -22,6 +23,7 @@ export function DraftNumberInput({
   max = 100,
   disabled = false,
   className,
+  placeholder,
   allowEmptyWhileEditing = true,
 }: DraftNumberInputProps) {
   const [focused, setFocused] = useState(false);
@@ -37,6 +39,7 @@ export function DraftNumberInput({
       inputMode="numeric"
       disabled={disabled}
       className={className}
+      placeholder={placeholder}
       value={focused ? text : String(value)}
       onFocus={() => {
         setFocused(true);

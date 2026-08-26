@@ -126,6 +126,14 @@ export function ShopProductDetail({
               ? `${product.stock.toLocaleString("fa-IR")} عدد موجود`
               : "ناموجود"}
           </p>
+          {product.size?.trim() ? (
+            <p className="mt-2 text-sm text-slate-600">سایز: {product.size}</p>
+          ) : null}
+          {(product.discountPercent ?? 0) > 0 ? (
+            <p className="mt-1 text-sm text-amber-700">
+              تخفیف محصول: {Number(product.discountPercent).toLocaleString("fa-IR")}٪
+            </p>
+          ) : null}
           {product.description ? (
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-600">
               {product.description}

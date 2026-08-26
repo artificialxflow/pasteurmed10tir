@@ -177,20 +177,22 @@ model ProductCategory {
 }
 
 model Product {
-  id          Int              @id
-  name        String
-  slug        String           @unique
-  description String           @default("")
-  category    String
-  categoryId  Int?
-  categoryRel ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  price       String
-  priceNum    Int
-  stock       Int              @default(0)
-  image       String
-  images      String[]         @default([])
-  active      Boolean          @default(true)
-  sortOrder   Int              @default(0)
+  id              Int              @id
+  name            String
+  slug            String           @unique
+  description     String           @default("")
+  category        String
+  categoryId      Int?
+  categoryRel     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  price           String
+  priceNum        Int
+  discountPercent Int              @default(0)
+  size            String           @default("")
+  stock           Int              @default(0)
+  image           String
+  images          String[]         @default([])
+  active          Boolean          @default(true)
+  sortOrder       Int              @default(0)
 }
 
 model BaseInsurance {

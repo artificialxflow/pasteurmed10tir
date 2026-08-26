@@ -3,7 +3,7 @@
  */
 import { PasteurStorage } from './storage';
 
-export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip' | 'shop-order';
+export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip' | 'shop-order' | 'consultation';
 
 export type PendingPaymentBase = {
   kind?: PendingPaymentKind | string;
@@ -64,11 +64,30 @@ export type PendingShopOrderPayment = PendingPaymentBase & {
   orderId?: string;
 };
 
+export type PendingConsultationPayment = PendingPaymentBase & {
+  kind: 'consultation';
+  type?: string;
+  typeLabel?: string;
+  category?: string;
+  categoryLabel?: string;
+  specialty?: string;
+  specialtyLabel?: string;
+  doctorId?: string | number;
+  doctorName?: string;
+  description?: string;
+  estimate?: string;
+  priceSource?: string;
+  hasImage?: boolean;
+  onlineInsuranceCovered?: boolean;
+  paymentLabel?: string;
+};
+
 export type PendingPayment =
   | PendingBookingPayment
   | PendingMembershipPayment
   | PendingShopVipPayment
   | PendingShopOrderPayment
+  | PendingConsultationPayment
   | PendingPaymentBase;
 
 export type CompletedPayment = PendingPayment & {
@@ -95,6 +114,7 @@ export const PaymentFlow = {
     if (pending?.kind === 'shop-order') return app ? '/app/shop/cart' : '/shop/cart';
     if (pending?.planId === 'shop-vip') return app ? '/app/shop-vip' : '/shop/vip';
     if (pending?.kind === 'membership') return app ? '/app/dental/membership' : '/dental/membership';
+    if (pending?.kind === 'consultation') return app ? '/app/consultation' : '/consultation';
     return app ? '/app/dental/general' : '/dental/general';
   },
 
@@ -107,6 +127,9 @@ export const PaymentFlow = {
       return this.isAppContext(pathname)
         ? '/app/shop-catalog?vip=paid'
         : '/shop/catalog?vip=paid';
+    }
+    if (pending?.kind === 'consultation') {
+      return this.isAppContext(pathname) ? '/app/consultation/success' : '/consultation/success';
     }
     return this.isAppContext(pathname) ? '/app/dental/success' : '/dental/success';
   },

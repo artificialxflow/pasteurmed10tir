@@ -15,9 +15,11 @@ import {
   loadConsultationPricing,
 } from "@/lib/consultationPrice";
 import { fetchPublic } from "@/lib/content/client";
-import { postClubPointsApi } from "@/lib/club/client";
-import { createConsultationApi, fetchPatientOps } from "@/lib/operations/client";
+import { fetchPatientOps } from "@/lib/operations/client";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
+import { type PendingConsultationPayment } from "@/lib/payment";
+import { ROUTES } from "@/lib/routes";
+import { PasteurStorage } from "@/lib/storage";
 import {
   isPatientApproved,
   payableFromFranchise,
@@ -25,12 +27,14 @@ import {
   type PatientProfile,
 } from "@/lib/patient";
 import { cn, formatPrice } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 const TYPE_IDS = ["text", "image", "video", "phone"] as const;
 
 export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const requestedType = searchParams.get("type");
   const requestedCategory = searchParams.get("category");
@@ -60,7 +64,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [onlineInsurance, setOnlineInsurance] = useState(false);
   const [hasComplementary, setHasComplementary] = useState(false);
   const [patientApproved, setPatientApproved] = useState(false);
@@ -145,49 +149,47 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       categoryId: category,
     });
 
-    void createConsultationApi({
+    let payableAmount = pricing.amount;
+    let paymentLabel = "مبلغ مشاوره یا ویزیت";
+    if (onlineInsurance && patientApproved) {
+      payableAmount = payableFromFranchise(pricing.amount, franchisePercent);
+      paymentLabel = `فرانشیز ${franchisePercent.toLocaleString("fa-IR")}٪ از هزینه ویزیت`;
+    }
+
+    if (payableAmount < 100) {
+      setSubmitError("مبلغ پرداخت نامعتبر است.");
+      return;
+    }
+
+    const pending: PendingConsultationPayment = {
+      kind: "consultation",
       type: selectedType,
       typeLabel: type?.label,
       category,
       categoryLabel: cat?.label,
-      specialty: selectedSpecialty?.id || null,
-      specialtyLabel: selectedSpecialty?.name || null,
-      doctorId: selectedDoctor?.id || null,
-      doctorName: selectedDoctor?.name || null,
-      name,
-      phone,
-      description,
+      specialty: selectedSpecialty?.id || undefined,
+      specialtyLabel: selectedSpecialty?.name || undefined,
+      doctorId: selectedDoctor?.id,
+      doctorName: selectedDoctor?.name || undefined,
+      patientName: name.trim(),
+      patientPhone: phone.trim(),
+      description: description.trim(),
       estimate: pricing.label,
-      amount: pricing.amount,
+      amount: payableAmount,
       priceSource: pricing.source,
       hasImage: Boolean(imagePreview),
       onlineInsuranceCovered: onlineInsurance,
-    })
-      .then(() => postClubPointsApi(phone, 20, "مشاوره و ویزیت"))
-      .then(() => setSubmitted(true))
-      .catch(() => setSubmitted(false));
-  }
+      paymentLabel,
+      returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
+      successTo:
+        variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
+    };
 
-  if (submitted) {
-    return (
-      <Card
-        hover={false}
-        className={cn(
-          "border-green-200 bg-green-50 p-6 text-center",
-          variant === "app" && "mt-2",
-        )}
-      >
-        <p className="text-2xl">✅</p>
-        <p className="mt-2 font-bold text-green-800">
-          {variant === "app" ? "درخواست ثبت شد" : "درخواست شما ثبت شد!"}
-        </p>
-        <p className="mt-2 text-sm text-slate-600">
-          {variant === "app"
-            ? "کارشناسان ظرف ۶ ساعت پاسخ می‌دهند."
-            : "کارشناسان ما ظرف ۶ ساعت برای هماهنگی مشاوره یا ویزیت پاسخ می‌دهند."}
-        </p>
-        <p className="mt-3 text-xs font-bold text-teal-700">+۲۰ امتیاز باشگاه ثبت شد</p>
-      </Card>
+    PasteurStorage.initPatientDomainIfNeeded();
+    PasteurStorage.setPendingPayment(pending);
+    setSubmitError("");
+    router.push(
+      variant === "app" ? ROUTES.app.consultationConfirm : ROUTES.web.consultationConfirm,
     );
   }
 
@@ -439,8 +441,9 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       </Card>
 
       <Button type="submit" variant="primary" className="w-full">
-        {variant === "app" ? "ثبت درخواست" : "ثبت درخواست مشاوره و ویزیت"}
+        {variant === "app" ? "ادامه و پرداخت" : "ادامه به پرداخت"}
       </Button>
+      {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
     </form>
   );
 }
