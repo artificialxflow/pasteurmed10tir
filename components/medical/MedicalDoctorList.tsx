@@ -97,6 +97,11 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
                     <Badge status={doctor.status} />
                   </div>
                   <p className="text-sm text-teal-700">{doctor.specialty}</p>
+                  {doctor.medicalCouncilNumber ? (
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      نظام پزشکی: {doctor.medicalCouncilNumber}
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-xs text-slate-500">
                     روزهای حضور: {doctor.days.join("، ")}
                   </p>

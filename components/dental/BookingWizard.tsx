@@ -336,6 +336,9 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           <div>
             <p className="font-bold text-slate-900">{doctor.name}</p>
             <p className="text-sm text-teal-700">{doctor.specialty}</p>
+            {doctor.medicalCouncilNumber ? (
+              <p className="text-xs text-slate-500">نظام پزشکی: {doctor.medicalCouncilNumber}</p>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -410,6 +413,9 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                     <Badge status={d.status} />
                   </div>
                   <p className="text-sm text-teal-700">{d.specialty}</p>
+                  {d.medicalCouncilNumber ? (
+                    <p className="text-xs text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
+                  ) : null}
                 </div>
               </button>
             );

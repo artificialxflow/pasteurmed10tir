@@ -230,6 +230,11 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
                       <Badge status={doctor.status} />
                     </div>
                     <p className="text-sm text-teal-700">{doctor.specialty}</p>
+                    {doctor.medicalCouncilNumber ? (
+                      <p className="text-xs text-slate-500">
+                        نظام پزشکی: {doctor.medicalCouncilNumber}
+                      </p>
+                    ) : null}
                   </div>
                 </button>
               );
@@ -259,6 +264,11 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
             <div>
               <p className="font-bold text-slate-900">{selectedDoctor.name}</p>
               <p className="text-sm text-teal-700">{selectedDoctor.specialty}</p>
+              {selectedDoctor.medicalCouncilNumber ? (
+                <p className="text-xs text-slate-500">
+                  نظام پزشکی: {selectedDoctor.medicalCouncilNumber}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>

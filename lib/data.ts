@@ -75,6 +75,8 @@ export interface Dentist {
   name: string;
   specialty: string;
   specialtyId?: string;
+  /** شماره نظام پزشکی */
+  medicalCouncilNumber?: string;
   image: string;
   days: string[];
   hours: string;
@@ -87,6 +89,8 @@ export interface Physician {
   name: string;
   specialty: string;
   specialtyId?: string;
+  /** شماره نظام پزشکی */
+  medicalCouncilNumber?: string;
   image: string;
   days: string[];
   status: DoctorStatus;

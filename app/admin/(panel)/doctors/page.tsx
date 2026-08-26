@@ -167,12 +167,14 @@ export default function AdminDoctorsPage() {
 
   const [dentistName, setDentistName] = useState("");
   const [dentistSpecialtyId, setDentistSpecialtyId] = useState("general");
+  const [dentistMedicalCouncilNumber, setDentistMedicalCouncilNumber] = useState("");
   const [dentistDayHours, setDentistDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [dentistImage, setDentistImage] = useState("");
 
   const [physicianName, setPhysicianName] = useState("");
   const [physicianSpecialty, setPhysicianSpecialty] = useState("");
   const [physicianSpecialtyId, setPhysicianSpecialtyId] = useState("");
+  const [physicianMedicalCouncilNumber, setPhysicianMedicalCouncilNumber] = useState("");
   const [physicianDays, setPhysicianDays] = useState("");
   const [physicianImage, setPhysicianImage] = useState("");
 
@@ -216,6 +218,7 @@ export default function AdminDoctorsPage() {
           name: String(patched.name || "").trim(),
           specialty: String(patched.specialty || "").trim() || "دندانپزشکی عمومی",
           specialtyId: patched.specialtyId?.trim() || "general",
+          medicalCouncilNumber: String(patched.medicalCouncilNumber || "").trim(),
           image: String(patched.image || "").trim() || "/uploads/placeholder.svg",
           status: patched.status || "available",
         };
@@ -236,6 +239,7 @@ export default function AdminDoctorsPage() {
         name: String(item.name || "").trim(),
         specialty: String(item.specialty || "").trim(),
         specialtyId: item.specialtyId?.trim() || undefined,
+        medicalCouncilNumber: String(item.medicalCouncilNumber || "").trim(),
         image: String(item.image || "").trim() || "/uploads/placeholder.svg",
         days: Array.isArray(item.days) ? item.days.filter(Boolean) : parseDaysInput(String(item.days || "")),
         status: item.status || "available",
@@ -274,6 +278,7 @@ export default function AdminDoctorsPage() {
           name: dentistName.trim(),
           specialty: specialtyLabel(specialtyId),
           specialtyId,
+          medicalCouncilNumber: dentistMedicalCouncilNumber.trim(),
           image: dentistImage.trim() || "/uploads/placeholder.svg",
           days: summary.days,
           hours: summary.hours,
@@ -286,6 +291,7 @@ export default function AdminDoctorsPage() {
       .then(() => {
         setDentistName("");
         setDentistSpecialtyId("general");
+        setDentistMedicalCouncilNumber("");
         setDentistDayHours(defaultNewDayHours());
         setDentistImage("");
         setError("");
@@ -302,6 +308,7 @@ export default function AdminDoctorsPage() {
         name: physicianName.trim(),
         specialty: physicianSpecialty.trim(),
         specialtyId: physicianSpecialtyId.trim() || undefined,
+        medicalCouncilNumber: physicianMedicalCouncilNumber.trim(),
         image: physicianImage.trim() || "/uploads/placeholder.svg",
         days: parseDaysInput(physicianDays),
         status: "available",
@@ -311,6 +318,7 @@ export default function AdminDoctorsPage() {
         setPhysicianName("");
         setPhysicianSpecialty("");
         setPhysicianSpecialtyId("");
+        setPhysicianMedicalCouncilNumber("");
         setPhysicianDays("");
         setPhysicianImage("");
       })
@@ -397,6 +405,12 @@ export default function AdminDoctorsPage() {
                   </option>
                 ))}
               </FormSelect>
+              <FormInput
+                value={dentistMedicalCouncilNumber}
+                onChange={(e) => setDentistMedicalCouncilNumber(e.target.value)}
+                placeholder="شماره نظام پزشکی"
+                className="md:col-span-2"
+              />
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
                 <p className="mb-2 text-sm font-bold text-slate-800">روز و ساعت حضور (جدا برای هر روز)</p>
                 <DayHoursEditor value={dentistDayHours} onChange={setDentistDayHours} />
@@ -425,7 +439,7 @@ export default function AdminDoctorsPage() {
           </div>
 
           <AdminTable
-            headers={["نام", "تخصص", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
+            headers={["نام", "تخصص", "نظام پزشکی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="دندانپزشکی ثبت نشده."
           >
             {dentists.map((d, index) => (
@@ -455,6 +469,14 @@ export default function AdminDoctorsPage() {
                       </option>
                     ))}
                   </FormSelect>
+                </td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="text-xs"
+                    value={d.medicalCouncilNumber || ""}
+                    onChange={(e) => updateDentist(index, { medicalCouncilNumber: e.target.value })}
+                    placeholder="شماره نظام"
+                  />
                 </td>
                 <td className="px-4 py-3">
                   <DayHoursEditor
@@ -523,6 +545,11 @@ export default function AdminDoctorsPage() {
                 placeholder="شناسه تخصص (اختیاری) — cardiology"
               />
               <FormInput
+                value={physicianMedicalCouncilNumber}
+                onChange={(e) => setPhysicianMedicalCouncilNumber(e.target.value)}
+                placeholder="شماره نظام پزشکی"
+              />
+              <FormInput
                 value={physicianDays}
                 onChange={(e) => setPhysicianDays(e.target.value)}
                 placeholder="روزها — شنبه، سه‌شنبه"
@@ -550,7 +577,7 @@ export default function AdminDoctorsPage() {
             </div>
           </div>
 
-          <AdminTable headers={["نام", "تخصص", "شناسه", "روزها", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
+          <AdminTable headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "روزها", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
             {physicians.map((p, index) => (
               <tr key={p.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
@@ -572,6 +599,14 @@ export default function AdminDoctorsPage() {
                     className="text-xs"
                     value={p.specialtyId || ""}
                     onChange={(e) => updatePhysician(index, { specialtyId: e.target.value })}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="text-xs"
+                    value={p.medicalCouncilNumber || ""}
+                    onChange={(e) => updatePhysician(index, { medicalCouncilNumber: e.target.value })}
+                    placeholder="شماره نظام"
                   />
                 </td>
                 <td className="px-4 py-3">

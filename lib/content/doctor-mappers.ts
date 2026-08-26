@@ -27,6 +27,7 @@ export function mapDentist(row: DbDentist): DentistRecord {
     name: row.name,
     specialty: row.specialty,
     specialtyId: row.specialtyId ?? undefined,
+    medicalCouncilNumber: row.medicalCouncilNumber?.trim() || undefined,
     image: row.image,
     days: [...row.days],
     hours: row.hours || '',
@@ -51,6 +52,7 @@ export function mapPhysician(row: DbPhysician) {
     name: row.name,
     specialty: row.specialty,
     specialtyId: row.specialtyId ?? undefined,
+    medicalCouncilNumber: row.medicalCouncilNumber?.trim() || undefined,
     image: row.image,
     days: [...row.days],
     status: (row.status as 'available' | 'busy' | 'inactive') || 'available',
@@ -215,6 +217,7 @@ export type DentistBody = {
   name: string;
   specialty: string;
   specialtyId?: string;
+  medicalCouncilNumber?: string;
   image: string;
   days: string[];
   hours?: string;
@@ -246,6 +249,7 @@ export function normalizeDentistBody(raw: DentistBody): DentistBody {
     name: String(raw.name || '').trim(),
     specialty: String(raw.specialty || '').trim() || 'دندانپزشکی عمومی',
     specialtyId: raw.specialtyId?.trim() || undefined,
+    medicalCouncilNumber: String(raw.medicalCouncilNumber || '').trim() || undefined,
     image: String(raw.image || '/uploads/placeholder.svg').trim(),
     days,
     hours,
@@ -264,6 +268,7 @@ export function dentistToDbInput(
     name: normalized.name,
     specialty: normalized.specialty,
     specialtyId: normalized.specialtyId || null,
+    medicalCouncilNumber: normalized.medicalCouncilNumber || '',
     image: normalized.image,
     days: normalized.days,
     hours: normalized.hours || '',
@@ -278,6 +283,7 @@ export type PhysicianBody = {
   name: string;
   specialty: string;
   specialtyId?: string;
+  medicalCouncilNumber?: string;
   image: string;
   days: string[];
   status?: string;
@@ -289,6 +295,7 @@ export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
     name: String(raw.name || '').trim(),
     specialty: String(raw.specialty || '').trim(),
     specialtyId: raw.specialtyId?.trim() || undefined,
+    medicalCouncilNumber: String(raw.medicalCouncilNumber || '').trim() || undefined,
     image: String(raw.image || '/uploads/placeholder.svg').trim(),
     days: Array.isArray(raw.days) ? raw.days.map(String).filter(Boolean) : [],
     status: String(raw.status || 'available'),

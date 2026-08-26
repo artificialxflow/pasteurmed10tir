@@ -120,6 +120,9 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
               <Badge status={d.status} />
             </div>
             <p className="text-xs text-teal-700">{d.specialty}</p>
+            {d.medicalCouncilNumber ? (
+              <p className="text-[0.7rem] text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
+            ) : null}
             <div className="mt-1 flex flex-wrap gap-2 text-[0.7rem] text-slate-500">
               <span>📅 {day}</span>
               <span>🕐 {hoursLabel}</span>
@@ -169,6 +172,9 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
             <Badge status={d.status} />
           </div>
           <p className="mb-2 text-sm font-medium text-teal-700">{d.specialty}</p>
+          {d.medicalCouncilNumber ? (
+            <p className="mb-2 text-xs text-slate-500">نظام پزشکی: {d.medicalCouncilNumber}</p>
+          ) : null}
           <div className="flex flex-wrap gap-3 text-xs text-slate-600">
             <span className="flex items-center gap-1">
               <span aria-hidden="true">📅</span>

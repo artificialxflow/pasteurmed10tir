@@ -38,6 +38,7 @@ export async function PUT(request: Request) {
           name: item.name,
           specialty: item.specialty,
           specialtyId: item.specialtyId || null,
+          medicalCouncilNumber: item.medicalCouncilNumber || '',
           image: item.image,
           days: item.days,
           status: item.status || 'available',
