@@ -140,7 +140,7 @@ async function main() {
         name: p.name,
         specialty: p.specialty,
         specialtyId: p.specialtyId ?? null,
-        medicalCouncilNumber: p.medicalCouncilNumber || '',
+        medicalCouncilNumber: '',
         image: await localizeImageUrl(p.image, cache),
         days: [...p.days],
         status: p.status,
