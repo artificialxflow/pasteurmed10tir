@@ -6,6 +6,10 @@ import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import type { Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { checkBookingSlot } from "@/lib/operations/client";
+import {
+  buildAvailableBookingDates,
+  formatBookingDateLabel,
+} from "@/lib/operations/booking-dates";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatHour, normalizePhone } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -20,6 +24,7 @@ type BookingState = {
   type: BookingType;
   doctorId: number | null;
   day: string | null;
+  appointmentDate: string | null;
   timeValue: number | null;
   timeLabel: string | null;
   patientName: string;
@@ -31,7 +36,7 @@ type BookingState = {
 const STEP_LABELS: Record<StepName, string> = {
   type: "نوع خدمت",
   doctor: "انتخاب پزشک",
-  day: "روز حضور",
+  day: "تاریخ نوبت",
   time: "انتخاب زمان",
   info: "اطلاعات مراجع",
 };
@@ -40,6 +45,7 @@ const INITIAL_STATE: BookingState = {
   type: null,
   doctorId: null,
   day: null,
+  appointmentDate: null,
   timeValue: null,
   timeLabel: null,
   patientName: "",
@@ -105,19 +111,19 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   }, []);
 
   useEffect(() => {
-    if (!state.doctorId || !state.day || !state.type) {
+    if (!state.doctorId || !state.appointmentDate || !state.type) {
       setOccupiedSlots([]);
       return;
     }
     const q = new URLSearchParams({
       doctorId: String(state.doctorId),
-      day: state.day,
+      date: state.appointmentDate,
       type: state.type,
     });
     void fetchPublic<{ timeValues: string[] }>(`/api/operations/bookings/occupied?${q}`)
       .then((data) => setOccupiedSlots(data.timeValues))
       .catch(() => setOccupiedSlots([]));
-  }, [state.doctorId, state.day, state.type]);
+  }, [state.doctorId, state.appointmentDate, state.type]);
 
   useEffect(() => {
     const saved = PasteurStorage.getPendingBooking() as
@@ -154,6 +160,10 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
+  const dateOptions = useMemo(() => {
+    if (!doctor) return [];
+    return buildAvailableBookingDates(Object.keys(doctor.schedule || {}), 8);
+  }, [doctor]);
 
   const stepHint = STEP_LABELS[currentStep] || "";
 
@@ -198,8 +208,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("لطفاً پزشک را انتخاب کنید.");
       return;
     }
-    if (currentStep === "day" && !state.day) {
-      showError("لطفاً روز حضور را انتخاب کنید.");
+    if (currentStep === "day" && !state.appointmentDate) {
+      showError("لطفاً تاریخ نوبت را انتخاب کنید.");
       return;
     }
     if (currentStep === "time") {
@@ -208,8 +218,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         showStep("type");
         return;
       }
-      if (!doctor || !state.day) {
-        showError("پزشک یا روز حضور مشخص نیست. دوباره از لیست انتخاب کنید.");
+      if (!doctor || !state.appointmentDate || !state.day) {
+        showError("پزشک یا تاریخ نوبت مشخص نیست. دوباره از لیست انتخاب کنید.");
         return;
       }
       const daySchedule = doctor.schedule?.[state.day];
@@ -248,14 +258,14 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("شماره موبایل معتبر وارد کنید.");
       return;
     }
-    if (!doctor || !state.type || !state.day || state.timeValue == null) {
+    if (!doctor || !state.type || !state.appointmentDate || !state.day || state.timeValue == null) {
       showError("اطلاعات رزرو ناقص است.");
       return;
     }
 
     void checkBookingSlot({
       doctorId: doctor.id,
-      day: state.day,
+      appointmentDate: state.appointmentDate,
       type: state.type,
       timeValue: state.timeValue,
     })
@@ -273,6 +283,10 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           type: state.type,
           typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
           day: state.day,
+          appointmentDate: state.appointmentDate,
+          appointmentDateLabel: state.appointmentDate
+            ? formatBookingDateLabel(state.appointmentDate)
+            : undefined,
           timeValue: state.timeValue,
           timeLabel: state.timeLabel,
           patientName,
@@ -389,6 +403,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                   updateState({
                     doctorId: d.id,
                     day: null,
+                    appointmentDate: null,
                     timeValue: null,
                     timeLabel: null,
                   })
@@ -425,30 +440,40 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
       {currentStep === "day" ? (
         <div>
-          <p className="mb-4 text-sm text-slate-600">روز حضور پزشک را انتخاب کنید:</p>
-          <div className="flex flex-wrap gap-3">
-            {!doctor || !Object.keys(doctor.schedule || {}).length ? (
-              <p className="w-full py-6 text-center text-slate-500">
-                روزی برای این پزشک ثبت نشده است.
+          <p className="mb-4 text-sm text-slate-600">
+            تاریخ نوبت را انتخاب کنید (تا ۸ هفته آینده):
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {!doctor || !dateOptions.length ? (
+              <p className="col-span-full py-6 text-center text-slate-500">
+                {dentistsLoading
+                  ? "در حال بارگذاری برنامه پزشک…"
+                  : "تاریخی برای این پزشک ثبت نشده است."}
               </p>
             ) : (
-              Object.keys(doctor.schedule).map((day) => {
-                const selected = state.day === day;
+              dateOptions.map((opt) => {
+                const selected = state.appointmentDate === opt.isoDate;
                 return (
                   <button
-                    key={day}
+                    key={opt.isoDate}
                     type="button"
                     onClick={() =>
-                      updateState({ day, timeValue: null, timeLabel: null })
+                      updateState({
+                        appointmentDate: opt.isoDate,
+                        day: opt.weekday,
+                        timeValue: null,
+                        timeLabel: null,
+                      })
                     }
                     className={cn(
-                      "min-w-[100px] rounded-2xl border px-5 py-4 text-center font-semibold transition",
+                      "rounded-2xl border px-4 py-3 text-right transition",
                       selected
                         ? "border-teal-500 bg-teal-50 ring-2 ring-teal-200"
                         : "border-sky-200 bg-white hover:border-teal-400",
                     )}
                   >
-                    📅 {day}
+                    <span className="block text-xs text-slate-500">{opt.weekday}</span>
+                    <span className="block font-semibold text-slate-900">{opt.label}</span>
                   </button>
                 );
               })
@@ -484,8 +509,12 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">روز:</span>
-                <span className="font-semibold">{state.day || "—"}</span>
+                <span className="text-slate-500">تاریخ:</span>
+                <span className="font-semibold">
+                  {state.appointmentDate
+                    ? formatBookingDateLabel(state.appointmentDate)
+                    : state.day || "—"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">زمان:</span>
@@ -733,15 +762,16 @@ function TimeStep({
       </div>
     );
   }
-  if (!state.day) {
-    return <p className="py-6 text-center text-sm text-slate-500">روز حضور مشخص نیست.</p>;
+  if (!state.appointmentDate || !state.day) {
+    return <p className="py-6 text-center text-sm text-slate-500">تاریخ نوبت مشخص نیست.</p>;
   }
 
   const daySchedule = doctor.schedule?.[state.day];
   if (!daySchedule) {
     return (
       <p className="py-6 text-center text-slate-500">
-        برنامه‌ای برای روز «{state.day}» وجود ندارد. روز دیگری انتخاب کنید.
+        برنامه‌ای برای «{formatBookingDateLabel(state.appointmentDate)}» وجود ندارد. تاریخ دیگری
+        انتخاب کنید.
       </p>
     );
   }
@@ -754,13 +784,17 @@ function TimeStep({
   if (!hasSlots) {
     return (
       <p className="py-6 text-center text-slate-500">
-        ساعتی برای این روز ثبت نشده است. با مرکز تماس بگیرید یا روز دیگری را انتخاب کنید.
+        ساعتی برای این تاریخ ثبت نشده است. با مرکز تماس بگیرید یا تاریخ دیگری را انتخاب کنید.
       </p>
     );
   }
 
   return (
     <div>
+      <p className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+        تاریخ انتخاب‌شده:{" "}
+        <strong>{formatBookingDateLabel(state.appointmentDate)}</strong>
+      </p>
       <p className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-700">
         {isVisit
           ? "ویزیت: یک ساعت کلی انتخاب کنید (مثلاً ساعت ۱۴)"

@@ -34,5 +34,9 @@ export async function POST(_request: Request, context: RouteContext) {
     },
   });
 
-  return NextResponse.json({ item: mapMembershipApplication(updated) });
+  return NextResponse.json({
+    item: mapMembershipApplication(updated),
+    zohalStatus: result.zohalStatus,
+    summary: result.summary,
+  });
 }

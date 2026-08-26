@@ -6,14 +6,22 @@ import {
 } from '@/lib/content/doctor-mappers';
 import { assignIntIds } from '@/lib/content/int-id';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { prismaRouteError } from '@/lib/prisma/route-error';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   const auth = await requireAdmin('doctors');
   if (auth.error) return auth.error;
-  const items = await prisma.physician.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
-  return NextResponse.json({ items: items.map(mapPhysician) });
+
+  try {
+    const items = await prisma.physician.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    });
+    return NextResponse.json({ items: items.map(mapPhysician) });
+  } catch (e) {
+    return prismaRouteError(e, 'admin/physicians GET');
+  }
 }
 
 export async function PUT(request: Request) {
@@ -29,24 +37,27 @@ export async function PUT(request: Request) {
       .filter((item) => item.name),
   );
 
-  await prisma.$transaction([
-    prisma.physician.deleteMany(),
-    ...cleaned.map((item, index) =>
-      prisma.physician.create({
-        data: {
-          id: item.id,
-          name: item.name,
-          specialty: item.specialty,
-          specialtyId: item.specialtyId || null,
-          medicalCouncilNumber: item.medicalCouncilNumber || '',
-          image: item.image,
-          days: item.days,
-          status: item.status || 'available',
-          sortOrder: index,
-        },
-      }),
-    ),
-  ]);
-
-  return NextResponse.json({ items: cleaned });
+  try {
+    await prisma.$transaction([
+      prisma.physician.deleteMany(),
+      ...cleaned.map((item, index) =>
+        prisma.physician.create({
+          data: {
+            id: item.id,
+            name: item.name,
+            specialty: item.specialty,
+            specialtyId: item.specialtyId || null,
+            medicalCouncilNumber: item.medicalCouncilNumber || '',
+            image: item.image,
+            days: item.days,
+            status: item.status || 'available',
+            sortOrder: index,
+          },
+        }),
+      ),
+    ]);
+    return NextResponse.json({ items: cleaned });
+  } catch (e) {
+    return prismaRouteError(e, 'admin/physicians PUT');
+  }
 }

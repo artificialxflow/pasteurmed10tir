@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
+import { zohalCreditStatusLabel } from "@/lib/zohal/run-credit-check";
 import { useEffect, useState } from "react";
 
 type FacilityRequest = Record<string, unknown> & {
@@ -47,12 +48,7 @@ export default function AdminFacilitiesPage() {
   }
 
   function zohalLabel(r: FacilityRequest) {
-    const s = r.zohalStatus;
-    if (s === "passed") return "زحل: تأیید";
-    if (s === "failed") return "زحل: رد شاهکار";
-    if (s === "error") return "زحل: خطا";
-    if (s === "skipped") return "زحل: —";
-    return s ? `زحل: ${s}` : "زحل: —";
+    return zohalCreditStatusLabel(r.zohalStatus);
   }
 
   return (
@@ -84,7 +80,21 @@ export default function AdminFacilitiesPage() {
             <td className="px-4 py-3 font-mono text-xs">{String(r.phone || "—")}</td>
             <td className="px-4 py-3 font-mono text-xs">{String(r.nationalId || "—")}</td>
             <td className="px-4 py-3">{String(r.amount || "—")}</td>
-            <td className="px-4 py-3 text-xs font-medium">{zohalLabel(r)}</td>
+            <td className="px-4 py-3 text-xs font-medium">
+              <span
+                className={
+                  r.zohalStatus === "partial"
+                    ? "text-amber-700"
+                    : r.zohalStatus === "failed" || r.zohalStatus === "error"
+                      ? "text-rose-700"
+                      : r.zohalStatus === "passed"
+                        ? "text-teal-700"
+                        : ""
+                }
+              >
+                {zohalLabel(r)}
+              </span>
+            </td>
             <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
               {r.zohalSummary || "—"}
             </td>

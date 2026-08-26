@@ -16,6 +16,7 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       type: pending.type ? String(pending.type) : undefined,
       typeLabel: pending.typeLabel ? String(pending.typeLabel) : undefined,
       day: pending.day ? String(pending.day) : undefined,
+      appointmentDate: pending.appointmentDate ? String(pending.appointmentDate) : undefined,
       timeValue:
         pending.timeValue != null
           ? (pending.timeValue as string | number)

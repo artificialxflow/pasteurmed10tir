@@ -11,6 +11,7 @@ import type {
   WalletTransaction,
 } from '@prisma/client';
 import type { WalletKind } from '@/lib/wallet';
+import { buildZohalCreditSummary } from '@/lib/zohal/run-credit-check';
 
 export function generateCommerceId(): string {
   return `PST-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -59,19 +60,7 @@ export function mapMembershipApplication(row: MembershipApplication) {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     const p = payload as Record<string, unknown>;
     if (typeof p.shahkarMatched === 'boolean') zohalShahkarMatched = p.shahkarMatched;
-    const parts: string[] = [];
-    if (typeof p.shahkarMatched === 'boolean') {
-      parts.push(p.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
-    }
-    if (p.credit && typeof p.credit === 'object') {
-      const c = p.credit as Record<string, unknown>;
-      parts.push(c.error ? 'اعتبار: خطا' : 'اعتبار: دریافت شد');
-    }
-    if (p.bouncedCheque && typeof p.bouncedCheque === 'object') {
-      const b = p.bouncedCheque as Record<string, unknown>;
-      parts.push(b.error ? 'چک: خطا' : 'چک: دریافت شد');
-    }
-    if (parts.length) zohalSummary = parts.join(' · ');
+    zohalSummary = buildZohalCreditSummary(p);
   }
 
   return {
@@ -195,21 +184,7 @@ export function mapFacilityRequest(row: FacilityRequest) {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     const p = payload as Record<string, unknown>;
     if (typeof p.shahkarMatched === 'boolean') zohalShahkarMatched = p.shahkarMatched;
-    const parts: string[] = [];
-    if (typeof p.shahkarMatched === 'boolean') {
-      parts.push(p.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
-    }
-    if (p.credit && typeof p.credit === 'object') {
-      const c = p.credit as Record<string, unknown>;
-      if (c.error) parts.push(`اعتبار: خطا`);
-      else parts.push('اعتبار: دریافت شد');
-    }
-    if (p.bouncedCheque && typeof p.bouncedCheque === 'object') {
-      const b = p.bouncedCheque as Record<string, unknown>;
-      if (b.error) parts.push('چک: خطا');
-      else parts.push('چک: دریافت شد');
-    }
-    if (parts.length) zohalSummary = parts.join(' · ');
+    zohalSummary = buildZohalCreditSummary(p);
   }
 
   return {

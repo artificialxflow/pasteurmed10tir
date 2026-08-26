@@ -89,6 +89,12 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
     ? `انتخاب پزشک تخصص ${specialtyMeta.name} — روز و ساعت در مرحله بعد`
     : "هر پزشک یک‌بار نمایش داده می‌شود؛ روز و ساعت حضور در مرحله رزرو مشخص می‌شود";
   const emptyTitle = specialtyFilter ? "پزشک این تخصص ثبت نشده" : "دندانپزشکی یافت نشد.";
+  const emptyDesc =
+    specialtyFilter && dentists.length > 0
+      ? "برای این تخصص هنوز پزشکی در سیستم ثبت نشده. می‌توانید از لیست عمومی دندانپزشکان رزرو کنید."
+      : dentists.length === 0 && !loading
+        ? "لیست خالی است — پس از بارگذاری، دندانپزشکان پیش‌فرض به‌صورت خودکار بازیابی می‌شوند. صفحه را یک‌بار رفرش کنید."
+        : undefined;
 
   function renderSchedule(entries: ScheduleEntry[]) {
     if (!entries.length) {
@@ -220,7 +226,14 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
           {loading ? (
             <p className="py-8 text-center text-sm text-slate-500">در حال بارگذاری...</p>
           ) : filteredDentists.length === 0 ? (
-            <EmptyState title={emptyTitle} />
+            <div className="space-y-3">
+              <EmptyState title={emptyTitle} desc={emptyDesc} />
+              {specialtyFilter ? (
+                <Button href={`${basePath}/general`} variant="outline" className="w-full">
+                  مشاهده همه دندانپزشکان
+                </Button>
+              ) : null}
+            </div>
           ) : (
             filteredDentists.map(renderDentistCard)
           )}
@@ -269,7 +282,19 @@ export function DentistList({ basePath }: { basePath: DentalBasePath }) {
         {loading ? (
           <p className="py-12 text-center text-slate-500">در حال بارگذاری...</p>
         ) : filteredDentists.length === 0 ? (
-          <EmptyState title={emptyTitle} />
+          <div className="space-y-4">
+            <EmptyState title={emptyTitle} desc={emptyDesc} />
+            {specialtyFilter ? (
+              <div className="text-center">
+                <Link
+                  href={`${basePath}/general`}
+                  className="inline-flex rounded-full border-2 border-teal-500 px-5 py-2 text-sm font-bold text-teal-700 hover:bg-teal-50"
+                >
+                  مشاهده همه دندانپزشکان
+                </Link>
+              </div>
+            ) : null}
+          </div>
         ) : (
           filteredDentists.map(renderDentistCard)
         )}

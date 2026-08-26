@@ -13,6 +13,10 @@ import { ROUTES } from "@/lib/routes";
 import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
 import { type Member } from "@/lib/storage";
+import {
+  zohalCreditCheckNotice,
+  zohalCreditStatusLabel,
+} from "@/lib/zohal/run-credit-check";
 import { useEffect, useState } from "react";
 
 type Application = Record<string, unknown> & {
@@ -44,6 +48,7 @@ export default function AdminMembershipsPage() {
   const [plans, setPlans] = useState<Membership[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function reload() {
@@ -97,12 +102,7 @@ export default function AdminMembershipsPage() {
   }
 
   function zohalLabel(app: Application) {
-    const s = app.zohalStatus;
-    if (s === "passed") return "زحل: تأیید";
-    if (s === "failed") return "زحل: رد شاهکار";
-    if (s === "error") return "زحل: خطا";
-    if (s === "skipped") return "زحل: —";
-    return s ? `زحل: ${s}` : "زحل: —";
+    return zohalCreditStatusLabel(app.zohalStatus);
   }
 
   function runCreditCheck(id: string | undefined) {
@@ -110,11 +110,22 @@ export default function AdminMembershipsPage() {
     setBusyId(id);
     setError("");
     setSuccess("");
-    void postAdminCommerce<{ item: Application }>(
+    setNotice("");
+    void postAdminCommerce<{ item: Application; zohalStatus?: string }>(
       `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}/credit-check`,
     )
-      .then(() => reload())
-      .then(() => setSuccess("استعلام اعتبار انجام شد."))
+      .then((data) => {
+        const status = data.zohalStatus;
+        const message = zohalCreditCheckNotice(status);
+        if (status === "passed" || status === "skipped") {
+          setSuccess(message);
+        } else if (status === "partial") {
+          setNotice(message);
+        } else {
+          setError(message);
+        }
+        return reload();
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusyId(null));
   }
@@ -137,6 +148,11 @@ export default function AdminMembershipsPage() {
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {notice ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {notice}
+        </p>
+      ) : null}
       {success ? <p className="text-sm text-teal-700">{success}</p> : null}
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -174,7 +190,21 @@ export default function AdminMembershipsPage() {
                   : "—"}
               </td>
               <td className="px-4 py-3">{String(app.planTitle || "—")}</td>
-              <td className="px-4 py-3 text-xs font-medium">{zohalLabel(app)}</td>
+              <td className="px-4 py-3 text-xs font-medium">
+                <span
+                  className={
+                    app.zohalStatus === "partial"
+                      ? "text-amber-700"
+                      : app.zohalStatus === "failed" || app.zohalStatus === "error"
+                        ? "text-rose-700"
+                        : app.zohalStatus === "passed"
+                          ? "text-teal-700"
+                          : ""
+                  }
+                >
+                  {zohalLabel(app)}
+                </span>
+              </td>
               <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
                 {app.zohalSummary || "—"}
               </td>

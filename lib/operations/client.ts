@@ -78,16 +78,21 @@ export async function deleteAdminOps<T = { ok: boolean }>(path: string): Promise
 
 export async function checkBookingSlot(params: {
   doctorId: string | number;
-  day: string;
   type: string;
   timeValue: string | number;
+  appointmentDate?: string;
+  day?: string;
 }): Promise<boolean> {
   const q = new URLSearchParams({
     doctorId: String(params.doctorId),
-    day: params.day,
     type: params.type,
     timeValue: String(params.timeValue),
   });
+  if (params.appointmentDate) {
+    q.set('date', params.appointmentDate);
+  } else if (params.day) {
+    q.set('day', params.day);
+  }
   const data = await fetchPublicOps<{ taken: boolean }>(
     `/api/operations/bookings/slot-check?${q}`,
   );

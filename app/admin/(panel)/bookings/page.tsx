@@ -178,7 +178,17 @@ export default function AdminBookingsPage() {
             <td className="px-4 py-3">{b.doctorName}</td>
             <td className="px-4 py-3">{b.typeLabel}</td>
             <td className="px-4 py-3">
-              {b.day} — {b.timeLabel}
+              {b.dateLabel ? (
+                <>
+                  {b.dateLabel}
+                  <br />
+                  <span className="text-xs text-slate-500">{b.timeLabel}</span>
+                </>
+              ) : (
+                <>
+                  {b.day} — {b.timeLabel}
+                </>
+              )}
             </td>
             <td className="px-4 py-3">
               {(b.amount || 0).toLocaleString("fa-IR")}

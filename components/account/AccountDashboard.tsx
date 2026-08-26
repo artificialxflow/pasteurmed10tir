@@ -331,8 +331,7 @@ export function AccountDashboard({
                         {String(b.doctorName || "رزرو دندانپزشکی")}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {String(b.day || "—")} {String(b.timeLabel || "")} ·{" "}
-                        {new Date(String(b.createdAt)).toLocaleDateString("fa-IR")}
+                        {String(b.dateLabel || b.day || "—")} {String(b.timeLabel || "")}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">

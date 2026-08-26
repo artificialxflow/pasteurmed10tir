@@ -65,7 +65,7 @@ function PaymentSummary({
         <SummaryRow label="موبایل:" value={String(pending.patientPhone || "—")} />
         <SummaryRow label="پزشک:" value={String(pending.doctorName || "—")} />
         <SummaryRow label="نوع خدمت:" value={String(pending.typeLabel || "—")} />
-        <SummaryRow label="روز:" value={String(pending.day || "—")} />
+        <SummaryRow label="تاریخ نوبت:" value={String(pending.appointmentDateLabel || pending.day || "—")} />
         <SummaryRow label="زمان:" value={String(pending.timeLabel || "—")} />
         {pending.referralCode ? (
           <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />

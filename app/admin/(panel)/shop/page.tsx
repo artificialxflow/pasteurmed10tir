@@ -165,7 +165,9 @@ export default function AdminShopPage() {
   const revenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const activeProducts = products.filter((p) => p.active !== false);
   const lowStock = activeProducts.filter((product) => Number(product.stock || 0) <= 3).length;
-  const pending = orders.filter((order) => order.status === "pending").length;
+  const awaitingFulfillment = orders.filter(
+    (order) => order.status === "pending" || order.status === "confirmed",
+  ).length;
 
   const defaultCategoryId = categories[0]?.id || 0;
 
@@ -295,9 +297,9 @@ export default function AdminShopPage() {
         </Card>
         <Card hover={false} className="p-5">
           <p className="text-2xl font-bold text-amber-700">
-            {pending.toLocaleString("fa-IR")}
+            {awaitingFulfillment.toLocaleString("fa-IR")}
           </p>
-          <p className="text-sm text-slate-500">سفارش در انتظار</p>
+          <p className="text-sm text-slate-500">سفارش در انتظار ارسال</p>
         </Card>
         <Card hover={false} className="p-5">
           <p className="text-2xl font-bold text-rose-700">{formatPrice(revenue)}</p>

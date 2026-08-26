@@ -12,6 +12,14 @@ export function SpecialtyList({ basePath }: { basePath: DentalBasePath }) {
   if (app) {
     return (
       <div className="grid grid-cols-1 gap-3">
+        <Link
+          href={generalHref}
+          className="rounded-2xl border border-teal-300 bg-teal-50 p-4 transition hover:border-teal-500"
+        >
+          <span className="text-2xl">🦷</span>
+          <p className="mt-2 text-sm font-bold text-slate-900">دندانپزشکی عمومی</p>
+          <p className="mt-1 text-xs text-slate-500">لیست همه دندانپزشکان و رزرو نوبت</p>
+        </Link>
         {PASTEUR_DATA.dentalSpecialties.map((s) => (
           <Link
             key={s.id}
@@ -41,6 +49,17 @@ export function SpecialtyList({ basePath }: { basePath: DentalBasePath }) {
       </h1>
       <p className="mb-8 text-slate-600">تخصص مورد نظر را انتخاب کنید و نوبت رزرو کنید</p>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-teal-200 bg-teal-50/50 p-6 hover:border-teal-500">
+          <span className="text-3xl">🦷</span>
+          <h2 className="mt-3 text-lg font-bold">دندانپزشکی عمومی</h2>
+          <p className="mt-2 text-sm text-slate-600">لیست همه دندانپزشکان مرکز</p>
+          <Link
+            href={generalHref}
+            className="mt-4 inline-block text-sm font-semibold text-teal-700 hover:underline"
+          >
+            رزرو نوبت ←
+          </Link>
+        </Card>
         {PASTEUR_DATA.dentalSpecialties.map((s) => (
           <Card key={s.id} className="p-6 hover:border-teal-500">
             <span className="text-3xl">{s.emoji}</span>

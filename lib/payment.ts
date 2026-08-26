@@ -28,6 +28,8 @@ export type PendingBookingPayment = PendingPaymentBase & {
   type?: string;
   typeLabel?: string;
   day?: string;
+  appointmentDate?: string;
+  appointmentDateLabel?: string;
   timeValue?: string | number;
   timeLabel?: string;
 };

@@ -224,6 +224,13 @@ export default function AdminDoctorsPage() {
         };
       })
       .filter((item) => item.name && item.days.length > 0);
+    if (cleaned.length === 0) {
+      throw new Error(
+        next.filter((item) => item.name).length > 0
+          ? "هیچ دندانپزشکی با روز و ساعت معتبر برای ذخیره باقی نماند."
+          : "حداقل یک دندانپزشک با نام و برنامه حضور لازم است.",
+      );
+    }
     if (cleaned.length !== next.filter((item) => item.name).length) {
       throw new Error("برای هر دندانپزشک حداقل یک روز با ساعت معتبر لازم است.");
     }

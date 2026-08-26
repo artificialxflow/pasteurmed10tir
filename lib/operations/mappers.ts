@@ -42,6 +42,7 @@ export function mapBooking(row: Booking) {
     status: row.status,
     createdAt: row.createdAt.toISOString(),
     dateLabel: row.dateLabel ?? undefined,
+    appointmentAt: row.appointmentAt?.toISOString(),
     referralCode: row.referralCode ?? undefined,
   };
 }
