@@ -130,6 +130,7 @@ export type MyActivityResponse = {
   bookings: Array<Record<string, unknown>>;
   insuranceInquiries: Array<Record<string, unknown>>;
   consultations: Array<Record<string, unknown>>;
+  shopOrders: Array<Record<string, unknown>>;
 };
 
 export async function fetchMyActivityApi() {

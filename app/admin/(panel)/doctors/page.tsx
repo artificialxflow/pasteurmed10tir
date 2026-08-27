@@ -65,6 +65,17 @@ function applyDayHoursToDentist(dentist: Dentist, dayHours: DayHoursMap): Dentis
   };
 }
 
+function applyDayHoursToPhysician(physician: Physician, dayHours: DayHoursMap): Physician {
+  const schedule = buildScheduleFromDayHours(dayHours);
+  const summary = summarizeDayHours(dayHours);
+  return {
+    ...physician,
+    schedule,
+    days: summary.days,
+    hours: summary.hours,
+  };
+}
+
 function validateDayHours(dayHours: DayHoursMap): string | null {
   for (const day of DENTIST_WEEKDAYS) {
     const range = dayHours[day];
@@ -175,7 +186,7 @@ export default function AdminDoctorsPage() {
   const [physicianSpecialty, setPhysicianSpecialty] = useState("");
   const [physicianSpecialtyId, setPhysicianSpecialtyId] = useState("");
   const [physicianMedicalCouncilNumber, setPhysicianMedicalCouncilNumber] = useState("");
-  const [physicianDays, setPhysicianDays] = useState("");
+  const [physicianDayHours, setPhysicianDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [physicianImage, setPhysicianImage] = useState("");
 
   const reloadDentists = useCallback(async () => {
@@ -194,7 +205,17 @@ export default function AdminDoctorsPage() {
 
   const reloadPhysicians = useCallback(async () => {
     const data = await fetchAdmin<{ items: Physician[] }>("/api/admin/content/physicians");
-    setPhysicians(data.items.map((p) => ({ ...p, days: [...(p.days || [])] })));
+    setPhysicians(
+      data.items.map((p) => {
+        const withCopies = {
+          ...p,
+          days: [...(p.days || [])],
+          schedule: { ...(p.schedule || {}) },
+          hours: p.hours || "",
+        };
+        return applyDayHoursToPhysician(withCopies, dayHoursFromDentist(withCopies));
+      }),
+    );
   }, []);
 
   useEffect(() => {
@@ -240,18 +261,28 @@ export default function AdminDoctorsPage() {
 
   async function persistPhysicians(next: Physician[]) {
     const cleaned = next
-      .map((item) => ({
-        ...item,
-        id: Number(item.id) || nextIntId(next),
-        name: String(item.name || "").trim(),
-        specialty: String(item.specialty || "").trim(),
-        specialtyId: item.specialtyId?.trim() || undefined,
-        medicalCouncilNumber: String(item.medicalCouncilNumber || "").trim(),
-        image: String(item.image || "").trim() || "/uploads/placeholder.svg",
-        days: Array.isArray(item.days) ? item.days.filter(Boolean) : parseDaysInput(String(item.days || "")),
-        status: item.status || "available",
-      }))
-      .filter((item) => item.name && item.specialty);
+      .map((item) => {
+        const dayHours = dayHoursFromDentist(item);
+        const patched = applyDayHoursToPhysician(item, dayHours);
+        return {
+          ...patched,
+          id: Number(patched.id) || nextIntId(next),
+          name: String(patched.name || "").trim(),
+          specialty: String(patched.specialty || "").trim(),
+          specialtyId: patched.specialtyId?.trim() || undefined,
+          medicalCouncilNumber: String(patched.medicalCouncilNumber || "").trim(),
+          image: String(patched.image || "").trim() || "/uploads/placeholder.svg",
+          days: patched.days,
+          hours: patched.hours || "",
+          schedule: patched.schedule || {},
+          dayHours,
+          status: patched.status || "available",
+        };
+      })
+      .filter((item) => item.name && item.specialty && item.days.length > 0);
+    if (!cleaned.length) {
+      throw new Error("حداقل یک متخصص با نام، تخصص و برنامه حضور لازم است.");
+    }
     await putAdmin("/api/admin/content/physicians", { items: cleaned });
     await reloadPhysicians();
   }
@@ -308,26 +339,42 @@ export default function AdminDoctorsPage() {
 
   function addPhysician(e: FormEvent) {
     e.preventDefault();
+    const summary = summarizeDayHours(physicianDayHours);
+    if (!summary.days.length) {
+      setError("حداقل یک روز حضور با ساعت از–تا انتخاب کنید.");
+      return;
+    }
+    const rangeError = validateDayHours(physicianDayHours);
+    if (rangeError) {
+      setError(rangeError);
+      return;
+    }
     void persistPhysicians([
       ...physicians,
-      {
-        id: nextIntId(physicians),
-        name: physicianName.trim(),
-        specialty: physicianSpecialty.trim(),
-        specialtyId: physicianSpecialtyId.trim() || undefined,
-        medicalCouncilNumber: physicianMedicalCouncilNumber.trim(),
-        image: physicianImage.trim() || "/uploads/placeholder.svg",
-        days: parseDaysInput(physicianDays),
-        status: "available",
-      },
+      applyDayHoursToPhysician(
+        {
+          id: nextIntId(physicians),
+          name: physicianName.trim(),
+          specialty: physicianSpecialty.trim(),
+          specialtyId: physicianSpecialtyId.trim() || undefined,
+          medicalCouncilNumber: physicianMedicalCouncilNumber.trim(),
+          image: physicianImage.trim() || "/uploads/placeholder.svg",
+          days: summary.days,
+          hours: summary.hours,
+          status: "available",
+          schedule: {},
+        },
+        physicianDayHours,
+      ),
     ])
       .then(() => {
         setPhysicianName("");
         setPhysicianSpecialty("");
         setPhysicianSpecialtyId("");
         setPhysicianMedicalCouncilNumber("");
-        setPhysicianDays("");
+        setPhysicianDayHours(defaultNewDayHours());
         setPhysicianImage("");
+        setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
   }
@@ -556,11 +603,10 @@ export default function AdminDoctorsPage() {
                 onChange={(e) => setPhysicianMedicalCouncilNumber(e.target.value)}
                 placeholder="شماره نظام پزشکی"
               />
-              <FormInput
-                value={physicianDays}
-                onChange={(e) => setPhysicianDays(e.target.value)}
-                placeholder="روزها — شنبه، سه‌شنبه"
-              />
+              <div className="md:col-span-2">
+                <p className="mb-2 text-xs font-bold text-slate-600">روز و ساعت حضور</p>
+                <DayHoursEditor value={physicianDayHours} onChange={setPhysicianDayHours} />
+              </div>
               <ImageUploadField value={physicianImage} onChange={setPhysicianImage} className="md:col-span-2" />
               <Button type="submit" className="md:col-span-2">
                 افزودن
@@ -584,7 +630,7 @@ export default function AdminDoctorsPage() {
             </div>
           </div>
 
-          <AdminTable headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "روزها", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
+          <AdminTable headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
             {physicians.map((p, index) => (
               <tr key={p.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
@@ -617,11 +663,12 @@ export default function AdminDoctorsPage() {
                   />
                 </td>
                 <td className="px-4 py-3">
-                  <FormInput
-                    className="text-xs"
-                    value={(p.days || []).join("، ")}
-                    onChange={(e) => updatePhysician(index, { days: parseDaysInput(e.target.value) })}
+                  <DayHoursEditor
+                    compact
+                    value={dayHoursFromDentist(p)}
+                    onChange={(dayHours) => updatePhysician(index, applyDayHoursToPhysician(p, dayHours))}
                   />
+                  <p className="mt-2 text-[0.7rem] text-slate-500">{p.hours}</p>
                 </td>
                 <td className="px-4 py-3">
                   <select

@@ -118,6 +118,12 @@ export function ConfirmConsultationPayment({ basePath }: { basePath: Consultatio
         {pending.doctorName ? (
           <SummaryRow label="پزشک:" value={String(pending.doctorName)} />
         ) : null}
+        {pending.preferredDateLabel || pending.preferredTimeLabel ? (
+          <SummaryRow
+            label="روز / ساعت:"
+            value={`${String(pending.preferredDateLabel || "")} ${String(pending.preferredTimeLabel || "")}`.trim()}
+          />
+        ) : null}
         <SummaryRow
           label={amountLabel}
           value={formatPrice(Number(pending.amount) || 0)}

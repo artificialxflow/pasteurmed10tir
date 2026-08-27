@@ -104,6 +104,7 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
                   ) : null}
                   <p className="mt-1 text-xs text-slate-500">
                     روزهای حضور: {doctor.days.join("، ")}
+                    {doctor.hours ? ` · ${doctor.hours}` : ""}
                   </p>
                 </div>
                 <span className="text-sm font-bold text-teal-700">انتخاب ←</span>

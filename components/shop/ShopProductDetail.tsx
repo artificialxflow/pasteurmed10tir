@@ -6,10 +6,16 @@ import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
 import { flashShopCartButton } from "@/lib/shop/cart-ui";
-import { productGallery, productThumbnail } from "@/lib/shop/product-display";
+import {
+  findProductVariants,
+  formatProductPercent,
+  productGallery,
+  productThumbnail,
+  resolveVariant,
+} from "@/lib/shop/product-display";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { shopRoutes, type ShopVariant } from "./types";
 
 export function ShopProductDetail({
@@ -21,24 +27,59 @@ export function ShopProductDetail({
 }) {
   const routes = shopRoutes(variant);
   const [product, setProduct] = useState<Product | null>(null);
+  const [variants, setVariants] = useState<Product[]>([]);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedPercent, setSelectedPercent] = useState(0);
   const [activeImage, setActiveImage] = useState("");
   const [error, setError] = useState("");
   const [snack, setSnack] = useState("");
   const isVip = ShopCart.getCustomerType() === "vip";
 
   useEffect(() => {
-    void fetchPublic<{ item: Product }>(`/api/content/products/${encodeURIComponent(slug)}`)
-      .then((data) => {
-        setProduct(data.item);
-        setActiveImage(productThumbnail(data.item));
-        ShopCart.setProductsCache([data.item]);
+    void Promise.all([
+      fetchPublic<{ item: Product }>(`/api/content/products/${encodeURIComponent(slug)}`),
+      fetchPublic<{ items: Product[] }>("/api/content/products"),
+    ])
+      .then(([detail, catalog]) => {
+        const item = detail.item;
+        const family = findProductVariants(catalog.items, item);
+        setVariants(family.length ? family : [item]);
+        setProduct(item);
+        setSelectedSize(String(item.size || "").trim());
+        setSelectedPercent(Number(item.discountPercent || 0));
+        setActiveImage(productThumbnail(item));
+        ShopCart.setProductsCache(family.length ? family : [item]);
         setError("");
       })
       .catch((e) => {
         setProduct(null);
+        setVariants([]);
         setError(e instanceof Error ? e.message : "محصول یافت نشد");
       });
   }, [slug]);
+
+  const sizes = useMemo(
+    () =>
+      Array.from(new Set(variants.map((v) => String(v.size || "").trim()).filter(Boolean))),
+    [variants],
+  );
+
+  const percentsForSize = useMemo(() => {
+    const pool = selectedSize
+      ? variants.filter((v) => String(v.size || "").trim() === selectedSize)
+      : variants;
+    return Array.from(
+      new Set(pool.map((v) => Number(v.discountPercent || 0)).filter((n) => n > 0)),
+    ).sort((a, b) => a - b);
+  }, [variants, selectedSize]);
+
+  useEffect(() => {
+    if (!variants.length) return;
+    const next = resolveVariant(variants, selectedSize, selectedPercent);
+    if (!next) return;
+    setProduct(next);
+    setActiveImage(productThumbnail(next));
+  }, [variants, selectedSize, selectedPercent]);
 
   function addToCart() {
     if (!product) return;
@@ -70,6 +111,7 @@ export function ShopProductDetail({
   const gallery = productGallery(product);
   const base = ShopCart.getProductPrice(product);
   const final = ShopCart.getFinalProductPrice(product);
+  const hasVariantUi = variants.length > 1 || sizes.length > 0 || percentsForSize.length > 0;
 
   const content = (
     <>
@@ -126,14 +168,75 @@ export function ShopProductDetail({
               ? `${product.stock.toLocaleString("fa-IR")} عدد موجود`
               : "ناموجود"}
           </p>
-          {product.size?.trim() ? (
-            <p className="mt-2 text-sm text-slate-600">سایز: {product.size}</p>
-          ) : null}
-          {(product.discountPercent ?? 0) > 0 ? (
-            <p className="mt-1 text-sm text-amber-700">
-              تخفیف محصول: {Number(product.discountPercent).toLocaleString("fa-IR")}٪
-            </p>
-          ) : null}
+
+          {hasVariantUi ? (
+            <div className="mt-4 space-y-4">
+              {sizes.length > 0 ? (
+                <div>
+                  <p className="mb-2 text-sm font-bold text-slate-800">سایز</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSize(size);
+                          const nextPercents = variants
+                            .filter((v) => String(v.size || "").trim() === size)
+                            .map((v) => Number(v.discountPercent || 0));
+                          if (!nextPercents.includes(selectedPercent)) {
+                            setSelectedPercent(nextPercents.find((n) => n > 0) || nextPercents[0] || 0);
+                          }
+                        }}
+                        className={cn(
+                          "rounded-xl border px-3 py-2 text-sm font-bold",
+                          selectedSize === size
+                            ? "border-teal-500 bg-teal-50 text-teal-900"
+                            : "border-slate-200 bg-white text-slate-700",
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {percentsForSize.length > 0 ? (
+                <div>
+                  <p className="mb-2 text-sm font-bold text-slate-800">درصد</p>
+                  <div className="flex flex-wrap gap-2">
+                    {percentsForSize.map((percent) => (
+                      <button
+                        key={percent}
+                        type="button"
+                        onClick={() => setSelectedPercent(percent)}
+                        className={cn(
+                          "rounded-xl border px-3 py-2 text-sm font-bold",
+                          selectedPercent === percent
+                            ? "border-teal-500 bg-teal-50 text-teal-900"
+                            : "border-slate-200 bg-white text-slate-700",
+                        )}
+                      >
+                        {formatProductPercent(percent)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              {product.size?.trim() ? (
+                <p className="mt-2 text-sm text-slate-600">سایز: {product.size}</p>
+              ) : null}
+              {(product.discountPercent ?? 0) > 0 ? (
+                <p className="mt-1 text-sm text-slate-600">
+                  درصد: {formatProductPercent(product.discountPercent)}
+                </p>
+              ) : null}
+            </>
+          )}
+
           {product.description ? (
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-600">
               {product.description}

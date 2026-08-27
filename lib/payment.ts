@@ -82,6 +82,10 @@ export type PendingConsultationPayment = PendingPaymentBase & {
   hasImage?: boolean;
   onlineInsuranceCovered?: boolean;
   paymentLabel?: string;
+  preferredDate?: string;
+  preferredDateLabel?: string;
+  preferredTime?: string;
+  preferredTimeLabel?: string;
 };
 
 export type PendingPayment =

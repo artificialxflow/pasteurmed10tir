@@ -14,6 +14,10 @@ import {
   getConsultationTypes,
   loadConsultationPricing,
 } from "@/lib/consultationPrice";
+import {
+  buildAvailableBookingDates,
+  formatBookingDateLabel,
+} from "@/lib/operations/booking-dates";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchPatientOps } from "@/lib/operations/client";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
@@ -69,6 +73,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [hasComplementary, setHasComplementary] = useState(false);
   const [patientApproved, setPatientApproved] = useState(false);
   const [franchisePercent, setFranchisePercent] = useState(10);
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
 
   const selectedSpecialty = useMemo(() => {
     if (!requestedSpecialty) return null;
@@ -95,6 +101,34 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     );
   }, [physicians, selectedSpecialty]);
   const showDoctorStep = requiresDoctor && !selectedDoctor;
+
+  const dateOptions = useMemo(() => {
+    if (!selectedDoctor?.days?.length) return [];
+    return buildAvailableBookingDates(selectedDoctor.days, 6);
+  }, [selectedDoctor]);
+
+  const timeOptions = useMemo(() => {
+    if (!selectedDoctor || !preferredDate) return [];
+    const option = dateOptions.find((d) => d.isoDate === preferredDate);
+    const weekday = option?.weekday;
+    const hours =
+      (weekday && selectedDoctor.schedule?.[weekday]?.visitHours) ||
+      Object.values(selectedDoctor.schedule || {})[0]?.visitHours ||
+      [];
+    return hours.map((h) => ({
+      value: String(h),
+      label: `${Number(h).toLocaleString("fa-IR")}:۰۰`,
+    }));
+  }, [selectedDoctor, preferredDate, dateOptions]);
+
+  useEffect(() => {
+    setPreferredDate("");
+    setPreferredTime("");
+  }, [doctorId]);
+
+  useEffect(() => {
+    setPreferredTime("");
+  }, [preferredDate]);
 
   useEffect(() => {
     void loadConsultationPricing().then(() => setConsultationTypes(getConsultationTypes()));
@@ -140,6 +174,12 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (requiresDoctor && !selectedDoctor) return;
+    if (selectedDoctor && dateOptions.length > 0) {
+      if (!preferredDate || !preferredTime) {
+        setSubmitError("روز و ساعت ویزیت را انتخاب کنید.");
+        return;
+      }
+    }
 
     const type = consultationTypes.find((item) => item.id === selectedType);
     const pricing = getConsultationPrice({
@@ -161,6 +201,11 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       return;
     }
 
+    const preferredDateLabel = preferredDate ? formatBookingDateLabel(preferredDate) : undefined;
+    const preferredTimeLabel = preferredTime
+      ? `${Number(preferredTime).toLocaleString("fa-IR")}:۰۰`
+      : undefined;
+
     const pending: PendingConsultationPayment = {
       kind: "consultation",
       type: selectedType,
@@ -180,6 +225,10 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       hasImage: Boolean(imagePreview),
       onlineInsuranceCovered: onlineInsurance,
       paymentLabel,
+      preferredDate: preferredDate || undefined,
+      preferredDateLabel,
+      preferredTime: preferredTime || undefined,
+      preferredTimeLabel,
       returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
       successTo:
         variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
@@ -237,6 +286,12 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
                         نظام پزشکی: {doctor.medicalCouncilNumber}
                       </p>
                     ) : null}
+                    {doctor.days?.length ? (
+                      <p className="mt-1 text-xs text-slate-500">
+                        روزهای حضور: {doctor.days.join("، ")}
+                        {doctor.hours ? ` · ${doctor.hours}` : ""}
+                      </p>
+                    ) : null}
                   </div>
                 </button>
               );
@@ -274,6 +329,66 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
             </div>
           </div>
         </div>
+      ) : null}
+
+      {selectedDoctor && dateOptions.length > 0 ? (
+        <div className="space-y-4">
+          <div>
+            <FormLabel>روز ویزیت</FormLabel>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {dateOptions.map((d) => (
+                <button
+                  key={d.isoDate}
+                  type="button"
+                  onClick={() => setPreferredDate(d.isoDate)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                    preferredDate === d.isoDate
+                      ? "border-teal-500 bg-teal-50 text-teal-900"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
+                  )}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {preferredDate ? (
+            <div>
+              <FormLabel>ساعت ویزیت</FormLabel>
+              {timeOptions.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {timeOptions.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setPreferredTime(t.value)}
+                      className={cn(
+                        "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                        preferredTime === t.value
+                          ? "border-teal-500 bg-teal-50 text-teal-900"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-amber-700">
+                  برای این روز ساعتی تعریف نشده است.
+                </p>
+              )}
+            </div>
+          ) : null}
+          <p className="text-xs text-slate-500">
+            پس از انتخاب روز و ساعت، کارشناسان هماهنگی نهایی را انجام می‌دهند.
+          </p>
+        </div>
+      ) : selectedDoctor ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          برنامه حضور این پزشک هنوز تنظیم نشده؛ کارشناسان ظرف چند ساعت هماهنگی می‌کنند.
+        </p>
       ) : null}
 
       <div>

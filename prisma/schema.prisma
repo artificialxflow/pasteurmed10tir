@@ -141,7 +141,9 @@ model Physician {
   medicalCouncilNumber String   @default("")
   image                String
   days                 String[]
+  hours                String   @default("")
   status               String   @default("available")
+  schedule             Json     @default("{}")
   sortOrder            Int      @default(0)
 }
 
@@ -348,6 +350,10 @@ model Consultation {
   priceSource            String?
   hasImage               Boolean            @default(false)
   onlineInsuranceCovered Boolean            @default(false)
+  preferredDate          String?
+  preferredDateLabel     String?
+  preferredTime          String?
+  preferredTimeLabel     String?
   status                 ConsultationStatus @default(pending)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt

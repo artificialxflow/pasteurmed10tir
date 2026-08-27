@@ -1,10 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
-import { postPublicOps } from "@/lib/operations/client";
-import { PasteurStorage } from "@/lib/storage";
-import { FormEvent, useMemo, useState } from "react";
+import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
+import { fetchPublicOps, postPublicOps } from "@/lib/operations/client";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+
+type PublicReview = {
+  id: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
+type ReviewStats = { avg: number; count: number };
 
 export function DoctorReviewForm({
   doctorId,
@@ -19,16 +27,35 @@ export function DoctorReviewForm({
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [reviews, setReviews] = useState<PublicReview[]>([]);
+  const [stats, setStats] = useState<ReviewStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = useMemo(() => {
-    const list = PasteurStorage.getApprovedReviewsForDoctor(doctorId);
-    if (!list.length) return null;
-    const avg = list.reduce((s, r) => s + r.rating, 0) / list.length;
-    return { avg, count: list.length };
-  }, [doctorId, done]);
+  const loadReviews = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchPublicOps<{
+        items: PublicReview[];
+        stats: ReviewStats;
+      }>(`/api/operations/reviews?doctorId=${encodeURIComponent(String(doctorId))}`);
+      setReviews(data.items);
+      setStats(data.stats.count > 0 ? data.stats : null);
+    } catch {
+      setReviews([]);
+      setStats(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [doctorId]);
+
+  useEffect(() => {
+    void loadReviews();
+  }, [loadReviews]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    setError("");
     void postPublicOps("/api/operations/reviews", {
       doctorId,
       doctorName,
@@ -36,17 +63,24 @@ export function DoctorReviewForm({
       phone: phone.trim(),
       rating: Number(rating) || 5,
       comment: comment.trim(),
-    }).then(() => {
-      setDone(true);
-      setComment("");
-    });
+    })
+      .then(() => {
+        setDone(true);
+        setComment("");
+        void loadReviews();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : "ثبت نظر ناموفق بود.");
+      });
   }
 
   return (
     <Card hover={false} className="mt-3 space-y-3 border-cyan-100 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-extrabold text-slate-900">نظر بیماران</p>
-        {stats ? (
+        {loading ? (
+          <p className="text-xs text-slate-500">در حال بارگذاری...</p>
+        ) : stats ? (
           <p className="text-xs font-bold text-amber-700">
             ★ {stats.avg.toFixed(1)} از {stats.count.toLocaleString("fa-IR")} نظر
           </p>
@@ -54,7 +88,29 @@ export function DoctorReviewForm({
           <p className="text-xs text-slate-500">هنوز نظری ثبت نشده</p>
         )}
       </div>
-      {done ? <p className="text-xs font-bold text-green-700">نظر شما ثبت شد.</p> : null}
+
+      {!loading && reviews.length > 0 ? (
+        <ul className="max-h-48 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-3">
+          {reviews.map((review) => (
+            <li key={review.id} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+              <p className="text-xs font-bold text-amber-700">
+                {"★".repeat(review.rating)}
+                <span className="mr-1 font-normal text-slate-400">
+                  {"☆".repeat(5 - review.rating)}
+                </span>
+              </p>
+              <p className="mt-0.5 text-sm text-slate-800">{review.comment}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {done ? (
+        <p className="text-xs font-bold text-green-700">
+          نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.
+        </p>
+      ) : null}
+      {error ? <p className="text-xs font-bold text-red-600">{error}</p> : null}
       <form onSubmit={submit} className="space-y-2">
         <FormInput
           placeholder="موبایل"

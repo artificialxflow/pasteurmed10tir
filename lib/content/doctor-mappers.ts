@@ -47,7 +47,11 @@ export function mapDentist(row: DbDentist): DentistRecord {
 }
 
 export function mapPhysician(row: DbPhysician) {
-  return {
+  const schedule =
+    row.schedule && typeof row.schedule === 'object' && !Array.isArray(row.schedule)
+      ? (row.schedule as unknown as Record<string, DaySchedule>)
+      : {};
+  const base = {
     id: row.id,
     name: row.name,
     specialty: row.specialty,
@@ -55,7 +59,18 @@ export function mapPhysician(row: DbPhysician) {
     medicalCouncilNumber: row.medicalCouncilNumber?.trim() || undefined,
     image: row.image,
     days: [...row.days],
+    hours: row.hours || '',
     status: (row.status as 'available' | 'busy' | 'inactive') || 'available',
+    schedule,
+  };
+  const dayHours = dayHoursFromDentist(base);
+  const healedSchedule = buildScheduleFromDayHours(dayHours);
+  const summary = summarizeDayHours(dayHours);
+  return {
+    ...base,
+    schedule: Object.keys(healedSchedule).length ? healedSchedule : base.schedule,
+    days: summary.days.length ? summary.days : base.days,
+    hours: summary.hours || base.hours,
   };
 }
 
@@ -286,10 +301,33 @@ export type PhysicianBody = {
   medicalCouncilNumber?: string;
   image: string;
   days: string[];
+  hours?: string;
   status?: string;
+  schedule?: Record<string, DaySchedule>;
+  dayHours?: DayHoursMap;
 };
 
 export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
+  let days = Array.isArray(raw.days) ? raw.days.map(String).filter(Boolean) : [];
+  let hours = String(raw.hours || '').trim();
+  let schedule = raw.schedule;
+
+  if (raw.dayHours) {
+    schedule = buildScheduleFromDayHours(raw.dayHours);
+    const summary = summarizeDayHours(raw.dayHours);
+    days = summary.days;
+    hours = summary.hours;
+  } else if (!schedule || Object.keys(schedule).length === 0) {
+    if (days.length) {
+      schedule = defaultScheduleForDays(days, hours || '۹ تا ۱۷');
+      if (!hours) hours = summarizeDayHours(dayHoursFromDentist({ days, hours, schedule })).hours;
+    } else {
+      schedule = {};
+    }
+  } else if (!days.length) {
+    days = Object.keys(schedule);
+  }
+
   return {
     id: Number(raw.id),
     name: String(raw.name || '').trim(),
@@ -297,7 +335,9 @@ export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
     specialtyId: raw.specialtyId?.trim() || undefined,
     medicalCouncilNumber: String(raw.medicalCouncilNumber || '').trim() || undefined,
     image: String(raw.image || '/uploads/placeholder.svg').trim(),
-    days: Array.isArray(raw.days) ? raw.days.map(String).filter(Boolean) : [],
+    days,
+    hours,
     status: String(raw.status || 'available'),
+    schedule,
   };
 }

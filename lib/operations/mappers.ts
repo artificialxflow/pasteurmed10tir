@@ -66,6 +66,10 @@ export function mapConsultation(row: Consultation) {
     priceSource: row.priceSource ?? undefined,
     hasImage: row.hasImage,
     onlineInsuranceCovered: row.onlineInsuranceCovered,
+    preferredDate: row.preferredDate ?? undefined,
+    preferredDateLabel: row.preferredDateLabel ?? undefined,
+    preferredTime: row.preferredTime ?? undefined,
+    preferredTimeLabel: row.preferredTimeLabel ?? undefined,
     status: row.status,
     createdAt: row.createdAt.toISOString(),
   };

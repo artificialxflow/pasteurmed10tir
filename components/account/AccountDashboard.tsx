@@ -13,6 +13,7 @@ import {
   patientStatusLabel,
   payableFromFranchise,
   resolveFranchisePercent,
+  shopOrderStatusLabel,
   type InsuranceCompany,
   type PatientProfile,
 } from "@/lib/patient";
@@ -399,12 +400,58 @@ export function AccountDashboard({
                 {activity.consultations.map((c) => {
                   const st = String(c.status || "");
                   const tone = st === "answered" ? "success" : "warn";
+                  const preferred =
+                    c.preferredDateLabel || c.preferredTimeLabel
+                      ? ` · ${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
+                      : "";
                   return (
                     <ActivityRow
                       key={String(c.id)}
                       title={String(c.typeLabel || c.categoryLabel || "مشاوره")}
-                      meta={`${String(c.doctorName || c.specialtyLabel || "—")} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
+                      meta={`${String(c.doctorName || c.specialtyLabel || "—")}${preferred} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
                       status={st === "answered" ? "پاسخ داده شد" : "در انتظار"}
+                      tone={tone}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
+          <Card hover={false} className="p-4 lg:col-span-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-extrabold text-slate-900">سفارشات فروشگاه</p>
+              <Link href={shopHref} className="text-xs font-bold text-teal-700 hover:underline">
+                ادامه خرید
+              </Link>
+            </div>
+            {(activity.shopOrders || []).length === 0 ? (
+              <p className="text-xs text-slate-500">هنوز سفارشی از فروشگاه ثبت نشده است.</p>
+            ) : (
+              <div className="grid gap-0 sm:grid-cols-2">
+                {(activity.shopOrders || []).map((order) => {
+                  const st = String(order.status || "");
+                  const tone =
+                    st === "shipped" || st === "confirmed"
+                      ? "success"
+                      : st === "cancelled"
+                        ? "danger"
+                        : "warn";
+                  const items = Array.isArray(order.items) ? order.items : [];
+                  const itemNames = items
+                    .slice(0, 2)
+                    .map((item) => {
+                      const row = item as Record<string, unknown>;
+                      return String(row.name || "محصول");
+                    })
+                    .join("، ");
+                  const more = items.length > 2 ? ` و ${items.length - 2} مورد دیگر` : "";
+                  return (
+                    <ActivityRow
+                      key={String(order.id)}
+                      title={`${itemNames || "سفارش فروشگاه"}${more}`}
+                      meta={`${formatPrice(Number(order.total || 0))} · ${new Date(String(order.createdAt)).toLocaleDateString("fa-IR")} · ${String(order.id)}`}
+                      status={shopOrderStatusLabel(st)}
                       tone={tone}
                     />
                   );

@@ -22,6 +22,10 @@ export type CreateConsultationInput = {
   priceSource?: string;
   hasImage?: boolean;
   onlineInsuranceCovered?: boolean;
+  preferredDate?: string;
+  preferredDateLabel?: string;
+  preferredTime?: string;
+  preferredTimeLabel?: string;
 };
 
 export async function createConsultationRecord(body: CreateConsultationInput) {
@@ -59,6 +63,10 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
       priceSource: body.priceSource ? String(body.priceSource) : null,
       hasImage: Boolean(body.hasImage),
       onlineInsuranceCovered: Boolean(body.onlineInsuranceCovered),
+      preferredDate: body.preferredDate ? String(body.preferredDate) : null,
+      preferredDateLabel: body.preferredDateLabel ? String(body.preferredDateLabel) : null,
+      preferredTime: body.preferredTime ? String(body.preferredTime) : null,
+      preferredTimeLabel: body.preferredTimeLabel ? String(body.preferredTimeLabel) : null,
       status: 'pending',
     },
   });

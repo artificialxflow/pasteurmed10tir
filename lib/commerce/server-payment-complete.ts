@@ -115,6 +115,14 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       priceSource: pending.priceSource ? String(pending.priceSource) : undefined,
       hasImage: Boolean(pending.hasImage),
       onlineInsuranceCovered: Boolean(pending.onlineInsuranceCovered),
+      preferredDate: pending.preferredDate ? String(pending.preferredDate) : undefined,
+      preferredDateLabel: pending.preferredDateLabel
+        ? String(pending.preferredDateLabel)
+        : undefined,
+      preferredTime: pending.preferredTime ? String(pending.preferredTime) : undefined,
+      preferredTimeLabel: pending.preferredTimeLabel
+        ? String(pending.preferredTimeLabel)
+        : undefined,
     });
     return { consultation };
   }

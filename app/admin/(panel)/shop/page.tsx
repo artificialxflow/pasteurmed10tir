@@ -544,12 +544,12 @@ export default function AdminShopPage() {
               max={100}
               value={draft.discountPercent}
               onCommit={(discountPercent) => updateDraft({ discountPercent })}
-              placeholder="درصد تخفیف"
+              placeholder="درصد (مثلاً ۲ یا ۴)"
             />
             <FormInput
               value={draft.size}
               onChange={(e) => updateDraft({ size: e.target.value })}
-              placeholder="سایز — مثلاً L یا ۱۰×۲۰"
+              placeholder="سایز — مثلاً ۲۵"
             />
             <DraftNumberInput
               min={0}

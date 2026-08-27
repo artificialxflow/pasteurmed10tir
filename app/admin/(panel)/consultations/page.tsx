@@ -50,6 +50,7 @@ export default function AdminConsultationsPage() {
           "دسته",
           "تخصص",
           "پزشک",
+          "روز / ساعت",
           "شرح",
           "مبلغ",
           "وضعیت",
@@ -65,6 +66,11 @@ export default function AdminConsultationsPage() {
             <td className="px-4 py-3">{String(c.categoryLabel || "—")}</td>
             <td className="px-4 py-3">{String(c.specialtyLabel || "—")}</td>
             <td className="px-4 py-3">{String(c.doctorName || "—")}</td>
+            <td className="px-4 py-3 text-xs">
+              {c.preferredDateLabel || c.preferredTimeLabel
+                ? `${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
+                : "—"}
+            </td>
             <td className="max-w-xs truncate px-4 py-3 text-xs">
               {String(c.description || "—")}
             </td>

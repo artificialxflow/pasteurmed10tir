@@ -38,6 +38,10 @@ export async function POST(request: Request) {
     priceSource: body.priceSource ? String(body.priceSource) : undefined,
     hasImage: Boolean(body.hasImage),
     onlineInsuranceCovered: Boolean(body.onlineInsuranceCovered),
+    preferredDate: body.preferredDate ? String(body.preferredDate) : undefined,
+    preferredDateLabel: body.preferredDateLabel ? String(body.preferredDateLabel) : undefined,
+    preferredTime: body.preferredTime ? String(body.preferredTime) : undefined,
+    preferredTimeLabel: body.preferredTimeLabel ? String(body.preferredTimeLabel) : undefined,
   });
 
   return NextResponse.json({ item: row }, { status: 201 });

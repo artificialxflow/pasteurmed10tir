@@ -217,6 +217,13 @@ export function bookingStatusLabel(status?: string): string {
   return 'در انتظار';
 }
 
+export function shopOrderStatusLabel(status?: string): string {
+  if (status === 'confirmed') return 'تأیید شده';
+  if (status === 'shipped') return 'ارسال شده';
+  if (status === 'cancelled') return 'لغو شده';
+  return 'در انتظار';
+}
+
 export function installmentSourceLabel(source: InstallmentSource | string): string {
   if (source === 'credit' || source === 'wallet') return 'اعتبار';
   if (source === 'facility') return 'تسهیلات تجهیزات';

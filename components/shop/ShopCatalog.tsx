@@ -6,7 +6,7 @@ import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
 import { flashShopCartButton } from "@/lib/shop/cart-ui";
-import { productThumbnail } from "@/lib/shop/product-display";
+import { productThumbnail, groupProductsByFamily, productVariantLabel } from "@/lib/shop/product-display";
 import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -176,12 +176,14 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
         )}
       >
         {products.length ? (
-          products.map((p) => {
+          groupProductsByFamily(products).map((family) => {
+            const p = family.representative;
             const base = ShopCart.getProductPrice(p);
             const final = ShopCart.getFinalProductPrice(p);
             const productHref = routes.product(p.slug || String(p.id));
+            const hasVariants = family.variants.length > 1;
             return (
-              <Card key={p.id} hover={false} className="overflow-hidden p-0">
+              <Card key={family.key} hover={false} className="overflow-hidden p-0">
                 <Link href={productHref}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -195,17 +197,41 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
                     {p.category}
                   </span>
                   <Link href={productHref} className="mt-2 block text-sm font-bold text-slate-900">
-                    {p.name}
+                    {family.name}
                   </Link>
+                  {(family.sizes.length > 0 || family.percents.length > 0) ? (
+                    <p className="mt-1 text-[0.7rem] leading-5 text-slate-500">
+                      {family.sizes.length
+                        ? `سایز: ${family.sizes.join("، ")}`
+                        : null}
+                      {family.sizes.length && family.percents.length ? " · " : null}
+                      {family.percents.length
+                        ? `درصد: ${family.percents.map((n) => `${n.toLocaleString("fa-IR")}٪`).join("، ")}`
+                        : null}
+                    </p>
+                  ) : productVariantLabel(p) ? (
+                    <p className="mt-1 text-[0.7rem] text-slate-500">{productVariantLabel(p)}</p>
+                  ) : null}
                   {isVip ? (
                     <>
                       <p className="mt-1 text-xs text-slate-400 line-through">{p.price}</p>
                       <p className="font-bold text-teal-700">
-                        {ShopCart.formatPrice(final)} تومان
+                        {hasVariants ? "از " : ""}
+                        {ShopCart.formatPrice(
+                          hasVariants
+                            ? Math.min(
+                                ...family.variants.map((v) => ShopCart.getFinalProductPrice(v)),
+                              )
+                            : final,
+                        )}{" "}
+                        تومان
                       </p>
                     </>
                   ) : (
-                    <p className="mt-1 font-bold text-teal-700">{p.price} تومان</p>
+                    <p className="mt-1 font-bold text-teal-700">
+                      {hasVariants ? "از " : ""}
+                      {(hasVariants ? family.minPrice : p.priceNum).toLocaleString("fa-IR")} تومان
+                    </p>
                   )}
                   <p
                     className={cn(
@@ -216,15 +242,24 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
                     {p.stock > 0
                       ? `${p.stock.toLocaleString("fa-IR")} موجود`
                       : "ناموجود"}
+                    {hasVariants
+                      ? ` · ${family.variants.length.toLocaleString("fa-IR")} گزینه`
+                      : ""}
                   </p>
-                  <Button
-                    variant="primary"
-                    className="mt-2 w-full text-xs"
-                    disabled={p.stock <= 0}
-                    onClick={() => addToCart(p.id)}
-                  >
-                    افزودن به سبد
-                  </Button>
+                  {hasVariants ? (
+                    <Button href={productHref} variant="primary" className="mt-2 w-full text-xs">
+                      انتخاب سایز / درصد
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      className="mt-2 w-full text-xs"
+                      disabled={p.stock <= 0}
+                      onClick={() => addToCart(p.id)}
+                    >
+                      افزودن به سبد
+                    </Button>
+                  )}
                   <Link
                     href={productHref}
                     className="mt-2 block text-center text-[0.65rem] font-bold text-slate-600 hover:text-teal-700"

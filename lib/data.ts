@@ -93,7 +93,9 @@ export interface Physician {
   medicalCouncilNumber?: string;
   image: string;
   days: string[];
+  hours?: string;
   status: DoctorStatus;
+  schedule?: Record<string, DaySchedule>;
 }
 
 export interface NursingItem {
@@ -136,7 +138,7 @@ export interface Product {
   categorySlug?: string | null;
   price: string;
   priceNum: number;
-  /** درصد تخفیف محصول (اختیاری) */
+  /** درصد محصول (مثلاً taper دندانپزشکی) — تخفیف قیمت نیست */
   discountPercent?: number;
   /** سایز / ابعاد محصول */
   size?: string;

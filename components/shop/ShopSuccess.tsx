@@ -7,6 +7,7 @@ import {
   fetchZibalPaymentResultApi,
   getPaymentIntentIdFromSearch,
 } from "@/lib/payment/zibal-client";
+import { ROUTES } from "@/lib/routes";
 import { ShopCart } from "@/lib/shop";
 import { PasteurStorage } from "@/lib/storage";
 import { useEffect, useState } from "react";
@@ -74,6 +75,13 @@ export function ShopSuccess({ variant = "web" }: { variant?: ShopVariant }) {
       ) : null}
       <Button href={routes.catalog} className="mt-6 w-full">
         ادامه خرید
+      </Button>
+      <Button
+        href={variant === "app" ? ROUTES.app.account : ROUTES.web.account}
+        variant="outline"
+        className="mt-3 w-full"
+      >
+        پیگیری سفارش در پنل کاربری
       </Button>
       <Button href={routes.root} variant="ghost" className="mt-3 w-full">
         بازگشت به خانه

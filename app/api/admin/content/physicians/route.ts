@@ -8,6 +8,7 @@ import { assignIntIds } from '@/lib/content/int-id';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prismaRouteError } from '@/lib/prisma/route-error';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -50,7 +51,9 @@ export async function PUT(request: Request) {
             medicalCouncilNumber: item.medicalCouncilNumber || '',
             image: item.image,
             days: item.days,
+            hours: item.hours || '',
             status: item.status || 'available',
+            schedule: (item.schedule || {}) as unknown as Prisma.InputJsonValue,
             sortOrder: index,
           },
         }),

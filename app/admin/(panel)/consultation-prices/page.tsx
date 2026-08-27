@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import {
   PASTEUR_DATA,
@@ -158,11 +159,11 @@ export default function AdminConsultationPricesPage() {
               </td>
               <td className="px-4 py-3 font-mono text-xs">{type.id}</td>
               <td className="px-4 py-3">
-                <FormInput
-                  type="number"
+                <DraftNumberInput
                   min={0}
-                  value={type.priceNum || 0}
-                  onChange={(e) => updateType(index, Number(e.target.value || 0))}
+                  max={100_000_000}
+                  value={Number(type.priceNum || 0)}
+                  onCommit={(priceNum) => updateType(index, priceNum)}
                   className="max-w-[160px]"
                 />
               </td>
@@ -231,16 +232,12 @@ export default function AdminConsultationPricesPage() {
                     <td className="px-4 py-3 font-semibold">{specialty.name}</td>
                     {types.map((type) => (
                       <td key={type.id} className="px-4 py-3">
-                        <FormInput
-                          type="number"
+                        <DraftNumberInput
                           min={0}
-                          value={tariffs[String(specialty.id)]?.[type.id] || 0}
-                          onChange={(e) =>
-                            updateTariff(
-                              String(specialty.id),
-                              type.id,
-                              Number(e.target.value || 0),
-                            )
+                          max={100_000_000}
+                          value={Number(tariffs[String(specialty.id)]?.[type.id] || 0)}
+                          onCommit={(priceNum) =>
+                            updateTariff(String(specialty.id), type.id, priceNum)
                           }
                           className="min-w-[120px]"
                         />
