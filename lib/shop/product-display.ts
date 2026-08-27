@@ -25,20 +25,29 @@ export function productFamilyKey(product: Pick<Product, 'name'>): string {
   return String(product.name || '')
     .trim()
     .toLowerCase()
+    .replace(/[>＞›«»]/g, ' ')
+    .replace(/[_\-–—|/\\]+/g, ' ')
     .replace(/\s+/g, ' ');
+}
+
+/** Prefer slug; fall back to id so detail links never 404 when slug is empty. */
+export function productPathKey(product: Pick<Product, 'slug' | 'id'>): string {
+  const slug = String(product.slug || '').trim();
+  if (slug) return slug;
+  return String(product.id);
 }
 
 export function formatProductPercent(percent?: number | null): string {
   const value = Number(percent || 0);
-  if (!value) return '';
+  if (!value) return 'بدون درصد';
   return `${value.toLocaleString('fa-IR')}٪`;
 }
 
 export function productVariantLabel(product: Pick<Product, 'size' | 'discountPercent'>): string {
   const parts: string[] = [];
   if (product.size?.trim()) parts.push(`سایز ${product.size.trim()}`);
-  const percent = formatProductPercent(product.discountPercent);
-  if (percent) parts.push(percent);
+  const pct = Number(product.discountPercent || 0);
+  if (pct > 0) parts.push(formatProductPercent(pct));
   return parts.join(' · ');
 }
 
@@ -68,7 +77,7 @@ export function groupProductsByFamily(products: Product[]): ProductFamily[] {
       new Set(sorted.map((v) => String(v.size || '').trim()).filter(Boolean)),
     );
     const percents = Array.from(
-      new Set(sorted.map((v) => Number(v.discountPercent || 0)).filter((n) => n > 0)),
+      new Set(sorted.map((v) => Number(v.discountPercent || 0))),
     ).sort((a, b) => a - b);
     return {
       key,
@@ -98,13 +107,36 @@ export function resolveVariant(
   size: string,
   percent: number,
 ): Product | null {
+  if (!variants.length) return null;
   const sizeNorm = size.trim();
+  const pct = Number(percent || 0);
+
   const exact = variants.find(
     (v) =>
-      String(v.size || '').trim() === sizeNorm && Number(v.discountPercent || 0) === percent,
+      String(v.size || '').trim() === sizeNorm && Number(v.discountPercent || 0) === pct,
   );
   if (exact) return exact;
-  const bySize = variants.find((v) => String(v.size || '').trim() === sizeNorm);
-  if (bySize) return bySize;
-  return variants[0] || null;
+
+  if (sizeNorm) {
+    const bySize = variants.filter((v) => String(v.size || '').trim() === sizeNorm);
+    if (bySize.length) {
+      const byPct = bySize.find((v) => Number(v.discountPercent || 0) === pct);
+      return byPct || bySize[0];
+    }
+  }
+
+  const byPct = variants.find((v) => Number(v.discountPercent || 0) === pct);
+  if (byPct) return byPct;
+  return variants[0];
+}
+
+/** Percents available for a given size (includes 0 when present). */
+export function percentsForSize(variants: Product[], size: string): number[] {
+  const sizeNorm = size.trim();
+  const pool = sizeNorm
+    ? variants.filter((v) => String(v.size || '').trim() === sizeNorm)
+    : variants;
+  return Array.from(new Set(pool.map((v) => Number(v.discountPercent || 0)))).sort(
+    (a, b) => a - b,
+  );
 }

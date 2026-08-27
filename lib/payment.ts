@@ -3,7 +3,14 @@
  */
 import { PasteurStorage } from './storage';
 
-export type PendingPaymentKind = 'booking' | 'membership' | 'shop-vip' | 'shop-order' | 'consultation';
+export type PendingPaymentKind =
+  | 'booking'
+  | 'membership'
+  | 'shop-vip'
+  | 'shop-order'
+  | 'consultation'
+  | 'nursing'
+  | 'laser';
 
 export type PendingPaymentBase = {
   kind?: PendingPaymentKind | string;
@@ -88,12 +95,45 @@ export type PendingConsultationPayment = PendingPaymentBase & {
   preferredTimeLabel?: string;
 };
 
+export type PendingNursingPayment = PendingPaymentBase & {
+  kind: 'nursing';
+  serviceId?: string;
+  serviceTitle?: string;
+  itemId?: string;
+  itemTitle?: string;
+  unit?: string;
+  description?: string;
+  estimate?: string;
+  paymentLabel?: string;
+};
+
+export type PendingLaserPayment = PendingPaymentBase & {
+  kind: 'laser';
+  serviceId?: string;
+  serviceTitle?: string;
+  categoryId?: string;
+  categoryName?: string;
+  description?: string;
+  estimate?: string;
+  paymentLabel?: string;
+  day?: string;
+  appointmentDate?: string;
+  appointmentDateLabel?: string;
+  timeValue?: string | number;
+  timeLabel?: string;
+  tariffAmount?: number;
+  isDeposit?: boolean;
+  depositNonRefundable?: boolean;
+};
+
 export type PendingPayment =
   | PendingBookingPayment
   | PendingMembershipPayment
   | PendingShopVipPayment
   | PendingShopOrderPayment
   | PendingConsultationPayment
+  | PendingNursingPayment
+  | PendingLaserPayment
   | PendingPaymentBase;
 
 export type CompletedPayment = PendingPayment & {
@@ -121,6 +161,8 @@ export const PaymentFlow = {
     if (pending?.planId === 'shop-vip') return app ? '/app/shop-vip' : '/shop/vip';
     if (pending?.kind === 'membership') return app ? '/app/dental/membership' : '/dental/membership';
     if (pending?.kind === 'consultation') return app ? '/app/consultation' : '/consultation';
+    if (pending?.kind === 'nursing') return app ? '/app/nursing' : '/nursing';
+    if (pending?.kind === 'laser') return app ? '/app/laser' : '/laser';
     return app ? '/app/dental/general' : '/dental/general';
   },
 
@@ -136,6 +178,12 @@ export const PaymentFlow = {
     }
     if (pending?.kind === 'consultation') {
       return this.isAppContext(pathname) ? '/app/consultation/success' : '/consultation/success';
+    }
+    if (pending?.kind === 'nursing') {
+      return this.isAppContext(pathname) ? '/app/nursing/success' : '/nursing/success';
+    }
+    if (pending?.kind === 'laser') {
+      return this.isAppContext(pathname) ? '/app/laser/success' : '/laser/success';
     }
     return this.isAppContext(pathname) ? '/app/dental/success' : '/dental/success';
   },

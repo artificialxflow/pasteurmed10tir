@@ -13,20 +13,21 @@ export function MedicalHub({ basePath }: { basePath: MedicalBasePath }) {
   const app = isAppMedical(basePath);
   const consultation = app ? ROUTES.app.consultation : ROUTES.web.consultation;
   const specialty = app ? ROUTES.app.medicalSpecialty : ROUTES.web.medicalSpecialty;
+  const doctors = app ? ROUTES.app.medicalDoctors : ROUTES.web.medicalDoctors;
 
   const items = [
     {
       emoji: "👨‍⚕️",
       title: "پزشکی عمومی",
-      desc: "ثبت شرح وضعیت برای مشاوره یا ویزیت عمومی.",
-      cta: "شروع درخواست",
-      href: `${consultation}?category=medical&type=text`,
+      desc: "پزشک عمومی را انتخاب کنید و روز و ساعت ویزیت (هر نوبت ۱۵ دقیقه) را رزرو کنید.",
+      cta: "انتخاب پزشک و نوبت",
+      href: `${doctors}?scope=general`,
       accent: false,
     },
     {
       emoji: "🔬",
       title: "تخصص‌ها",
-      desc: "تخصص مورد نظر را انتخاب کنید و درخواست مشاوره یا ویزیت ثبت کنید.",
+      desc: "تخصص و پزشک را انتخاب کنید؛ سپس نوبت ویزیت ۱۵ دقیقه‌ای ثبت کنید.",
       cta: "درخواست ویزیت تخصصی",
       href: specialty,
       accent: true,
@@ -94,9 +95,9 @@ export function MedicalHub({ basePath }: { basePath: MedicalBasePath }) {
           <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
             {[
               "۱. انتخاب عمومی، تخصصی یا ویزیت در منزل",
-              "۲. انتخاب تخصص پزشکی (در مسیر تخصصی)",
-              "۳. ثبت شرح مشکل و اطلاعات تماس",
-              "۴. هماهنگی کارشناس برای مشاوره، تماس یا ویزیت",
+              "۲. انتخاب و معرفی پزشک (مثل دندانپزشکی)",
+              "۳. انتخاب روز و نوبت ۱۵ دقیقه‌ای ویزیت",
+              "۴. ثبت اطلاعات و پرداخت / هماهنگی نهایی",
             ].map((step) => (
               <div
                 key={step}

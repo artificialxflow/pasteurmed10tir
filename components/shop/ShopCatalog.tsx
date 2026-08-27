@@ -6,7 +6,7 @@ import type { Product } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { ShopCart } from "@/lib/shop";
 import { flashShopCartButton } from "@/lib/shop/cart-ui";
-import { productThumbnail, groupProductsByFamily, productVariantLabel } from "@/lib/shop/product-display";
+import { productThumbnail, groupProductsByFamily, productPathKey, productVariantLabel } from "@/lib/shop/product-display";
 import { PasteurStorage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -180,7 +180,7 @@ export function ShopCatalog({ variant = "web" }: { variant?: ShopVariant }) {
             const p = family.representative;
             const base = ShopCart.getProductPrice(p);
             const final = ShopCart.getFinalProductPrice(p);
-            const productHref = routes.product(p.slug || String(p.id));
+            const productHref = routes.product(productPathKey(p));
             const hasVariants = family.variants.length > 1;
             return (
               <Card key={family.key} hover={false} className="overflow-hidden p-0">

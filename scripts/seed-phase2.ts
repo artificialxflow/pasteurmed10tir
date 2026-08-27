@@ -22,6 +22,7 @@ async function main() {
   await prisma.nursingService.deleteMany();
   await prisma.service.deleteMany();
   await prisma.laserService.deleteMany();
+  await prisma.laserCategory.deleteMany();
   await prisma.galleryItem.deleteMany();
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
@@ -48,6 +49,19 @@ async function main() {
     });
   }
 
+  for (let i = 0; i < PASTEUR_DATA.laserCategories.length; i++) {
+    const c = PASTEUR_DATA.laserCategories[i];
+    await prisma.laserCategory.create({
+      data: {
+        id: c.id,
+        name: c.name,
+        emoji: c.emoji,
+        active: (c as { active?: boolean }).active !== false,
+        sortOrder: c.sortOrder ?? i,
+      },
+    });
+  }
+
   for (let i = 0; i < PASTEUR_DATA.laserServices.length; i++) {
     const s = PASTEUR_DATA.laserServices[i];
     await prisma.laserService.create({
@@ -58,6 +72,7 @@ async function main() {
         price: s.price,
         priceNum: s.priceNum ?? null,
         description: s.description ?? null,
+        categoryId: s.categoryId ?? null,
         active: (s as { active?: boolean }).active !== false,
         sortOrder: i,
       },
@@ -205,6 +220,7 @@ async function main() {
     create: {
       id: 'default',
       dentalReservationFee: PASTEUR_DATA.settings.dentalReservationFee,
+      laserReservationFee: PASTEUR_DATA.settings.laserReservationFee,
       walletRegularCap: DEFAULT_WALLET_SETTINGS.regularCap,
       walletMembershipVipCap: DEFAULT_WALLET_SETTINGS.membershipVipCap,
       walletShopVipCap: DEFAULT_WALLET_SETTINGS.shopVipCap,
@@ -214,6 +230,7 @@ async function main() {
     },
     update: {
       dentalReservationFee: PASTEUR_DATA.settings.dentalReservationFee,
+      laserReservationFee: PASTEUR_DATA.settings.laserReservationFee,
       walletRegularCap: DEFAULT_WALLET_SETTINGS.regularCap,
       walletMembershipVipCap: DEFAULT_WALLET_SETTINGS.membershipVipCap,
       walletShopVipCap: DEFAULT_WALLET_SETTINGS.shopVipCap,

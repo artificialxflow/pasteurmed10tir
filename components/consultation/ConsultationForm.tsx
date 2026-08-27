@@ -18,6 +18,10 @@ import {
   buildAvailableBookingDates,
   formatBookingDateLabel,
 } from "@/lib/operations/booking-dates";
+import {
+  formatPreferredTimeLabel,
+  medicalVisitSlotsForDay,
+} from "@/lib/operations/medical-slots";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchPatientOps } from "@/lib/operations/client";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
@@ -31,6 +35,7 @@ import {
   type PatientProfile,
 } from "@/lib/patient";
 import { cn, formatPrice } from "@/lib/utils";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -57,6 +62,10 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     PASTEUR_DATA.consultationCategories.some((c) => c.id === requestedCategory)
       ? (requestedCategory as string)
       : PASTEUR_DATA.consultationCategories[0]?.id || "dental";
+
+  // پرستاری و لیزر دیگر از فرم مشاوره پشتیبانی نمی‌شوند
+  const blockedNursing = requestedCategory === "nursing";
+  const blockedLaser = requestedCategory === "laser";
 
   const [consultationTypes, setConsultationTypes] = useState(() => getConsultationTypes());
   const [selectedType, setSelectedType] = useState(initialType);
@@ -88,6 +97,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   }, [physicians, requestedSpecialty]);
 
   const requiresDoctor = category === "medical-specialty" && Boolean(selectedSpecialty);
+  const isVisitBooking =
+    category === "medical" || category === "medical-specialty";
   const selectedDoctor = useMemo(
     () => physicians.find((doctor) => doctor.id === doctorId) || null,
     [physicians, doctorId],
@@ -101,6 +112,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     );
   }, [physicians, selectedSpecialty]);
   const showDoctorStep = requiresDoctor && !selectedDoctor;
+  const needsGeneralDoctor = category === "medical" && !doctorId;
 
   const dateOptions = useMemo(() => {
     if (!selectedDoctor?.days?.length) return [];
@@ -111,14 +123,16 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     if (!selectedDoctor || !preferredDate) return [];
     const option = dateOptions.find((d) => d.isoDate === preferredDate);
     const weekday = option?.weekday;
-    const hours =
-      (weekday && selectedDoctor.schedule?.[weekday]?.visitHours) ||
-      Object.values(selectedDoctor.schedule || {})[0]?.visitHours ||
-      [];
-    return hours.map((h) => ({
-      value: String(h),
-      label: `${Number(h).toLocaleString("fa-IR")}:۰۰`,
-    }));
+    const daySchedule =
+      (weekday && selectedDoctor.schedule?.[weekday]) ||
+      Object.values(selectedDoctor.schedule || {})[0] ||
+      null;
+    const slots = medicalVisitSlotsForDay(daySchedule);
+    if (slots.length) return slots;
+    // Fallback when schedule not yet configured: 9–16 every 15 minutes
+    return medicalVisitSlotsForDay({
+      visitHours: [9, 10, 11, 12, 13, 14, 15, 16],
+    });
   }, [selectedDoctor, preferredDate, dateOptions]);
 
   useEffect(() => {
@@ -174,9 +188,9 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (requiresDoctor && !selectedDoctor) return;
-    if (selectedDoctor && dateOptions.length > 0) {
+    if (selectedDoctor && isVisitBooking) {
       if (!preferredDate || !preferredTime) {
-        setSubmitError("روز و ساعت ویزیت را انتخاب کنید.");
+        setSubmitError("روز و ساعت ویزیت ۱۵ دقیقه‌ای را انتخاب کنید.");
         return;
       }
     }
@@ -203,7 +217,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
 
     const preferredDateLabel = preferredDate ? formatBookingDateLabel(preferredDate) : undefined;
     const preferredTimeLabel = preferredTime
-      ? `${Number(preferredTime).toLocaleString("fa-IR")}:۰۰`
+      ? formatPreferredTimeLabel(preferredTime)
       : undefined;
 
     const pending: PendingConsultationPayment = {
@@ -242,13 +256,49 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     );
   }
 
+  if (blockedNursing) {
+    const nursingHref = variant === "app" ? ROUTES.app.nursing : ROUTES.web.nursing;
+    return (
+      <div className={cn("space-y-4", variant === "app" && "mt-2")}>
+        <p className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
+          خدمات پرستاری دیگر از مسیر مشاوره و ویزیت ثبت نمی‌شود. لطفاً خدمت و تعرفه را از بخش
+          پرستاری انتخاب و پرداخت کنید.
+        </p>
+        <Link
+          href={nursingHref}
+          className="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-bold text-white"
+        >
+          رفتن به خدمات پرستاری
+        </Link>
+      </div>
+    );
+  }
+
+  if (blockedLaser) {
+    const laserHref = variant === "app" ? ROUTES.app.laser : ROUTES.web.laser;
+    return (
+      <div className={cn("space-y-4", variant === "app" && "mt-2")}>
+        <p className="rounded-2xl border border-purple-200 bg-purple-50 p-4 text-sm text-purple-900">
+          خدمات لیزر و زیبایی از مسیر مشاوره ثبت نمی‌شود. لطفاً خدمت و تعرفه را از بخش لیزر انتخاب و
+          پرداخت کنید.
+        </p>
+        <Link
+          href={laserHref}
+          className="inline-flex rounded-full bg-purple-700 px-5 py-2.5 text-sm font-bold text-white"
+        >
+          رفتن به لیزر و زیبایی
+        </Link>
+      </div>
+    );
+  }
+
   if (showDoctorStep) {
     return (
       <div className={cn("space-y-4", variant === "app" && "mt-2")}>
         <div>
           <FormLabel>انتخاب پزشک — {selectedSpecialty?.name}</FormLabel>
           <p className="mb-3 text-sm text-slate-600">
-            پزشک مورد نظر را انتخاب کنید؛ سپس نوع ویزیت را مشخص می‌کنید.
+            پزشک را انتخاب کنید؛ سپس روز و نوبت ۱۵ دقیقه‌ای ویزیت را مشخص می‌کنید.
           </p>
         </div>
         <div className="space-y-3">
@@ -292,6 +342,9 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
                         {doctor.hours ? ` · ${doctor.hours}` : ""}
                       </p>
                     ) : null}
+                    <p className="mt-1 text-[0.7rem] font-bold text-cyan-800">
+                      ویزیت · نوبت‌های ۱۵ دقیقه‌ای
+                    </p>
                   </div>
                 </button>
               );
@@ -302,6 +355,27 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
             </p>
           )}
         </div>
+      </div>
+    );
+  }
+
+  if (needsGeneralDoctor) {
+    const doctorsHref =
+      variant === "app"
+        ? `${ROUTES.app.medicalDoctors}?scope=general`
+        : `${ROUTES.web.medicalDoctors}?scope=general`;
+    return (
+      <div className={cn("space-y-4", variant === "app" && "mt-2")}>
+        <p className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
+          برای ویزیت پزشکی عمومی ابتدا پزشک را انتخاب کنید (مثل دندانپزشکی)، سپس روز و نوبت ۱۵
+          دقیقه‌ای را مشخص کنید.
+        </p>
+        <Link
+          href={doctorsHref}
+          className="inline-flex rounded-full bg-teal-700 px-5 py-2.5 text-sm font-bold text-white"
+        >
+          مشاهده پزشکان عمومی
+        </Link>
       </div>
     );
   }
@@ -331,40 +405,49 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         </div>
       ) : null}
 
-      {selectedDoctor && dateOptions.length > 0 ? (
+      {selectedDoctor && (dateOptions.length > 0 || isVisitBooking) ? (
         <div className="space-y-4">
           <div>
             <FormLabel>روز ویزیت</FormLabel>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {dateOptions.map((d) => (
-                <button
-                  key={d.isoDate}
-                  type="button"
-                  onClick={() => setPreferredDate(d.isoDate)}
-                  className={cn(
-                    "rounded-xl border px-3 py-2 text-xs font-bold transition",
-                    preferredDate === d.isoDate
-                      ? "border-teal-500 bg-teal-50 text-teal-900"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
-                  )}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+            <p className="mb-2 text-xs text-slate-500">
+              فقط ویزیت — هر نوبت ۱۵ دقیقه (یک ربع)
+            </p>
+            {dateOptions.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {dateOptions.map((d) => (
+                  <button
+                    key={d.isoDate}
+                    type="button"
+                    onClick={() => setPreferredDate(d.isoDate)}
+                    className={cn(
+                      "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                      preferredDate === d.isoDate
+                        ? "border-teal-500 bg-teal-50 text-teal-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
+                    )}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-amber-700">
+                روزهای حضور این پزشک هنوز تنظیم نشده است.
+              </p>
+            )}
           </div>
           {preferredDate ? (
             <div>
-              <FormLabel>ساعت ویزیت</FormLabel>
+              <FormLabel>ساعت ویزیت (۱۵ دقیقه‌ای)</FormLabel>
               {timeOptions.length ? (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 grid max-h-48 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
                   {timeOptions.map((t) => (
                     <button
                       key={t.value}
                       type="button"
                       onClick={() => setPreferredTime(t.value)}
                       className={cn(
-                        "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                        "rounded-xl border px-2 py-2 text-xs font-bold transition",
                         preferredTime === t.value
                           ? "border-teal-500 bg-teal-50 text-teal-900"
                           : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
@@ -376,7 +459,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-amber-700">
-                  برای این روز ساعتی تعریف نشده است.
+                  برای این روز نوبتی تعریف نشده است.
                 </p>
               )}
             </div>

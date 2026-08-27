@@ -1169,12 +1169,16 @@ export const PasteurStorage = {
       dentalReservationFee: Number(
         stored?.dentalReservationFee ?? PASTEUR_DATA.settings.dentalReservationFee,
       ),
+      laserReservationFee: Number(
+        stored?.laserReservationFee ?? PASTEUR_DATA.settings.laserReservationFee,
+      ),
     };
   },
 
   saveSettings(settings: PasteurSettings): void {
     this.set(this.KEYS.settings, {
       dentalReservationFee: Number(settings.dentalReservationFee || 0),
+      laserReservationFee: Number(settings.laserReservationFee || 0),
     });
   },
 

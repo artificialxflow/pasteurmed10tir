@@ -23,6 +23,8 @@ export function smsBodyIds() {
     reminder2h: Number(env('SMS_REMINDER_2H_BODY_ID') || 0),
     booking: Number(env('SMS_BOOKING_BODY_ID') || 0),
     consultation: Number(env('SMS_CONSULTATION_BODY_ID') || 0),
+    installmentDue: Number(env('SMS_INSTALLMENT_DUE_BODY_ID') || 0),
+    installmentOverdue: Number(env('SMS_INSTALLMENT_OVERDUE_BODY_ID') || 0),
   };
 }
 
@@ -139,4 +141,36 @@ export async function sendReminder2hSms(
   const id = smsBodyIds().reminder2h;
   if (!id) return { ok: false, error: 'پترن یادآور ۲س تنظیم نشده.' };
   return sendByPattern(id, phone, [timeLabel || '—', serviceLabel || 'نوبت']);
+}
+
+/** یک روز قبل سررسید قسط — vars: عنوان طرح؛ مبلغ؛ تاریخ سررسید */
+export async function sendInstallmentDueSms(
+  phone: string,
+  planTitle: string,
+  amountLabel: string,
+  dueDateLabel: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().installmentDue;
+  if (!id) return { ok: false, error: 'پترن یادآور سررسید قسط تنظیم نشده.' };
+  return sendByPattern(id, phone, [
+    planTitle || 'اقساط',
+    amountLabel || '—',
+    dueDateLabel || 'فردا',
+  ]);
+}
+
+/** پیامک روزانه قسط معوقه — vars: عنوان طرح؛ شماره قسط؛ مبلغ مانده */
+export async function sendInstallmentOverdueSms(
+  phone: string,
+  planTitle: string,
+  installmentLabel: string,
+  amountLabel: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().installmentOverdue;
+  if (!id) return { ok: false, error: 'پترن پیامک معوقه اقساط تنظیم نشده.' };
+  return sendByPattern(id, phone, [
+    planTitle || 'اقساط',
+    installmentLabel || 'قسط',
+    amountLabel || '—',
+  ]);
 }

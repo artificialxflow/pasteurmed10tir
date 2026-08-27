@@ -118,6 +118,14 @@ export interface NursingService {
   active?: boolean;
 }
 
+export interface LaserCategory {
+  id: string;
+  name: string;
+  emoji: string;
+  active?: boolean;
+  sortOrder?: number;
+}
+
 export interface LaserService {
   id: string;
   title: string;
@@ -125,6 +133,8 @@ export interface LaserService {
   price: string;
   priceNum?: number;
   description?: string;
+  categoryId?: string | null;
+  categoryName?: string | null;
   active?: boolean;
 }
 
@@ -237,6 +247,7 @@ export type SpecialtyTariffs = Record<string, Record<string, number>>;
 
 export interface PasteurSettings {
   dentalReservationFee: number;
+  laserReservationFee: number;
 }
 
 export interface GalleryItem {
@@ -287,6 +298,7 @@ export interface PasteurData {
   dentists: Dentist[];
   physicians: Physician[];
   nursingServices: NursingService[];
+  laserCategories: LaserCategory[];
   laserServices: LaserService[];
   products: Product[];
   memberships: Membership[];
@@ -572,7 +584,7 @@ export const PASTEUR_DATA = {
   ],
 
   physicians: [
-    { id: 1, name: 'دکتر سعید نوری', specialty: 'پزشک عمومی', specialtyId: 'internal', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop', days: ['شنبه', 'سه‌شنبه'], status: 'available' },
+    { id: 1, name: 'دکتر سعید نوری', specialty: 'پزشک عمومی', specialtyId: 'general', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop', days: ['شنبه', 'سه‌شنبه'], status: 'available' },
     { id: 2, name: 'دکتر فاطمه موسوی', specialty: 'قلب و عروق', specialtyId: 'cardiology', image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop', days: ['یکشنبه', 'چهارشنبه'], status: 'available' },
     { id: 3, name: 'دکتر رضا جعفری', specialty: 'اطفال', specialtyId: 'pediatrics', image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop', days: ['دوشنبه', 'پنجشنبه'], status: 'available' },
     { id: 4, name: 'دکتر مهدی اکبری', specialty: 'اورولوژی', specialtyId: 'urology', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop', days: ['شنبه', 'دوشنبه'], status: 'available' },
@@ -685,6 +697,12 @@ export const PASTEUR_DATA = {
     },
   ],
 
+  laserCategories: [
+    { id: 'laser-cat-hair', name: 'لیزر موهای زائد', emoji: '✨', active: true, sortOrder: 0 },
+    { id: 'laser-cat-skin', name: 'پوست و زیبایی', emoji: '🌟', active: true, sortOrder: 1 },
+    { id: 'laser-cat-body', name: 'بدن', emoji: '🔥', active: true, sortOrder: 2 },
+  ],
+
   laserServices: [
     {
       id: 'laser-hair',
@@ -692,6 +710,7 @@ export const PASTEUR_DATA = {
       emoji: '✨',
       price: 'از ۲۵۰,۰۰۰ تومان',
       priceNum: 250000,
+      categoryId: 'laser-cat-hair',
       description: 'لیزر موهای زائد با دستگاه‌های پیشرفته برای نواحی مختلف بدن',
       active: true,
     },
@@ -701,6 +720,7 @@ export const PASTEUR_DATA = {
       emoji: '🌟',
       price: 'از ۵۰۰,۰۰۰ تومان',
       priceNum: 500000,
+      categoryId: 'laser-cat-skin',
       description: 'جوانسازی و بازسازی پوست با تکنولوژی لیزر',
       active: true,
     },
@@ -710,6 +730,7 @@ export const PASTEUR_DATA = {
       emoji: '💫',
       price: 'از ۴۰۰,۰۰۰ تومان',
       priceNum: 400000,
+      categoryId: 'laser-cat-skin',
       description: 'درمان لک، تیرگی و ملasma با لیزر',
       active: true,
     },
@@ -719,6 +740,7 @@ export const PASTEUR_DATA = {
       emoji: '👁️',
       price: 'از ۶۰۰,۰۰۰ تومان',
       priceNum: 600000,
+      categoryId: 'laser-cat-skin',
       description: 'لیفت و جوانسازی ابرو و پلک',
       active: true,
     },
@@ -728,6 +750,7 @@ export const PASTEUR_DATA = {
       emoji: '🔥',
       price: 'از ۳۵۰,۰۰۰ تومان',
       priceNum: 350000,
+      categoryId: 'laser-cat-body',
       description: 'لیزر موهای زائد ناحیه شکم',
       active: true,
     },
@@ -737,6 +760,7 @@ export const PASTEUR_DATA = {
       emoji: '💪',
       price: 'از ۳۵۰,۰۰۰ تومان',
       priceNum: 350000,
+      categoryId: 'laser-cat-body',
       description: 'لیزر موهای زائد ناحیه سینه',
       active: true,
     },
@@ -894,8 +918,6 @@ export const PASTEUR_DATA = {
     { id: 'medical-home', label: 'ویزیت پزشک در منزل', estimate: 'از ۵۰۰,۰۰۰ تومان', estimateMin: 500000, service: 'اعزام پزشک یا هماهنگی ویزیت در منزل' },
     { id: 'dental-home', label: 'اعزام دندانپزشک به منزل', estimate: 'از ۴۰۰,۰۰۰ تومان', estimateMin: 400000, service: 'اعزام دندانپزشک به منزل' },
     { id: 'dental-corporate', label: 'اعزام دندانپزشک به مجموعه طرف قرارداد', estimate: 'از ۶۰۰,۰۰۰ تومان', estimateMin: 600000, service: 'اعزام دندانپزشک به مجموعه‌های طرف قرارداد' },
-    { id: 'laser', label: 'لیزر و زیبایی', estimate: '۴۰۰,۰۰۰ — ۳,۰۰۰,۰۰۰ تومان', estimateMin: 400000, service: 'جلسه لیزر یا زیبایی' },
-    { id: 'nursing', label: 'پرستاری', estimate: '۱۵۰,۰۰۰ — ۵۰۰,۰۰۰ تومان', estimateMin: 150000, service: 'خدمات پرستاری' },
   ],
 
   specialtyTariffs: {
@@ -913,6 +935,7 @@ export const PASTEUR_DATA = {
 
   settings: {
     dentalReservationFee: 200000,
+    laserReservationFee: 100000,
   },
 
   galleryItems: [

@@ -127,6 +127,59 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
     return { consultation };
   }
 
+  if (pending.kind === 'nursing') {
+    const serviceTitle = pending.serviceTitle ? String(pending.serviceTitle) : 'پرستاری';
+    const itemTitle = pending.itemTitle ? String(pending.itemTitle) : serviceTitle;
+    const amount = Number(pending.amountToman || pending.amount || 0);
+    const consultation = await createConsultationRecord({
+      type: pending.itemId ? String(pending.itemId) : 'nursing-service',
+      typeLabel: itemTitle,
+      category: 'nursing',
+      categoryLabel: 'پرستاری',
+      specialty: pending.serviceId ? String(pending.serviceId) : undefined,
+      specialtyLabel: serviceTitle,
+      patientName: pending.patientName ? String(pending.patientName) : undefined,
+      patientPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      description: pending.description ? String(pending.description) : undefined,
+      estimate: pending.estimate
+        ? String(pending.estimate)
+        : `${amount.toLocaleString('fa-IR')} تومان`,
+      amount,
+      priceSource: 'nursing-tariff',
+    });
+    return { nursingRequest: consultation, consultation };
+  }
+
+  if (pending.kind === 'laser') {
+    const serviceTitle = pending.serviceTitle ? String(pending.serviceTitle) : 'لیزر و زیبایی';
+    const amount = Number(pending.amountToman || pending.amount || 0);
+    const booking = await createBookingRecord({
+      doctorId: 'laser',
+      doctorName: 'لیزر و زیبایی',
+      specialty: pending.categoryName
+        ? String(pending.categoryName)
+        : pending.categoryId
+          ? String(pending.categoryId)
+          : 'لیزر',
+      type: 'laser',
+      typeLabel: serviceTitle,
+      day: pending.day ? String(pending.day) : undefined,
+      appointmentDate: pending.appointmentDate ? String(pending.appointmentDate) : undefined,
+      timeValue:
+        pending.timeValue != null
+          ? (pending.timeValue as string | number)
+          : undefined,
+      timeLabel: pending.timeLabel ? String(pending.timeLabel) : undefined,
+      patientName: pending.patientName ? String(pending.patientName) : undefined,
+      patientPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      amount,
+      isDeposit: pending.isDeposit !== false,
+      depositNonRefundable: pending.depositNonRefundable !== false,
+      referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
+    });
+    return { booking, laserBooking: booking };
+  }
+
   throw new Error('نوع پرداخت پشتیبانی نمی‌شود.');
 }
 
@@ -148,6 +201,10 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
       successPath = app ? '/app/shop-catalog?vip=paid' : '/shop/catalog?vip=paid';
     } else if (pending.kind === 'consultation') {
       successPath = app ? '/app/consultation/success' : '/consultation/success';
+    } else if (pending.kind === 'nursing') {
+      successPath = app ? '/app/nursing/success' : '/nursing/success';
+    } else if (pending.kind === 'laser') {
+      successPath = app ? '/app/laser/success' : '/laser/success';
     } else {
       successPath = app ? '/app/dental/success' : '/dental/success';
     }
@@ -159,6 +216,10 @@ export function resolvePaymentPaths(pending: PendingPayment, basePath: string) {
     failPath = app ? '/app/shop/failed' : '/shop/failed';
   } else if (pending.kind === 'consultation') {
     failPath = app ? '/app/consultation/failed' : '/consultation/failed';
+  } else if (pending.kind === 'nursing') {
+    failPath = app ? '/app/nursing/failed' : '/nursing/failed';
+  } else if (pending.kind === 'laser') {
+    failPath = app ? '/app/laser/failed' : '/laser/failed';
   } else {
     failPath = `${basePath}/failed`;
   }
@@ -184,6 +245,12 @@ export function buildPaymentDescription(pending: PendingPayment): string {
   }
   if (pending.kind === 'consultation') {
     return `مشاوره و ویزیت — ${pending.patientName || 'بیمار'}`;
+  }
+  if (pending.kind === 'nursing') {
+    return `پرستاری — ${pending.itemTitle || pending.serviceTitle || pending.patientName || 'بیمار'}`;
+  }
+  if (pending.kind === 'laser') {
+    return `بیعانه لیزر — ${pending.serviceTitle || pending.patientName || 'مراجع'}`;
   }
   return 'پرداخت پاستور پلاس';
 }

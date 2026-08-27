@@ -7,6 +7,7 @@ const DEFAULT_ID = 'default';
 
 type SettingsBody = {
   dentalReservationFee?: number;
+  laserReservationFee?: number;
   wallet?: {
     regularCap?: number;
     membershipVipCap?: number;
@@ -21,7 +22,10 @@ export async function GET() {
   const auth = await requireAdmin('bookings');
   if (auth.error) {
     const walletAuth = await requireAdmin('wallets');
-    if (walletAuth.error) return auth.error;
+    if (walletAuth.error) {
+      const laserAuth = await requireAdmin('laserServices');
+      if (laserAuth.error) return auth.error;
+    }
   }
 
   const row =
@@ -30,6 +34,7 @@ export async function GET() {
 
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
+    laserReservationFee: row.laserReservationFee,
     wallet: {
       regularCap: row.walletRegularCap,
       membershipVipCap: row.walletMembershipVipCap,
@@ -45,9 +50,12 @@ export async function PUT(request: Request) {
   const body = await parseJson<SettingsBody>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  if (body.dentalReservationFee != null) {
+  if (body.dentalReservationFee != null || body.laserReservationFee != null) {
     const auth = await requireAdmin('bookings');
-    if (auth.error) return auth.error;
+    if (auth.error) {
+      const laserAuth = await requireAdmin('laserServices');
+      if (laserAuth.error || body.dentalReservationFee != null) return auth.error;
+    }
   }
   if (body.wallet) {
     const auth = await requireAdmin('wallets');
@@ -66,6 +74,10 @@ export async function PUT(request: Request) {
         body.dentalReservationFee != null
           ? Number(body.dentalReservationFee)
           : current.dentalReservationFee,
+      laserReservationFee:
+        body.laserReservationFee != null
+          ? Number(body.laserReservationFee)
+          : current.laserReservationFee,
       walletRegularCap: w.regularCap != null ? Number(w.regularCap) : current.walletRegularCap,
       walletMembershipVipCap:
         w.membershipVipCap != null ? Number(w.membershipVipCap) : current.walletMembershipVipCap,
@@ -80,6 +92,7 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
+    laserReservationFee: row.laserReservationFee,
     wallet: {
       regularCap: row.walletRegularCap,
       membershipVipCap: row.walletMembershipVipCap,

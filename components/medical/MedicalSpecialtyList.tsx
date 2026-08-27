@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { fetchPublic } from "@/lib/content/client";
 import type { Physician } from "@/lib/data";
+import { isGeneralPhysician } from "@/lib/operations/medical-slots";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ type SpecialtyItem = {
 function deriveSpecialties(physicians: Physician[]): SpecialtyItem[] {
   const map = new Map<string, SpecialtyItem>();
   for (const doctor of physicians) {
+    if (isGeneralPhysician(doctor)) continue;
     const id = String(doctor.specialtyId || doctor.specialty);
     if (!id) continue;
     if (!map.has(id)) {
@@ -30,7 +32,7 @@ function deriveSpecialties(physicians: Physician[]): SpecialtyItem[] {
         id,
         name: doctor.specialty,
         emoji: "🔬",
-        description: `پزشکان ${doctor.specialty}`,
+        description: `پزشکان ${doctor.specialty} · ویزیت ۱۵ دقیقه‌ای`,
       });
     }
   }

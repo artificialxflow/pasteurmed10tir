@@ -1,4 +1,5 @@
 import { jsonError } from '@/lib/auth/api-utils';
+import { processInstallmentSmsReminders } from '@/lib/commerce/installment-sms';
 import {
   isSmsConfigured,
   sendReminder24hSms,
@@ -8,11 +9,15 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 /**
- * Secure cron endpoint for appointment reminder SMS.
+ * Secure cron endpoint for appointment + installment reminder SMS.
  * Auth: Authorization: Bearer $CRON_SECRET  (or x-cron-secret header)
  *
  * Schedule externally every 10–15 minutes against:
  *   POST https://pasteur.plus/api/cron/sms-reminders
+ *
+ * Installment rules (updates/10/07):
+ * - 1 day before due → SMS once (SMS_INSTALLMENT_DUE_BODY_ID)
+ * - while overdue → SMS once per calendar day (SMS_INSTALLMENT_OVERDUE_BODY_ID)
  */
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -81,11 +86,14 @@ export async function POST(request: Request) {
     }
   }
 
+  const installment = await processInstallmentSmsReminders();
+
   return NextResponse.json({
     ok: true,
     sent24,
     sent2,
     scanned24: due24.length,
     scanned2: due2.length,
+    installment,
   });
 }

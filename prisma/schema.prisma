@@ -96,15 +96,28 @@ model Service {
   sortOrder   Int     @default(0)
 }
 
+model LaserCategory {
+  id        String         @id
+  name      String
+  emoji     String         @default("✨")
+  sortOrder Int            @default(0)
+  active    Boolean        @default(true)
+  services  LaserService[]
+}
+
 model LaserService {
-  id          String  @id
+  id          String         @id
   title       String
-  emoji       String  @default("✨")
+  emoji       String         @default("✨")
   price       String
   priceNum    Int?
   description String?
-  active      Boolean @default(true)
-  sortOrder   Int     @default(0)
+  categoryId  String?
+  category    LaserCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  active      Boolean        @default(true)
+  sortOrder   Int            @default(0)
+
+  @@index([categoryId])
 }
 
 model NursingService {
@@ -221,6 +234,7 @@ model ConsultationType {
 model SiteSettings {
   id                     String @id @default("default")
   dentalReservationFee   Int    @default(200000)
+  laserReservationFee    Int    @default(100000)
   walletRegularCap       Int    @default(15000000)
   walletMembershipVipCap Int    @default(30000000)
   walletShopVipCap       Int    @default(20000000)
@@ -769,22 +783,28 @@ model InstallmentPlan {
 }
 
 model InstallmentScheduleItem {
-  id         String               @id
-  planId     String
-  plan       InstallmentPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
-  index      Int
-  dueDate    DateTime
-  amount     Int
-  paidAmount Int                  @default(0)
-  status     InstallmentItemStatus @default(pending)
-  payments   InstallmentPayment[]
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
+  id               String                @id
+  planId           String
+  plan             InstallmentPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  index            Int
+  dueDate          DateTime
+  amount           Int
+  paidAmount       Int                   @default(0)
+  status           InstallmentItemStatus @default(pending)
+  /** SMS «یک روز قبل سررسید» ارسال شده */
+  dueReminderSent  Boolean               @default(false)
+  /** آخرین SMS معوقه روزانه */
+  lastOverdueSmsAt DateTime?
+  payments         InstallmentPayment[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   @@unique([planId, index])
   @@index([planId])
   @@index([status])
   @@index([dueDate])
+  @@index([dueReminderSent, dueDate])
+  @@index([lastOverdueSmsAt])
 }
 
 model InstallmentPayment {

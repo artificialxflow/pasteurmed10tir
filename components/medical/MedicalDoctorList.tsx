@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Card";
 import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
 import { fetchPublic } from "@/lib/content/client";
 import type { Physician } from "@/lib/data";
+import { isGeneralPhysician } from "@/lib/operations/medical-slots";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -18,6 +19,8 @@ function isAppMedical(basePath: MedicalBasePath): boolean {
 export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   const searchParams = useSearchParams();
   const specialtyId = searchParams.get("specialty");
+  const scope = searchParams.get("scope");
+  const isGeneralScope = scope === "general";
   const [physicians, setPhysicians] = useState<Physician[]>([]);
 
   useEffect(() => {
@@ -27,12 +30,15 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   }, []);
 
   const doctors = useMemo(() => {
-    if (!specialtyId) return physicians;
+    if (isGeneralScope) {
+      return physicians.filter(isGeneralPhysician);
+    }
+    if (!specialtyId) return [];
     return physicians.filter(
       (doctor) =>
         doctor.specialtyId === specialtyId || String(doctor.specialtyId) === specialtyId,
     );
-  }, [physicians, specialtyId]);
+  }, [physicians, specialtyId, isGeneralScope]);
 
   const app = isAppMedical(basePath);
   const consultation = app ? ROUTES.app.consultation : ROUTES.web.consultation;
@@ -40,6 +46,9 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
   const specialtyPage = app ? ROUTES.app.medicalSpecialty : ROUTES.web.medicalSpecialty;
 
   const specialty = useMemo(() => {
+    if (isGeneralScope) {
+      return { id: "general", name: "پزشکی عمومی", emoji: "👨‍⚕️" };
+    }
     if (!specialtyId) return null;
     const match = physicians.find(
       (doctor) =>
@@ -51,7 +60,7 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
       name: match.specialty,
       emoji: "🔬",
     };
-  }, [physicians, specialtyId]);
+  }, [physicians, specialtyId, isGeneralScope]);
 
   if (!specialty) {
     return (
@@ -64,12 +73,17 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
     );
   }
 
+  const backHref = isGeneralScope ? medical : specialtyPage;
+  const backLabel = isGeneralScope ? "بازگشت به پزشکی" : "بازگشت به تخصص‌ها";
+
   const content = (
     <div className="space-y-4">
       {doctors.length ? (
         doctors.map((doctor) => {
           const inactive = doctor.status !== "available" && doctor.status !== "busy";
-          const href = `${consultation}?category=medical-specialty&specialty=${specialty.id}&doctor=${doctor.id}`;
+          const href = isGeneralScope
+            ? `${consultation}?category=medical&type=phone&doctor=${doctor.id}`
+            : `${consultation}?category=medical-specialty&specialty=${specialty.id}&doctor=${doctor.id}&type=phone`;
           return (
             <div key={doctor.id}>
               <Link
@@ -103,8 +117,11 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
                     </p>
                   ) : null}
                   <p className="mt-1 text-xs text-slate-500">
-                    روزهای حضور: {doctor.days.join("، ")}
+                    روزهای حضور: {(doctor.days || []).join("، ") || "—"}
                     {doctor.hours ? ` · ${doctor.hours}` : ""}
+                  </p>
+                  <p className="mt-1 text-[0.7rem] font-bold text-cyan-800">
+                    ویزیت · نوبت‌های ۱۵ دقیقه‌ای
                   </p>
                 </div>
                 <span className="text-sm font-bold text-teal-700">انتخاب ←</span>
@@ -119,7 +136,9 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
         })
       ) : (
         <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          در حال حاضر پزشکی برای این تخصص ثبت نشده است. لطفاً با پشتیبانی تماس بگیرید.
+          {isGeneralScope
+            ? "در حال حاضر پزشک عمومی ثبت نشده است. از پنل ادمین پزشک با تخصص «پزشک عمومی» اضافه کنید."
+            : "در حال حاضر پزشکی برای این تخصص ثبت نشده است. لطفاً با پشتیبانی تماس بگیرید."}
         </p>
       )}
     </div>
@@ -129,15 +148,15 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
     return (
       <div className="space-y-4">
         <div>
-          <p className="text-xs text-slate-500">تخصص: {specialty.name}</p>
+          <p className="text-xs text-slate-500">{specialty.name}</p>
           <h2 className="text-lg font-bold text-slate-900">انتخاب پزشک</h2>
           <p className="mt-1 text-sm text-slate-600">
-            پزشک مورد نظر را انتخاب کنید تا نوع ویزیت را ثبت کنید.
+            پزشک را انتخاب کنید؛ سپس روز و ساعت ویزیت (هر نوبت ۱۵ دقیقه) را مشخص می‌کنید.
           </p>
         </div>
         {content}
-        <Link href={specialtyPage} className="inline-block text-sm font-bold text-teal-700 underline">
-          بازگشت به تخصص‌ها
+        <Link href={backHref} className="inline-block text-sm font-bold text-teal-700 underline">
+          {backLabel}
         </Link>
       </div>
     );
@@ -149,10 +168,14 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
         <Link href={medical} className="hover:text-teal-700">
           پزشکی
         </Link>
-        <span className="mx-2">/</span>
-        <Link href={specialtyPage} className="hover:text-teal-700">
-          تخصص‌ها
-        </Link>
+        {!isGeneralScope ? (
+          <>
+            <span className="mx-2">/</span>
+            <Link href={specialtyPage} className="hover:text-teal-700">
+              تخصص‌ها
+            </Link>
+          </>
+        ) : null}
         <span className="mx-2">/</span>
         <span className="font-medium text-slate-900">{specialty.name}</span>
       </nav>
@@ -161,16 +184,14 @@ export function MedicalDoctorList({ basePath }: { basePath: MedicalBasePath }) {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">انتخاب پزشک — {specialty.name}</h1>
           <p className="mt-1 text-slate-600">
-            پزشک مورد نظر را انتخاب کنید؛ سپس نوع مشاوره یا ویزیت را مشخص می‌کنید.
+            مثل دندانپزشکی: ابتدا پزشک را ببینید و انتخاب کنید؛ سپس روز و نوبت ۱۵ دقیقه‌ای ویزیت را
+            مشخص کنید.
           </p>
         </div>
       </div>
       {content}
-      <Link
-        href={specialtyPage}
-        className="mt-6 inline-block text-sm font-bold text-teal-700 underline"
-      >
-        بازگشت به تخصص‌ها
+      <Link href={backHref} className="mt-6 inline-block text-sm font-bold text-teal-700 underline">
+        {backLabel}
       </Link>
     </div>
   );

@@ -1,13 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card, EmptyState } from "@/components/ui/Card";
+import { Card, EmptyState, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
+import { fetchPatientOps } from "@/lib/operations/client";
+import type { PendingNursingPayment } from "@/lib/payment";
+import type { PatientProfile } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { PasteurStorage } from "@/lib/storage";
+import { cn, formatPrice } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 type NursingCatalogProps = {
   variant?: "site" | "app";
@@ -18,12 +22,24 @@ function formatItemPrice(item: NursingItem): string {
   return `${item.priceNum.toLocaleString("fa-IR")} تومان`;
 }
 
+function parsePriceFromLabel(raw?: string): number {
+  if (!raw) return 0;
+  const digits = raw.replace(/[^\d۰-۹0-9]/g, "").replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
   const app = variant === "app";
-  const phone = PASTEUR_DATA.institute.phoneDigits;
+  const router = useRouter();
+  const phoneDigits = PASTEUR_DATA.institute.phoneDigits;
   const [categories, setCategories] = useState<NursingService[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [selectedItemId, setSelectedItemId] = useState<string>("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchPublic<{ items: NursingService[] }>("/api/content/nursing")
@@ -37,6 +53,14 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
         }
       })
       .catch(() => setCategories([]));
+
+    void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
+      .then((res) => {
+        if (!res.profile) return;
+        setName((prev) => prev || res.profile!.name);
+        setPhone((prev) => prev || res.profile!.phone);
+      })
+      .catch(() => {});
   }, []);
 
   const selectedCategory = useMemo(
@@ -54,11 +78,68 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
     [activeItems, selectedItemId],
   );
 
+  const payableAmount = useMemo(() => {
+    if (selectedItem?.priceNum && selectedItem.priceNum > 0) return selectedItem.priceNum;
+    if (selectedCategory) return parsePriceFromLabel(selectedCategory.price);
+    return 0;
+  }, [selectedItem, selectedCategory]);
+
   function selectCategory(id: string) {
     setSelectedId(id);
     const category = categories.find((c) => c.id === id);
     const items = (category?.items || []).filter((item) => item.active !== false);
     setSelectedItemId(items[0]?.id || "");
+    setError("");
+  }
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!selectedCategory) {
+      setError("خدمت پرستاری را انتخاب کنید.");
+      return;
+    }
+    if (activeItems.length > 0 && !selectedItem) {
+      setError("تعرفه خدمت را انتخاب کنید.");
+      return;
+    }
+    if (payableAmount < 100) {
+      setError("تعرفه این خدمت برای پرداخت تنظیم نشده است. از پنل ادمین قیمت را وارد کنید.");
+      return;
+    }
+    const patientName = name.trim();
+    const patientPhone = phone.trim();
+    if (!patientName || !patientPhone) {
+      setError("نام و موبایل الزامی است.");
+      return;
+    }
+
+    const itemTitle = selectedItem?.title || selectedCategory.title;
+    const estimate = selectedItem
+      ? formatItemPrice(selectedItem)
+      : selectedCategory.price || formatPrice(payableAmount);
+
+    const pending: PendingNursingPayment = {
+      kind: "nursing",
+      serviceId: selectedCategory.id,
+      serviceTitle: selectedCategory.title,
+      itemId: selectedItem?.id,
+      itemTitle,
+      unit: selectedItem?.unit,
+      patientName,
+      patientPhone,
+      description: description.trim(),
+      amount: payableAmount,
+      amountToman: payableAmount,
+      estimate,
+      paymentLabel: "مبلغ تعرفه خدمت پرستاری",
+      returnTo: app ? ROUTES.app.nursing : ROUTES.web.nursing,
+      successTo: app ? ROUTES.app.nursingSuccess : ROUTES.web.nursingSuccess,
+    };
+
+    PasteurStorage.initPatientDomainIfNeeded();
+    PasteurStorage.setPendingPayment(pending);
+    router.push(app ? ROUTES.app.nursingConfirm : ROUTES.web.nursingConfirm);
   }
 
   return (
@@ -106,7 +187,7 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
 
             {activeItems.length === 0 ? (
               <div className="mt-4 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-bold text-teal-800">
-                {selectedCategory.price}
+                {selectedCategory.price || "تعرفه تعریف نشده"}
               </div>
             ) : (
               <div className="mt-4 space-y-2">
@@ -115,7 +196,10 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setSelectedItemId(item.id)}
+                    onClick={() => {
+                      setSelectedItemId(item.id);
+                      setError("");
+                    }}
                     className={cn(
                       "flex w-full items-center justify-between rounded-xl border px-4 py-3 text-right text-sm transition-colors",
                       selectedItemId === item.id
@@ -130,48 +214,69 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
                     </span>
                   </button>
                 ))}
-                {selectedItem ? (
-                  <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
-                    <p className="text-xs text-slate-500">قیمت انتخاب‌شده</p>
-                    <p className="mt-1 text-lg font-extrabold text-teal-800">
-                      {formatItemPrice(selectedItem)}
-                      {selectedItem.unit ? (
-                        <span className="text-sm font-normal text-slate-600">
-                          {" "}
-                          / {selectedItem.unit}
-                        </span>
-                      ) : null}
-                    </p>
-                  </div>
-                ) : null}
               </div>
             )}
+
+            <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
+              <p className="text-xs text-slate-500">مبلغ قابل پرداخت (بر اساس تعرفه)</p>
+              <p className="mt-1 text-lg font-extrabold text-teal-800">
+                {payableAmount > 0 ? formatPrice(payableAmount) : "—"}
+                {selectedItem?.unit ? (
+                  <span className="text-sm font-normal text-slate-600"> / {selectedItem.unit}</span>
+                ) : null}
+              </p>
+            </div>
           </div>
         </Card>
       ) : (
         <EmptyState
           title="هنوز خدمت پرستاری ثبت نشده"
-          desc="از پنل ادمین → خدمات پرستاری آیتم اضافه کنید."
+          desc="از پنل ادمین → خدمات پرستاری آیتم و تعرفه اضافه کنید."
         />
       )}
 
-      {app ? (
-        <>
-          <Button href={`tel:${phone}`} className="w-full">
-            تماس برای درخواست
+      {selectedCategory ? (
+        <form onSubmit={onSubmit} className={cn("mt-6 space-y-4", app && "mt-4")}>
+          <p className="text-sm font-bold text-slate-800">ثبت و پرداخت آنلاین</p>
+          <p className="text-xs text-slate-500">
+            پرداخت بر اساس تعرفه خدمت انتخاب‌شده انجام می‌شود — نه تعرفه‌های مشاوره و ویزیت.
+          </p>
+          <div className={cn("grid gap-4", app ? "grid-cols-1" : "sm:grid-cols-2")}>
+            <div>
+              <FormLabel>نام و نام خانوادگی</FormLabel>
+              <FormInput required value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <FormLabel>موبایل</FormLabel>
+              <FormInput
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <FormLabel>توضیحات (اختیاری)</FormLabel>
+            <FormTextarea
+              placeholder="آدرس تقریبی، زمان ترجیحی یا شرح نیاز..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[90px]"
+            />
+          </div>
+          {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
+          <Button type="submit" className="w-full" disabled={payableAmount < 100}>
+            ادامه به پرداخت {payableAmount > 0 ? `(${formatPrice(payableAmount)})` : ""}
           </Button>
-          <Link
-            href={`${ROUTES.app.consultation}?category=nursing&type=phone`}
-            className="mt-3 block text-center text-sm font-bold text-cyan-700 underline-offset-4 hover:underline"
+          <a
+            href={`tel:${phoneDigits}`}
+            className="block text-center text-sm font-bold text-slate-600 hover:text-teal-700"
           >
-            ثبت درخواست آنلاین
-          </Link>
-        </>
-      ) : (
-        <div className="mt-8 text-center">
-          <Button href={`tel:${phone}`}>درخواست خدمات پرستاری</Button>
-        </div>
-      )}
+            یا تماس تلفنی: {PASTEUR_DATA.institute.phone}
+          </a>
+        </form>
+      ) : null}
     </>
   );
 }

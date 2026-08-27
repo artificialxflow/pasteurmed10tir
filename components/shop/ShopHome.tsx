@@ -7,7 +7,7 @@ import { PASTEUR_DATA } from "@/lib/data";
 import type { Product } from "@/lib/data";
 import { catalogCategoryHref, groupProductsByCategory, type ShopCategoryGroup } from "@/lib/shop/group-products";
 import { ShopCart } from "@/lib/shop";
-import { productThumbnail } from "@/lib/shop/product-display";
+import { productThumbnail, groupProductsByFamily, productPathKey, productVariantLabel } from "@/lib/shop/product-display";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,18 +94,40 @@ export function ShopHome({ variant = "web" }: { variant?: ShopVariant }) {
           </Button>
         </div>
         <div className={gridClass}>
-          {group.products.map((p) => (
-            <Link key={p.id} href={routes.product(p.slug || String(p.id))}>
+          {groupProductsByFamily(group.products).map((family) => {
+            const p = family.representative;
+            const hasVariants = family.variants.length > 1;
+            return (
+            <Link key={family.key} href={routes.product(productPathKey(p))}>
               <Card hover className="overflow-hidden p-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={productThumbnail(p)}
-                  alt={p.name}
+                  alt={family.name}
                   className="h-32 w-full object-cover"
                 />
                 <div className="p-3">
-                  <p className="text-sm font-bold text-slate-900">{p.name}</p>
-                  <p className="mt-1 text-xs font-bold text-teal-700">{p.price} تومان</p>
+                  <p className="text-sm font-bold text-slate-900">{family.name}</p>
+                  {(family.sizes.length > 0 || family.percents.some((n) => n > 0)) ? (
+                    <p className="mt-1 text-[0.65rem] leading-4 text-slate-500">
+                      {family.sizes.length ? `سایز: ${family.sizes.slice(0, 4).join("، ")}` : null}
+                      {family.sizes.length > 4 ? "…" : null}
+                      {family.sizes.length && family.percents.some((n) => n > 0) ? " · " : null}
+                      {family.percents.filter((n) => n > 0).length
+                        ? `٪: ${family.percents
+                            .filter((n) => n > 0)
+                            .slice(0, 4)
+                            .map((n) => n.toLocaleString("fa-IR"))
+                            .join("، ")}`
+                        : null}
+                    </p>
+                  ) : productVariantLabel(p) ? (
+                    <p className="mt-1 text-[0.65rem] text-slate-500">{productVariantLabel(p)}</p>
+                  ) : null}
+                  <p className="mt-1 text-xs font-bold text-teal-700">
+                    {hasVariants ? "از " : ""}
+                    {family.minPrice.toLocaleString("fa-IR")} تومان
+                  </p>
                   <p
                     className={cn(
                       "mt-1 text-[0.65rem]",
@@ -115,11 +137,15 @@ export function ShopHome({ variant = "web" }: { variant?: ShopVariant }) {
                     {p.stock > 0
                       ? `${p.stock.toLocaleString("fa-IR")} موجود`
                       : "ناموجود"}
+                    {hasVariants
+                      ? ` · ${family.variants.length.toLocaleString("fa-IR")} گزینه`
+                      : ""}
                   </p>
                 </div>
               </Card>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
