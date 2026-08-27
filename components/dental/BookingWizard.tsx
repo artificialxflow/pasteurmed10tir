@@ -11,7 +11,7 @@ import {
   formatBookingDateLabel,
 } from "@/lib/operations/booking-dates";
 import { PasteurStorage } from "@/lib/storage";
-import { cn, formatHour, normalizePhone } from "@/lib/utils";
+import { cn, formatHour, formatPrice, normalizePhone } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { DentalBasePath } from "./types";
@@ -520,6 +520,18 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 <span className="text-slate-500">زمان:</span>
                 <span className="font-semibold">{state.timeLabel || "—"}</span>
               </div>
+              <div className="flex justify-between border-t border-slate-200 pt-2">
+                <span className="text-slate-500">بیعانه رزرو:</span>
+                <span className="font-extrabold text-teal-800">
+                  {formatPrice(reservationFee)}
+                </span>
+              </div>
+              <p className="mt-2 rounded-lg border border-teal-100 bg-white p-3 text-xs leading-6 text-teal-900">
+                مبلغ بیعانه رزرو از مبلغ صورتحسابتان کسر خواهد شد.
+                <span className="mt-1 block text-slate-600">
+                  مبلغ رزرو وقت ثابت است و قابل ویرایش نیست.
+                </span>
+              </p>
             </Card>
           ) : null}
           <form className="space-y-4" onSubmit={submitBooking}>
