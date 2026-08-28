@@ -39,7 +39,6 @@ ADMIN-CREDENTIALS.local.json
 ADMIN-CREDENTIALS.local.md
 ADMIN-CREDENTIALS.local.*
 !ADMIN-CREDENTIALS.example.json
-backend-dev/TEST-FULL-WALKTHROUGH-FA.md
 
 # vercel
 .vercel
@@ -51,3 +50,14 @@ next-env.d.ts
 # prototype / design reference (not part of Next.js app)
 /pastour
 /samtrackstatic
+
+# internal dev notes, client feedback, and QA (local only — not for repo)
+/backend-dev/
+/pasteurmed10tir-main/
+/updates/
+
+# project todos & manual test checklists
+/todo.md
+/todo-v*.md
+/TODO*.md
+/MANUAL-*.md

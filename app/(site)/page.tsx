@@ -1,5 +1,6 @@
 "use client";
 
+import { HeroSlider } from "@/components/home/HeroSlider";
 import { Button } from "@/components/ui/Button";
 import { Card, Logo } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
@@ -95,27 +96,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative animate-[fadeUp_0.85s_ease-out_0.12s_both]">
-            <div className="pointer-events-none absolute -inset-8 rounded-full bg-cyan-300/25 blur-3xl" />
-            <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-[1.5rem] border border-cyan-200/80 bg-white shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)] lg:mr-0 lg:ml-auto lg:max-w-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/hero-home.png"
-                alt="فضای درمانگاه پاستور پلاس"
-                className="aspect-[4/5] h-auto w-full object-cover object-[center_35%]"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-900/40 to-transparent p-5 text-white sm:p-6">
-                <p className="text-xs font-bold text-cyan-200">پاستور پلاس</p>
-                <p className="mt-1 text-lg font-extrabold sm:text-xl">همراه شما در مسیر درمان</p>
-                <Link
-                  href={ROUTES.app.home}
-                  onClick={markAppView}
-                  className="mt-3 inline-flex text-sm font-bold text-cyan-100 underline-offset-4 hover:underline"
-                >
-                  ورود به نسخه موبایل ←
-                </Link>
-              </div>
-            </div>
+          <div className="animate-[fadeUp_0.85s_ease-out_0.12s_both]">
+            <HeroSlider />
           </div>
         </div>
       </section>
