@@ -921,6 +921,8 @@ export const PASTEUR_DATA = {
   ],
 
   specialtyTariffs: {
+    /** تعرفه پزشکی عمومی — پایین‌تر از تخصص‌ها */
+    general: { text: 100000, image: 130000, video: 300000, phone: 230000 },
     urology: { text: 140000, image: 170000, video: 380000, phone: 290000 },
     infectious: { text: 130000, image: 160000, video: 340000, phone: 270000 },
     cardiology: { text: 160000, image: 190000, video: 420000, phone: 320000 },

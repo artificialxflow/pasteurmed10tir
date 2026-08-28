@@ -4,6 +4,7 @@ import { AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
 import { FormEvent, useCallback, useEffect, useState } from "react";
@@ -14,6 +15,25 @@ function makeNursingId(title: string) {
 
 function makeItemId(title: string) {
   return `item-${Date.now()}-${String(title || "").replace(/\s+/g, "-").slice(0, 12)}`;
+}
+
+function parsePriceFromLabel(raw?: string): number {
+  if (!raw) return 0;
+  const digits = String(raw)
+    .replace(/[^\d۰-۹0-9]/g, "")
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeNursingItem(item: NursingItem): NursingItem {
+  const label = String(item.price || "").trim();
+  let priceNum = Number(item.priceNum || 0);
+  if (priceNum <= 0 && label) {
+    priceNum = parsePriceFromLabel(label);
+  }
+  const price = label || (priceNum > 0 ? `${priceNum.toLocaleString("fa-IR")} تومان` : "");
+  return { ...item, priceNum, price: price || undefined };
 }
 
 export default function AdminNursingServicesPage() {
@@ -30,7 +50,7 @@ export default function AdminNursingServicesPage() {
     const data = await fetchAdmin<{ items: NursingService[] }>("/api/admin/content/nursing");
     const next = data.items.map((s) => ({
       ...s,
-      items: (s.items || []).map((item) => ({ ...item })),
+      items: (s.items || []).map((item) => normalizeNursingItem({ ...item })),
     }));
     setServices(next);
     setExpandedId((prev) => prev || next[0]?.id || "");
@@ -52,6 +72,7 @@ export default function AdminNursingServicesPage() {
         image: String(service.image || "").trim() || undefined,
         active: service.active !== false,
         items: (service.items || [])
+          .map((item) => normalizeNursingItem(item))
           .map((item) => ({
             ...item,
             id: item.id || makeItemId(item.title),
@@ -277,7 +298,12 @@ export default function AdminNursingServicesPage() {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-bold">آیتم‌های قیمت‌دار</h3>
+                <div>
+                  <h3 className="text-sm font-bold">آیتم‌های قیمت‌دار</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    برای پرداخت آنلاین، «قیمت (عدد)» را حتماً وارد کنید. برچسب فقط نمایش است.
+                  </p>
+                </div>
                 <Button
                   type="button"
                   className="text-xs"
@@ -303,16 +329,21 @@ export default function AdminNursingServicesPage() {
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <FormInput
+                      <DraftNumberInput
                         className="text-xs"
-                        type="number"
                         min={0}
-                        value={item.priceNum ?? 0}
-                        onChange={(e) =>
+                        max={100_000_000}
+                        value={Number(item.priceNum || 0)}
+                        onCommit={(priceNum) =>
                           updateItem(categoryIndex, itemIndex, {
-                            priceNum: Number(e.target.value),
+                            priceNum,
+                            price:
+                              priceNum > 0
+                                ? `${priceNum.toLocaleString("fa-IR")} تومان`
+                                : item.price,
                           })
                         }
+                        placeholder="قیمت پرداخت (تومان)"
                       />
                     </td>
                     <td className="px-4 py-3">

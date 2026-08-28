@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import type { Booking } from "@/lib/storage";
@@ -119,11 +120,11 @@ export default function AdminBookingsPage() {
             <label className="mb-1 block text-xs font-bold text-slate-600">
               مبلغ بیعانه (تومان)
             </label>
-            <FormInput
-              type="number"
+            <DraftNumberInput
               min={0}
+              max={10_000_000}
               value={reservationFee}
-              onChange={(e) => setReservationFee(Number(e.target.value || 0))}
+              onCommit={setReservationFee}
               className="max-w-[200px]"
             />
           </div>

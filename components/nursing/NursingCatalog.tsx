@@ -29,6 +29,19 @@ function parsePriceFromLabel(raw?: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function resolvePayableAmount(
+  item: NursingItem | null,
+  category: NursingService | null,
+): number {
+  if (item) {
+    if (item.priceNum && item.priceNum > 0) return item.priceNum;
+    const fromItemLabel = parsePriceFromLabel(item.price);
+    if (fromItemLabel > 0) return fromItemLabel;
+  }
+  if (category) return parsePriceFromLabel(category.price);
+  return 0;
+}
+
 export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
   const app = variant === "app";
   const router = useRouter();
@@ -78,11 +91,10 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
     [activeItems, selectedItemId],
   );
 
-  const payableAmount = useMemo(() => {
-    if (selectedItem?.priceNum && selectedItem.priceNum > 0) return selectedItem.priceNum;
-    if (selectedCategory) return parsePriceFromLabel(selectedCategory.price);
-    return 0;
-  }, [selectedItem, selectedCategory]);
+  const payableAmount = useMemo(
+    () => resolvePayableAmount(selectedItem, selectedCategory),
+    [selectedItem, selectedCategory],
+  );
 
   function selectCategory(id: string) {
     setSelectedId(id);

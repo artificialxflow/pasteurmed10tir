@@ -28,6 +28,8 @@ type ConsultationPricingCache = {
 
 let pricingCache: ConsultationPricingCache | null = null;
 
+const GENERAL_TARIFF_KEY = 'general';
+
 function normalizeDigits(value: string): string {
   return value
     .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
@@ -45,6 +47,12 @@ function getCategoryFallback(categoryId?: string | null): ConsultationCategory |
   return PASTEUR_DATA.consultationCategories.find((category) => category.id === categoryId);
 }
 
+function isGeneralMedicineCategory(input: ConsultationPriceInput): boolean {
+  if (input.categoryId === 'medical') return true;
+  if (input.specialtyId === GENERAL_TARIFF_KEY) return true;
+  return false;
+}
+
 function buildPreviewLabel(
   amount: number,
   type?: ConsultationType,
@@ -54,6 +62,9 @@ function buildPreviewLabel(
   const price = formatPrice(amount);
   if (specialtyName && type) {
     return `متخصص ${specialtyName} — ${type.label}: ${price}`;
+  }
+  if (type && category?.id === 'medical') {
+    return `پزشکی عمومی — ${type.label}: ${price}`;
   }
   if (type) {
     return `${type.label}: ${price}`;
@@ -96,7 +107,18 @@ export function getConsultationPrice(input: ConsultationPriceInput): Consultatio
   const type = types.find((item) => item.id === typeId);
   const category = getCategoryFallback(categoryId);
 
-  if (specialtyId && typeId) {
+  if (isGeneralMedicineCategory(input) && typeId) {
+    const generalAmount = tariffs[GENERAL_TARIFF_KEY]?.[typeId];
+    if (generalAmount) {
+      return {
+        amount: generalAmount,
+        source: 'tariff',
+        label: buildPreviewLabel(generalAmount, type, null, category),
+      };
+    }
+  }
+
+  if (specialtyId && specialtyId !== GENERAL_TARIFF_KEY && typeId) {
     const tariffAmount = tariffs[specialtyId]?.[typeId];
     if (tariffAmount) {
       return {

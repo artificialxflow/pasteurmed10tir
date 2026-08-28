@@ -213,7 +213,50 @@ export default function AdminConsultationPricesPage() {
 
       {hasTypes ? (
         <div>
-          <h2 className="mb-4 text-lg font-bold">تعرفه تخصص × نوع ویزیت</h2>
+          <h2 className="mb-2 text-lg font-bold">تعرفه پزشکی عمومی</h2>
+          <p className="mb-4 text-sm text-slate-600">
+            ویزیت/مشاوره پزشک عمومی — معمولاً پایین‌تر از تخصص‌ها. کلید ذخیره:{" "}
+            <code className="rounded bg-slate-100 px-1">general</code>
+          </p>
+          <Card hover={false} className="overflow-x-auto p-0">
+            <table className="min-w-full text-sm">
+              <thead className="bg-teal-50 text-right">
+                <tr>
+                  <th className="px-4 py-3 font-bold">پزشکی عمومی</th>
+                  {types.map((type) => (
+                    <th key={type.id} className="px-4 py-3 font-bold">
+                      {type.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-slate-100">
+                  <td className="px-4 py-3 font-semibold">تعرفه عمومی</td>
+                  {types.map((type) => (
+                    <td key={type.id} className="px-4 py-3">
+                      <DraftNumberInput
+                        min={0}
+                        max={100_000_000}
+                        value={Number(tariffs.general?.[type.id] || 0)}
+                        onCommit={(priceNum) => updateTariff("general", type.id, priceNum)}
+                        className="min-w-[120px]"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      ) : null}
+
+      {hasTypes ? (
+        <div>
+          <h2 className="mb-2 text-lg font-bold">تعرفه تخصص × نوع ویزیت</h2>
+          <p className="mb-4 text-sm text-slate-600">
+            هر تخصص جدا از عمومی — معمولاً بالاتر از تعرفه پزشک عمومی.
+          </p>
           <Card hover={false} className="overflow-x-auto p-0">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-right">
