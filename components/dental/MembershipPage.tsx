@@ -22,6 +22,10 @@ import {
   normalizeMemberCount,
   type MembershipTier,
 } from "@/lib/membership";
+import {
+  applyMembershipDiscounts,
+  resolveGroupDiscountPercent,
+} from "@/lib/membership/group-discount";
 import { ROUTES } from "@/lib/routes";
 import {
   createMembershipApplicationApi,
@@ -155,13 +159,27 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
   const unitPrice = getUnitPrice(form.tier, form.planId);
   const memberCount = normalizeMemberCount(form.memberCount);
-  const amountToman = unitPrice * memberCount;
+  const subtotalToman = unitPrice * memberCount;
   const durationPlan = durationOptions.find((p) => p.id === form.planId);
   const validityLabel = getValidityLabel(form.tier, form.planId);
   const discountPercent = durationPlan?.discountPercent || 0;
-  const amountPreview = `${formatToman(unitPrice)} برای هر نفر × ${memberCount.toLocaleString("fa-IR")} نفر = ${formatToman(amountToman)} | مدت عضویت: ${validityLabel}${
-    discountPercent ? ` | تخفیف: ${discountPercent.toLocaleString("fa-IR")}٪` : ""
-  }`;
+  const groupDiscountPercent = resolveGroupDiscountPercent(memberCount);
+  const finalAmountToman = applyMembershipDiscounts({
+    subtotal: subtotalToman,
+    durationDiscountPercent: discountPercent,
+    groupDiscountPercent,
+  });
+  const amountPreview = [
+    `${formatToman(unitPrice)} × ${memberCount.toLocaleString("fa-IR")} نفر = ${formatToman(subtotalToman)}`,
+    `مدت: ${validityLabel}`,
+    discountPercent ? `تخفیف مدت ${discountPercent.toLocaleString("fa-IR")}٪` : null,
+    groupDiscountPercent
+      ? `تخفیف مجموعه ${groupDiscountPercent.toLocaleString("fa-IR")}٪`
+      : null,
+    `قابل پرداخت: ${formatToman(finalAmountToman)}`,
+  ]
+    .filter(Boolean)
+    .join(" | ");
 
   function updateForm<K extends keyof ApplicationForm>(key: K, value: ApplicationForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -203,7 +221,14 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     }
     const count = normalizeMemberCount(form.memberCount);
     const unit = getUnitPrice(form.tier, form.planId);
-    const total = unit * count;
+    const subtotal = unit * count;
+    const durationDisc = plan?.discountPercent || 0;
+    const groupDisc = resolveGroupDiscountPercent(count);
+    const total = applyMembershipDiscounts({
+      subtotal,
+      durationDiscountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
+    });
     return {
       id: PasteurStorage.generateId(),
       date: form.date || new Date().toLocaleDateString("fa-IR"),
@@ -221,11 +246,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       planTitle: plan ? `${plan.title} (${plan.duration})` : "—",
       validityLabel: getValidityLabel(form.tier, form.planId),
       membershipDurationLabel: getValidityLabel(form.tier, form.planId),
-      discountPercent: plan?.discountPercent || 0,
+      discountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
       tier: form.tier,
       tierLabel: form.tier === "vip" ? "VIP" : "عادی",
       memberCount: count,
       unitPriceToman: unit,
+      subtotalToman: subtotal,
       amountRial: total * 10,
       amountToman: total,
       medicalHistory: form.medicalHistory.trim(),
@@ -241,7 +268,14 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const referralCode = form.referral.trim().toUpperCase();
     const count = normalizeMemberCount(form.memberCount);
     const unit = getUnitPrice(form.tier, form.planId);
-    const total = unit * count;
+    const subtotal = unit * count;
+    const durationDisc = plan?.discountPercent || 0;
+    const groupDisc = resolveGroupDiscountPercent(count);
+    const total = applyMembershipDiscounts({
+      subtotal,
+      durationDiscountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
+    });
     return {
       id: PasteurStorage.generateId(),
       date: form.date || new Date().toLocaleDateString("fa-IR"),
@@ -259,11 +293,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       planTitle: plan ? `${plan.title} (${plan.duration})` : "—",
       validityLabel: getValidityLabel(form.tier, form.planId),
       membershipDurationLabel: getValidityLabel(form.tier, form.planId),
-      discountPercent: plan?.discountPercent || 0,
+      discountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
       tier: form.tier,
       tierLabel: form.tier === "vip" ? "VIP" : "عادی",
       memberCount: count,
       unitPriceToman: unit,
+      subtotalToman: subtotal,
       amountRial: total * 10,
       amountToman: total,
       medicalHistory: form.medicalHistory.trim(),
@@ -308,6 +344,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       validityLabel: data.validityLabel,
       membershipDurationLabel: data.membershipDurationLabel,
       discountPercent: data.discountPercent,
+      groupDiscountPercent: data.groupDiscountPercent,
       successTo: successHref,
       returnTo: returnHref,
     });
@@ -321,9 +358,17 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const phone = quick.phone.trim();
     const count = normalizeMemberCount(quick.memberCount);
     const unit = getUnitPrice(quick.tier, quick.planId);
+    const subtotal = unit * count;
     const membershipDurationLabel = getValidityLabel(quick.tier, quick.planId);
     const plan = durationOptions.find((p) => p.id === quick.planId);
     const membership = membershipPlans.find((m) => m.id === quick.tier);
+    const durationDisc = plan?.discountPercent || 0;
+    const groupDisc = resolveGroupDiscountPercent(count);
+    const payable = applyMembershipDiscounts({
+      subtotal,
+      durationDiscountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
+    });
     if (name.length < 2 || normalizePhone(phone).length < 10) {
       setError("اطلاعات را کامل وارد کنید.");
       return;
@@ -334,10 +379,11 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       planName: `${membership?.name || quick.tier} — عضویت ${membershipDurationLabel} — ${count} نفر`,
       patientName: name,
       patientPhone: phone,
-      amount: unit * count,
+      amount: payable,
       validityLabel: membershipDurationLabel,
       membershipDurationLabel,
-      discountPercent: plan?.discountPercent || 0,
+      discountPercent: durationDisc,
+      groupDiscountPercent: groupDisc,
       referralCode: quick.referral.trim().toUpperCase(),
       successTo: successHref,
       returnTo: returnHref,
@@ -1017,10 +1063,23 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   const count = normalizeMemberCount(quick.memberCount);
                   const unit = getUnitPrice(quick.tier!, quick.planId);
                   const plan = durationOptions.find((p) => p.id === quick.planId);
-                  const disc = plan?.discountPercent
-                    ? ` | تخفیف: ${plan.discountPercent.toLocaleString("fa-IR")}٪`
-                    : "";
-                  return `${formatToman(unit)} برای هر نفر × ${count.toLocaleString("fa-IR")} نفر = ${formatToman(unit * count)} | مدت عضویت: ${getValidityLabel(quick.tier!, quick.planId)}${disc}`;
+                  const subtotal = unit * count;
+                  const durationDisc = plan?.discountPercent || 0;
+                  const groupDisc = resolveGroupDiscountPercent(count);
+                  const payable = applyMembershipDiscounts({
+                    subtotal,
+                    durationDiscountPercent: durationDisc,
+                    groupDiscountPercent: groupDisc,
+                  });
+                  return [
+                    `${formatToman(unit)} × ${count.toLocaleString("fa-IR")} نفر = ${formatToman(subtotal)}`,
+                    `مدت: ${getValidityLabel(quick.tier!, quick.planId)}`,
+                    durationDisc ? `تخفیف مدت ${durationDisc.toLocaleString("fa-IR")}٪` : null,
+                    groupDisc ? `تخفیف مجموعه ${groupDisc.toLocaleString("fa-IR")}٪` : null,
+                    `قابل پرداخت: ${formatToman(payable)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" | ");
                 })()}
               </div>
               <div>

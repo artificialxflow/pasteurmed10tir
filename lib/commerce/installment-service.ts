@@ -382,3 +382,301 @@ export async function applyInstallmentPayment(input: {
 }
 
 export type InstallmentSourceValue = InstallmentSource;
+
+type ScheduleItemRow = {
+  id: string;
+  index: number;
+  dueDate: Date;
+  amount: number;
+  paidAmount: number;
+  status: InstallmentItemStatus;
+};
+
+/** توزیع مجدد مبلغ باقی‌مانده بین اقساط پرداخت‌نشده */
+export function redistributeUnpaidAmounts(
+  items: ScheduleItemRow[],
+  newTotal: number,
+): Array<{ id: string; amount: number }> {
+  const locked = items.reduce((sum, item) => sum + item.paidAmount, 0);
+  let pool = Math.max(0, newTotal - locked);
+  const flexible = items.filter((item) => item.paidAmount < item.amount);
+  if (flexible.length === 0) return [];
+
+  const oldRemaining = flexible.reduce(
+    (sum, item) => sum + (item.amount - item.paidAmount),
+    0,
+  );
+
+  const updates: Array<{ id: string; amount: number }> = [];
+  let assigned = 0;
+
+  flexible.forEach((item, idx) => {
+    const oldRem = item.amount - item.paidAmount;
+    let newRem: number;
+    if (idx === flexible.length - 1) {
+      newRem = pool - assigned;
+    } else if (oldRemaining > 0) {
+      newRem = Math.round(pool * (oldRem / oldRemaining));
+    } else {
+      newRem = Math.floor(pool / flexible.length);
+    }
+    assigned += newRem;
+    updates.push({ id: item.id, amount: item.paidAmount + Math.max(0, newRem) });
+  });
+
+  return updates;
+}
+
+async function refreshPlanTotals(planId: string) {
+  const items = await prisma.installmentScheduleItem.findMany({
+    where: { planId },
+    orderBy: { index: 'asc' },
+  });
+  const paidAmount = items.reduce((sum, item) => sum + item.paidAmount, 0);
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  const allPaid = items.every((item) => item.paidAmount >= item.amount);
+
+  await prisma.installmentPlan.update({
+    where: { id: planId },
+    data: {
+      totalAmount,
+      paidAmount,
+      installmentCount: items.length,
+      dueDates: items.map((item) => item.dueDate.toISOString()),
+      status: allPaid ? 'completed' : 'active',
+    },
+  });
+}
+
+async function logAdminAdjustment(input: {
+  planId: string;
+  note?: string | null;
+  amount?: number;
+}) {
+  if (!input.note?.trim()) return;
+  await prisma.installmentPayment.create({
+    data: {
+      id: generateCommerceId(),
+      planId: input.planId,
+      amount: input.amount ?? 0,
+      method: 'manual',
+      status: 'completed',
+      note: `[ویرایش ادمین] ${input.note.trim()}`,
+      paidAt: new Date(),
+    },
+  });
+}
+
+export async function updateInstallmentPlanTotal(input: {
+  planId: string;
+  totalAmount: number;
+  note?: string | null;
+}) {
+  const plan = await prisma.installmentPlan.findUnique({
+    where: { id: input.planId },
+    include: { scheduleItems: { orderBy: { index: 'asc' } } },
+  });
+  if (!plan) return null;
+  if (plan.scheduleItems.length === 0) {
+    throw new Error('برنامه اقساط خالی است.');
+  }
+
+  const paidLocked = plan.scheduleItems.reduce((sum, item) => sum + item.paidAmount, 0);
+  if (input.totalAmount < paidLocked) {
+    throw new Error('مبلغ کل نمی‌تواند کمتر از مجموع پرداخت‌شده باشد.');
+  }
+
+  const updates = redistributeUnpaidAmounts(plan.scheduleItems, input.totalAmount);
+
+  await prisma.$transaction(async (tx) => {
+    for (const update of updates) {
+      const item = plan.scheduleItems.find((s) => s.id === update.id);
+      if (!item) continue;
+      await tx.installmentScheduleItem.update({
+        where: { id: update.id },
+        data: {
+          amount: update.amount,
+          status: deriveItemStatus({
+            dueDate: item.dueDate,
+            amount: update.amount,
+            paidAmount: item.paidAmount,
+          }),
+        },
+      });
+    }
+    await tx.installmentPlan.update({
+      where: { id: plan.id },
+      data: { totalAmount: input.totalAmount },
+    });
+  });
+
+  await logAdminAdjustment({
+    planId: plan.id,
+    note: input.note,
+    amount: input.totalAmount - plan.totalAmount,
+  });
+  await refreshPlanTotals(plan.id);
+
+  return prisma.installmentPlan.findUnique({
+    where: { id: plan.id },
+    include: {
+      scheduleItems: { orderBy: { index: 'asc' } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+}
+
+export async function updateInstallmentScheduleItemAmount(input: {
+  planId: string;
+  scheduleItemId: string;
+  amount: number;
+  note?: string | null;
+}) {
+  const item = await prisma.installmentScheduleItem.findFirst({
+    where: { id: input.scheduleItemId, planId: input.planId },
+  });
+  if (!item) throw new Error('قسط یافت نشد.');
+  if (item.status === 'paid' || item.paidAmount >= item.amount) {
+    throw new Error('قسط پرداخت‌شده قابل ویرایش نیست.');
+  }
+  const amount = Math.round(input.amount);
+  if (amount < item.paidAmount) {
+    throw new Error('مبلغ قسط نمی‌تواند کمتر از پرداخت‌شده باشد.');
+  }
+
+  await prisma.installmentScheduleItem.update({
+    where: { id: item.id },
+    data: {
+      amount,
+      status: deriveItemStatus({
+        dueDate: item.dueDate,
+        amount,
+        paidAmount: item.paidAmount,
+      }),
+    },
+  });
+
+  await logAdminAdjustment({
+    planId: input.planId,
+    note: input.note || `ویرایش قسط ${item.index} به ${amount.toLocaleString('fa-IR')} تومان`,
+    amount: amount - item.amount,
+  });
+  await refreshPlanTotals(input.planId);
+
+  return prisma.installmentPlan.findUnique({
+    where: { id: input.planId },
+    include: {
+      scheduleItems: { orderBy: { index: 'asc' } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+}
+
+export async function addInstallmentScheduleItem(input: {
+  planId: string;
+  amount?: number;
+  dueDate?: string;
+  note?: string | null;
+}) {
+  const plan = await prisma.installmentPlan.findUnique({
+    where: { id: input.planId },
+    include: { scheduleItems: { orderBy: { index: 'asc' } } },
+  });
+  if (!plan) return null;
+
+  const lastIndex = plan.scheduleItems.at(-1)?.index ?? 0;
+  const dueDate = input.dueDate ? new Date(input.dueDate) : new Date();
+  if (Number.isNaN(dueDate.getTime())) throw new Error('تاریخ سررسید نامعتبر است.');
+
+  const remaining = Math.max(0, plan.totalAmount - plan.paidAmount);
+  const unpaidCount =
+    plan.scheduleItems.filter((item) => item.paidAmount < item.amount).length + 1;
+  const defaultAmount = Math.max(0, Math.floor(remaining / Math.max(1, unpaidCount)));
+  const amount = Math.round(input.amount ?? defaultAmount);
+  if (amount <= 0) throw new Error('مبلغ قسط باید بیشتر از صفر باشد.');
+
+  await prisma.installmentScheduleItem.create({
+    data: {
+      id: generateCommerceId(),
+      planId: plan.id,
+      index: lastIndex + 1,
+      dueDate,
+      amount,
+      paidAmount: 0,
+      status: deriveItemStatus({ dueDate, amount, paidAmount: 0 }),
+    },
+  });
+
+  await logAdminAdjustment({
+    planId: plan.id,
+    note: input.note || `افزودن قسط ${lastIndex + 1}`,
+    amount,
+  });
+  await refreshPlanTotals(plan.id);
+
+  return prisma.installmentPlan.findUnique({
+    where: { id: plan.id },
+    include: {
+      scheduleItems: { orderBy: { index: 'asc' } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+}
+
+export async function removeInstallmentScheduleItem(input: {
+  planId: string;
+  scheduleItemId: string;
+  note?: string | null;
+}) {
+  const item = await prisma.installmentScheduleItem.findFirst({
+    where: { id: input.scheduleItemId, planId: input.planId },
+  });
+  if (!item) throw new Error('قسط یافت نشد.');
+  if (item.paidAmount > 0 || item.status === 'paid') {
+    throw new Error('فقط اقساط پرداخت‌نشده قابل حذف هستند.');
+  }
+
+  await prisma.installmentScheduleItem.delete({ where: { id: item.id } });
+
+  const remaining = await prisma.installmentScheduleItem.findMany({
+    where: { planId: input.planId },
+    orderBy: { index: 'asc' },
+  });
+  await prisma.$transaction(
+    remaining.map((row, idx) =>
+      prisma.installmentScheduleItem.update({
+        where: { id: row.id },
+        data: { index: idx + 1 },
+      }),
+    ),
+  );
+
+  await logAdminAdjustment({
+    planId: input.planId,
+    note: input.note || `حذف قسط ${item.index}`,
+    amount: -item.amount,
+  });
+  await refreshPlanTotals(input.planId);
+
+  return prisma.installmentPlan.findUnique({
+    where: { id: input.planId },
+    include: {
+      scheduleItems: { orderBy: { index: 'asc' } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+}
+
+/** @deprecated use specific admin functions */
+export async function adminAdjustInstallmentPlan(input: {
+  planId: string;
+  totalAmount?: number;
+  note?: string | null;
+}) {
+  if (input.totalAmount == null) throw new Error('مبلغ کل الزامی است.');
+  return updateInstallmentPlanTotal({
+    planId: input.planId,
+    totalAmount: input.totalAmount,
+    note: input.note,
+  });
+}

@@ -11,6 +11,8 @@ const PARTNER_TYPES = [
   { id: "dentist", label: "دندانپزشک", emoji: "🦷" },
   { id: "doctor", label: "پزشک", emoji: "🩺" },
   { id: "psychologist", label: "روانشناس", emoji: "🧠" },
+  { id: "nutritionist", label: "مشاور تغذیه", emoji: "🥗" },
+  { id: "midwife", label: "ماما", emoji: "🤱" },
 ] as const;
 
 type Props = {

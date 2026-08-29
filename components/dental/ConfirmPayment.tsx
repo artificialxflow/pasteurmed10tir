@@ -116,6 +116,18 @@ function PaymentSummary({
             value={String(pending.membershipDurationLabel || pending.validityLabel)}
           />
         ) : null}
+        {pending.discountPercent ? (
+          <SummaryRow
+            label="تخفیف مدت:"
+            value={`${Number(pending.discountPercent).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
+        {pending.groupDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف مجموعه:"
+            value={`${Number(pending.groupDiscountPercent).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
         <SummaryRow
           label="مبلغ واریزی:"
           value={formatPrice(Number(pending.amount) || 0)}

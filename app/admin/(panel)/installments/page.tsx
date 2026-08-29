@@ -3,7 +3,8 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { FormInput } from "@/components/ui/Card";
-import { fetchAdminCommerce, postAdminCommerce } from "@/lib/commerce/client";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
+import { fetchAdminCommerce, patchAdminCommerce, postAdminCommerce } from "@/lib/commerce/client";
 import {
   formatJalaliDate,
   installmentSourceLabel,
@@ -21,6 +22,10 @@ export default function AdminInstallmentsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [manualNote, setManualNote] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [editTotal, setEditTotal] = useState("");
+  const [newItemAmount, setNewItemAmount] = useState("");
+  const [newItemDueDate, setNewItemDueDate] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   function reload() {
@@ -64,6 +69,33 @@ export default function AdminInstallmentsPage() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  async function patchPlan(
+    planId: string,
+    body: Record<string, unknown>,
+    busyKey = planId,
+  ) {
+    setError("");
+    setSuccess("");
+    setBusyId(busyKey);
+    try {
+      await patchAdminCommerce(`/api/admin/commerce/installments/${encodeURIComponent(planId)}`, body);
+      setSuccess("طرح اقساط به‌روز شد.");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ویرایش ناموفق");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function openPlan(plan: InstallmentPlan) {
+    setExpandedId(plan.id);
+    setEditTotal(String(plan.totalAmount));
+    setEditNote("");
+    setNewItemAmount("");
+    setNewItemDueDate("");
   }
 
   return (
@@ -113,7 +145,7 @@ export default function AdminInstallmentsPage() {
                 <button
                   type="button"
                   className="text-xs font-bold text-cyan-800"
-                  onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                  onClick={() => (expandedId === p.id ? setExpandedId(null) : openPlan(p))}
                 >
                   {expandedId === p.id ? "بستن" : "باز کردن"}
                 </button>
@@ -122,6 +154,79 @@ export default function AdminInstallmentsPage() {
             {expandedId === p.id ? (
               <tr className="border-t border-slate-50 bg-slate-50/50">
                 <td colSpan={7} className="px-4 py-4">
+                  <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_auto]">
+                    <div>
+                      <p className="mb-2 text-xs font-bold text-slate-700">ویرایش مبلغ کل طرح</p>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <DraftNumberInput
+                          min={p.paidAmount}
+                          max={2_000_000_000}
+                          value={Number(editTotal || p.totalAmount)}
+                          onCommit={(value) => setEditTotal(String(value))}
+                          className="min-w-[140px]"
+                        />
+                        <FormInput
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          placeholder="یادداشت ویرایش (اختیاری)"
+                          className="min-w-[180px] text-xs"
+                        />
+                        <Button
+                          type="button"
+                          className="px-3 py-1.5 text-xs"
+                          disabled={busyId === p.id}
+                          onClick={() =>
+                            void patchPlan(p.id, {
+                              action: "updateTotal",
+                              totalAmount: Number(editTotal || p.totalAmount),
+                              note: editNote.trim() || undefined,
+                            })
+                          }
+                        >
+                          بازمحاسبه اقساط
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-xs font-bold text-slate-700">افزودن قسط جدید</p>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <FormInput
+                          type="number"
+                          min={0}
+                          value={newItemAmount}
+                          onChange={(e) => setNewItemAmount(e.target.value)}
+                          placeholder="مبلغ (اختیاری)"
+                          className="w-28 text-xs"
+                        />
+                        <FormInput
+                          type="date"
+                          value={newItemDueDate}
+                          onChange={(e) => setNewItemDueDate(e.target.value)}
+                          className="text-xs"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="px-3 py-1.5 text-xs"
+                          disabled={busyId === `${p.id}-add`}
+                          onClick={() =>
+                            void patchPlan(
+                              p.id,
+                              {
+                                action: "addItem",
+                                amount: newItemAmount ? Number(newItemAmount) : undefined,
+                                dueDate: newItemDueDate || undefined,
+                                note: editNote.trim() || undefined,
+                              },
+                              `${p.id}-add`,
+                            )
+                          }
+                        >
+                          افزودن قسط
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                   <div className="mb-3 max-w-md">
                     <FormInput
                       value={manualNote}
@@ -141,16 +246,57 @@ export default function AdminInstallmentsPage() {
                           {formatPrice(item.amount)} · {item.status}
                           {item.remaining > 0 ? ` · مانده ${formatPrice(item.remaining)}` : ""}
                         </span>
-                        {item.status !== "paid" && item.remaining > 0 ? (
-                          <Button
-                            type="button"
-                            className="px-3 py-1 text-[0.65rem]"
-                            disabled={busyId === item.id}
-                            onClick={() => void manualPay(p.id, item.id, item.remaining)}
-                          >
-                            ثبت واریز دستی
-                          </Button>
-                        ) : null}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.status !== "paid" && item.remaining > 0 ? (
+                            <>
+                              <DraftNumberInput
+                                min={item.paidAmount || 0}
+                                max={500_000_000}
+                                value={item.amount}
+                                onCommit={(amount) =>
+                                  void patchPlan(
+                                    p.id,
+                                    {
+                                      action: "updateItem",
+                                      scheduleItemId: item.id,
+                                      amount,
+                                      note: editNote.trim() || undefined,
+                                    },
+                                    item.id,
+                                  )
+                                }
+                                className="min-w-[100px]"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="px-2 py-1 text-[0.65rem]"
+                                disabled={busyId === `${item.id}-rm`}
+                                onClick={() =>
+                                  void patchPlan(
+                                    p.id,
+                                    {
+                                      action: "removeItem",
+                                      scheduleItemId: item.id,
+                                      note: editNote.trim() || undefined,
+                                    },
+                                    `${item.id}-rm`,
+                                  )
+                                }
+                              >
+                                حذف
+                              </Button>
+                              <Button
+                                type="button"
+                                className="px-3 py-1 text-[0.65rem]"
+                                disabled={busyId === item.id}
+                                onClick={() => void manualPay(p.id, item.id, item.remaining)}
+                              >
+                                ثبت واریز دستی
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                     {!p.items?.length ? (

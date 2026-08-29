@@ -19,12 +19,6 @@ const colorBorder: Record<string, string> = {
   amber: "border-amber-300 hover:border-amber-500 group-hover:bg-amber-50",
 };
 
-function markAppView() {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("pasteur_app_view", "app");
-  }
-}
-
 export default function HomePage() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -84,14 +78,6 @@ export default function HomePage() {
               </Button>
               <Button href={ROUTES.web.medical} variant="outline" className="border-cyan-700 px-7 text-base text-cyan-900">
                 مشاوره و ویزیت پزشکی
-              </Button>
-              <Button
-                href={ROUTES.app.home}
-                variant="ghost"
-                className="px-5 text-base text-slate-600"
-                onClick={markAppView}
-              >
-                نسخه موبایل ←
               </Button>
             </div>
           </div>

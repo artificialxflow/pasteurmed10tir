@@ -1,5 +1,11 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
+import {
+  DEFAULT_HOME_VISIT_TARIFFS,
+  mergeTariffStore,
+  splitTariffStore,
+  type HomeVisitTariffs,
+} from '@/lib/consultation/home-visit';
 import { prisma } from '@/lib/prisma';
 import type { SpecialtyTariffs } from '@/lib/data';
 import { NextResponse } from 'next/server';
@@ -20,9 +26,12 @@ export async function GET() {
     prisma.consultationType.findMany({ orderBy: { id: 'asc' } }),
     prisma.specialtyTariff.findUnique({ where: { id: 'default' } }),
   ]);
+  const raw = (tariffRow?.tariffs as SpecialtyTariffs) || {};
+  const { specialtyTariffs, homeVisitTariffs } = splitTariffStore(raw);
   return NextResponse.json({
     consultationTypes: types,
-    specialtyTariffs: (tariffRow?.tariffs as SpecialtyTariffs) || {},
+    specialtyTariffs,
+    homeVisitTariffs,
   });
 }
 
@@ -33,8 +42,14 @@ export async function PUT(request: Request) {
   const body = await parseJson<{
     consultationTypes?: ConsultationTypeBody[];
     specialtyTariffs?: SpecialtyTariffs;
+    homeVisitTariffs?: HomeVisitTariffs;
   }>(request);
   if (!body?.consultationTypes) return jsonError('درخواست نامعتبر است.');
+
+  const mergedTariffs = mergeTariffStore(
+    body.specialtyTariffs || {},
+    body.homeVisitTariffs || DEFAULT_HOME_VISIT_TARIFFS,
+  );
 
   const types = body.consultationTypes.map((t) => ({
     id: String(t.id),
@@ -50,13 +65,16 @@ export async function PUT(request: Request) {
     ...types.map((t) => prisma.consultationType.create({ data: t })),
     prisma.specialtyTariff.upsert({
       where: { id: 'default' },
-      create: { id: 'default', tariffs: body.specialtyTariffs || {} },
-      update: { tariffs: body.specialtyTariffs || {} },
+      create: { id: 'default', tariffs: mergedTariffs },
+      update: { tariffs: mergedTariffs },
     }),
   ]);
 
+  const { specialtyTariffs, homeVisitTariffs } = splitTariffStore(mergedTariffs);
+
   return NextResponse.json({
     consultationTypes: types,
-    specialtyTariffs: body.specialtyTariffs || {},
+    specialtyTariffs,
+    homeVisitTariffs,
   });
 }

@@ -48,6 +48,7 @@ export type PendingMembershipPayment = PendingPaymentBase & {
   validityLabel?: string;
   membershipDurationLabel?: string;
   discountPercent?: number;
+  groupDiscountPercent?: number;
 };
 
 export type PendingShopVipPayment = PendingPaymentBase & {

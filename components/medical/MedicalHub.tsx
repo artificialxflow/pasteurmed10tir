@@ -35,9 +35,9 @@ export function MedicalHub({ basePath }: { basePath: MedicalBasePath }) {
     {
       emoji: "🏠",
       title: "ویزیت در منزل",
-      desc: "هماهنگی ویزیت پزشک در منزل پس از تماس کارشناس.",
+      desc: "انتخاب پزشک عمومی یا متخصص، پرداخت آنلاین و اعزام به منزل.",
       cta: "درخواست ویزیت منزل",
-      href: `${consultation}?category=medical-home&type=phone`,
+      href: `${consultation}?category=medical-home`,
       accent: false,
     },
   ];

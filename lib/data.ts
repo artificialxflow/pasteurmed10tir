@@ -824,6 +824,11 @@ export const PASTEUR_DATA = {
     vipPerPerson: 1600000,
     vipTwoYearPerPerson: 2560000,
     twoYearDiscountPercent: 20,
+    groupDiscountTiers: [
+      { minMembers: 10, percent: 2 },
+      { minMembers: 20, percent: 3 },
+      { minMembers: 40, percent: 5 },
+    ],
   },
 
   membershipDurationOptions: [
@@ -918,6 +923,9 @@ export const PASTEUR_DATA = {
     { id: 'medical-home', label: 'ویزیت پزشک در منزل', estimate: 'از ۵۰۰,۰۰۰ تومان', estimateMin: 500000, service: 'اعزام پزشک یا هماهنگی ویزیت در منزل' },
     { id: 'dental-home', label: 'اعزام دندانپزشک به منزل', estimate: 'از ۴۰۰,۰۰۰ تومان', estimateMin: 400000, service: 'اعزام دندانپزشک به منزل' },
     { id: 'dental-corporate', label: 'اعزام دندانپزشک به مجموعه طرف قرارداد', estimate: 'از ۶۰۰,۰۰۰ تومان', estimateMin: 600000, service: 'اعزام دندانپزشک به مجموعه‌های طرف قرارداد' },
+    { id: 'psychology', label: 'روانشناسی', estimate: 'تماس کارشناس', estimateMin: 0, service: 'درخواست مشاوره روانشناسی — تماس اپراتور' },
+    { id: 'nutrition', label: 'مشاور تغذیه', estimate: 'تماس کارشناس', estimateMin: 0, service: 'درخواست مشاوره تغذیه — تماس اپراتور' },
+    { id: 'midwifery', label: 'مامایی', estimate: 'تماس کارشناس', estimateMin: 0, service: 'درخواست خدمات مامایی — تماس اپراتور' },
   ],
 
   specialtyTariffs: {

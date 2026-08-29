@@ -1,4 +1,5 @@
 import { ConsultationForm } from "@/components/consultation/ConsultationForm";
+import { ConsultationQuickLinks } from "@/components/consultation/ConsultationQuickLinks";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -17,6 +18,7 @@ export default function ConsultationPage() {
         ابتدا درخواست خود را ثبت کنید؛ در مرحله بعد نوع ارتباط متنی، تصویری، ویدیویی یا تلفنی
         هماهنگ می‌شود.
       </p>
+      <ConsultationQuickLinks variant="web" />
       <Suspense
         fallback={<p className="text-center text-sm text-slate-500">در حال بارگذاری...</p>}
       >

@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     validityLabel?: string;
     membershipDurationLabel?: string;
     discountPercent?: number;
+    groupDiscountPercent?: number;
     referralCode?: string;
   }>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');

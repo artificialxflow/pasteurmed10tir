@@ -58,6 +58,10 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
         pending.discountPercent === undefined || pending.discountPercent === null
           ? undefined
           : Number(pending.discountPercent),
+      groupDiscountPercent:
+        pending.groupDiscountPercent === undefined || pending.groupDiscountPercent === null
+          ? undefined
+          : Number(pending.groupDiscountPercent),
       referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
     });
     return result;

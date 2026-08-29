@@ -34,7 +34,13 @@ import {
   resolveFranchisePercent,
   type PatientProfile,
 } from "@/lib/patient";
+import {
+  isConsultationCallbackCategory,
+  isMedicalHomeCategory,
+} from "@/lib/consultation/categories";
 import { cn, formatPrice } from "@/lib/utils";
+import { ConsultationCallbackForm } from "./ConsultationCallbackForm";
+import { MedicalHomeVisitForm } from "./MedicalHomeVisitForm";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -272,6 +278,14 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         </Link>
       </div>
     );
+  }
+
+  if (isConsultationCallbackCategory(category)) {
+    return <ConsultationCallbackForm categoryId={category} variant={variant} />;
+  }
+
+  if (isMedicalHomeCategory(category)) {
+    return <MedicalHomeVisitForm variant={variant} />;
   }
 
   if (blockedLaser) {

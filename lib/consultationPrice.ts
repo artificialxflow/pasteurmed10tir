@@ -1,3 +1,4 @@
+import { HOME_VISIT_TARIFF_KEY } from './consultation/home-visit';
 import {
   PASTEUR_DATA,
   type ConsultationCategory,
@@ -91,7 +92,13 @@ export function getConsultationTypes(): ConsultationType[] {
 }
 
 export function getSpecialtyTariffs(): SpecialtyTariffs {
-  return pricingCache?.specialtyTariffs ?? {};
+  const raw = pricingCache?.specialtyTariffs ?? {};
+  const filtered: SpecialtyTariffs = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === HOME_VISIT_TARIFF_KEY) continue;
+    filtered[key] = value;
+  }
+  return filtered;
 }
 
 export function getTypePrice(typeId?: string | null): number | null {

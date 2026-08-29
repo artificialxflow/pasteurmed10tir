@@ -57,8 +57,8 @@ const HUB_ITEMS: HubItem[] = [
     appDesc: "هماهنگی اعزام دندانپزشک",
     href: (base) =>
       isAppDental(base)
-        ? `${ROUTES.app.consultation}?category=dental-home&type=phone`
-        : `${ROUTES.web.consultation}?category=dental-home&type=phone`,
+        ? `${ROUTES.app.consultation}?category=dental-home`
+        : `${ROUTES.web.consultation}?category=dental-home`,
     amber: true,
   },
   {
@@ -69,8 +69,8 @@ const HUB_ITEMS: HubItem[] = [
     appDesc: "سازمان‌های طرف قرارداد",
     href: (base) =>
       isAppDental(base)
-        ? `${ROUTES.app.consultation}?category=dental-corporate&type=phone`
-        : `${ROUTES.web.consultation}?category=dental-corporate&type=phone`,
+        ? `${ROUTES.app.consultation}?category=dental-corporate`
+        : `${ROUTES.web.consultation}?category=dental-corporate`,
     amber: true,
   },
 ];

@@ -70,6 +70,7 @@ export async function completeMembershipPayment(input: {
   validityLabel?: string;
   membershipDurationLabel?: string;
   discountPercent?: number;
+  groupDiscountPercent?: number;
   referralCode?: string;
 }) {
   const phone = normalizePhoneDigits(input.patientPhone || '');
@@ -111,6 +112,12 @@ export async function completeMembershipPayment(input: {
         input.discountPercent === undefined || input.discountPercent === null
           ? null
           : Number(input.discountPercent),
+      extra: {
+        groupDiscountPercent:
+          input.groupDiscountPercent === undefined || input.groupDiscountPercent === null
+            ? undefined
+            : Number(input.groupDiscountPercent),
+      },
       status: 'paid',
       source: 'payment-complete',
     },

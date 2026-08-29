@@ -6,6 +6,10 @@ import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import {
+  DEFAULT_HOME_VISIT_TARIFFS,
+  type HomeVisitTariffs,
+} from "@/lib/consultation/home-visit";
+import {
   PASTEUR_DATA,
   type ConsultationType,
   type SpecialtyTariffs,
@@ -16,6 +20,9 @@ import { useCallback, useEffect, useState } from "react";
 export default function AdminConsultationPricesPage() {
   const [types, setTypes] = useState<ConsultationType[]>([]);
   const [tariffs, setTariffs] = useState<SpecialtyTariffs>({});
+  const [homeVisitTariffs, setHomeVisitTariffs] = useState<HomeVisitTariffs>(
+    DEFAULT_HOME_VISIT_TARIFFS,
+  );
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [newId, setNewId] = useState("");
@@ -27,9 +34,11 @@ export default function AdminConsultationPricesPage() {
     const data = await fetchAdmin<{
       consultationTypes: ConsultationType[];
       specialtyTariffs: SpecialtyTariffs;
+      homeVisitTariffs?: HomeVisitTariffs;
     }>("/api/admin/content/consultation-pricing");
     setTypes(data.consultationTypes.map((type) => ({ ...type })));
     setTariffs({ ...data.specialtyTariffs });
+    setHomeVisitTariffs({ ...DEFAULT_HOME_VISIT_TARIFFS, ...(data.homeVisitTariffs || {}) });
   }, []);
 
   useEffect(() => {
@@ -60,6 +69,13 @@ export default function AdminConsultationPricesPage() {
     }));
   }
 
+  function updateHomeVisitTariff(specialtyId: string, priceNum: number) {
+    setHomeVisitTariffs((prev) => ({
+      ...prev,
+      [specialtyId]: priceNum,
+    }));
+  }
+
   function saveAll() {
     setSuccess("");
     void putAdmin("/api/admin/content/consultation-pricing", {
@@ -68,6 +84,7 @@ export default function AdminConsultationPricesPage() {
         priceNum: Number(type.priceNum || 0),
       })),
       specialtyTariffs: tariffs,
+      homeVisitTariffs,
     })
       .then(() => reload())
       .then(() => setSuccess("قیمت‌ها ذخیره شد."))
@@ -297,6 +314,48 @@ export default function AdminConsultationPricesPage() {
           پس از تعریف حداقل یک نوع مشاوره، جدول تعرفه تخصصی نمایش داده می‌شود.
         </Card>
       )}
+
+      <div>
+        <h2 className="mb-2 text-lg font-bold">تعرفه ویزیت پزشک در منزل</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          مبلغ ثابت برای هر تخصص — بدون انتخاب نوع مشاوره (متنی/تصویری). در فرم{" "}
+          <code className="rounded bg-slate-100 px-1">medical-home</code> استفاده می‌شود.
+        </p>
+        <AdminTable headers={["تخصص", "شناسه", "تعرفه (تومان)", "نمایش"]} empty="">
+          <tr className="border-t border-slate-100">
+            <td className="px-4 py-3 font-semibold">پزشک عمومی</td>
+            <td className="px-4 py-3 font-mono text-xs">general</td>
+            <td className="px-4 py-3">
+              <DraftNumberInput
+                min={0}
+                max={100_000_000}
+                value={Number(homeVisitTariffs.general || 0)}
+                onCommit={(priceNum) => updateHomeVisitTariff("general", priceNum)}
+                className="max-w-[160px]"
+              />
+            </td>
+            <td className="px-4 py-3">{formatPrice(Number(homeVisitTariffs.general || 0))}</td>
+          </tr>
+          {PASTEUR_DATA.medicalSpecialties.map((specialty) => (
+            <tr key={String(specialty.id)} className="border-t border-slate-100">
+              <td className="px-4 py-3 font-semibold">{specialty.name}</td>
+              <td className="px-4 py-3 font-mono text-xs">{String(specialty.id)}</td>
+              <td className="px-4 py-3">
+                <DraftNumberInput
+                  min={0}
+                  max={100_000_000}
+                  value={Number(homeVisitTariffs[String(specialty.id)] || 0)}
+                  onCommit={(priceNum) => updateHomeVisitTariff(String(specialty.id), priceNum)}
+                  className="max-w-[160px]"
+                />
+              </td>
+              <td className="px-4 py-3">
+                {formatPrice(Number(homeVisitTariffs[String(specialty.id)] || 0))}
+              </td>
+            </tr>
+          ))}
+        </AdminTable>
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <Button onClick={saveAll} disabled={!hasTypes}>
