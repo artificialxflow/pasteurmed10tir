@@ -50,18 +50,6 @@ const HUB_ITEMS: HubItem[] = [
     vip: true,
   },
   {
-    emoji: "🏠",
-    title: "اعزام دندانپزشک به منزل",
-    appTitle: "اعزام به منزل",
-    desc: "ثبت درخواست برای بررسی شرایط بیمار و هماهنگی اعزام به منزل",
-    appDesc: "هماهنگی اعزام دندانپزشک",
-    href: (base) =>
-      isAppDental(base)
-        ? `${ROUTES.app.consultation}?category=dental-home`
-        : `${ROUTES.web.consultation}?category=dental-home`,
-    amber: true,
-  },
-  {
     emoji: "🏢",
     title: "اعزام به مجموعه‌های طرف قرارداد",
     appTitle: "اعزام مجموعه",
@@ -85,7 +73,7 @@ export function DentalHub({ basePath }: { basePath: DentalBasePath }) {
           <p className="text-xs font-bold text-teal-700">بخش تخصصی</p>
           <p className="mt-1 text-base font-extrabold text-slate-900">🦷 بخش دندانپزشکی</p>
           <p className="mt-1 text-sm text-slate-600">
-            یکی از بخش‌های زیر را انتخاب کنید — رزرو، تخصص، عضویت و اعزام
+            یکی از بخش‌های زیر را انتخاب کنید — رزرو، تخصص و عضویت
           </p>
         </section>
         <div className="grid grid-cols-2 gap-3">

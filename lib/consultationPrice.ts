@@ -1,4 +1,8 @@
-import { HOME_VISIT_TARIFF_KEY } from './consultation/home-visit';
+import {
+  DEFAULT_HOME_VISIT_TARIFFS,
+  HOME_VISIT_TARIFF_KEY,
+  type HomeVisitTariffs,
+} from './consultation/home-visit';
 import {
   PASTEUR_DATA,
   type ConsultationCategory,
@@ -25,6 +29,7 @@ export type ConsultationPriceResult = {
 type ConsultationPricingCache = {
   consultationTypes: ConsultationType[];
   specialtyTariffs: SpecialtyTariffs;
+  homeVisitTariffs: HomeVisitTariffs;
 };
 
 let pricingCache: ConsultationPricingCache | null = null;
@@ -79,10 +84,18 @@ function buildPreviewLabel(
 export async function loadConsultationPricing(): Promise<ConsultationPricingCache> {
   if (pricingCache) return pricingCache;
   const { fetchPublic } = await import('./content/client');
-  const data = await fetchPublic<ConsultationPricingCache>('/api/content/consultation-pricing');
+  const data = await fetchPublic<{
+    consultationTypes: ConsultationType[];
+    specialtyTariffs: SpecialtyTariffs;
+    homeVisitTariffs?: HomeVisitTariffs;
+  }>('/api/content/consultation-pricing');
   pricingCache = {
     consultationTypes: data.consultationTypes.map((type) => ({ ...type })),
     specialtyTariffs: { ...data.specialtyTariffs },
+    homeVisitTariffs: {
+      ...DEFAULT_HOME_VISIT_TARIFFS,
+      ...(data.homeVisitTariffs || {}),
+    },
   };
   return pricingCache;
 }
@@ -99,6 +112,10 @@ export function getSpecialtyTariffs(): SpecialtyTariffs {
     filtered[key] = value;
   }
   return filtered;
+}
+
+export function getHomeVisitTariffs(): HomeVisitTariffs {
+  return pricingCache?.homeVisitTariffs ?? { ...DEFAULT_HOME_VISIT_TARIFFS };
 }
 
 export function getTypePrice(typeId?: string | null): number | null {

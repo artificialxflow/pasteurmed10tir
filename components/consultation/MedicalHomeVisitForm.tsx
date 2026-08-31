@@ -3,13 +3,12 @@
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import {
-  getSpecialtyTariffs,
+  getHomeVisitTariffs,
   loadConsultationPricing,
 } from "@/lib/consultationPrice";
 import {
   DEFAULT_HOME_VISIT_TARIFFS,
   getHomeVisitPrice,
-  splitTariffStore,
   type HomeVisitTariffs,
 } from "@/lib/consultation/home-visit";
 import { PASTEUR_DATA } from "@/lib/data";
@@ -40,8 +39,7 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
 
   useEffect(() => {
     void loadConsultationPricing().then(() => {
-      const { homeVisitTariffs } = splitTariffStore(getSpecialtyTariffs());
-      setHomeTariffs(homeVisitTariffs);
+      setHomeTariffs(getHomeVisitTariffs());
     });
     void fetchPatientOps<{ profile: PatientProfile | null }>("/api/auth/me")
       .then((res) => {

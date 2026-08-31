@@ -912,8 +912,8 @@ export const PASTEUR_DATA = {
   consultationTypes: [
     { id: 'text', label: 'مشاوره متنی', emoji: '💬', desc: 'پاسخ متنی در بستر اپلیکیشن', priceNum: 120000, price: '۱۲۰,۰۰۰ تومان' },
     { id: 'image', label: 'مشاوره تصویری', emoji: '📷', desc: 'ارسال عکس داخل اپلیکیشن برای بررسی تخصصی', priceNum: 150000, price: '۱۵۰,۰۰۰ تومان' },
-    { id: 'video', label: 'ویزیت تصویری / تلفنی', emoji: '🎥', desc: 'اولویت با بستر اپلیکیشن؛ در صورت نیاز از روبیکا هماهنگ می‌شود', priceNum: 350000, price: '۳۵۰,۰۰۰ تومان' },
-    { id: 'phone', label: 'ویزیت تلفنی', emoji: '☎️', desc: 'هماهنگی تماس تلفنی با پزشک یا کارشناس مربوطه', priceNum: 250000, price: '۲۵۰,۰۰۰ تومان' },
+    { id: 'video', label: 'ویزیت اورژانسی', emoji: '🎥', desc: 'ویزیت فوری — هماهنگی سریع با پزشک در بستر اپلیکیشن', priceNum: 350000, price: '۳۵۰,۰۰۰ تومان' },
+    { id: 'phone', label: 'ویزیت صوتی', emoji: '☎️', desc: 'تماس صوتی با پزشک یا کارشناس مربوطه', priceNum: 250000, price: '۲۵۰,۰۰۰ تومان' },
   ],
 
   consultationCategories: [

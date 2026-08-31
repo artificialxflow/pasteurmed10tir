@@ -11,6 +11,14 @@ export type ConsultationCallbackCategory = (typeof CONSULTATION_CALLBACK_CATEGOR
 
 export const MEDICAL_HOME_CATEGORY = "medical-home";
 
+/** مسیرهای اختصاصی — Quick Links عمومی نمایش داده نمی‌شود. */
+export const FOCUSED_CONSULTATION_CATEGORIES = [
+  MEDICAL_HOME_CATEGORY,
+  ...CONSULTATION_CALLBACK_CATEGORIES,
+] as const;
+
+export type FocusedConsultationCategory = (typeof FOCUSED_CONSULTATION_CATEGORIES)[number];
+
 export function isConsultationCallbackCategory(
   categoryId?: string | null,
 ): categoryId is ConsultationCallbackCategory {
@@ -21,4 +29,12 @@ export function isConsultationCallbackCategory(
 
 export function isMedicalHomeCategory(categoryId?: string | null): boolean {
   return categoryId === MEDICAL_HOME_CATEGORY;
+}
+
+export function isFocusedConsultationCategory(
+  categoryId?: string | null,
+): categoryId is FocusedConsultationCategory {
+  return FOCUSED_CONSULTATION_CATEGORIES.includes(
+    categoryId as FocusedConsultationCategory,
+  );
 }

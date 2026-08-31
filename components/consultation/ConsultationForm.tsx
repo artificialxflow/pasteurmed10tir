@@ -151,6 +151,30 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   }, [preferredDate]);
 
   useEffect(() => {
+    if (
+      requestedCategory &&
+      PASTEUR_DATA.consultationCategories.some((c) => c.id === requestedCategory)
+    ) {
+      setCategory(requestedCategory);
+    }
+  }, [requestedCategory]);
+
+  useEffect(() => {
+    if (requestedType && TYPE_IDS.includes(requestedType as (typeof TYPE_IDS)[number])) {
+      setSelectedType(requestedType);
+    }
+  }, [requestedType]);
+
+  useEffect(() => {
+    if (requestedDoctor) {
+      const parsed = Number.parseInt(requestedDoctor, 10);
+      if (Number.isFinite(parsed)) {
+        setDoctorId(parsed);
+      }
+    }
+  }, [requestedDoctor]);
+
+  useEffect(() => {
     void loadConsultationPricing().then(() => setConsultationTypes(getConsultationTypes()));
     void fetchPublic<{ items: Physician[] }>("/api/content/physicians")
       .then((data) => setPhysicians(data.items))
