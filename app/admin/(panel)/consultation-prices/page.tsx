@@ -15,7 +15,39 @@ import {
   type SpecialtyTariffs,
 } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
+import { resetConsultationPricingCache } from "@/lib/consultationPrice";
 import { useCallback, useEffect, useState } from "react";
+
+function HomeVisitTariffInput({
+  value,
+  onCommit,
+}: {
+  value: number;
+  onCommit: (priceNum: number) => void;
+}) {
+  const [preview, setPreview] = useState(value);
+
+  useEffect(() => {
+    setPreview(value);
+  }, [value]);
+
+  return (
+    <div>
+      <DraftNumberInput
+        min={0}
+        max={100_000_000}
+        value={value}
+        onCommit={(priceNum) => {
+          onCommit(priceNum);
+          setPreview(priceNum);
+        }}
+        onDraftChange={(next) => setPreview(next ?? value)}
+        className="max-w-[160px]"
+      />
+      <p className="mt-1 text-xs font-bold text-teal-700">{formatPrice(preview)}</p>
+    </div>
+  );
+}
 
 export default function AdminConsultationPricesPage() {
   const [types, setTypes] = useState<ConsultationType[]>([]);
@@ -87,7 +119,10 @@ export default function AdminConsultationPricesPage() {
       homeVisitTariffs,
     })
       .then(() => reload())
-      .then(() => setSuccess("قیمت‌ها ذخیره شد."))
+      .then(() => {
+        resetConsultationPricingCache();
+        setSuccess("قیمت‌ها ذخیره شد.");
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
@@ -319,38 +354,29 @@ export default function AdminConsultationPricesPage() {
         <h2 className="mb-2 text-lg font-bold">تعرفه ویزیت پزشک در منزل</h2>
         <p className="mb-4 text-sm text-slate-600">
           مبلغ ثابت برای هر تخصص — بدون انتخاب نوع مشاوره (متنی/تصویری). در فرم{" "}
-          <code className="rounded bg-slate-100 px-1">medical-home</code> استفاده می‌شود.
+          <code className="rounded bg-slate-100 px-1">medical-home</code> استفاده می‌شود. پس از
+          ویرایش از فیلد خارج شوید و «ذخیره قیمت‌ها» را بزنید.
         </p>
-        <AdminTable headers={["تخصص", "شناسه", "تعرفه (تومان)", "نمایش"]} empty="">
+        <AdminTable headers={["تخصص", "شناسه", "تعرفه (تومان)"]} empty="">
           <tr className="border-t border-slate-100">
             <td className="px-4 py-3 font-semibold">پزشک عمومی</td>
             <td className="px-4 py-3 font-mono text-xs">general</td>
             <td className="px-4 py-3">
-              <DraftNumberInput
-                min={0}
-                max={100_000_000}
+              <HomeVisitTariffInput
                 value={Number(homeVisitTariffs.general || 0)}
                 onCommit={(priceNum) => updateHomeVisitTariff("general", priceNum)}
-                className="max-w-[160px]"
               />
             </td>
-            <td className="px-4 py-3">{formatPrice(Number(homeVisitTariffs.general || 0))}</td>
           </tr>
           {PASTEUR_DATA.medicalSpecialties.map((specialty) => (
             <tr key={String(specialty.id)} className="border-t border-slate-100">
               <td className="px-4 py-3 font-semibold">{specialty.name}</td>
               <td className="px-4 py-3 font-mono text-xs">{String(specialty.id)}</td>
               <td className="px-4 py-3">
-                <DraftNumberInput
-                  min={0}
-                  max={100_000_000}
+                <HomeVisitTariffInput
                   value={Number(homeVisitTariffs[String(specialty.id)] || 0)}
                   onCommit={(priceNum) => updateHomeVisitTariff(String(specialty.id), priceNum)}
-                  className="max-w-[160px]"
                 />
-              </td>
-              <td className="px-4 py-3">
-                {formatPrice(Number(homeVisitTariffs[String(specialty.id)] || 0))}
               </td>
             </tr>
           ))}

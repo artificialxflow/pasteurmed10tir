@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 type DraftNumberInputProps = {
   value: number;
   onCommit: (next: number) => void;
+  /** Live preview while typing (before blur commit). */
+  onDraftChange?: (next: number | null) => void;
   min?: number;
   max?: number;
   disabled?: boolean;
@@ -19,6 +21,7 @@ type DraftNumberInputProps = {
 export function DraftNumberInput({
   value,
   onCommit,
+  onDraftChange,
   min = 0,
   max = 100,
   disabled = false,
@@ -32,6 +35,17 @@ export function DraftNumberInput({
   useEffect(() => {
     if (!focused) setText(String(value));
   }, [value, focused]);
+
+  function emitDraft(raw: string) {
+    if (!onDraftChange) return;
+    if (raw.trim() === "") {
+      onDraftChange(null);
+      return;
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return;
+    onDraftChange(Math.min(max, Math.max(min, n)));
+  }
 
   return (
     <FormInput
@@ -49,21 +63,25 @@ export function DraftNumberInput({
         const raw = e.target.value.replace(/[^\d]/g, "");
         if (!allowEmptyWhileEditing && raw === "") return;
         setText(raw);
+        emitDraft(raw);
       }}
       onBlur={() => {
         setFocused(false);
         if (text.trim() === "") {
           setText(String(value));
+          onDraftChange?.(value);
           return;
         }
         const n = Number(text);
         if (!Number.isFinite(n)) {
           setText(String(value));
+          onDraftChange?.(value);
           return;
         }
         const clamped = Math.min(max, Math.max(min, n));
         onCommit(clamped);
         setText(String(clamped));
+        onDraftChange?.(clamped);
       }}
     />
   );

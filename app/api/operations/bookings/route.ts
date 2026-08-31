@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       type: body.type ? String(body.type) : undefined,
       typeLabel: body.typeLabel ? String(body.typeLabel) : undefined,
       day: body.day ? String(body.day) : undefined,
+      appointmentDate: body.appointmentDate ? String(body.appointmentDate) : undefined,
       timeValue: body.timeValue as string | number | undefined,
       timeLabel: body.timeLabel ? String(body.timeLabel) : undefined,
       patientName: body.patientName ? String(body.patientName) : undefined,

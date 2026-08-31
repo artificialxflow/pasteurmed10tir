@@ -4,23 +4,34 @@ import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { FormInput } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
-import { fetchAdminCommerce, patchAdminCommerce, postAdminCommerce } from "@/lib/commerce/client";
+import {
+  filterInstallmentPlansForReport,
+  INSTALLMENT_REPORT_TABS,
+  type InstallmentReportSource,
+} from "@/lib/admin/installment-report";
+import {
+  downloadAdminCommerceExport,
+  fetchAdminCommerce,
+  patchAdminCommerce,
+  postAdminCommerce,
+} from "@/lib/commerce/client";
 import {
   formatJalaliDate,
   installmentSourceLabel,
   remainingInstallment,
   type InstallmentPlan,
 } from "@/lib/patient";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
 export default function AdminInstallmentsPage() {
   const [items, setItems] = useState<InstallmentPlan[]>([]);
   const [rawItems, setRawItems] = useState<InstallmentPlan[]>([]);
-  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<InstallmentReportSource>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
   const [manualNote, setManualNote] = useState("");
   const [editNote, setEditNote] = useState("");
   const [editTotal, setEditTotal] = useState("");
@@ -42,13 +53,31 @@ export default function AdminInstallmentsPage() {
     void reload().catch((e: Error) => setError(e.message));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (sourceFilter === "all") return items;
-    if (sourceFilter === "legacy-membership") {
-      return rawItems.filter((p) => p.source === "membership" || p.status === "hidden");
+  const filtered = useMemo(
+    () => filterInstallmentPlansForReport(items, rawItems, sourceFilter),
+    [items, rawItems, sourceFilter],
+  );
+
+  async function exportReport(format: "xlsx" | "pdf" | "csv") {
+    setError("");
+    setExportBusy(format);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const path = `/api/admin/commerce/installments/export?format=${format}&source=${encodeURIComponent(sourceFilter)}`;
+    try {
+      if (format === "pdf") {
+        window.open(path, "_blank", "noopener,noreferrer");
+        setSuccess("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
+      } else {
+        const ext = format === "xlsx" ? "xlsx" : "csv";
+        await downloadAdminCommerceExport(path, `installments-${sourceFilter}-${stamp}.${ext}`);
+        setSuccess(format === "xlsx" ? "فایل Excel دانلود شد." : "فایل CSV دانلود شد.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");
+    } finally {
+      setExportBusy(null);
     }
-    return items.filter((p) => p.source === sourceFilter);
-  }, [items, rawItems, sourceFilter]);
+  }
 
   async function manualPay(planId: string, scheduleItemId: string, amount: number) {
     setError("");
@@ -103,23 +132,61 @@ export default function AdminInstallmentsPage() {
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {success ? <p className="text-sm text-teal-700">{success}</p> : null}
       <p className="rounded-xl border border-cyan-100 bg-cyan-50/60 p-3 text-xs leading-6 text-slate-700">
-        وام عضویت ≠ تسهیلات تجهیزات ≠ سقف کیف اعتبار — هر کدام طرح اقساط جدا دارند. از اینجا می‌توانید
-        واریز حضوری را روی یک قسط ثبت کنید.
+        وام درمانی، تسهیلات تجهیزات و اعتبار/کیف — هر کدام طرح اقساط جدا دارند. از اینجا می‌توانید
+        واریز حضوری را ثبت کنید یا گزارش Excel/PDF بگیرید.
       </p>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-slate-600">فیلتر منبع:</span>
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-        >
-          <option value="all">همه (فعال)</option>
-          <option value="credit">اعتبار</option>
-          <option value="facility">تسهیلات</option>
-          <option value="loan">وام</option>
-          <option value="legacy-membership">منسوخ / عضویت</option>
-        </select>
+
+      <div className="flex flex-wrap gap-2">
+        {INSTALLMENT_REPORT_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setSourceFilter(tab.id)}
+            className={cn(
+              "rounded-full border px-4 py-2 text-xs font-bold transition",
+              sourceFilter === tab.id
+                ? "border-teal-500 bg-teal-50 text-teal-900"
+                : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("xlsx")}
+        >
+          {exportBusy === "xlsx" ? "در حال آماده‌سازی..." : "خروجی Excel"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("pdf")}
+        >
+          {exportBusy === "pdf" ? "در حال باز کردن..." : "خروجی PDF"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("csv")}
+        >
+          {exportBusy === "csv" ? "در حال آماده‌سازی..." : "خروجی CSV"}
+        </Button>
+        <span className="text-xs text-slate-500">
+          {filtered.length.toLocaleString("fa-IR")} طرح در این فیلتر
+        </span>
+      </div>
+
       <AdminTable
         headers={["بیمار", "عنوان", "کل", "پرداخت‌شده", "مانده", "منبع", "جزئیات"]}
         empty="طرح اقساطی نیست."

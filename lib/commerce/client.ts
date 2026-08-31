@@ -71,6 +71,28 @@ export async function postAdminCommerce<T>(path: string, body?: unknown): Promis
   });
 }
 
+export async function downloadAdminCommerceExport(path: string, filename: string): Promise<void> {
+  const res = await fetch(path, { credentials: 'include' });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = `خطا (${res.status})`;
+    try {
+      const data = JSON.parse(text) as { error?: string };
+      if (data.error) message = data.error;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function getMembershipPlansApi() {
   return fetchPublicCommerce<{ items: import('@/lib/data').Membership[] }>(
     '/api/commerce/membership-plans',

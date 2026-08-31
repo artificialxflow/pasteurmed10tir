@@ -10,6 +10,11 @@ import {
   resolveFranchisePercent,
 } from "@/lib/patient";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
+import {
+  completeFreeReservation,
+  pendingPayableAmount,
+  requiresOnlinePayment,
+} from "@/lib/payment/free-reservation";
 import { startZibalPaymentApi } from "@/lib/payment/zibal-client";
 import { fetchPublic } from "@/lib/content/client";
 import {
@@ -211,8 +216,8 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       router.replace(app ? "/app/dental/general" : "/dental/general");
       return;
     }
-    const deposit = Number(data.amount) || 200000;
-    setDepositAmount(deposit);
+    const deposit = Number(data.amount);
+    setDepositAmount(Number.isFinite(deposit) ? deposit : 200000);
     setPending(data);
     const storedInquiryId = data.insuranceInquiryId ? String(data.insuranceInquiryId) : null;
     if (storedInquiryId) {
@@ -225,7 +230,12 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
       }
     }
     void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
-      .then((s) => setDepositAmount(Number(data.amount) || s.dentalReservationFee))
+      .then((s) => {
+        const fromPending = Number(data.amount);
+        setDepositAmount(
+          Number.isFinite(fromPending) ? fromPending : Number(s.dentalReservationFee) || 200000,
+        );
+      })
       .catch(() => {});
     void refreshProfile(String(data.patientPhone || ""));
     setReady(true);
@@ -367,12 +377,24 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
   const onPay = () => {
     if (!pending || paying) return;
     setPaying(true);
+    const payable = pendingPayableAmount(pending);
+    if (pending.kind === "booking" && !requiresOnlinePayment(payable)) {
+      void completeFreeReservation(pending)
+        .then(() => {
+          router.push(PaymentFlow.defaultSuccessHref(pending, basePath));
+        })
+        .catch((e) => {
+          setNote(e instanceof Error ? e.message : "ثبت رزرو ناموفق");
+          setPaying(false);
+        });
+      return;
+    }
     void startZibalPaymentApi({ pending, basePath })
       .then(({ redirectUrl }) => {
         window.location.href = redirectUrl;
       })
       .catch((e) => {
-        setNote(e instanceof Error ? e.message : 'اتصال به درگاه ناموفق');
+        setNote(e instanceof Error ? e.message : "اتصال به درگاه ناموفق");
         setPaying(false);
       });
   };
@@ -392,6 +414,9 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
 
   const amountLabel =
     inquiryStatus === "approved" ? "فرانشیز (پس از تأیید بیمه):" : "بیعانه رزرو نوبت:";
+  const payableAmount = pendingPayableAmount(pending);
+  const isFreeReservation =
+    pending.kind === "booking" && !requiresOnlinePayment(payableAmount);
 
   return (
     <div className={app ? "space-y-4" : "mx-auto max-w-lg px-4 py-10"}>
@@ -494,14 +519,26 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
         </Card>
       ) : null}
 
-      {!app ? (
+      {!app && !isFreeReservation ? (
         <Card className="mb-6 border-blue-200 bg-blue-50 p-4 text-sm leading-7 text-blue-800" hover={false}>
           🔒 پرداخت امن از طریق درگاه زیبال — پس از تأیید، به بانک منتقل می‌شوید.
         </Card>
       ) : null}
 
+      {isFreeReservation ? (
+        <Card className="mb-6 border-teal-200 bg-teal-50 p-4 text-sm leading-7 text-teal-800" hover={false}>
+          بیعانه رزرو صفر است؛ با تأیید، نوبت بدون پرداخت آنلاین ثبت می‌شود.
+        </Card>
+      ) : null}
+
       <Button onClick={onPay} disabled={paying} className="mb-3 w-full py-3 text-base">
-        {paying ? "در حال اتصال به درگاه..." : "پرداخت و انتقال به درگاه"}
+        {paying
+          ? isFreeReservation
+            ? "در حال ثبت رزرو..."
+            : "در حال اتصال به درگاه..."
+          : isFreeReservation
+            ? "تأیید و ثبت رزرو"
+            : "پرداخت و انتقال به درگاه"}
       </Button>
       {!app ? (
         <button

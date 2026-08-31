@@ -7,6 +7,7 @@ import {
   fetchZibalPaymentResultApi,
   getPaymentIntentIdFromSearch,
 } from "@/lib/payment/zibal-client";
+import { requiresOnlinePayment } from "@/lib/payment/free-reservation";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
@@ -59,13 +60,22 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
   let showReminder = false;
 
   if (kind === "booking") {
+    const amt = Number(payment?.amount) || 0;
+    const isFree = !requiresOnlinePayment(amt);
     title = app ? "رزرو ثبت شد" : "رزرو با موفقیت ثبت شد!";
-    desc = app
-      ? "بیعانه رزرو پرداخت شد و از صورتحساب نهایی کسر می‌شود. هزینه باقی‌مانده در مطب هماهنگ می‌شود."
-      : "بیعانه رزرو شما پرداخت شد و از مبلغ صورتحسابتان کسر خواهد شد. هزینه باقی‌مانده ویزیت یا درمان در مطب هماهنگ می‌شود.";
-    badge = app
-      ? `بیعانه ${formatPrice(Number(payment?.amount) || 0)} ثبت شد. +۵۰ امتیاز باشگاه`
-      : `بیعانه ${formatPrice(Number(payment?.amount) || 0)} ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁`;
+    if (isFree) {
+      desc = app
+        ? "نوبت شما بدون پرداخت بیعانه ثبت شد. هزینه ویزیت یا درمان در مطب هماهنگ می‌شود."
+        : "رزرو شما بدون پرداخت بیعانه ثبت شد. هزینه باقی‌مانده ویزیت یا درمان در مطب هماهنگ می‌شود.";
+      badge = app ? "رزرو بدون پرداخت ثبت شد. +۵۰ امتیاز باشگاه" : "رزرو بدون پرداخت ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁";
+    } else {
+      desc = app
+        ? "بیعانه رزرو پرداخت شد و از صورتحساب نهایی کسر می‌شود. هزینه باقی‌مانده در مطب هماهنگ می‌شود."
+        : "بیعانه رزرو شما پرداخت شد و از مبلغ صورتحسابتان کسر خواهد شد. هزینه باقی‌مانده ویزیت یا درمان در مطب هماهنگ می‌شود.";
+      badge = app
+        ? `بیعانه ${formatPrice(amt)} ثبت شد. +۵۰ امتیاز باشگاه`
+        : `بیعانه ${formatPrice(amt)} ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁`;
+    }
     primaryLabel = "رزرو جدید";
     primaryHref = `${basePath}/general`;
     showReminder = true;

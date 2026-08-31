@@ -16,6 +16,7 @@ import type { PendingLaserPayment } from "@/lib/payment";
 import type { PatientProfile } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
+import { requiresOnlinePayment } from "@/lib/payment/free-reservation";
 import { cn, formatPrice } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -95,7 +96,7 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
     void fetchPublic<{ laserReservationFee?: number }>("/api/content/settings")
       .then((data) => {
         const fee = Number(data.laserReservationFee);
-        if (Number.isFinite(fee) && fee > 0) setReservationFee(fee);
+        if (Number.isFinite(fee) && fee >= 0) setReservationFee(fee);
       })
       .catch(() => {});
 
@@ -183,10 +184,6 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
       setError("تاریخ و ساعت نوبت را انتخاب کنید.");
       return;
     }
-    if (reservationFee < 100) {
-      setError("بیعانه رزرو تنظیم نشده است.");
-      return;
-    }
     const patientName = name.trim();
     const patientPhone = phone.trim();
     if (!patientName || !patientPhone) {
@@ -252,11 +249,14 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
     );
   }
 
+  const isFreeReservation = !requiresOnlinePayment(reservationFee);
+
   return (
     <>
       <p className={cn("mb-4 text-sm text-slate-600", app && "text-xs")}>
-        دسته و خدمت را انتخاب کنید، وقت ۱۰ صبح تا ۷ عصر بگیرید و بیعانه{" "}
-        {formatPrice(reservationFee)} بپردازید (مثل دندانپزشکی).
+        {isFreeReservation
+          ? "دسته و خدمت را انتخاب کنید و وقت ۱۰ صبح تا ۷ عصر بگیرید (بدون پرداخت بیعانه)."
+          : `دسته و خدمت را انتخاب کنید، وقت ۱۰ صبح تا ۷ عصر بگیرید و بیعانه ${formatPrice(reservationFee)} بپردازید (مثل دندانپزشکی).`}
       </p>
 
       {categories.length > 0 ? (
@@ -431,11 +431,13 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
             type="submit"
             variant="accent"
             className="w-full"
-            disabled={checking || !timeValue || reservationFee < 100}
+            disabled={checking || !timeValue}
           >
             {checking
               ? "در حال بررسی زمان..."
-              : `ادامه به پرداخت بیعانه (${formatPrice(reservationFee)})`}
+              : isFreeReservation
+                ? "ادامه و ثبت رزرو (رایگان)"
+                : `ادامه به پرداخت بیعانه (${formatPrice(reservationFee)})`}
           </Button>
           <a
             href={`tel:${phoneDigits}`}

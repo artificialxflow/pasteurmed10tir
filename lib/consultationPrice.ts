@@ -34,6 +34,10 @@ type ConsultationPricingCache = {
 
 let pricingCache: ConsultationPricingCache | null = null;
 
+export function resetConsultationPricingCache(): void {
+  pricingCache = null;
+}
+
 const GENERAL_TARIFF_KEY = 'general';
 
 function normalizeDigits(value: string): string {
