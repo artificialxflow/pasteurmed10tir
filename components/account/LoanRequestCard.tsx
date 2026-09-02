@@ -6,6 +6,10 @@ import {
   createLoanApplicationApi,
   getMyMembershipApplicationsApi,
 } from "@/lib/commerce/client";
+import {
+  LOAN_REQUEST_TERM_OPTIONS,
+  loanTermInterestLabel,
+} from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { formatPrice } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
@@ -19,6 +23,7 @@ type LoanApp = {
   nationalId?: string | null;
   createdAt?: string;
   source?: string | null;
+  reviewNote?: string | null;
 };
 
 function statusLabel(status?: string) {
@@ -74,6 +79,10 @@ export function LoanRequestCard({
     const nid = normalizeNationalId(nationalId);
     if (!loanAmount || loanAmount < 1_000_000) {
       setError("مبلغ وام معتبر نیست.");
+      return;
+    }
+    if (!LOAN_REQUEST_TERM_OPTIONS.some((term) => term.months === loanMonths)) {
+      setError("مدت بازپرداخت معتبر نیست.");
       return;
     }
     if (!nid || !isValidNationalId(nid)) {
@@ -143,12 +152,15 @@ export function LoanRequestCard({
         <div>
           <FormLabel>مدت بازپرداخت</FormLabel>
           <FormSelect value={months} onChange={(e) => setMonths(e.target.value)}>
-            {[6, 10, 12, 18, 24].map((m) => (
-              <option key={m} value={m}>
-                {m.toLocaleString("fa-IR")} ماهه (سود ۱۲٪)
+            {LOAN_REQUEST_TERM_OPTIONS.map((term) => (
+              <option key={term.months} value={term.months}>
+                {loanTermInterestLabel(term.months, term.interestRate)}
               </option>
             ))}
           </FormSelect>
+          <p className="mt-1 text-[11px] leading-5 text-slate-500">
+            گزینه‌های ۱ تا ۳ ماهه بدون سود برای بدهی‌های کوچک تا سر برج است.
+          </p>
         </div>
         <div className="sm:col-span-2">
           <FormLabel>کد ملی (الزامی)</FormLabel>
@@ -173,12 +185,34 @@ export function LoanRequestCard({
           {items.map((item) => (
             <div
               key={String(item.id)}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white bg-white/80 px-3 py-2 text-sm"
+              className="rounded-xl border border-white bg-white/80 px-3 py-2 text-sm"
             >
-              <span className="font-bold">
-                {formatPrice(Number(item.loanAmount || 0))}
-              </span>
-              <span className="text-xs font-bold text-slate-600">{statusLabel(item.status)}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-bold">
+                  {formatPrice(Number(item.loanAmount || 0))}
+                </span>
+                <span
+                  className={`text-xs font-bold ${
+                    item.status === "rejected"
+                      ? "text-rose-700"
+                      : item.status === "approved"
+                        ? "text-teal-700"
+                        : "text-slate-600"
+                  }`}
+                >
+                  {statusLabel(item.status)}
+                </span>
+              </div>
+              {item.status === "rejected" && item.reviewNote ? (
+                <p className="mt-2 rounded-lg border border-rose-100 bg-rose-50/80 px-2 py-1.5 text-xs leading-6 text-rose-900">
+                  توضیح کارشناس: {item.reviewNote}
+                </p>
+              ) : null}
+              {item.status === "rejected" && !item.reviewNote ? (
+                <p className="mt-2 text-xs leading-6 text-slate-500">
+                  درخواست رد شده است. برای جزئیات با پشتیبانی تماس بگیرید.
+                </p>
+              ) : null}
             </div>
           ))}
           <Link href={installmentsHref} className="inline-block text-xs font-bold text-teal-700 underline">

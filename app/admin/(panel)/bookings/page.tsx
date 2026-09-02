@@ -4,17 +4,31 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
+import {
+  filterReceptionItems,
+  mapBookingToReception,
+  mapConsultationToReception,
+  receptionCategoryLabel,
+  RECEPTION_CATEGORY_TABS,
+  RECEPTION_TIME_TABS,
+  uniqueDoctors,
+  type ReceptionCategory,
+  type ReceptionItem,
+  type ReceptionTimeOfDay,
+} from "@/lib/admin/reception-bookings";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-
-type Filter = "all" | "visit" | "treatment";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 export default function AdminBookingsPage() {
-  const [filter, setFilter] = useState<Filter>("all");
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [category, setCategory] = useState<ReceptionCategory>("all");
+  const [timeOfDay, setTimeOfDay] = useState<ReceptionTimeOfDay>("all");
+  const [doctor, setDoctor] = useState("all");
+  const [items, setItems] = useState<ReceptionItem[]>([]);
+  const [bookingById, setBookingById] = useState<Record<string, Booking>>({});
   const [reservationFee, setReservationFee] = useState(200000);
   const [error, setError] = useState("");
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -26,20 +40,38 @@ export default function AdminBookingsPage() {
     status: "confirmed",
   });
 
-  const reload = useCallback(async (type: Filter = filter) => {
-    const q = type === "all" ? "" : `?type=${type}`;
-    const data = await fetchAdminOps<{ items: Booking[] }>(
-      `/api/admin/operations/bookings${q}`,
-    );
-    setBookings(data.items);
-  }, [filter]);
+  const reload = useCallback(async () => {
+    const [bookingsRes, consultationsRes] = await Promise.all([
+      fetchAdminOps<{ items: Booking[] }>("/api/admin/operations/bookings"),
+      fetchAdminOps<{ items: Record<string, unknown>[] }>(
+        "/api/admin/operations/consultations",
+      ).catch(() => ({ items: [] as Record<string, unknown>[] })),
+    ]);
+
+    const map: Record<string, Booking> = {};
+    for (const b of bookingsRes.items) map[String(b.id)] = b;
+    setBookingById(map);
+
+    const reception = [
+      ...bookingsRes.items.map((b) => mapBookingToReception(b as unknown as Record<string, unknown>)),
+      ...consultationsRes.items.map((c) => mapConsultationToReception(c)),
+    ].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+    setItems(reception);
+  }, []);
 
   useEffect(() => {
     void fetchAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings")
       .then((data) => setReservationFee(data.dentalReservationFee))
       .catch(() => {});
-    void reload("all").catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+    void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
+
+  const filtered = useMemo(
+    () => filterReceptionItems(items, { category, timeOfDay, doctor }),
+    [items, category, timeOfDay, doctor],
+  );
+
+  const doctors = useMemo(() => uniqueDoctors(items), [items]);
 
   async function cancelBooking(id: string) {
     if (
@@ -50,7 +82,7 @@ export default function AdminBookingsPage() {
       return;
     }
     void patchAdminOps("/api/admin/operations/bookings", { id, status: "cancelled" })
-      .then(() => reload(filter))
+      .then(() => reload())
       .catch((e) => setError(e instanceof Error ? e.message : "لغو ناموفق"));
   }
 
@@ -78,7 +110,7 @@ export default function AdminBookingsPage() {
     })
       .then(() => {
         setEditBooking(null);
-        return reload(filter);
+        return reload();
       })
       .catch((err) => setError(err instanceof Error ? err.message : "ویرایش ناموفق"));
   }
@@ -99,15 +131,21 @@ export default function AdminBookingsPage() {
       .catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
+  function markConsultationAnswered(id: string) {
+    void patchAdminOps("/api/admin/operations/consultations", { id, status: "answered" })
+      .then(() => reload())
+      .catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }
+
   return (
     <div className="space-y-6">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <Card hover={false} className="border-cyan-100 bg-cyan-50/70 p-4 text-sm leading-7 text-cyan-950">
-        این صفحه فقط <strong>رزرو نوبت</strong> است (ویزیت/درمان). تأیید اینجا یعنی نوبت تأیید شده.
-        استعلام پوشش بیمه جداست →{" "}
-        <a href="/admin/insurances" className="font-bold underline">
+        رزروها برای پذیرش به‌تفکیک خدمت، پزشک و ساعت روز فیلتر می‌شوند. دندانپزشکی و لیزر از
+        جدول نوبت؛ پزشکی، پرستاری و مشاوره‌ها از درخواست‌های مرتبط خوانده می‌شوند. استعلام بیمه →{" "}
+        <Link href="/admin/insurances" className="font-bold underline">
           /admin/insurances
-        </a>
+        </Link>
         .
       </Card>
       <Card hover={false} className="p-5">
@@ -138,109 +176,178 @@ export default function AdminBookingsPage() {
         </p>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            { id: "all", label: "همه" },
-            { id: "visit", label: "ویزیت" },
-            { id: "treatment", label: "درمان" },
-          ] as const
-        ).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => {
-              setFilter(item.id);
-              void reload(item.id).catch((e) =>
-                setError(e instanceof Error ? e.message : "خطا"),
-              );
-            }}
-            className={cn(
-              "rounded-full border px-3 py-1 text-xs font-bold",
-              filter === item.id
-                ? "border-green-300 bg-green-100 text-green-800"
-                : "border-slate-300 bg-slate-100 text-slate-700",
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div>
+        <p className="mb-2 text-xs font-bold text-slate-500">تفکیک خدمت</p>
+        <div className="flex flex-wrap gap-2">
+          {RECEPTION_CATEGORY_TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setCategory(item.id)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs font-bold",
+                category === item.id
+                  ? "border-green-300 bg-green-100 text-green-800"
+                  : "border-slate-300 bg-slate-100 text-slate-700",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <p className="mb-2 text-xs font-bold text-slate-500">زمان روز</p>
+          <div className="flex flex-wrap gap-2">
+            {RECEPTION_TIME_TABS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTimeOfDay(item.id)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-bold",
+                  timeOfDay === item.id
+                    ? "border-cyan-300 bg-cyan-50 text-cyan-900"
+                    : "border-slate-300 bg-white text-slate-700",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="min-w-[12rem]">
+          <FormLabel>پزشک / منبع</FormLabel>
+          <FormSelect value={doctor} onChange={(e) => setDoctor(e.target.value)}>
+            <option value="all">همه پزشکان</option>
+            {doctors.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </FormSelect>
+        </div>
+        <span className="pb-2 text-xs text-slate-500">
+          {filtered.length.toLocaleString("fa-IR")} مورد
+        </span>
       </div>
 
       <AdminTable
-        headers={["کد", "مراجع", "موبایل", "پزشک", "نوع", "زمان", "بیعانه", "وضعیت", "عملیات"]}
-        empty="رزروی ثبت نشده است."
+        headers={[
+          "کد",
+          "مراجع",
+          "موبایل",
+          "بخش",
+          "پزشک",
+          "نوع",
+          "زمان",
+          "مبلغ",
+          "وضعیت",
+          "عملیات",
+        ]}
+        empty="موردی با این فیلتر نیست."
       >
-        {bookings.map((b) => (
-          <tr key={b.id} className="border-t border-slate-100 hover:bg-slate-50">
-            <td className="px-4 py-3 font-mono text-xs">{b.id}</td>
-            <td className="px-4 py-3">{b.patientName}</td>
-            <td className="px-4 py-3 font-mono text-xs">{b.patientPhone || "—"}</td>
-            <td className="px-4 py-3">{b.doctorName}</td>
-            <td className="px-4 py-3">{b.typeLabel}</td>
-            <td className="px-4 py-3">
-              {b.dateLabel ? (
-                <>
-                  {b.dateLabel}
-                  <br />
-                  <span className="text-xs text-slate-500">{b.timeLabel}</span>
-                </>
-              ) : (
-                <>
-                  {b.day} — {b.timeLabel}
-                </>
-              )}
-            </td>
-            <td className="px-4 py-3">
-              {(b.amount || 0).toLocaleString("fa-IR")}
-              {b.isDeposit ? (
-                <>
-                  <br />
-                  <span className="text-xs text-amber-700">بیعانه</span>
-                </>
-              ) : null}
-            </td>
-            <td className="px-4 py-3">
-              <AdminBadge
-                tone={
-                  b.status === "confirmed"
-                    ? "success"
-                    : b.status === "cancelled"
-                      ? "danger"
-                      : "warn"
-                }
-              >
-                {b.status === "confirmed"
-                  ? "تأیید"
-                  : b.status === "cancelled"
-                    ? b.depositNonRefundable
-                      ? "لغو — بدون عودت"
-                      : "لغو"
-                    : "در انتظار"}
-              </AdminBadge>
-            </td>
-            <td className="px-4 py-3">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-cyan-800"
-                  onClick={() => openEdit(b)}
-                >
-                  ویرایش
-                </button>
-                {b.status !== "cancelled" ? (
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-red-600"
-                    onClick={() => cancelBooking(String(b.id))}
-                  >
-                    لغو
-                  </button>
+        {filtered.map((row) => {
+          const booking = row.source === "booking" ? bookingById[row.id] : null;
+          return (
+            <tr key={`${row.source}-${row.id}`} className="border-t border-slate-100 hover:bg-slate-50">
+              <td className="max-w-[7rem] break-all px-4 py-3 font-mono text-[0.65rem]">{row.id}</td>
+              <td className="px-4 py-3">{row.patientName}</td>
+              <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
+              <td className="px-4 py-3 text-xs font-bold text-slate-700">
+                {receptionCategoryLabel(row.category)}
+              </td>
+              <td className="px-4 py-3">{row.doctorName}</td>
+              <td className="px-4 py-3 text-xs">
+                {row.typeLabel}
+                {row.categoryLabel && row.source === "consultation" ? (
+                  <span className="mt-0.5 block text-[0.65rem] text-slate-500">
+                    {row.categoryLabel}
+                  </span>
                 ) : null}
-              </div>
-            </td>
-          </tr>
-        ))}
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {row.dateLabel}
+                <br />
+                <span className="text-slate-500">{row.timeLabel}</span>
+              </td>
+              <td className="px-4 py-3">
+                {row.amount.toLocaleString("fa-IR")}
+                {row.isDeposit ? (
+                  <>
+                    <br />
+                    <span className="text-xs text-amber-700">بیعانه</span>
+                  </>
+                ) : null}
+              </td>
+              <td className="px-4 py-3">
+                <AdminBadge
+                  tone={
+                    row.status === "confirmed" || row.status === "answered"
+                      ? "success"
+                      : row.status === "cancelled"
+                        ? "danger"
+                        : "warn"
+                  }
+                >
+                  {row.status === "confirmed"
+                    ? "تأیید"
+                    : row.status === "answered"
+                      ? "پاسخ‌داده‌شده"
+                      : row.status === "cancelled"
+                        ? row.depositNonRefundable
+                          ? "لغو — بدون عودت"
+                          : "لغو"
+                        : "در انتظار"}
+                </AdminBadge>
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  {booking ? (
+                    <>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-cyan-800"
+                        onClick={() => openEdit(booking)}
+                      >
+                        ویرایش
+                      </button>
+                      {booking.status !== "cancelled" ? (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-red-600"
+                          onClick={() => cancelBooking(String(booking.id))}
+                        >
+                          لغو
+                        </button>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      {row.status !== "answered" ? (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-cyan-800"
+                          onClick={() => markConsultationAnswered(row.id)}
+                        >
+                          علامت پاسخ
+                        </button>
+                      ) : null}
+                      <Link
+                        href="/admin/consultations"
+                        className="text-xs font-semibold text-slate-600 underline"
+                      >
+                        مشاوره‌ها
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </td>
+            </tr>
+          );
+        })}
       </AdminTable>
 
       {editBooking ? (

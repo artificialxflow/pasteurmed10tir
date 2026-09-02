@@ -38,6 +38,7 @@ type Application = Record<string, unknown> & {
   zohalStatus?: string;
   zohalSummary?: string;
   zohalShahkarMatched?: boolean | null;
+  reviewNote?: string | null;
 };
 
 type MemberRow = Member & { walletCeiling?: number | null };
@@ -132,15 +133,31 @@ export default function AdminMembershipsPage() {
 
   function updateApplicationStatus(id: string | undefined, status: string) {
     if (!id || busyId) return;
+    let reviewNote: string | undefined;
+    if (status === "rejected") {
+      const note = window.prompt("توضیح رد برای وام‌گیرنده (الزامی):");
+      if (note == null) return;
+      if (!note.trim()) {
+        setError("برای رد وام، نوشتن توضیح برای وام‌گیرنده الزامی است.");
+        return;
+      }
+      reviewNote = note.trim();
+    }
     setBusyId(id);
     setError("");
     setSuccess("");
     void patchAdminCommerce<{ item: Application }>(
       `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}`,
-      { status },
+      { status, ...(reviewNote ? { reviewNote } : {}) },
     )
       .then(() => reload())
-      .then(() => setSuccess("وضعیت درخواست به‌روز شد."))
+      .then(() =>
+        setSuccess(
+          status === "rejected"
+            ? "درخواست رد شد و توضیح برای وام‌گیرنده ثبت شد."
+            : "وضعیت درخواست به‌روز شد.",
+        ),
+      )
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusyId(null));
   }
@@ -205,8 +222,13 @@ export default function AdminMembershipsPage() {
                   {zohalLabel(app)}
                 </span>
               </td>
-              <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
+              <td className="max-w-xs px-4 py-3 text-xs leading-5 whitespace-pre-line text-slate-600">
                 {app.zohalSummary || "—"}
+                {app.status === "rejected" && app.reviewNote ? (
+                  <p className="mt-2 rounded-lg border border-rose-100 bg-rose-50 px-2 py-1 text-[11px] text-rose-800">
+                    توضیح رد: {String(app.reviewNote)}
+                  </p>
+                ) : null}
               </td>
               <td className="px-4 py-3">
                 <AdminBadge

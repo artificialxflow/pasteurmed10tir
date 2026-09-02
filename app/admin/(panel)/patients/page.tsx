@@ -3,6 +3,10 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import {
+  summarizePatientProfiles,
+  type PatientReportStatusFilter,
+} from "@/lib/admin/patient-report";
 import { fetchPublic } from "@/lib/content/client";
 import {
   patientStatusLabel,
@@ -13,6 +17,7 @@ import {
 } from "@/lib/patient";
 import {
   deleteAdminOps,
+  downloadAdminOpsExport,
   fetchAdminOps,
   patchAdminOps,
 } from "@/lib/operations/client";
@@ -30,7 +35,7 @@ const STATUS_ACTIONS: {
   { status: "pending", label: "در بررسی", variant: "outline" },
 ];
 
-type StatusFilter = "all" | PatientStatus;
+type StatusFilter = PatientReportStatusFilter;
 
 const emptyEditForm = {
   name: "",
@@ -58,6 +63,7 @@ export default function AdminPatientsPage() {
   const [search, setSearch] = useState("");
   const [editPhone, setEditPhone] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const data = await fetchAdminOps<{ items: PatientProfile[] }>(
@@ -92,6 +98,8 @@ export default function AdminPatientsPage() {
       .finally(() => setLoading(false));
   }, [reload]);
 
+  const stats = useMemo(() => summarizePatientProfiles(items), [items]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter((p) => {
@@ -104,6 +112,32 @@ export default function AdminPatientsPage() {
       );
     });
   }, [items, search, statusFilter]);
+
+  async function exportReport(format: "xlsx" | "pdf" | "csv") {
+    setError("");
+    setExportBusy(format);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const q = new URLSearchParams({
+      format,
+      status: statusFilter,
+    });
+    if (search.trim()) q.set("q", search.trim());
+    const path = `/api/admin/operations/patients/export?${q.toString()}`;
+    try {
+      if (format === "pdf") {
+        window.open(path, "_blank", "noopener,noreferrer");
+        setSuccess("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
+      } else {
+        const ext = format === "xlsx" ? "xlsx" : "csv";
+        await downloadAdminOpsExport(path, `patients-${statusFilter}-${stamp}.${ext}`);
+        setSuccess(format === "xlsx" ? "فایل Excel دانلود شد." : "فایل CSV دانلود شد.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");
+    } finally {
+      setExportBusy(null);
+    }
+  }
 
   async function setStatus(phone: string, status: PatientStatus) {
     if (busyPhone) return;
@@ -245,6 +279,45 @@ export default function AdminPatientsPage() {
         </Link>
       </p>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <Card hover={false} className="border-cyan-100 bg-cyan-50/50 p-4">
+          <p className="text-xs text-slate-500">کل کاربران</p>
+          <p className="mt-1 text-2xl font-extrabold text-cyan-900">
+            {stats.total.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+        <Card hover={false} className="border-amber-100 bg-amber-50/50 p-4">
+          <p className="text-xs text-slate-500">در بررسی</p>
+          <p className="mt-1 text-2xl font-extrabold text-amber-800">
+            {stats.pending.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+        <Card hover={false} className="border-teal-100 bg-teal-50/50 p-4">
+          <p className="text-xs text-slate-500">تأیید شده</p>
+          <p className="mt-1 text-2xl font-extrabold text-teal-800">
+            {stats.approved.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+        <Card hover={false} className="border-rose-100 bg-rose-50/50 p-4">
+          <p className="text-xs text-slate-500">رد شده</p>
+          <p className="mt-1 text-2xl font-extrabold text-rose-800">
+            {stats.rejected.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+        <Card hover={false} className="border-slate-200 bg-white p-4">
+          <p className="text-xs text-slate-500">با کد ملی</p>
+          <p className="mt-1 text-2xl font-extrabold text-slate-800">
+            {stats.withNationalId.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+        <Card hover={false} className="border-violet-100 bg-violet-50/40 p-4">
+          <p className="text-xs text-slate-500">تأیید زحل</p>
+          <p className="mt-1 text-2xl font-extrabold text-violet-800">
+            {stats.zohalPassed.toLocaleString("fa-IR")}
+          </p>
+        </Card>
+      </div>
+
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[12rem] flex-1">
           <FormLabel>جستجو (موبایل / نام / کد ملی)</FormLabel>
@@ -262,6 +335,39 @@ export default function AdminPatientsPage() {
             <option value="rejected">رد شده</option>
           </FormSelect>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("xlsx")}
+        >
+          {exportBusy === "xlsx" ? "در حال آماده‌سازی..." : "خروجی Excel"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("pdf")}
+        >
+          {exportBusy === "pdf" ? "در حال باز کردن..." : "خروجی PDF"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("csv")}
+        >
+          {exportBusy === "csv" ? "در حال آماده‌سازی..." : "خروجی CSV"}
+        </Button>
+        <span className="text-xs text-slate-500">
+          {filtered.length.toLocaleString("fa-IR")} کاربر در این فیلتر
+        </span>
       </div>
 
       {loading ? <p className="text-sm text-slate-500">در حال بارگذاری…</p> : null}
@@ -330,7 +436,6 @@ export default function AdminPatientsPage() {
                       return (
                         <Button
                           key={action.status}
-                          type="button"
                           variant={isCurrent ? "primary" : action.variant || "outline"}
                           className="px-3 py-1.5 text-xs"
                           disabled={busy || isCurrent || Boolean(busyPhone)}

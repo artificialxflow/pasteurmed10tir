@@ -2,8 +2,10 @@
  * Laser appointment slots — 10:00 to 19:00, one-hour blocks (۱۰ صبح تا ۷ عصر).
  */
 import {
-  buildAvailableBookingDates,
+  buildAvailableBookingDatesForMonths,
   formatBookingDateLabel,
+  persianMonthKey,
+  persianMonthLabel,
   type BookingDateOption,
 } from '@/lib/operations/booking-dates';
 
@@ -22,10 +24,16 @@ export const LASER_WORKING_DAYS = [
 ] as const;
 
 export const DEFAULT_LASER_RESERVATION_FEE = 100_000;
+export const LASER_BOOKING_MONTHS_AHEAD = 3;
 
 export type LaserHourSlot = {
   value: string;
   hour: number;
+  label: string;
+};
+
+export type LaserMonthOption = {
+  key: string;
   label: string;
 };
 
@@ -45,8 +53,34 @@ export function buildLaserHourSlots(): LaserHourSlot[] {
   return slots;
 }
 
-export function buildLaserAvailableDates(daysAheadWeeks = 3): BookingDateOption[] {
-  return buildAvailableBookingDates([...LASER_WORKING_DAYS], daysAheadWeeks);
+/** Legacy weeks-based helper — now maps to month coverage. */
+export function buildLaserAvailableDates(daysAheadWeeks = 12): BookingDateOption[] {
+  const months = Math.max(1, Math.ceil(daysAheadWeeks / 4));
+  return buildLaserDatesForMonths(months);
+}
+
+export function buildLaserDatesForMonths(
+  monthsAhead = LASER_BOOKING_MONTHS_AHEAD,
+): BookingDateOption[] {
+  return buildAvailableBookingDatesForMonths([...LASER_WORKING_DAYS], monthsAhead);
+}
+
+export function listLaserMonthOptions(dates: BookingDateOption[]): LaserMonthOption[] {
+  const seen = new Map<string, string>();
+  for (const date of dates) {
+    const key = persianMonthKey(date.isoDate);
+    if (!key || seen.has(key)) continue;
+    seen.set(key, persianMonthLabel(date.isoDate));
+  }
+  return Array.from(seen.entries()).map(([key, label]) => ({ key, label }));
+}
+
+export function filterLaserDatesByMonth(
+  dates: BookingDateOption[],
+  monthKey: string,
+): BookingDateOption[] {
+  if (!monthKey) return dates;
+  return dates.filter((d) => persianMonthKey(d.isoDate) === monthKey);
 }
 
 export function formatLaserTimeLabel(hourRaw: string | number): string {

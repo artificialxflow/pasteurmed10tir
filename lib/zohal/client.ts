@@ -18,6 +18,37 @@ export function isZohalConfigured(): boolean {
   return Boolean(process.env.ZOHAL_TOKEN?.trim());
 }
 
+function extractZohalBusinessError(data: Record<string, unknown>): string | null {
+  if (data.success === false || data.ok === false) {
+    return String(data.message || data.error || 'استعلام ناموفق');
+  }
+
+  const resultCode = data.result_code ?? data.resultCode ?? data.code;
+  if (typeof resultCode === 'number' && resultCode !== 0 && resultCode !== 200) {
+    return String(data.message || data.error || `کد نتیجه ${resultCode}`);
+  }
+  if (
+    typeof resultCode === 'string' &&
+    resultCode.trim() &&
+    !['0', '200', 'ok', 'OK', 'success', 'SUCCESS'].includes(resultCode.trim())
+  ) {
+    return String(data.message || data.error || `کد نتیجه ${resultCode}`);
+  }
+
+  const body = data.response_body;
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const nested = body as Record<string, unknown>;
+    if (nested.success === false || nested.ok === false) {
+      return String(nested.message || nested.error || 'استعلام ناموفق');
+    }
+    if (nested.error != null && String(nested.error).trim()) {
+      return String(nested.error);
+    }
+  }
+
+  return null;
+}
+
 async function callInquiry(
   method: string,
   payload: Record<string, unknown>,
@@ -46,6 +77,13 @@ async function callInquiry(
         data,
       };
     }
+
+    const businessError = extractZohalBusinessError(data);
+    if (businessError) {
+      console.error('[zohal] business error', method, businessError);
+      return { ok: false, error: businessError, data };
+    }
+
     return { ok: true, data };
   } catch (e) {
     console.error('[zohal] network', method, e);
@@ -68,7 +106,10 @@ async function callInquiryFirstOk(
       msg.includes('404') ||
       msg.includes('not found') ||
       msg.includes('یافت نشد') ||
-      msg.includes('unknown');
+      msg.includes('unknown') ||
+      msg.includes('invalid method') ||
+      msg.includes('method not') ||
+      msg.includes('وجود ندارد');
     if (!retryable) return result;
   }
   return last;
@@ -90,14 +131,28 @@ export async function zohalNationalIdentity(nationalCode: string): Promise<Zohal
 
 export async function zohalCreditInquiry(nationalCode: string): Promise<ZohalResult> {
   return callInquiryFirstOk(
-    ['credit_inquiry', 'credit-scoring', 'credit_score', 'person_credit'],
+    [
+      'credit_inquiry',
+      'credit_score_inquiry',
+      'credit-scoring',
+      'credit_score',
+      'person_credit',
+      'credit',
+    ],
     { national_code: nationalCode },
   );
 }
 
 export async function zohalBouncedCheque(nationalCode: string): Promise<ZohalResult> {
   return callInquiryFirstOk(
-    ['bounced_cheque', 'returned_cheque', 'cheque_inquiry', 'bounced-cheques'],
+    [
+      'bounced_cheque',
+      'bounced_cheques',
+      'returned_cheque',
+      'cheque_inquiry',
+      'bounced-cheques',
+      'sayad_cheque_inquiry',
+    ],
     { national_code: nationalCode },
   );
 }

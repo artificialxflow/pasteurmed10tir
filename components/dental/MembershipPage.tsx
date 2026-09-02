@@ -19,6 +19,7 @@ import {
   getMembershipPlansAsync,
   getUnitPrice,
   getValidityLabel,
+  isZeroInterestLoanTerm,
   normalizeMemberCount,
   type MembershipTier,
 } from "@/lib/membership";
@@ -555,11 +556,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               محاسبه‌گر اقساط وام درمانی
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              سود وام ۱۲٪ است. درخواست رسمی وام از پنل کاربری ثبت می‌شود — اینجا فقط محاسبه‌گر است.
+              مدت‌های ۱ تا ۳ ماهه بدون سود؛ بقیه با سود ۱۲٪. درخواست رسمی وام از پنل کاربری ثبت
+              می‌شود — اینجا فقط محاسبه‌گر است.
             </p>
           </div>
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
-            وام درمانی ۱۲٪
+            {isZeroInterestLoanTerm(loanMonths) ? "سود ۰٪ (کوتاه‌مدت)" : "وام درمانی ۱۲٪"}
           </span>
         </div>
         <div className={cn("grid gap-4", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-4")}>
@@ -599,7 +601,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
           <div>
             <FormLabel>سود سالانه</FormLabel>
             <div className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
-              ۱۲٪
+              {isZeroInterestLoanTerm(loanMonths) ? "۰٪" : "۱۲٪"}
             </div>
           </div>
         </div>
@@ -621,7 +623,11 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             <p className="mt-1 font-extrabold text-sky-800">{formatToman(loanResult.remaining)}</p>
           </div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-            <p className="text-xs text-slate-500">جمع بازپرداخت با سود ۱۲٪</p>
+            <p className="text-xs text-slate-500">
+              {isZeroInterestLoanTerm(loanMonths)
+                ? "جمع بازپرداخت (بدون سود)"
+                : "جمع بازپرداخت با سود ۱۲٪"}
+            </p>
             <p className="mt-1 font-extrabold text-amber-800">
               {formatToman(loanResult.totalRepayment)}
             </p>

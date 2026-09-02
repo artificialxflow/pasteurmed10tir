@@ -1,8 +1,10 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { fetchAdminOps } from "@/lib/operations/client";
+import type { AppOverviewStats } from "@/lib/admin/app-report";
+import { downloadAdminOpsExport, fetchAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Booking, type BookingStats } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -47,6 +49,10 @@ function computeBookingStats(bookings: Booking[]): BookingStats {
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<Period>("day");
   const [stats, setStats] = useState<BookingStats | null>(null);
+  const [overview, setOverview] = useState<AppOverviewStats | null>(null);
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
+  const [exportError, setExportError] = useState("");
+  const [exportOk, setExportOk] = useState("");
   const [queue, setQueue] = useState<QueueCounts>({
     pendingPatients: 0,
     pendingInsuranceInquiries: 0,
@@ -110,8 +116,39 @@ export default function AdminDashboardPage() {
           pendingCommissions: commissions.filter((c) => c.status !== "paid").length,
         });
       }
+
+      try {
+        const overviewRes = await fetchAdminOps<AppOverviewStats>(
+          "/api/admin/operations/app-report",
+        );
+        setOverview(overviewRes);
+      } catch {
+        setOverview(null);
+      }
     })();
   }, [period]);
+
+  async function exportAppReport(format: "xlsx" | "pdf" | "csv") {
+    setExportError("");
+    setExportOk("");
+    setExportBusy(format);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const path = `/api/admin/operations/app-report?format=${format}`;
+    try {
+      if (format === "pdf") {
+        window.open(path, "_blank", "noopener,noreferrer");
+        setExportOk("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
+      } else {
+        const ext = format === "xlsx" ? "xlsx" : "csv";
+        await downloadAdminOpsExport(path, `app-report-${stamp}.${ext}`);
+        setExportOk(format === "xlsx" ? "گزارش Excel دانلود شد." : "گزارش CSV دانلود شد.");
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");
+    } finally {
+      setExportBusy(null);
+    }
+  }
 
   if (!stats) {
     return <p className="text-slate-500">در حال بارگذاری...</p>;
@@ -186,6 +223,121 @@ export default function AdminDashboardPage() {
             {item.label}
           </button>
         ))}
+      </div>
+
+      {exportError ? (
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {exportError}
+        </p>
+      ) : null}
+      {exportOk ? (
+        <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
+          {exportOk}
+        </p>
+      ) : null}
+
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">آمار کاربران و اپلیکیشن</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              تعداد فعلی کاربران و شاخص‌های مرتبط — گزارش استاندارد Excel / PDF
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              disabled={exportBusy !== null}
+              onClick={() => void exportAppReport("xlsx")}
+            >
+              {exportBusy === "xlsx" ? "در حال آماده‌سازی..." : "گزارش Excel"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              disabled={exportBusy !== null}
+              onClick={() => void exportAppReport("pdf")}
+            >
+              {exportBusy === "pdf" ? "در حال باز کردن..." : "گزارش PDF"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              disabled={exportBusy !== null}
+              onClick={() => void exportAppReport("csv")}
+            >
+              {exportBusy === "csv" ? "در حال آماده‌سازی..." : "گزارش CSV"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <Card hover={false} className="border-cyan-100 bg-cyan-50/50 p-5">
+            <p className="text-2xl font-bold text-cyan-900">
+              {(overview?.users.total ?? 0).toLocaleString("fa-IR")}
+            </p>
+            <p className="text-sm text-slate-600">کل کاربران الان</p>
+          </Card>
+          <Card hover={false} className="border-teal-100 bg-teal-50/50 p-5">
+            <p className="text-2xl font-bold text-teal-800">
+              {(overview?.users.approved ?? 0).toLocaleString("fa-IR")}
+            </p>
+            <p className="text-sm text-slate-600">تأیید شده</p>
+          </Card>
+          <Card hover={false} className="border-amber-100 bg-amber-50/50 p-5">
+            <p className="text-2xl font-bold text-amber-800">
+              {(overview?.users.pending ?? 0).toLocaleString("fa-IR")}
+            </p>
+            <p className="text-sm text-slate-600">در بررسی</p>
+          </Card>
+          <Card hover={false} className="border-rose-100 bg-rose-50/50 p-5">
+            <p className="text-2xl font-bold text-rose-800">
+              {(overview?.users.rejected ?? 0).toLocaleString("fa-IR")}
+            </p>
+            <p className="text-sm text-slate-600">رد شده</p>
+          </Card>
+          <Card hover={false} className="border-violet-100 bg-violet-50/40 p-5">
+            <p className="text-2xl font-bold text-violet-800">
+              {(overview?.commerce.membersPaid ?? stats.activeMembers).toLocaleString(
+                "fa-IR",
+              )}
+            </p>
+            <p className="text-sm text-slate-600">عضویت فعال</p>
+          </Card>
+        </div>
+
+        {overview ? (
+          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Card hover={false} className="p-4">
+              <p className="text-lg font-bold text-slate-800">
+                {overview.operations.bookingsConfirmed.toLocaleString("fa-IR")}
+              </p>
+              <p className="text-xs text-slate-500">رزرو تأییدشده</p>
+            </Card>
+            <Card hover={false} className="p-4">
+              <p className="text-lg font-bold text-slate-800">
+                {overview.commerce.installmentsActive.toLocaleString("fa-IR")}
+              </p>
+              <p className="text-xs text-slate-500">اقساط فعال</p>
+            </Card>
+            <Card hover={false} className="p-4">
+              <p className="text-lg font-bold text-slate-800">
+                {overview.commerce.facilityPending.toLocaleString("fa-IR")}
+              </p>
+              <p className="text-xs text-slate-500">تسهیلات در انتظار</p>
+            </Card>
+            <Card hover={false} className="p-4">
+              <p className="text-lg font-bold text-slate-800">
+                {overview.engagement.clubProfiles.toLocaleString("fa-IR")}
+              </p>
+              <p className="text-xs text-slate-500">باشگاه مشتریان</p>
+            </Card>
+          </div>
+        ) : null}
       </div>
 
       <div>

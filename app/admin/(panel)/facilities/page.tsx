@@ -95,7 +95,7 @@ export default function AdminFacilitiesPage() {
                 {zohalLabel(r)}
               </span>
             </td>
-            <td className="max-w-xs px-4 py-3 text-xs leading-5 text-slate-600">
+            <td className="max-w-xs px-4 py-3 text-xs leading-5 whitespace-pre-line text-slate-600">
               {r.zohalSummary || "—"}
             </td>
             <td className="px-4 py-3">

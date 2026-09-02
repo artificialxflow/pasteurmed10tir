@@ -2,6 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { generateCommerceId } from '@/lib/commerce/mappers';
 import { loadWalletSettings } from '@/lib/commerce/wallet-service';
+import {
+  clampLoanMonths,
+  computeLoanRepaymentTotal,
+  isZeroInterestLoanTerm,
+} from '@/lib/membership';
 import type {
   InstallmentItemStatus,
   InstallmentPaymentMethod,
@@ -194,7 +199,7 @@ export async function createFacilityInstallmentPlan(input: {
   });
 }
 
-/** Medical/membership loan after admin approve — 12% total, N months. */
+/** Medical/membership loan after admin approve — 0% for 1–3 months, else +12%. */
 export async function createLoanInstallmentPlan(input: {
   phone?: string | null;
   patientName?: string;
@@ -207,9 +212,10 @@ export async function createLoanInstallmentPlan(input: {
   if (!phone) return null;
   const principal = Math.max(0, Number(input.amount || 0));
   if (!principal) return null;
-  const months = Math.min(36, Math.max(3, Number(input.months || 12)));
-  const total = Math.round(principal * 1.12);
+  const months = clampLoanMonths(input.months, 12);
+  const total = computeLoanRepaymentTotal(principal, months);
   const dueDates = buildDueDates(months);
+  const rateNote = isZeroInterestLoanTerm(months) ? 'سود ۰٪' : 'سود ۱۲٪';
 
   return prisma.installmentPlan.create({
     data: {
@@ -219,7 +225,7 @@ export async function createLoanInstallmentPlan(input: {
       source: 'loan',
       title:
         input.title ||
-        `اقساط وام درمانی ${total.toLocaleString('fa-IR')} تومان (${months} ماه)`,
+        `اقساط وام درمانی ${total.toLocaleString('fa-IR')} تومان (${months} ماه، ${rateNote})`,
       totalAmount: total,
       paidAmount: 0,
       installmentCount: months,

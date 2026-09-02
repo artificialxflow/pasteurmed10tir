@@ -21,11 +21,24 @@ export async function PATCH(request: Request, context: RouteContext) {
   const row = await prisma.membershipApplication.findUnique({ where: { id } });
   if (!row) return jsonError('درخواست یافت نشد.', 404);
 
+  let reviewNote = row.reviewNote;
+  if (body.status === 'rejected') {
+    const note = String(body.reviewNote || '').trim();
+    if (!note) {
+      return jsonError('برای رد وام، نوشتن توضیح برای وام‌گیرنده الزامی است.');
+    }
+    reviewNote = note;
+  } else if (body.reviewNote !== undefined) {
+    reviewNote = String(body.reviewNote).trim() || null;
+  } else if (body.status === 'approved') {
+    reviewNote = null;
+  }
+
   const updated = await prisma.membershipApplication.update({
     where: { id },
     data: {
       status: body.status,
-      reviewNote: body.reviewNote ? String(body.reviewNote).trim() : row.reviewNote,
+      reviewNote,
       reviewedAt: new Date(),
     },
   });

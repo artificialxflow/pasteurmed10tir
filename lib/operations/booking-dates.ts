@@ -13,6 +13,17 @@ const PERSIAN_WEEKDAY_BY_DOW = [
   'شنبه',
 ] as const;
 
+/** Saturday-first index for calendar grids. */
+export const PERSIAN_WEEKDAY_ORDER = [
+  'شنبه',
+  'یکشنبه',
+  'دوشنبه',
+  'سه‌شنبه',
+  'چهارشنبه',
+  'پنجشنبه',
+  'جمعه',
+] as const;
+
 export type BookingDateOption = {
   isoDate: string;
   weekday: string;
@@ -32,6 +43,12 @@ function isoFromIrDate(d: Date): string {
   const m = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function iranNoonFromIso(isoDate: string): Date | null {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
 }
 
 /** Start/end of calendar day in Iran, as UTC Date instances for DB queries. */
@@ -82,6 +99,40 @@ export function formatBookingDateLabel(isoDate: string): string {
   });
 }
 
+/** Stable key for Persian calendar month grouping, e.g. "1405-06". */
+export function persianMonthKey(isoDate: string): string {
+  const date = iranNoonFromIso(isoDate);
+  if (!date) return '';
+  const parts = new Intl.DateTimeFormat('en-US-u-ca-persian', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value || '';
+  const month = parts.find((p) => p.type === 'month')?.value || '';
+  if (!year || !month) return '';
+  return `${year}-${month.padStart(2, '0')}`;
+}
+
+export function persianMonthLabel(isoDate: string): string {
+  const date = iranNoonFromIso(isoDate);
+  if (!date) return isoDate;
+  return date.toLocaleDateString('fa-IR-u-ca-persian', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: 'long',
+  });
+}
+
+export function persianDayNumber(isoDate: string): string {
+  const date = iranNoonFromIso(isoDate);
+  if (!date) return '';
+  return date.toLocaleDateString('fa-IR-u-ca-persian', {
+    timeZone: 'Asia/Tehran',
+    day: 'numeric',
+  });
+}
+
 /** Upcoming calendar dates matching doctor working weekdays (default 8 weeks). */
 export function buildAvailableBookingDates(
   workingDays: string[],
@@ -111,4 +162,13 @@ export function buildAvailableBookingDates(
   }
 
   return results;
+}
+
+/** Upcoming dates for the next N calendar months. */
+export function buildAvailableBookingDatesForMonths(
+  workingDays: string[],
+  monthsAhead = 3,
+): BookingDateOption[] {
+  const weeks = Math.max(4, Math.ceil((monthsAhead * 31) / 7) + 1);
+  return buildAvailableBookingDates(workingDays, weeks);
 }

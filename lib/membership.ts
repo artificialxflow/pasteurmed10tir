@@ -81,6 +81,48 @@ export function computeFinancedAmount(loanAmount: number, downPaymentAmount: num
   return Math.max(0, loanAmount - downPaymentAmount);
 }
 
+/** Short bridge terms for small remaining balances — no interest. */
+export const ZERO_INTEREST_LOAN_MONTHS = [1, 2, 3] as const;
+
+export const STANDARD_LOAN_INTEREST_RATE = 0.12;
+
+export const LOAN_REQUEST_TERM_OPTIONS: Array<{ months: number; interestRate: number }> = [
+  { months: 1, interestRate: 0 },
+  { months: 2, interestRate: 0 },
+  { months: 3, interestRate: 0 },
+  { months: 6, interestRate: STANDARD_LOAN_INTEREST_RATE },
+  { months: 10, interestRate: STANDARD_LOAN_INTEREST_RATE },
+  { months: 12, interestRate: STANDARD_LOAN_INTEREST_RATE },
+  { months: 18, interestRate: STANDARD_LOAN_INTEREST_RATE },
+  { months: 24, interestRate: STANDARD_LOAN_INTEREST_RATE },
+];
+
+export function isZeroInterestLoanTerm(months: number): boolean {
+  return (ZERO_INTEREST_LOAN_MONTHS as readonly number[]).includes(Number(months));
+}
+
+export function clampLoanMonths(months: number | string | undefined, fallback = 12): number {
+  const raw = Number(months);
+  const value = Number.isFinite(raw) && raw > 0 ? raw : fallback;
+  return Math.min(36, Math.max(1, Math.round(value)));
+}
+
+/** Total repayment for medical loan installments (0% for 1–3 months, else +12%). */
+export function computeLoanRepaymentTotal(principal: number, months: number): number {
+  const amount = Math.max(0, Number(principal || 0));
+  if (isZeroInterestLoanTerm(months)) return Math.round(amount);
+  return Math.round(amount * (1 + STANDARD_LOAN_INTEREST_RATE));
+}
+
+export function loanTermInterestLabel(months: number, interestRate?: number): string {
+  const rate =
+    interestRate ??
+    (isZeroInterestLoanTerm(months) ? 0 : STANDARD_LOAN_INTEREST_RATE);
+  const monthsLabel = Number(months).toLocaleString('fa-IR');
+  if (rate <= 0) return `${monthsLabel} ماهه (سود ۰٪)`;
+  return `${monthsLabel} ماهه (سود ${(rate * 100).toLocaleString('fa-IR')}٪)`;
+}
+
 export function getLoanMonthOptions(tier: MembershipTier, plans?: Membership[]): number[] {
   const plan = getLoanPlan(tier, plans);
   const maxMonths = Number(
@@ -89,7 +131,7 @@ export function getLoanMonthOptions(tier: MembershipTier, plans?: Membership[]):
   return Array.from({ length: maxMonths }, (_, i) => i + 1)
     .filter(
       (month) =>
-        [3, 6, 10, 12, 15, 18, 24, maxMonths].includes(month) && month <= maxMonths,
+        [1, 2, 3, 6, 10, 12, 15, 18, 24, maxMonths].includes(month) && month <= maxMonths,
     )
     .filter((month, index, arr) => arr.indexOf(month) === index);
 }
@@ -112,7 +154,7 @@ export function calculateLoan({
   const downPaymentPercent = getDownPaymentPercent(tier, plans);
   const downPaymentAmount = computeDownPayment(validAmount, downPaymentPercent);
   const remaining = computeFinancedAmount(validAmount, downPaymentAmount);
-  const totalRepayment = Math.round(remaining * 1.12);
+  const totalRepayment = computeLoanRepaymentTotal(remaining, term);
   const installment = Math.ceil(totalRepayment / term);
   return {
     plan,

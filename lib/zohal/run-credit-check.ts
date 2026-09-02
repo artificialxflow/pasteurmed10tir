@@ -23,27 +23,58 @@ export type ZohalCreditCheckResult = {
   summary: string;
 };
 
+function truncateError(value: unknown, max = 48): string {
+  const text = String(value || 'خطای نامشخص').replace(/\s+/g, ' ').trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1)}…`;
+}
+
+function hasServiceError(section: unknown): string | null {
+  if (!section || typeof section !== 'object') return null;
+  const obj = section as Record<string, unknown>;
+  if (obj.error != null && String(obj.error).trim()) return String(obj.error);
+  return null;
+}
+
+/** Human-readable multi-line summary for admin tables. */
 export function buildZohalCreditSummary(payload: Record<string, unknown>): string {
   const parts: string[] = [];
-  if (typeof payload.shahkarMatched === 'boolean') {
+
+  if (payload.skipped) {
+    return 'زحل: غیرفعال — بررسی دستی';
+  }
+
+  const shahkarErr = hasServiceError(payload.shahkar);
+  if (shahkarErr) {
+    parts.push(`شاهکار: خطا سرویس (${truncateError(shahkarErr)})`);
+  } else if (typeof payload.shahkarMatched === 'boolean') {
     parts.push(payload.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
+  } else if (payload.shahkar) {
+    parts.push('شاهکار: نتیجه نامشخص');
   }
-  if (payload.credit && typeof payload.credit === 'object') {
-    const c = payload.credit as Record<string, unknown>;
-    parts.push(c.error ? 'اعتبار: خطا' : 'اعتبار: دریافت شد');
+
+  const creditErr = hasServiceError(payload.credit);
+  if (creditErr) {
+    parts.push(`اعتبار: ناموفق (${truncateError(creditErr)})`);
+  } else if (payload.credit) {
+    parts.push('اعتبار: دریافت شد');
   }
-  if (payload.bouncedCheque && typeof payload.bouncedCheque === 'object') {
-    const b = payload.bouncedCheque as Record<string, unknown>;
-    parts.push(b.error ? 'چک: خطا' : 'چک: دریافت شد');
+
+  const chequeErr = hasServiceError(payload.bouncedCheque);
+  if (chequeErr) {
+    parts.push(`چک برگشتی: ناموفق (${truncateError(chequeErr)})`);
+  } else if (payload.bouncedCheque) {
+    parts.push('چک برگشتی: دریافت شد');
   }
-  return parts.join(' · ') || '—';
+
+  return parts.join('\n') || '—';
 }
 
 export function zohalCreditStatusLabel(status?: string | null): string {
   if (status === 'passed') return 'زحل: تأیید کامل';
   if (status === 'partial') return 'زحل: ناقص';
   if (status === 'failed') return 'زحل: رد شاهکار';
-  if (status === 'error') return 'زحل: خطا';
+  if (status === 'error') return 'زحل: خطا شاهکار';
   if (status === 'skipped') return 'زحل: —';
   return status ? `زحل: ${status}` : 'زحل: —';
 }
@@ -51,10 +82,10 @@ export function zohalCreditStatusLabel(status?: string | null): string {
 export function zohalCreditCheckNotice(status?: string | null): string {
   if (status === 'passed') return 'استعلام کامل شد — شاهکار، اعتبار و چک دریافت شد.';
   if (status === 'partial') {
-    return 'شاهکار تأیید شد؛ اعتبار یا چک برگشتی خطا داشت. جزئیات در ستون خلاصه.';
+    return 'شاهکار انجام شد؛ بخش اعتبار یا چک برگشتی ناموفق بود (جزئیات در ستون خلاصه). این لزوماً رد شاهکار نیست.';
   }
   if (status === 'failed') return 'شاهکار: کد ملی با موبایل تطبیق ندارد.';
-  if (status === 'error') return 'خطا در استعلام زحل — جزئیات در ستون خلاصه.';
+  if (status === 'error') return 'خطا در سرویس شاهکار — جزئیات در ستون خلاصه.';
   if (status === 'skipped') return 'زحل غیرفعال است — بررسی دستی لازم است.';
   return 'استعلام انجام شد.';
 }
@@ -67,6 +98,7 @@ function resolveZohalStatus(input: {
 }): string {
   if (!input.shahkarOk) return 'error';
   if (input.matched === false) return 'failed';
+  if (input.matched == null) return 'error';
   if (!input.creditOk || !input.bouncedOk) return 'partial';
   return 'passed';
 }
@@ -97,7 +129,7 @@ export async function runZohalCreditCheck(
   }
 
   const shahkar = await zohalShahkar(nationalId, phone);
-  const matched = shahkar.ok ? shahkarMatched(shahkar.data) : false;
+  const matched = shahkar.ok ? shahkarMatched(shahkar.data) : null;
   const identity = await zohalNationalIdentity(nationalId);
   const credit = await zohalCreditInquiry(nationalId);
   const bounced = await zohalBouncedCheque(nationalId);
@@ -108,6 +140,9 @@ export async function runZohalCreditCheck(
     credit: credit.ok ? credit.data : { error: credit.error },
     bouncedCheque: bounced.ok ? bounced.data : { error: bounced.error },
     shahkarMatched: matched,
+    shahkarOk: shahkar.ok,
+    creditOk: credit.ok,
+    bouncedOk: bounced.ok,
   };
 
   const zohalPayload = payloadObj as Prisma.InputJsonValue;
@@ -122,7 +157,7 @@ export async function runZohalCreditCheck(
   return {
     zohalStatus,
     zohalPayload,
-    shahkarMatched: shahkar.ok ? matched : null,
+    shahkarMatched: matched,
     zohalCheckedAt: checkedAt,
     summary,
   };

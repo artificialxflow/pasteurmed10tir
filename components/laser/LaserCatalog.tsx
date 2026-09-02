@@ -5,10 +5,17 @@ import { Card, EmptyState, FormInput, FormLabel, FormTextarea } from "@/componen
 import { PASTEUR_DATA, type LaserCategory, type LaserService } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import {
-  buildLaserAvailableDates,
+  PERSIAN_WEEKDAY_ORDER,
+  persianDayNumber,
+} from "@/lib/operations/booking-dates";
+import {
+  buildLaserDatesForMonths,
   buildLaserHourSlots,
   DEFAULT_LASER_RESERVATION_FEE,
+  filterLaserDatesByMonth,
   formatLaserTimeLabel,
+  LASER_BOOKING_MONTHS_AHEAD,
+  listLaserMonthOptions,
 } from "@/lib/operations/laser-slots";
 import { checkBookingSlot } from "@/lib/operations/client";
 import { fetchPatientOps } from "@/lib/operations/client";
@@ -58,6 +65,7 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
   const [categoryId, setCategoryId] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
   const [day, setDay] = useState("");
   const [timeValue, setTimeValue] = useState("");
   const [timeLabel, setTimeLabel] = useState("");
@@ -69,8 +77,23 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
 
-  const dateOptions = useMemo(() => buildLaserAvailableDates(3), []);
+  const dateOptions = useMemo(
+    () => buildLaserDatesForMonths(LASER_BOOKING_MONTHS_AHEAD),
+    [],
+  );
+  const monthOptions = useMemo(() => listLaserMonthOptions(dateOptions), [dateOptions]);
+  const monthDates = useMemo(
+    () => filterLaserDatesByMonth(dateOptions, selectedMonth),
+    [dateOptions, selectedMonth],
+  );
   const hourSlots = useMemo(() => buildLaserHourSlots(), []);
+
+  useEffect(() => {
+    if (!monthOptions.length) return;
+    if (!selectedMonth || !monthOptions.some((m) => m.key === selectedMonth)) {
+      setSelectedMonth(monthOptions[0].key);
+    }
+  }, [monthOptions, selectedMonth]);
 
   useEffect(() => {
     fetchPublic<{ categories?: LaserCategory[]; items: LaserService[] }>("/api/content/laser")
@@ -157,6 +180,15 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
     setError("");
     setTimeValue("");
     setTimeLabel("");
+  }
+
+  function selectMonth(monthKey: string) {
+    setSelectedMonth(monthKey);
+    setAppointmentDate("");
+    setDay("");
+    setTimeValue("");
+    setTimeLabel("");
+    setError("");
   }
 
   function selectDate(iso: string, weekday: string) {
@@ -323,31 +355,100 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
       {selected ? (
         <form onSubmit={onSubmit} className={cn("mt-6 space-y-4", app && "mt-4")}>
           <div>
-            <FormLabel>تاریخ نوبت</FormLabel>
+            <FormLabel>ماه نوبت</FormLabel>
             <div className="mt-2 flex flex-wrap gap-2">
-              {dateOptions.map((opt) => {
-                const active = appointmentDate === opt.isoDate;
+              {monthOptions.map((month) => {
+                const active = selectedMonth === month.key;
                 return (
                   <button
-                    key={opt.isoDate}
+                    key={month.key}
                     type="button"
-                    onClick={() => selectDate(opt.isoDate, opt.weekday)}
+                    onClick={() => selectMonth(month.key)}
                     className={cn(
-                      "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                      "rounded-full border px-4 py-2 text-xs font-bold transition",
                       active
                         ? "border-purple-500 bg-purple-50 text-purple-900"
                         : "border-slate-200 bg-white text-slate-700 hover:border-purple-300",
                     )}
                   >
-                    <span className="block">{opt.weekday}</span>
-                    <span className="mt-0.5 block text-[0.7rem] font-medium text-slate-500">
-                      {opt.label}
-                    </span>
+                    {month.label}
                   </button>
                 );
               })}
             </div>
+            <p className="mt-2 text-[11px] leading-5 text-slate-500">
+              نوبت‌دهی تا ۳ ماه آینده — ابتدا ماه را انتخاب کنید، سپس روز همان ماه را از تقویم
+              بزنید.
+            </p>
           </div>
+
+          {selectedMonth ? (
+            <div>
+              <FormLabel>تقویم ماهانه</FormLabel>
+              <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-[0.65rem] font-bold text-slate-500">
+                  {PERSIAN_WEEKDAY_ORDER.map((wd) => (
+                    <div key={wd} className="px-1 py-2">
+                      {wd}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1 p-2">
+                  {(() => {
+                    if (!monthDates.length) {
+                      return (
+                        <p className="col-span-7 py-6 text-center text-xs text-slate-500">
+                          در این ماه نوبت قابل رزرو نیست.
+                        </p>
+                      );
+                    }
+                    const firstWeekday = monthDates[0].weekday;
+                    const pad = Math.max(
+                      0,
+                      PERSIAN_WEEKDAY_ORDER.findIndex((w) => w === firstWeekday),
+                    );
+                    const cells: Array<
+                      | { type: "empty"; key: string }
+                      | { type: "day"; key: string; opt: (typeof monthDates)[number] }
+                    > = [];
+                    for (let i = 0; i < pad; i += 1) {
+                      cells.push({ type: "empty", key: `pad-${i}` });
+                    }
+                    for (const opt of monthDates) {
+                      cells.push({ type: "day", key: opt.isoDate, opt });
+                    }
+                    return cells.map((cell) => {
+                      if (cell.type === "empty") {
+                        return <div key={cell.key} className="min-h-[3rem]" />;
+                      }
+                      const active = appointmentDate === cell.opt.isoDate;
+                      return (
+                        <button
+                          key={cell.key}
+                          type="button"
+                          onClick={() => selectDate(cell.opt.isoDate, cell.opt.weekday)}
+                          className={cn(
+                            "flex min-h-[3rem] flex-col items-center justify-center rounded-xl border px-1 py-1 text-xs font-bold transition",
+                            active
+                              ? "border-purple-500 bg-purple-50 text-purple-900 ring-2 ring-purple-200"
+                              : "border-slate-100 bg-white text-slate-800 hover:border-purple-300",
+                          )}
+                          title={cell.opt.label}
+                        >
+                          <span className="text-[0.65rem] font-medium text-slate-500">
+                            {cell.opt.weekday}
+                          </span>
+                          <span className="text-sm">
+                            {persianDayNumber(cell.opt.isoDate)}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {appointmentDate ? (
             <div>
