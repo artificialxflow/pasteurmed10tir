@@ -3,7 +3,7 @@ import { generateCommerceId, mapFacilityRequest } from '@/lib/commerce/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
-import { runZohalCreditCheck } from '@/lib/zohal/run-credit-check';
+import { runZohalBaseCheck } from '@/lib/zohal/run-credit-check';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return jsonError('کد ملی معتبر الزامی است.');
   }
 
-  const zohal = await runZohalCreditCheck({ nationalId, phone });
+  const zohal = await runZohalBaseCheck({ nationalId, phone });
   if ('error' in zohal) {
     return jsonError(zohal.error, zohal.status);
   }

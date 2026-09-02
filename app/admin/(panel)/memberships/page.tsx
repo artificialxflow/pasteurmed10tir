@@ -51,6 +51,7 @@ export default function AdminMembershipsPage() {
   const [success, setSuccess] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [otpById, setOtpById] = useState<Record<string, string>>({});
 
   async function reload() {
     try {
@@ -106,25 +107,71 @@ export default function AdminMembershipsPage() {
     return zohalCreditStatusLabel(app.zohalStatus);
   }
 
-  function runCreditCheck(id: string | undefined) {
+  function applyCreditResult(status: string | undefined, noticeText?: string) {
+    const message = noticeText || zohalCreditCheckNotice(status);
+    if (status === "passed" || status === "skipped") {
+      setSuccess(message);
+      setNotice("");
+      setError("");
+    } else if (status === "partial" || status === "otp_pending") {
+      setNotice(message);
+      setSuccess("");
+      setError("");
+    } else {
+      setError(message);
+      setSuccess("");
+      setNotice("");
+    }
+  }
+
+  function sendCreditOtp(id: string | undefined) {
     if (!id || busyId) return;
     setBusyId(id);
     setError("");
     setSuccess("");
     setNotice("");
-    void postAdminCommerce<{ item: Application; zohalStatus?: string }>(
+    void postAdminCommerce<{
+      item: Application;
+      zohalStatus?: string;
+      notice?: string;
+    }>(
       `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}/credit-check`,
+      { action: "send_otp" },
     )
       .then((data) => {
-        const status = data.zohalStatus;
-        const message = zohalCreditCheckNotice(status);
-        if (status === "passed" || status === "skipped") {
-          setSuccess(message);
-        } else if (status === "partial") {
-          setNotice(message);
-        } else {
-          setError(message);
-        }
+        applyCreditResult(data.zohalStatus, data.notice);
+        return reload();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
+  function verifyCreditOtp(id: string | undefined) {
+    if (!id || busyId) return;
+    const otp = String(otpById[id] || "").trim();
+    if (!otp) {
+      setError("کد OTP را وارد کنید.");
+      return;
+    }
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    setNotice("");
+    void postAdminCommerce<{
+      item: Application;
+      zohalStatus?: string;
+      notice?: string;
+    }>(
+      `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}/credit-check`,
+      { action: "verify_otp", otp },
+    )
+      .then((data) => {
+        applyCreditResult(data.zohalStatus, data.notice);
+        setOtpById((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
         return reload();
       })
       .catch((e: Error) => setError(e.message))
@@ -210,7 +257,7 @@ export default function AdminMembershipsPage() {
               <td className="px-4 py-3 text-xs font-medium">
                 <span
                   className={
-                    app.zohalStatus === "partial"
+                    app.zohalStatus === "partial" || app.zohalStatus === "otp_pending"
                       ? "text-amber-700"
                       : app.zohalStatus === "failed" || app.zohalStatus === "error"
                         ? "text-rose-700"
@@ -250,12 +297,40 @@ export default function AdminMembershipsPage() {
               <td className="px-4 py-3 space-y-2">
                 <button
                   type="button"
-                  className="block text-xs font-bold text-cyan-800"
+                  className="block text-xs font-bold text-cyan-800 disabled:opacity-50"
                   disabled={busyId === String(app.id)}
-                  onClick={() => runCreditCheck(app.id ? String(app.id) : undefined)}
+                  onClick={() => sendCreditOtp(app.id ? String(app.id) : undefined)}
                 >
-                  استعلام اعتبار
+                  {app.zohalStatus === "otp_pending"
+                    ? "ارسال مجدد OTP"
+                    : "استعلام اعتبار (OTP)"}
                 </button>
+                {app.zohalStatus === "otp_pending" ? (
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="کد OTP"
+                      className="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs font-mono"
+                      value={otpById[String(app.id)] || ""}
+                      onChange={(e) =>
+                        setOtpById((prev) => ({
+                          ...prev,
+                          [String(app.id)]: e.target.value,
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-teal-800 disabled:opacity-50"
+                      disabled={busyId === String(app.id)}
+                      onClick={() => verifyCreditOtp(app.id ? String(app.id) : undefined)}
+                    >
+                      تأیید OTP و دریافت نتیجه
+                    </button>
+                  </div>
+                ) : null}
                 <select
                   className="block w-full rounded-lg border border-slate-200 px-2 py-1 text-xs"
                   disabled={busyId === String(app.id)}

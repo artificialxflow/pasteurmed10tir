@@ -1,5 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { mapMembershipApplication } from '@/lib/commerce/mappers';
+import { mapFacilityRequest } from '@/lib/commerce/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import {
@@ -23,11 +23,11 @@ function payloadRecord(value: unknown): Record<string, unknown> | null {
 }
 
 export async function POST(request: Request, context: RouteContext) {
-  const auth = await requireAdmin('memberships');
+  const auth = await requireAdmin('facilities');
   if (auth.error) return auth.error;
 
   const { id } = await context.params;
-  const row = await prisma.membershipApplication.findUnique({ where: { id } });
+  const row = await prisma.facilityRequest.findUnique({ where: { id } });
   if (!row) return jsonError('درخواست یافت نشد.', 404);
 
   const body = (await parseJson<Body>(request)) || {};
@@ -55,18 +55,16 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError(result.error, result.status);
   }
 
-  const updated = await prisma.membershipApplication.update({
+  const updated = await prisma.facilityRequest.update({
     where: { id },
     data: {
       zohalStatus: result.zohalStatus,
       zohalPayload: result.zohalPayload,
-      shahkarMatched: result.shahkarMatched,
-      zohalCheckedAt: result.zohalCheckedAt,
     },
   });
 
   return NextResponse.json({
-    item: mapMembershipApplication(updated),
+    item: mapFacilityRequest(updated),
     zohalStatus: result.zohalStatus,
     summary: result.summary,
     referenceId: result.referenceId,

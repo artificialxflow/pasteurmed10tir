@@ -2,8 +2,15 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
-import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
-import { zohalCreditStatusLabel } from "@/lib/zohal/run-credit-check";
+import {
+  fetchAdminCommerce,
+  patchAdminCommerce,
+  postAdminCommerce,
+} from "@/lib/commerce/client";
+import {
+  zohalCreditCheckNotice,
+  zohalCreditStatusLabel,
+} from "@/lib/zohal/run-credit-check";
 import { useEffect, useState } from "react";
 
 type FacilityRequest = Record<string, unknown> & {
@@ -23,7 +30,9 @@ export default function AdminFacilitiesPage() {
   const [items, setItems] = useState<FacilityRequest[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [otpById, setOtpById] = useState<Record<string, string>>({});
 
   function reload() {
     return fetchAdminCommerce<{ items: FacilityRequest[] }>("/api/admin/commerce/facilities")
@@ -34,6 +43,76 @@ export default function AdminFacilitiesPage() {
   useEffect(() => {
     void reload();
   }, []);
+
+  function applyCreditResult(status: string | undefined, noticeText?: string) {
+    const message = noticeText || zohalCreditCheckNotice(status);
+    if (status === "passed" || status === "skipped") {
+      setSuccess(message);
+      setNotice("");
+      setError("");
+    } else if (status === "partial" || status === "otp_pending") {
+      setNotice(message);
+      setSuccess("");
+      setError("");
+    } else {
+      setError(message);
+      setSuccess("");
+      setNotice("");
+    }
+  }
+
+  function sendCreditOtp(id: string | undefined) {
+    if (!id || busyId) return;
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    setNotice("");
+    void postAdminCommerce<{
+      item: FacilityRequest;
+      zohalStatus?: string;
+      notice?: string;
+    }>(`/api/admin/commerce/facilities/${encodeURIComponent(id)}/credit-check`, {
+      action: "send_otp",
+    })
+      .then((data) => {
+        applyCreditResult(data.zohalStatus, data.notice);
+        return reload();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
+  function verifyCreditOtp(id: string | undefined) {
+    if (!id || busyId) return;
+    const otp = String(otpById[id] || "").trim();
+    if (!otp) {
+      setError("کد OTP را وارد کنید.");
+      return;
+    }
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    setNotice("");
+    void postAdminCommerce<{
+      item: FacilityRequest;
+      zohalStatus?: string;
+      notice?: string;
+    }>(`/api/admin/commerce/facilities/${encodeURIComponent(id)}/credit-check`, {
+      action: "verify_otp",
+      otp,
+    })
+      .then((data) => {
+        applyCreditResult(data.zohalStatus, data.notice);
+        setOtpById((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        return reload();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
 
   function updateStatus(id: string | undefined, status: string) {
     if (!id || busyId) return;
@@ -58,6 +137,11 @@ export default function AdminFacilitiesPage() {
           {error}
         </p>
       ) : null}
+      {notice ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {notice}
+        </p>
+      ) : null}
       {success ? (
         <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-800">
           {success}
@@ -68,7 +152,8 @@ export default function AdminFacilitiesPage() {
         <a href="/admin/memberships" className="font-bold text-teal-700 underline">
           /admin/memberships
         </a>{" "}
-        بررسی کنید. پس از تأیید اینجا، طرح اقساط برای بیمار در «اقساط من» ساخته می‌شود.
+        بررسی کنید. پس از تأیید اینجا، طرح اقساط برای بیمار در «اقساط من» ساخته می‌شود. استعلام
+        اعتبار بانکی با OTP زحل انجام می‌شود.
       </p>
       <AdminTable
         headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "خلاصه استعلام", "وضعیت", "عملیات"]}
@@ -83,7 +168,7 @@ export default function AdminFacilitiesPage() {
             <td className="px-4 py-3 text-xs font-medium">
               <span
                 className={
-                  r.zohalStatus === "partial"
+                  r.zohalStatus === "partial" || r.zohalStatus === "otp_pending"
                     ? "text-amber-700"
                     : r.zohalStatus === "failed" || r.zohalStatus === "error"
                       ? "text-rose-700"
@@ -115,7 +200,43 @@ export default function AdminFacilitiesPage() {
                     : "در بررسی"}
               </AdminBadge>
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 space-y-2">
+              <button
+                type="button"
+                className="block text-xs font-bold text-cyan-800 disabled:opacity-50"
+                disabled={busyId === String(r.id)}
+                onClick={() => sendCreditOtp(r.id ? String(r.id) : undefined)}
+              >
+                {r.zohalStatus === "otp_pending"
+                  ? "ارسال مجدد OTP"
+                  : "استعلام اعتبار (OTP)"}
+              </button>
+              {r.zohalStatus === "otp_pending" ? (
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="کد OTP"
+                    className="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs font-mono"
+                    value={otpById[String(r.id)] || ""}
+                    onChange={(e) =>
+                      setOtpById((prev) => ({
+                        ...prev,
+                        [String(r.id)]: e.target.value,
+                      }))
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-teal-800 disabled:opacity-50"
+                    disabled={busyId === String(r.id)}
+                    onClick={() => verifyCreditOtp(r.id ? String(r.id) : undefined)}
+                  >
+                    تأیید OTP و دریافت نتیجه
+                  </button>
+                </div>
+              ) : null}
               <FormSelect
                 className="py-1 text-xs"
                 disabled={busyId === r.id}
