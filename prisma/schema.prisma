@@ -147,6 +147,30 @@ model NursingItem {
   @@index([serviceId])
 }
 
+model DentalTariffCategory {
+  id          String            @id
+  title       String
+  emoji       String            @default("🦷")
+  description String            @default("")
+  active      Boolean           @default(true)
+  sortOrder   Int               @default(0)
+  items       DentalTariffItem[]
+}
+
+model DentalTariffItem {
+  id         String               @id
+  categoryId String
+  category   DentalTariffCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title      String
+  priceNum   Int
+  price      String?
+  unit       String?
+  active     Boolean              @default(true)
+  sortOrder  Int                  @default(0)
+
+  @@index([categoryId])
+}
+
 model Physician {
   id                   Int      @id
   name                 String

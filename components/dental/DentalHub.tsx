@@ -33,6 +33,14 @@ const HUB_ITEMS: HubItem[] = [
     href: (base) => `${base}/specialty`,
   },
   {
+    emoji: "💰",
+    title: "تعرفه‌های دندانپزشکی",
+    appTitle: "تعرفه‌ها",
+    desc: "لیست قیمت خدمات دندانپزشکی",
+    appDesc: "لیست قیمت خدمات",
+    href: (base) => `${base}/tariffs`,
+  },
+  {
     emoji: "📚",
     title: "آموزش‌ها و نکات دندانپزشکی",
     appTitle: "آموزش‌ها",

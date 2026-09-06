@@ -11,6 +11,7 @@ export type AdminPermission =
   | 'services'
   | 'laserServices'
   | 'nursingServices'
+  | 'dental-tariffs'
   | 'doctors'
   | 'consultationPrices'
   | 'gallery'
@@ -68,6 +69,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'services', label: 'آموزش دندان', href: ROUTES.admin.dentalEducation },
   { id: 'laserServices', label: 'لیزر', href: ROUTES.admin.laserServices },
   { id: 'nursingServices', label: 'پرستاری', href: ROUTES.admin.nursingServices },
+  { id: 'dental-tariffs', label: 'تعرفه دندان', href: ROUTES.admin.dentalTariffs },
   { id: 'doctors', label: 'پزشکان', href: ROUTES.admin.doctors },
   { id: 'consultationPrices', label: 'قیمت مشاوره', href: ROUTES.admin.consultationPrices },
   { id: 'gallery', label: 'گالری', href: ROUTES.admin.gallery },
@@ -115,6 +117,7 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
       'services',
       'laserServices',
       'nursingServices',
+      'dental-tariffs',
       'doctors',
       'consultationPrices',
       'gallery',

@@ -1,4 +1,4 @@
-import type { AdminPermission, AdminSession } from '@/lib/adminAccess';
+import { ALL_ADMIN_PERMISSIONS, type AdminPermission, type AdminSession } from '@/lib/adminAccess';
 import { prisma } from '@/lib/prisma';
 
 export async function buildAdminSession(adminUserId: string): Promise<AdminSession | null> {
@@ -7,13 +7,18 @@ export async function buildAdminSession(adminUserId: string): Promise<AdminSessi
     include: { role: true },
   });
   if (!user || !user.active) return null;
+  const stored = user.role.permissions as AdminPermission[];
+  const permissions =
+    user.roleId === 'superadmin'
+      ? [...new Set([...stored, ...ALL_ADMIN_PERMISSIONS])]
+      : stored;
   return {
     userId: user.id,
     username: user.username,
     displayName: user.displayName,
     roleId: user.roleId,
     roleName: user.role.name,
-    permissions: user.role.permissions as AdminPermission[],
+    permissions,
   };
 }
 
