@@ -287,6 +287,12 @@ export function AccountDashboard({
             <span className="text-slate-500">کد ملی:</span>{" "}
             <span className="font-bold font-mono text-xs">{profile.nationalId || "—"}</span>
           </p>
+          {profile.fileNumber ? (
+            <p>
+              <span className="text-slate-500">شماره پرونده:</span>{" "}
+              <span className="font-bold font-mono text-xs">{profile.fileNumber}</span>
+            </p>
+          ) : null}
           <p>
             <span className="text-slate-500">فرانشیز:</span>{" "}
             <span className="font-bold">{franchisePercent}٪</span>

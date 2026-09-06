@@ -16,6 +16,8 @@ export type PatientProfile = {
   phone: string;
   name: string;
   nationalId?: string;
+  /** شماره پرونده «سیستم لبخند» — فقط پرسنل/ادمین وارد می‌کنند */
+  fileNumber?: string;
   baseInsuranceId?: string;
   complementaryInsuranceId?: string;
   /** درصد فرانشیز ۰–۱۰۰ (واحد صحیح v4) */
@@ -273,6 +275,7 @@ export function normalizePatientProfile(
     phone: normalizePatientPhone(raw.phone),
     name: raw.name || 'بیمار',
     nationalId: raw.nationalId,
+    fileNumber: raw.fileNumber,
     baseInsuranceId: raw.baseInsuranceId,
     complementaryInsuranceId: raw.complementaryInsuranceId,
     franchisePercent: resolveFranchisePercent(raw as PatientProfile),

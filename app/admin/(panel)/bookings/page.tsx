@@ -18,6 +18,7 @@ import {
 } from "@/lib/admin/reception-bookings";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { normalizePatientPhone, type PatientProfile } from "@/lib/patient";
 import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
 import Link from "next/link";
@@ -29,6 +30,8 @@ export default function AdminBookingsPage() {
   const [doctor, setDoctor] = useState("all");
   const [items, setItems] = useState<ReceptionItem[]>([]);
   const [bookingById, setBookingById] = useState<Record<string, Booking>>({});
+  const [fileNumberByPhone, setFileNumberByPhone] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
   const [reservationFee, setReservationFee] = useState(200000);
   const [error, setError] = useState("");
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -41,16 +44,27 @@ export default function AdminBookingsPage() {
   });
 
   const reload = useCallback(async () => {
-    const [bookingsRes, consultationsRes] = await Promise.all([
+    const [bookingsRes, consultationsRes, patientsRes] = await Promise.all([
       fetchAdminOps<{ items: Booking[] }>("/api/admin/operations/bookings"),
       fetchAdminOps<{ items: Record<string, unknown>[] }>(
         "/api/admin/operations/consultations",
       ).catch(() => ({ items: [] as Record<string, unknown>[] })),
+      // شماره پرونده روی خود رزرو ذخیره نمی‌شود؛ از پروفایل بیمار خوانده می‌شود.
+      // ادمین بدون مجوز «بیماران» فقط ستون خالی می‌بیند.
+      fetchAdminOps<{ items: PatientProfile[] }>(
+        "/api/admin/operations/patients",
+      ).catch(() => ({ items: [] as PatientProfile[] })),
     ]);
 
     const map: Record<string, Booking> = {};
     for (const b of bookingsRes.items) map[String(b.id)] = b;
     setBookingById(map);
+
+    const fileNumbers: Record<string, string> = {};
+    for (const p of patientsRes.items) {
+      if (p.fileNumber) fileNumbers[normalizePatientPhone(p.phone)] = p.fileNumber;
+    }
+    setFileNumberByPhone(fileNumbers);
 
     const reception = [
       ...bookingsRes.items.map((b) => mapBookingToReception(b as unknown as Record<string, unknown>)),
@@ -66,10 +80,22 @@ export default function AdminBookingsPage() {
     void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
 
-  const filtered = useMemo(
-    () => filterReceptionItems(items, { category, timeOfDay, doctor }),
-    [items, category, timeOfDay, doctor],
+  const fileNumberFor = useCallback(
+    (phone: string) => fileNumberByPhone[normalizePatientPhone(phone)] || "",
+    [fileNumberByPhone],
   );
+
+  const filtered = useMemo(() => {
+    const base = filterReceptionItems(items, { category, timeOfDay, doctor });
+    const q = search.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter(
+      (row) =>
+        row.patientPhone.includes(q) ||
+        row.patientName.toLowerCase().includes(q) ||
+        fileNumberFor(row.patientPhone).toLowerCase().includes(q),
+    );
+  }, [items, category, timeOfDay, doctor, search, fileNumberFor]);
 
   const doctors = useMemo(() => uniqueDoctors(items), [items]);
 
@@ -218,6 +244,10 @@ export default function AdminBookingsPage() {
             ))}
           </div>
         </div>
+        <div className="min-w-[14rem] flex-1">
+          <FormLabel>جستجو (شماره پرونده / نام / موبایل)</FormLabel>
+          <FormInput value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
         <div className="min-w-[12rem]">
           <FormLabel>پزشک / منبع</FormLabel>
           <FormSelect value={doctor} onChange={(e) => setDoctor(e.target.value)}>
@@ -239,6 +269,7 @@ export default function AdminBookingsPage() {
           "کد",
           "مراجع",
           "موبایل",
+          "شماره پرونده",
           "بخش",
           "پزشک",
           "نوع",
@@ -256,6 +287,9 @@ export default function AdminBookingsPage() {
               <td className="max-w-[7rem] break-all px-4 py-3 font-mono text-[0.65rem]">{row.id}</td>
               <td className="px-4 py-3">{row.patientName}</td>
               <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
+              <td className="px-4 py-3 font-mono text-xs">
+                {fileNumberFor(row.patientPhone) || "—"}
+              </td>
               <td className="px-4 py-3 text-xs font-bold text-slate-700">
                 {receptionCategoryLabel(row.category)}
               </td>

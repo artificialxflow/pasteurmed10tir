@@ -17,6 +17,7 @@ function rowValues(row: PatientReportRow): Array<string | number> {
     row.name,
     row.phone,
     row.nationalId,
+    row.fileNumber,
     row.franchisePercent,
     row.baseInsurance,
     row.complementaryInsurance,
@@ -69,6 +70,7 @@ export function buildPatientPdfHtml(rows: PatientReportRow[], reportTitle: strin
         <td>${row.name}</td>
         <td dir="ltr">${row.phone}</td>
         <td dir="ltr">${row.nationalId}</td>
+        <td dir="ltr">${row.fileNumber}</td>
         <td>${row.franchisePercent.toLocaleString('fa-IR')}</td>
         <td>${row.baseInsurance}</td>
         <td>${row.complementaryInsurance}</td>
@@ -107,7 +109,7 @@ export function buildPatientPdfHtml(rows: PatientReportRow[], reportTitle: strin
     <thead>
       <tr>${PATIENT_REPORT_HEADERS.map((h) => `<th>${h}</th>`).join('')}</tr>
     </thead>
-    <tbody>${tableRows || '<tr><td colspan="11">رکوردی نیست.</td></tr>'}</tbody>
+    <tbody>${tableRows || `<tr><td colspan="${PATIENT_REPORT_HEADERS.length}">رکوردی نیست.</td></tr>`}</tbody>
   </table>
   <script>
     window.addEventListener('load', function () {

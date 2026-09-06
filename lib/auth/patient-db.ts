@@ -10,6 +10,7 @@ export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
     phone: user.phone,
     name: user.name,
     nationalId: profile?.nationalId ?? undefined,
+    fileNumber: profile?.fileNumber ?? undefined,
     baseInsuranceId: profile?.baseInsuranceId ?? undefined,
     complementaryInsuranceId: profile?.complementaryInsuranceId ?? undefined,
     franchisePercent: profile?.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT,

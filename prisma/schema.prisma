@@ -38,6 +38,7 @@ model PatientProfile {
   userId                   String        @unique
   user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   nationalId               String?
+  fileNumber               String?
   baseInsuranceId          String?
   complementaryInsuranceId String?
   franchisePercent         Int           @default(30)

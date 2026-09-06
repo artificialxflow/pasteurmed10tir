@@ -22,6 +22,7 @@ export type PatientReportRow = {
   name: string;
   phone: string;
   nationalId: string;
+  fileNumber: string;
   franchisePercent: number;
   baseInsurance: string;
   complementaryInsurance: string;
@@ -36,6 +37,7 @@ export const PATIENT_REPORT_HEADERS = [
   'نام',
   'موبایل',
   'کد ملی',
+  'شماره پرونده',
   'فرانشیز٪',
   'بیمه پایه',
   'بیمه تکمیلی',
@@ -83,7 +85,8 @@ export function filterPatientsForReport(
     return (
       p.phone.includes(q) ||
       (p.name || '').toLowerCase().includes(q) ||
-      (p.nationalId || '').includes(q)
+      (p.nationalId || '').includes(q) ||
+      (p.fileNumber || '').toLowerCase().includes(q)
     );
   });
 }
@@ -101,6 +104,7 @@ export function buildPatientReportRows(
     name: p.name || '—',
     phone: p.phone,
     nationalId: p.nationalId || '—',
+    fileNumber: p.fileNumber || '—',
     franchisePercent: resolveFranchisePercent(p),
     baseInsurance: insuranceName(p.baseInsuranceId),
     complementaryInsurance: insuranceName(p.complementaryInsuranceId),

@@ -5,6 +5,7 @@ import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
 import type { PatientStatus } from '@/lib/patient';
 import { clampFranchisePercent } from '@/lib/patient';
+import { normalizeFileNumber } from '@/lib/validation/file-number';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import {
   mergePatientStatusAfterZohal,
@@ -18,6 +19,7 @@ type PatchBody = {
   reviewNote?: string;
   name?: string;
   nationalId?: string;
+  fileNumber?: string | null;
   franchisePercent?: number;
   baseInsuranceId?: string | null;
   complementaryInsuranceId?: string | null;
@@ -53,6 +55,8 @@ export async function PATCH(request: Request) {
   });
   if (!user?.profile) return jsonError('بیمار یافت نشد.', 404);
 
+  // ⚠️ fileNumber عمداً اینجا نیست: این پرچم استعلام زحل را دوباره اجرا می‌کند
+  // و وضعیت approved را به pending برمی‌گرداند. شماره پرونده نباید چنین اثری داشته باشد.
   const profileFieldsProvided =
     body?.name !== undefined ||
     body?.nationalId !== undefined ||
@@ -60,11 +64,13 @@ export async function PATCH(request: Request) {
     body?.baseInsuranceId !== undefined ||
     body?.complementaryInsuranceId !== undefined;
 
+  const fileNumberProvided = body?.fileNumber !== undefined;
+
   const statusProvided =
     body?.status !== undefined &&
     ['pending', 'approved', 'rejected'].includes(String(body.status));
 
-  if (!statusProvided && !profileFieldsProvided && !body?.recheckZohal) {
+  if (!statusProvided && !profileFieldsProvided && !fileNumberProvided && !body?.recheckZohal) {
     return jsonError('هیچ فیلدی برای به‌روزرسانی ارسال نشده است.');
   }
 
@@ -79,6 +85,11 @@ export async function PATCH(request: Request) {
     if (!nationalId || !isValidNationalId(nationalId)) {
       return jsonError('کد ملی معتبر الزامی است.');
     }
+  }
+
+  let fileNumber = user.profile.fileNumber;
+  if (fileNumberProvided) {
+    fileNumber = normalizeFileNumber(body!.fileNumber) || null;
   }
 
   const franchisePercent = clampFranchisePercent(
@@ -141,6 +152,7 @@ export async function PATCH(request: Request) {
     where: { userId: user.id },
     data: {
       nationalId,
+      fileNumber,
       baseInsuranceId,
       complementaryInsuranceId,
       franchisePercent,

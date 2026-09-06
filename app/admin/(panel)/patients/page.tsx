@@ -40,6 +40,7 @@ type StatusFilter = PatientReportStatusFilter;
 const emptyEditForm = {
   name: "",
   nationalId: "",
+  fileNumber: "",
   franchisePercent: "30",
   baseInsuranceId: "",
   complementaryInsuranceId: "",
@@ -108,7 +109,8 @@ export default function AdminPatientsPage() {
       return (
         p.phone.includes(q) ||
         (p.name || "").toLowerCase().includes(q) ||
-        (p.nationalId || "").includes(q)
+        (p.nationalId || "").includes(q) ||
+        (p.fileNumber || "").toLowerCase().includes(q)
       );
     });
   }, [items, search, statusFilter]);
@@ -200,6 +202,7 @@ export default function AdminPatientsPage() {
     setEditForm({
       name: p.name || "",
       nationalId: p.nationalId || "",
+      fileNumber: p.fileNumber || "",
       franchisePercent: String(resolveFranchisePercent(p)),
       baseInsuranceId: p.baseInsuranceId || "",
       complementaryInsuranceId: p.complementaryInsuranceId || "",
@@ -217,6 +220,7 @@ export default function AdminPatientsPage() {
         phone: editPhone,
         name: editForm.name.trim(),
         nationalId: editForm.nationalId.trim(),
+        fileNumber: editForm.fileNumber.trim(),
         franchisePercent: Number(editForm.franchisePercent),
         baseInsuranceId: editForm.baseInsuranceId || null,
         complementaryInsuranceId: editForm.complementaryInsuranceId || null,
@@ -320,7 +324,7 @@ export default function AdminPatientsPage() {
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[12rem] flex-1">
-          <FormLabel>جستجو (موبایل / نام / کد ملی)</FormLabel>
+          <FormLabel>جستجو (موبایل / نام / کد ملی / شماره پرونده)</FormLabel>
           <FormInput value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div>
@@ -377,6 +381,7 @@ export default function AdminPatientsPage() {
           "نام",
           "موبایل",
           "کد ملی",
+          "شماره پرونده",
           "فرانشیز٪",
           "بیمه پایه",
           "بیمه تکمیلی",
@@ -393,6 +398,7 @@ export default function AdminPatientsPage() {
               <td className="px-4 py-3">{p.name || "—"}</td>
               <td className="px-4 py-3 font-mono text-xs">{p.phone}</td>
               <td className="px-4 py-3 font-mono text-xs">{p.nationalId || "—"}</td>
+              <td className="px-4 py-3 font-mono text-xs">{p.fileNumber || "—"}</td>
               <td className="px-4 py-3">
                 {resolveFranchisePercent(p).toLocaleString("fa-IR")}٪
               </td>
@@ -513,6 +519,16 @@ export default function AdminPatientsPage() {
                   required
                   inputMode="numeric"
                   maxLength={10}
+                />
+              </div>
+              <div>
+                <FormLabel>شماره پرونده (سیستم لبخند)</FormLabel>
+                <FormInput
+                  value={editForm.fileNumber}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, fileNumber: e.target.value }))
+                  }
+                  placeholder="اختیاری — دستی وارد کنید"
                 />
               </div>
               <div>
