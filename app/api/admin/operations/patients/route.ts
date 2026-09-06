@@ -3,9 +3,14 @@ import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
+import { isUniqueViolation } from '@/lib/prisma/route-error';
 import type { PatientStatus } from '@/lib/patient';
 import { clampFranchisePercent } from '@/lib/patient';
-import { normalizeFileNumber } from '@/lib/validation/file-number';
+import {
+  FILE_NUMBER_LENGTH,
+  isValidFileNumber,
+  normalizeFileNumber,
+} from '@/lib/validation/file-number';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import {
   mergePatientStatusAfterZohal,
@@ -89,7 +94,15 @@ export async function PATCH(request: Request) {
 
   let fileNumber = user.profile.fileNumber;
   if (fileNumberProvided) {
-    fileNumber = normalizeFileNumber(body!.fileNumber) || null;
+    const raw = normalizeFileNumber(body!.fileNumber);
+    // رشته خالی ⇒ پاک کردن شماره پرونده
+    if (!raw) {
+      fileNumber = null;
+    } else if (!isValidFileNumber(raw)) {
+      return jsonError(`شماره پرونده باید دقیقاً ${FILE_NUMBER_LENGTH} رقم باشد.`);
+    } else {
+      fileNumber = raw;
+    }
   }
 
   const franchisePercent = clampFranchisePercent(
@@ -148,27 +161,34 @@ export async function PATCH(request: Request) {
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { name } });
-  await prisma.patientProfile.update({
-    where: { userId: user.id },
-    data: {
-      nationalId,
-      fileNumber,
-      baseInsuranceId,
-      complementaryInsuranceId,
-      franchisePercent,
-      status,
-      reviewedAt,
-      reviewNote,
-      ...(zohalFields
-        ? {
-            zohalStatus: zohalFields.zohalStatus,
-            zohalPayload: zohalFields.zohalPayload,
-            shahkarMatched: zohalFields.shahkarMatched,
-            zohalCheckedAt: zohalFields.zohalCheckedAt,
-          }
-        : {}),
-    },
-  });
+  try {
+    await prisma.patientProfile.update({
+      where: { userId: user.id },
+      data: {
+        nationalId,
+        fileNumber,
+        baseInsuranceId,
+        complementaryInsuranceId,
+        franchisePercent,
+        status,
+        reviewedAt,
+        reviewNote,
+        ...(zohalFields
+          ? {
+              zohalStatus: zohalFields.zohalStatus,
+              zohalPayload: zohalFields.zohalPayload,
+              shahkarMatched: zohalFields.shahkarMatched,
+              zohalCheckedAt: zohalFields.zohalCheckedAt,
+            }
+          : {}),
+      },
+    });
+  } catch (err) {
+    if (isUniqueViolation(err, 'fileNumber')) {
+      return jsonError('این شماره پرونده قبلاً برای بیمار دیگری ثبت شده است.', 409);
+    }
+    throw err;
+  }
 
   const updated = await prisma.user.findUnique({
     where: { id: user.id },

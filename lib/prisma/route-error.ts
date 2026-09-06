@@ -11,6 +11,21 @@ function messageLooksLikeSchemaDrift(message: string): boolean {
   );
 }
 
+/**
+ * آیا خطا نقض قید یکتایی (P2002) روی فیلد مشخصی است؟
+ * `meta.target` بسته به نسخه یا آرایه نام ستون‌هاست یا نام ایندکس
+ * (مثل `PatientProfile_fileNumber_key`) — هر دو حالت پوشش داده می‌شود.
+ */
+export function isUniqueViolation(e: unknown, field: string): boolean {
+  if (!(e instanceof Prisma.PrismaClientKnownRequestError) || e.code !== 'P2002') {
+    return false;
+  }
+  const target = e.meta?.target;
+  if (Array.isArray(target)) return target.includes(field);
+  if (typeof target === 'string') return target.includes(field);
+  return false;
+}
+
 /** Map Prisma/DB failures to a JSON error the admin UI can show. */
 export function prismaRouteError(e: unknown, context?: string) {
   console.error(`[prisma] ${context || 'route'}`, e);

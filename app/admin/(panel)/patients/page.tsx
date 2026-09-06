@@ -21,6 +21,10 @@ import {
   fetchAdminOps,
   patchAdminOps,
 } from "@/lib/operations/client";
+import {
+  FILE_NUMBER_LENGTH,
+  normalizeFileNumber,
+} from "@/lib/validation/file-number";
 import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
@@ -526,10 +530,18 @@ export default function AdminPatientsPage() {
                 <FormInput
                   value={editForm.fileNumber}
                   onChange={(e) =>
-                    setEditForm((f) => ({ ...f, fileNumber: e.target.value }))
+                    setEditForm((f) => ({
+                      ...f,
+                      fileNumber: normalizeFileNumber(e.target.value),
+                    }))
                   }
-                  placeholder="اختیاری — دستی وارد کنید"
+                  placeholder="مثلاً ۱۲۳۴۵"
+                  inputMode="numeric"
+                  maxLength={FILE_NUMBER_LENGTH}
                 />
+                <p className="mt-1 text-xs text-slate-500">
+                  {FILE_NUMBER_LENGTH} رقم، بدون تکرار. برای پاک کردن خالی بگذارید.
+                </p>
               </div>
               <div>
                 <FormLabel>فرانشیز (درصد)</FormLabel>
