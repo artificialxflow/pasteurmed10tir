@@ -770,6 +770,26 @@ model FacilityRequest {
   @@index([deletedAt])
 }
 
+model CreditActivationRequest {
+  id              String    @id
+  phone           String
+  patientName     String?
+  nationalId      String?
+  requestedAmount Int
+  status          String    @default("pending")
+  reviewNote      String?
+  reviewedAt      DateTime?
+  linkedPlanId    String?
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime?
+  deletedBy       String?
+  deleteNote      String?
+
+  @@index([phone])
+  @@index([status])
+  @@index([deletedAt])
+}
+
 model InstallmentPlan {
   id               String                  @id
   phone            String

@@ -90,6 +90,41 @@ export async function softDeleteMembershipApplication(
   };
 }
 
+export async function softDeleteCreditActivationRequest(
+  id: string,
+  actor?: SoftDeleteActor,
+  note?: string,
+): Promise<SoftDeleteResult> {
+  const row = await prisma.creditActivationRequest.findUnique({ where: { id } });
+  if (!row || row.deletedAt) {
+    throw new SoftDeleteError('درخواست فعال‌سازی اعتبار یافت نشد.', 404);
+  }
+
+  const linked = await prisma.installmentPlan.findMany({
+    where: { linkedRequestId: id, deletedAt: null },
+    select: { paidAmount: true },
+  });
+  const data = stamp(actor, note);
+  const cascadeNote = note?.trim() || 'حذف همراه با درخواست فعال‌سازی اعتبار';
+
+  await prisma.$transaction([
+    prisma.installmentPlan.updateMany({
+      where: { linkedRequestId: id, deletedAt: null },
+      data: { ...data, deleteNote: cascadeNote },
+    }),
+    prisma.creditActivationRequest.update({
+      where: { id },
+      data,
+    }),
+  ]);
+
+  return {
+    id,
+    cascadedPlans: linked.length,
+    paidAmount: linked.reduce((sum, p) => sum + p.paidAmount, 0),
+  };
+}
+
 export async function softDeleteFacilityRequest(
   id: string,
   actor?: SoftDeleteActor,

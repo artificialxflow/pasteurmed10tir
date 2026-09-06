@@ -73,6 +73,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'gallery', label: 'گالری', href: ROUTES.admin.gallery },
   { id: 'memberships', label: 'عضویت‌ها', href: ROUTES.admin.memberships },
   { id: 'wallets', label: 'کیف اعتبار', href: ROUTES.admin.wallets },
+  { id: 'wallets', label: 'فعال‌سازی اعتبار', href: ROUTES.admin.creditActivation },
   { id: 'shop', label: 'فروشگاه', href: ROUTES.admin.shop },
   { id: 'commissions', label: 'پورسانت‌ها', href: ROUTES.admin.commissions },
   { id: 'facilities', label: 'تسهیلات', href: ROUTES.admin.facilities },

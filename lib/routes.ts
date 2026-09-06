@@ -114,6 +114,7 @@ export const ROUTES = {
     laserServices: '/admin/laser-services',
     nursingServices: '/admin/nursing-services',
     wallets: '/admin/wallets',
+    creditActivation: '/admin/credit-activation',
     consultationPrices: '/admin/consultation-prices',
     shop: '/admin/shop',
     access: '/admin/access',

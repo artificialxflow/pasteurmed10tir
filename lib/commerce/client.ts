@@ -131,6 +131,19 @@ export async function getMyMembershipApplicationsApi() {
   );
 }
 
+export async function createCreditActivationApi(body: { requestedAmount: number }) {
+  return postPatientCommerce<{ item: Record<string, unknown> }>(
+    '/api/commerce/credit-activation',
+    body,
+  );
+}
+
+export async function getMyCreditActivationApi() {
+  return fetchPatientCommerce<{ items: Record<string, unknown>[] }>(
+    '/api/commerce/credit-activation',
+  );
+}
+
 export async function completeMembershipPaymentApi(body: Record<string, unknown>) {
   return postPublicCommerce<{ member: Record<string, unknown> }>(
     '/api/commerce/payments/membership',

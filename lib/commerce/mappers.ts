@@ -1,5 +1,6 @@
 import type {
   Commission,
+  CreditActivationRequest,
   FacilityRequest,
   InstallmentPlan,
   Member,
@@ -246,6 +247,21 @@ export function mapInstallmentPayment(row: {
     trackId: row.trackId ?? undefined,
     note: row.note ?? undefined,
     paidAt: row.paidAt?.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function mapCreditActivationRequest(row: CreditActivationRequest) {
+  return {
+    id: row.id,
+    phone: row.phone,
+    patientName: row.patientName ?? undefined,
+    nationalId: row.nationalId ?? undefined,
+    requestedAmount: row.requestedAmount,
+    status: row.status,
+    reviewNote: row.reviewNote ?? undefined,
+    reviewedAt: row.reviewedAt?.toISOString(),
+    linkedPlanId: row.linkedPlanId ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
 }

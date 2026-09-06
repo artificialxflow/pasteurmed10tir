@@ -1,8 +1,5 @@
 import { createCommission } from '@/lib/commerce/commission-service';
-import {
-  createCreditInstallmentPlan,
-  hideMembershipInstallmentPlans,
-} from '@/lib/commerce/installment-service';
+import { hideMembershipInstallmentPlans } from '@/lib/commerce/installment-service';
 import { generateCommerceId, mapMember, mapMembershipApplication } from '@/lib/commerce/mappers';
 import {
   activateShopVip,
@@ -128,24 +125,10 @@ export async function completeMembershipPayment(input: {
     planIdToWalletKinds(String(input.planId || 'regular')),
   );
 
+  // سقف اعتبار با عضویت داده می‌شود؛ طرح اقساط اعتباری دیگر خودکار ساخته نمی‌شود.
+  // بیمار باید درخواست فعال‌سازی بدهد و ادمین تأیید کند (بخش D).
   if (wallet && wallet.ceiling > 0) {
     await hideMembershipInstallmentPlans(phone);
-    const existingCredit = await prisma.installmentPlan.findFirst({
-      where: {
-        phone,
-        source: { in: ['credit', 'wallet'] },
-        status: { not: 'hidden' },
-        deletedAt: null,
-      },
-    });
-    if (!existingCredit) {
-      await createCreditInstallmentPlan({
-        phone,
-        patientName: input.patientName,
-        ceilingAmount: wallet.ceiling,
-        label: `اقساط بسته اعتباری ${wallet.ceiling.toLocaleString('fa-IR')} تومان`,
-      });
-    }
   }
 
   let commission = null;

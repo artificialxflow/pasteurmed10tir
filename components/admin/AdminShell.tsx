@@ -46,6 +46,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: ROUTES.admin.memberships, label: "عضویت‌ها", permission: "memberships" },
       { href: ROUTES.admin.wallets, label: "کیف اعتبار", permission: "wallets" },
+      { href: ROUTES.admin.creditActivation, label: "فعال‌سازی اعتبار", permission: "wallets" },
       { href: ROUTES.admin.shop, label: "فروشگاه", permission: "shop" },
       { href: ROUTES.admin.commissions, label: "پورسانت‌ها", permission: "commissions" },
       { href: ROUTES.admin.facilities, label: "تسهیلات", permission: "facilities" },
@@ -90,6 +91,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.memberships]: "مدیریت عضویت",
   [ROUTES.admin.consultationPrices]: "قیمت مشاوره و تعرفه تخصصی",
   [ROUTES.admin.wallets]: "مدیریت کیف اعتبار",
+  [ROUTES.admin.creditActivation]: "درخواست‌های فعال‌سازی کارت اعتباری",
   [ROUTES.admin.shop]: "مدیریت فروشگاه",
   [ROUTES.admin.access]: "مدیریت سطح دسترسی",
   [ROUTES.admin.insurances]: "بیمه‌ها و استعلام",

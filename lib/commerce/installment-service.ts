@@ -136,6 +136,7 @@ export async function createCreditInstallmentPlan(input: {
   patientName?: string;
   ceilingAmount: number;
   label?: string;
+  linkedRequestId?: string;
 }) {
   const phone = normalizePhoneDigits(input.phone || '');
   if (!phone) return null;
@@ -154,12 +155,13 @@ export async function createCreditInstallmentPlan(input: {
       phone,
       patientName: input.patientName || null,
       source: 'credit',
-      title: input.label || `اقساط بسته اعتباری ${total.toLocaleString('fa-IR')} تومان`,
+      title: input.label || `اقساط اعتباری ${total.toLocaleString('fa-IR')} تومان`,
       totalAmount: total,
       paidAmount: 0,
       installmentCount: count,
       dueDates,
       status: 'active',
+      linkedRequestId: input.linkedRequestId || null,
       scheduleItems: { create: buildScheduleCreateData({ totalAmount: total, installmentCount: count, dueDates }) },
     },
     include: { scheduleItems: { orderBy: { index: 'asc' } }, payments: true },

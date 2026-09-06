@@ -328,7 +328,7 @@ export default function AdminAccessPage() {
                   const checked = selectedRole.permissions.includes(item.id);
                   return (
                     <label
-                      key={item.id}
+                      key={item.href}
                       className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5 text-sm font-bold text-slate-700 hover:border-cyan-300"
                     >
                       <input

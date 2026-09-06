@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState, FormInput, FormLabel } from "@/components/ui/Card";
+import { CreditActivationCard } from "@/components/wallet/CreditActivationCard";
 import { getWalletApi } from "@/lib/commerce/client";
 import { formatToman } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
@@ -153,16 +154,19 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
             <p>
               <strong>سقف اعتبار</strong> حداکثر مبلغ قابل استفاده از بسته عضویت است.{" "}
               <strong>موجودی مصرف‌شده</strong> تا اولین استفاده معمولاً صفر است — طبیعی است. این کیف{" "}
-              <strong>وام درمانی نیست</strong>؛ اقساط وام را در{" "}
+              <strong>وام درمانی نیست</strong>؛ اقساط اعتباری فقط بعد از درخواست فعال‌سازی و تأیید
+              ادمین در{" "}
               <a
                 href={isApp ? "/app/installments" : "/installments"}
                 className="font-bold text-teal-700 underline"
               >
                 صفحه اقساط
               </a>{" "}
-              ببینید.
+              دیده می‌شود.
             </p>
           </Card>
+
+          <CreditActivationCard ceiling={wallet.ceiling} variant={variant} />
 
           <Card hover={false} className="p-5">
             <h2 className="mb-3 text-lg font-bold">نوع کاربر و سقف</h2>
