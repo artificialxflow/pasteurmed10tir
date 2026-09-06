@@ -4,6 +4,7 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
 import {
+  deleteAdminCommerce,
   fetchAdminCommerce,
   patchAdminCommerce,
   postAdminCommerce,
@@ -181,6 +182,31 @@ export default function AdminMembershipsPage() {
           delete next[id];
           return next;
         });
+        return reload();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
+  function deleteApplication(app: Application) {
+    const id = app.id ? String(app.id) : "";
+    if (!id || busyId) return;
+    const name = String(app.patientName || app.phone || id);
+    if (
+      !window.confirm(
+        `درخواست وام «${name}» حذف شود؟\n\nطرح اقساط مرتبط با این درخواست هم از لیست اقساط ناپدید می‌شود. سابقه در دیتابیس می‌ماند.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    void deleteAdminCommerce<{ message?: string }>(
+      `/api/admin/commerce/membership-applications/${encodeURIComponent(id)}`,
+    )
+      .then((res) => {
+        setSuccess(res.message || "درخواست وام حذف شد.");
         return reload();
       })
       .catch((e: Error) => setError(e.message))
@@ -366,6 +392,14 @@ export default function AdminMembershipsPage() {
                   <option value="approved">تأیید وام</option>
                   <option value="rejected">رد</option>
                 </select>
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-rose-700 disabled:opacity-50"
+                  disabled={busyId === String(app.id)}
+                  onClick={() => deleteApplication(app)}
+                >
+                  حذف وام
+                </button>
               </td>
             </tr>
             );

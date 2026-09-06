@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     where: { id: body.planId },
     include: { scheduleItems: true },
   });
-  if (!plan || plan.phone !== phone) {
+  if (!plan || plan.phone !== phone || plan.deletedAt) {
     return jsonError('طرح اقساط یافت نشد.', 404);
   }
 

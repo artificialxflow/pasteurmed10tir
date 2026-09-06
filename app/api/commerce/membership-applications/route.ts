@@ -15,7 +15,7 @@ export async function GET() {
   if (!phone) return jsonError('شماره موبایل یافت نشد.', 401);
 
   const rows = await prisma.membershipApplication.findMany({
-    where: { phone },
+    where: { phone, deletedAt: null },
     orderBy: { createdAt: 'desc' },
   });
   return NextResponse.json({ items: rows.map(mapMembershipApplication) });

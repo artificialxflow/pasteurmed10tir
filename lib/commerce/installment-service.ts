@@ -242,6 +242,7 @@ export async function hideMembershipInstallmentPlans(phone?: string | null) {
   const key = phone ? normalizePhoneDigits(phone) : null;
   await prisma.installmentPlan.updateMany({
     where: {
+      deletedAt: null,
       source: 'membership',
       ...(key ? { phone: key } : {}),
     },
@@ -253,6 +254,7 @@ export async function listVisibleInstallments(phone?: string | null) {
   const key = phone ? normalizePhoneDigits(phone) : undefined;
   const rows = await prisma.installmentPlan.findMany({
     where: {
+      deletedAt: null,
       status: { not: 'hidden' },
       source: { not: 'membership' },
       ...(key ? { phone: key } : {}),
@@ -686,3 +688,9 @@ export async function adminAdjustInstallmentPlan(input: {
     note: input.note,
   });
 }
+
+export {
+  softDeleteInstallmentPlan,
+  softDeleteMembershipApplication,
+  softDeleteFacilityRequest,
+} from '@/lib/commerce/soft-delete';

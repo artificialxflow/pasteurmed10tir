@@ -10,7 +10,10 @@ export async function GET() {
 
   const [members, applications] = await Promise.all([
     prisma.member.findMany({ orderBy: { createdAt: 'desc' } }),
-    prisma.membershipApplication.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.membershipApplication.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    }),
   ]);
 
   const items = [];

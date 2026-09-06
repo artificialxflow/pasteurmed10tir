@@ -7,7 +7,9 @@ import {
   updateInstallmentScheduleItemAmount,
   updateInstallmentPlanTotal,
 } from '@/lib/commerce/installment-service';
+import { SoftDeleteError, softDeleteInstallmentPlan } from '@/lib/commerce/soft-delete';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 type PatchBody = {
@@ -27,6 +29,9 @@ export async function PATCH(
   if (auth.error) return auth.error;
 
   const { id } = await context.params;
+  const existing = await prisma.installmentPlan.findUnique({ where: { id } });
+  if (!existing || existing.deletedAt) return jsonError('طرح اقساط یافت نشد.', 404);
+
   const body = await parseJson<PatchBody>(request);
   if (!body?.action) return jsonError('عملیات نامعتبر است.');
 
@@ -78,5 +83,26 @@ export async function PATCH(
     return NextResponse.json({ item: mapInstallmentPlan(plan) });
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : 'ویرایش ناموفق.');
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin('installments');
+  if (auth.error) return auth.error;
+
+  const { id } = await context.params;
+  try {
+    const result = await softDeleteInstallmentPlan(id, auth.session);
+    return NextResponse.json({
+      ok: true,
+      ...result,
+      message: 'طرح اقساط حذف شد.',
+    });
+  } catch (e) {
+    if (e instanceof SoftDeleteError) return jsonError(e.message, e.status);
+    return jsonError(e instanceof Error ? e.message : 'حذف ناموفق.');
   }
 }

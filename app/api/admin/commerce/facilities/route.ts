@@ -10,7 +10,10 @@ export async function GET() {
   const auth = await requireAdmin('facilities');
   if (auth.error) return auth.error;
 
-  const rows = await prisma.facilityRequest.findMany({ orderBy: { createdAt: 'desc' } });
+  const rows = await prisma.facilityRequest.findMany({
+    where: { deletedAt: null },
+    orderBy: { createdAt: 'desc' },
+  });
   return NextResponse.json({ items: rows.map(mapFacilityRequest) });
 }
 
@@ -25,7 +28,7 @@ export async function PATCH(request: Request) {
   }
 
   const prev = await prisma.facilityRequest.findUnique({ where: { id: body.id } });
-  if (!prev) return jsonError('درخواست یافت نشد.', 404);
+  if (!prev || prev.deletedAt) return jsonError('درخواست یافت نشد.', 404);
 
   const row = await prisma.facilityRequest.update({
     where: { id: body.id },
@@ -34,7 +37,7 @@ export async function PATCH(request: Request) {
 
   if (body.status === 'approved' && prev.status !== 'approved' && row.amountNum > 0) {
     const already = await prisma.installmentPlan.findFirst({
-      where: { linkedRequestId: row.id, source: 'facility' },
+      where: { linkedRequestId: row.id, source: 'facility', deletedAt: null },
     });
     if (!already) {
       await createFacilityInstallmentPlan({

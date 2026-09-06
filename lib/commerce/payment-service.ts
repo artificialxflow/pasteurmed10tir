@@ -135,6 +135,7 @@ export async function completeMembershipPayment(input: {
         phone,
         source: { in: ['credit', 'wallet'] },
         status: { not: 'hidden' },
+        deletedAt: null,
       },
     });
     if (!existingCredit) {

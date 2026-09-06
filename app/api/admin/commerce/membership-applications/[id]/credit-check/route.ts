@@ -28,7 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   const row = await prisma.membershipApplication.findUnique({ where: { id } });
-  if (!row) return jsonError('درخواست یافت نشد.', 404);
+  if (!row || row.deletedAt) return jsonError('درخواست یافت نشد.', 404);
 
   const body = (await parseJson<Body>(request)) || {};
   const action = body.action || 'send_otp';

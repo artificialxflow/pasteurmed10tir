@@ -63,6 +63,12 @@ export async function patchAdminCommerce<T>(path: string, body: unknown): Promis
   });
 }
 
+export async function deleteAdminCommerce<T = { ok: boolean; message?: string }>(
+  path: string,
+): Promise<T> {
+  return fetchAdminCommerce<T>(path, { method: 'DELETE' });
+}
+
 export async function postAdminCommerce<T>(path: string, body?: unknown): Promise<T> {
   return fetchAdminCommerce<T>(path, {
     method: 'POST',

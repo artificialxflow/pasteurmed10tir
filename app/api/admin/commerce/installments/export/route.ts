@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
   const [visibleRows, rawRows] = await Promise.all([
     prisma.installmentPlan.findMany({
-      where: { status: { not: 'hidden' }, source: { not: 'membership' } },
+      where: { deletedAt: null, status: { not: 'hidden' }, source: { not: 'membership' } },
       include: {
         scheduleItems: { orderBy: { index: 'asc' } },
         payments: { orderBy: { createdAt: 'desc' }, take: 20 },
@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     }),
     prisma.installmentPlan.findMany({
+      where: { deletedAt: null },
       include: {
         scheduleItems: { orderBy: { index: 'asc' } },
         payments: { orderBy: { createdAt: 'desc' }, take: 20 },

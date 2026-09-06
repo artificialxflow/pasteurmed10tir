@@ -10,6 +10,7 @@ import {
   type InstallmentReportSource,
 } from "@/lib/admin/installment-report";
 import {
+  deleteAdminCommerce,
   downloadAdminCommerceExport,
   fetchAdminCommerce,
   patchAdminCommerce,
@@ -114,6 +115,36 @@ export default function AdminInstallmentsPage() {
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "ویرایش ناموفق");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deletePlan(plan: InstallmentPlan) {
+    const paid = Number(plan.paidAmount || 0);
+    const paidWarn =
+      paid > 0
+        ? `\n\nهشدار: ${formatPrice(paid)} از این طرح پرداخت شده. سابقه در دیتابیس می‌ماند ولی از لیست ناپدید می‌شود.`
+        : "";
+    if (
+      !window.confirm(
+        `طرح «${plan.title}» برای ${plan.patientName || plan.phone} حذف شود؟${paidWarn}`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    setBusyId(`${plan.id}-del`);
+    try {
+      const res = await deleteAdminCommerce<{ message?: string }>(
+        `/api/admin/commerce/installments/${encodeURIComponent(plan.id)}`,
+      );
+      setSuccess(res.message || "طرح اقساط حذف شد.");
+      setExpandedId(null);
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "حذف ناموفق");
     } finally {
       setBusyId(null);
     }
@@ -292,6 +323,17 @@ export default function AdminInstallmentsPage() {
                           افزودن قسط
                         </Button>
                       </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Button
+                        type="button"
+                        variant="danger"
+                        className="px-3 py-1.5 text-xs"
+                        disabled={busyId === `${p.id}-del`}
+                        onClick={() => void deletePlan(p)}
+                      >
+                        حذف طرح
+                      </Button>
                     </div>
                   </div>
                   <div className="mb-3 max-w-md">

@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
 import {
+  deleteAdminCommerce,
   fetchAdminCommerce,
   patchAdminCommerce,
   postAdminCommerce,
@@ -116,6 +117,31 @@ export default function AdminFacilitiesPage() {
           delete next[id];
           return next;
         });
+        return reload();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusyId(null));
+  }
+
+  function deleteRequest(r: FacilityRequest) {
+    const id = r.id ? String(r.id) : "";
+    if (!id || busyId) return;
+    const name = String(r.name || r.phone || id);
+    if (
+      !window.confirm(
+        `درخواست تسهیلات «${name}» حذف شود؟\n\nطرح اقساط مرتبط هم از لیست اقساط ناپدید می‌شود. سابقه در دیتابیس می‌ماند.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(id);
+    setError("");
+    setSuccess("");
+    void deleteAdminCommerce<{ message?: string }>(
+      `/api/admin/commerce/facilities/${encodeURIComponent(id)}`,
+    )
+      .then((res) => {
+        setSuccess(res.message || "درخواست تسهیلات حذف شد.");
         return reload();
       })
       .catch((e: Error) => setError(e.message))
@@ -269,6 +295,14 @@ export default function AdminFacilitiesPage() {
                 <option value="approved">تأیید</option>
                 <option value="rejected">رد</option>
               </FormSelect>
+              <button
+                type="button"
+                className="block text-xs font-bold text-rose-700 disabled:opacity-50"
+                disabled={busyId === String(r.id)}
+                onClick={() => deleteRequest(r)}
+              >
+                حذف درخواست
+              </button>
             </td>
           </tr>
           );

@@ -652,9 +652,13 @@ model MembershipApplication {
   date                     String?
   extra                    Json?
   createdAt                DateTime @default(now())
+  deletedAt                DateTime?
+  deletedBy                String?
+  deleteNote               String?
 
   @@index([phone])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model Wallet {
@@ -757,9 +761,13 @@ model FacilityRequest {
   zohalCheckedAt DateTime?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+  deletedBy      String?
+  deleteNote     String?
 
   @@index([phone])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model InstallmentPlan {
@@ -775,6 +783,9 @@ model InstallmentPlan {
   status           InstallmentPlanStatus   @default(active)
   linkedRequestId  String?
   createdAt        DateTime                @default(now())
+  deletedAt        DateTime?
+  deletedBy        String?
+  deleteNote       String?
   scheduleItems    InstallmentScheduleItem[]
   payments         InstallmentPayment[]
 
@@ -782,6 +793,7 @@ model InstallmentPlan {
   @@index([source])
   @@index([status])
   @@index([linkedRequestId])
+  @@index([deletedAt])
 }
 
 model InstallmentScheduleItem {

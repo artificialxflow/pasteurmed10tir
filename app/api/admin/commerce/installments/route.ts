@@ -12,8 +12,9 @@ export async function GET(request: Request) {
 
   const rows = await prisma.installmentPlan.findMany({
     where: raw
-      ? undefined
+      ? { deletedAt: null }
       : {
+          deletedAt: null,
           status: { not: 'hidden' },
           source: { not: 'membership' },
         },

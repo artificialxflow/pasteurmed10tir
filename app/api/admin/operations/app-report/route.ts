@@ -66,13 +66,14 @@ async function loadAppOverviewStats(): Promise<AppOverviewStats> {
     prisma.member.count({ where: { status: 'paid' } }),
     prisma.membershipApplication.count({
       where: {
+        deletedAt: null,
         status: 'pending',
         OR: [{ loanAmount: { gt: 0 } }, { source: 'loan-request' }],
       },
     }),
-    prisma.facilityRequest.count({ where: { status: 'pending' } }),
+    prisma.facilityRequest.count({ where: { status: 'pending', deletedAt: null } }),
     prisma.installmentPlan.count({
-      where: { status: 'active', source: { not: 'membership' } },
+      where: { status: 'active', source: { not: 'membership' }, deletedAt: null },
     }),
     prisma.commission.count({ where: { status: { not: 'paid' } } }),
     prisma.clubProfile.count(),
