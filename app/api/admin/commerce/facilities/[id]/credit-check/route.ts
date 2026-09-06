@@ -60,6 +60,7 @@ export async function POST(request: Request, context: RouteContext) {
     data: {
       zohalStatus: result.zohalStatus,
       zohalPayload: result.zohalPayload,
+      zohalCheckedAt: result.zohalCheckedAt,
     },
   });
 

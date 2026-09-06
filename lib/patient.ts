@@ -257,6 +257,17 @@ export function formatJalaliDate(isoDate: string | null | undefined): string {
   return d.toLocaleDateString('fa-IR');
 }
 
+/** تاریخ و ساعت شمسی — برای تشخیص داده کهنه از نتیجه تازه */
+export function formatJalaliDateTime(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return `${d.toLocaleDateString('fa-IR')} ${d.toLocaleTimeString('fa-IR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+}
+
 export function buildDueDates(count: number, start = new Date()): string[] {
   const dates: string[] = [];
   for (let i = 1; i <= count; i += 1) {

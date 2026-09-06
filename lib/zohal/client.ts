@@ -8,9 +8,33 @@
  *   GET  inquiry/credit_inquiry/result/{reference_id}
  */
 
+import { isRetryablePathError } from '@/lib/zohal/errors';
+
 export type ZohalResult =
   | { ok: true; data: unknown }
   | { ok: false; error: string; data?: unknown };
+
+/**
+ * مسیرهای جایگزین اعتبارسنجی. مسیر اول رسمی است؛ بقیه فقط وقتی امتحان
+ * می‌شوند که مسیر اول ۴۰۴ بدهد (یعنی زحل آدرس را عوض کرده باشد).
+ */
+const CREDIT_SEND_OTP_PATHS = [
+  'inquiry/credit_inquiry/send_otp',
+  'inquiry/credit_scoring/send_otp',
+  'inquiry/credit/send_otp',
+];
+
+const CREDIT_VERIFY_OTP_PATHS = [
+  'inquiry/credit_inquiry/verify_otp',
+  'inquiry/credit_scoring/verify_otp',
+  'inquiry/credit/verify_otp',
+];
+
+const CREDIT_RESULT_PREFIXES = [
+  'inquiry/credit_inquiry/result',
+  'inquiry/credit_scoring/result',
+  'inquiry/credit/result',
+];
 
 function baseUrl(): string {
   return (process.env.ZOHAL_BASE_URL || 'https://service.zohal.io/api/v0/services').replace(
@@ -135,27 +159,33 @@ async function callInquiry(
   return callZohal(`inquiry/${method}`, { method: 'POST', body: payload });
 }
 
+/**
+ * چند مسیر را به ترتیب امتحان می‌کند و روی اولین موفق می‌ایستد.
+ * فقط وقتی جلو می‌رود که خطا از جنس «مسیر پیدا نشد» باشد؛ خطاهای واقعی
+ * مثل `SERVICE_DISABLED` بلافاصله برمی‌گردند و درخواست بیهوده زده نمی‌شود.
+ */
+async function callZohalFirstOk(
+  paths: string[],
+  init?: { method?: 'GET' | 'POST'; body?: Record<string, unknown> },
+): Promise<ZohalResult> {
+  let last: ZohalResult = { ok: false, error: 'مسیر زحل یافت نشد.' };
+  for (const path of paths) {
+    const result = await callZohal(path, init);
+    if (result.ok) return result;
+    last = result;
+    if (!isRetryablePathError(result.error)) return result;
+  }
+  return last;
+}
+
 async function callInquiryFirstOk(
   methods: string[],
   payload: Record<string, unknown>,
 ): Promise<ZohalResult> {
-  let last: ZohalResult = { ok: false, error: 'متد زحل یافت نشد.' };
-  for (const method of methods) {
-    const result = await callInquiry(method, payload);
-    if (result.ok) return result;
-    last = result;
-    const msg = result.error.toLowerCase();
-    const retryable =
-      msg.includes('404') ||
-      msg.includes('not found') ||
-      msg.includes('یافت نشد') ||
-      msg.includes('unknown') ||
-      msg.includes('invalid method') ||
-      msg.includes('method not') ||
-      msg.includes('وجود ندارد');
-    if (!retryable) return result;
-  }
-  return last;
+  return callZohalFirstOk(
+    methods.map((method) => `inquiry/${method}`),
+    { method: 'POST', body: payload },
+  );
 }
 
 export async function zohalShahkar(nationalCode: string, mobile: string): Promise<ZohalResult> {
@@ -184,7 +214,7 @@ export async function zohalCreditSendOtp(
   nationalCode: string,
   mobile: string,
 ): Promise<ZohalResult> {
-  return callZohal('inquiry/credit_inquiry/send_otp', {
+  return callZohalFirstOk(CREDIT_SEND_OTP_PATHS, {
     method: 'POST',
     body: {
       national_code: nationalCode,
@@ -197,7 +227,7 @@ export async function zohalCreditVerifyOtp(
   otp: string,
   referenceId: string,
 ): Promise<ZohalResult> {
-  return callZohal('inquiry/credit_inquiry/verify_otp', {
+  return callZohalFirstOk(CREDIT_VERIFY_OTP_PATHS, {
     method: 'POST',
     body: {
       otp,
@@ -207,9 +237,11 @@ export async function zohalCreditVerifyOtp(
 }
 
 export async function zohalCreditGetResult(referenceId: string): Promise<ZohalResult> {
-  return callZohal(`inquiry/credit_inquiry/result/${encodeURIComponent(referenceId)}`, {
-    method: 'GET',
-  });
+  const ref = encodeURIComponent(referenceId);
+  return callZohalFirstOk(
+    CREDIT_RESULT_PREFIXES.map((prefix) => `${prefix}/${ref}`),
+    { method: 'GET' },
+  );
 }
 
 export function extractCreditReferenceId(data: unknown): string | null {

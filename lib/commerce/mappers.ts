@@ -198,6 +198,7 @@ export function mapFacilityRequest(row: FacilityRequest) {
     zohalStatus: row.zohalStatus ?? undefined,
     zohalShahkarMatched,
     zohalSummary,
+    zohalCheckedAt: row.zohalCheckedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
 }

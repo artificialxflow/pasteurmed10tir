@@ -744,18 +744,19 @@ model Commission {
 }
 
 model FacilityRequest {
-  id           String                @id
-  name         String
-  phone        String
-  nationalId   String?
-  amount       String                @default("")
-  amountNum    Int                   @default(0)
-  description  String?
-  status       FacilityRequestStatus @default(pending)
-  zohalStatus  String?
-  zohalPayload Json?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  id             String                @id
+  name           String
+  phone          String
+  nationalId     String?
+  amount         String                @default("")
+  amountNum      Int                   @default(0)
+  description    String?
+  status         FacilityRequestStatus @default(pending)
+  zohalStatus    String?
+  zohalPayload   Json?
+  zohalCheckedAt DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   @@index([phone])
   @@index([status])

@@ -14,8 +14,11 @@ import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
 import { type Member } from "@/lib/storage";
 import {
+  formatZohalCheckedAt,
+  ZOHAL_CREDIT_DISABLED,
   zohalCreditCheckNotice,
   zohalCreditStatusLabel,
+  zohalCreditStatusTone,
 } from "@/lib/zohal/run-credit-check";
 import { useEffect, useState } from "react";
 
@@ -37,6 +40,7 @@ type Application = Record<string, unknown> & {
   status?: string;
   zohalStatus?: string;
   zohalSummary?: string;
+  zohalCheckedAt?: string;
   zohalShahkarMatched?: boolean | null;
   reviewNote?: string | null;
 };
@@ -113,7 +117,12 @@ export default function AdminMembershipsPage() {
       setSuccess(message);
       setNotice("");
       setError("");
-    } else if (status === "partial" || status === "otp_pending") {
+    } else if (
+      status === "partial" ||
+      status === "otp_pending" ||
+      status === ZOHAL_CREDIT_DISABLED
+    ) {
+      // «سرویس غیرفعال» خطای ما نیست — هشدار زرد، نه خطای قرمز
       setNotice(message);
       setSuccess("");
       setError("");
@@ -241,7 +250,10 @@ export default function AdminMembershipsPage() {
           ]}
           empty="فرم عضویتی ثبت نشده است."
         >
-          {applications.map((app) => (
+          {applications.map((app) => {
+            const tone = zohalCreditStatusTone(app.zohalStatus);
+            const creditDisabled = app.zohalStatus === ZOHAL_CREDIT_DISABLED;
+            return (
             <tr key={String(app.id)} className="border-t border-slate-100 align-top">
               <td className="px-4 py-3">
                 {String(app.patientName || "—")}
@@ -257,11 +269,11 @@ export default function AdminMembershipsPage() {
               <td className="px-4 py-3 text-xs font-medium">
                 <span
                   className={
-                    app.zohalStatus === "partial" || app.zohalStatus === "otp_pending"
+                    tone === "warn"
                       ? "text-amber-700"
-                      : app.zohalStatus === "failed" || app.zohalStatus === "error"
+                      : tone === "danger"
                         ? "text-rose-700"
-                        : app.zohalStatus === "passed"
+                        : tone === "ok"
                           ? "text-teal-700"
                           : ""
                   }
@@ -271,6 +283,11 @@ export default function AdminMembershipsPage() {
               </td>
               <td className="max-w-xs px-4 py-3 text-xs leading-5 whitespace-pre-line text-slate-600">
                 {app.zohalSummary || "—"}
+                {app.zohalCheckedAt ? (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    آخرین استعلام: {formatZohalCheckedAt(app.zohalCheckedAt)}
+                  </p>
+                ) : null}
                 {app.status === "rejected" && app.reviewNote ? (
                   <p className="mt-2 rounded-lg border border-rose-100 bg-rose-50 px-2 py-1 text-[11px] text-rose-800">
                     توضیح رد: {String(app.reviewNote)}
@@ -305,6 +322,12 @@ export default function AdminMembershipsPage() {
                     ? "ارسال مجدد OTP"
                     : "استعلام اعتبار (OTP)"}
                 </button>
+                {creditDisabled ? (
+                  <p className="text-[11px] leading-4 text-amber-800">
+                    سرویس در پنل زحل فعال نیست. تلاش مجدد تا فعال‌سازی بی‌فایده است.
+                    وام را از همین‌جا می‌توانید دستی تأیید کنید.
+                  </p>
+                ) : null}
                 {app.zohalStatus === "otp_pending" ? (
                   <div className="flex flex-col gap-1">
                     <input
@@ -345,7 +368,8 @@ export default function AdminMembershipsPage() {
                 </select>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </AdminTable>
       </div>
 

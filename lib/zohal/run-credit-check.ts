@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { isValidNationalId, normalizeNationalId } from '@/lib/validation/national-id';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
+import { isZohalServiceDisabled, zohalErrorDetail } from '@/lib/zohal/errors';
 import {
   extractCreditReferenceId,
   isCreditResultCompleted,
@@ -28,12 +29,6 @@ export type ZohalCreditCheckResult = {
   summary: string;
   referenceId?: string;
 };
-
-function truncateError(value: unknown, max = 48): string {
-  const text = String(value || 'خطای نامشخص').replace(/\s+/g, ' ').trim();
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1)}…`;
-}
 
 function hasServiceError(section: unknown): string | null {
   if (!section || typeof section !== 'object') return null;
@@ -101,7 +96,7 @@ export function buildZohalCreditSummary(payload: Record<string, unknown>): strin
 
   const shahkarErr = hasServiceError(payload.shahkar);
   if (shahkarErr) {
-    parts.push(`شاهکار: خطا سرویس (${truncateError(shahkarErr)})`);
+    parts.push(`شاهکار: ${zohalErrorDetail(shahkarErr)}`);
   } else if (typeof payload.shahkarMatched === 'boolean') {
     parts.push(payload.shahkarMatched ? 'شاهکار: تطبیق' : 'شاهکار: عدم تطبیق');
   } else if (payload.shahkar) {
@@ -111,7 +106,7 @@ export function buildZohalCreditSummary(payload: Record<string, unknown>): strin
   const chequeCount = extractBouncedChequeCount(payload);
   const chequeErr = hasServiceError(payload.bouncedCheque);
   if (chequeErr) {
-    parts.push(`چک برگشتی: ناموفق (${truncateError(chequeErr)})`);
+    parts.push(`چک برگشتی: ${zohalErrorDetail(chequeErr)}`);
   } else if (chequeCount != null) {
     parts.push(`چک برگشتی: ${chequeCount.toLocaleString('fa-IR')} مورد`);
   } else if (payload.bouncedCheque) {
@@ -125,7 +120,7 @@ export function buildZohalCreditSummary(payload: Record<string, unknown>): strin
 
   const creditErr = hasServiceError(payload.credit);
   if (creditErr) {
-    parts.push(`اعتبار: ناموفق (${truncateError(creditErr)})`);
+    parts.push(`اعتبار: ${zohalErrorDetail(creditErr)}`);
   } else if (payload.credit) {
     const scoreInfo = extractCreditScoreInfo(payload.credit);
     if (scoreInfo.score != null) {
@@ -140,9 +135,17 @@ export function buildZohalCreditSummary(payload: Record<string, unknown>): strin
   return parts.join('\n') || '—';
 }
 
+/**
+ * وضعیت `credit_disabled` عمداً از `partial` جدا شد: `partial` یعنی «دوباره
+ * تلاش کن، شاید درست شود»، ولی `credit_disabled` یعنی «تلاش مجدد بی‌فایده است
+ * تا وقتی سرویس در پنل زحل فعال شود». پرسنل باید این دو را از هم تشخیص بدهند.
+ */
+export const ZOHAL_CREDIT_DISABLED = 'credit_disabled';
+
 export function zohalCreditStatusLabel(status?: string | null): string {
   if (status === 'passed') return 'زحل: تأیید کامل';
   if (status === 'partial') return 'زحل: ناقص';
+  if (status === ZOHAL_CREDIT_DISABLED) return 'زحل: اعتبارسنجی غیرفعال';
   if (status === 'otp_pending') return 'زحل: منتظر OTP اعتبار';
   if (status === 'failed') return 'زحل: رد شاهکار';
   if (status === 'error') return 'زحل: خطا شاهکار';
@@ -150,10 +153,39 @@ export function zohalCreditStatusLabel(status?: string | null): string {
   return status ? `زحل: ${status}` : 'زحل: —';
 }
 
+export function formatZohalCheckedAt(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('fa-IR');
+}
+
+export function zohalCreditStatusTone(
+  status?: string | null,
+): 'ok' | 'warn' | 'danger' | 'neutral' {
+  if (status === 'passed') return 'ok';
+  if (
+    status === 'partial' ||
+    status === 'otp_pending' ||
+    status === ZOHAL_CREDIT_DISABLED
+  ) {
+    return 'warn';
+  }
+  if (status === 'failed' || status === 'error') return 'danger';
+  return 'neutral';
+}
+
 export function zohalCreditCheckNotice(status?: string | null): string {
   if (status === 'passed') return 'استعلام کامل شد — شاهکار، چک برگشتی و اعتبار بانکی دریافت شد.';
   if (status === 'partial') {
     return 'شاهکار انجام شد؛ بخش اعتبار یا چک ناقص است (جزئیات در ستون خلاصه).';
+  }
+  if (status === ZOHAL_CREDIT_DISABLED) {
+    return (
+      'شاهکار انجام شد، ولی سرویس اعتبارسنجی در پنل زحل فعال نیست. ' +
+      'تلاش مجدد نتیجه‌ای ندارد تا وقتی با پشتیبانی زحل تماس بگیرید. ' +
+      'در این حالت وام را می‌توانید دستی تأیید کنید.'
+    );
   }
   if (status === 'otp_pending') {
     return 'کد OTP اعتبارسنجی برای موبایل بیمار ارسال شد. کد را وارد کنید.';
@@ -170,14 +202,16 @@ function resolveZohalStatus(input: {
   creditOk: boolean | null;
   bouncedOk: boolean;
   otpPending?: boolean;
+  creditError?: unknown;
 }): string {
   if (!input.shahkarOk) return 'error';
   if (input.matched === false) return 'failed';
   if (input.matched == null) return 'error';
   if (input.otpPending) return 'otp_pending';
-  if (input.creditOk === null) {
-    return input.bouncedOk ? 'partial' : 'partial';
+  if (input.creditError && isZohalServiceDisabled(input.creditError)) {
+    return ZOHAL_CREDIT_DISABLED;
   }
+  if (input.creditOk === null) return 'partial';
   if (!input.creditOk || !input.bouncedOk) return 'partial';
   return 'passed';
 }
@@ -288,13 +322,22 @@ export async function startZohalCreditOtp(
 
   const otpSend = await zohalCreditSendOtp(nationalId, phone);
   if (!otpSend.ok) {
-    basePayload.credit = { error: otpSend.error };
+    // پاسخ خام برای عیب‌یابی نگه داشته می‌شود؛ فقط سمت سرور می‌ماند و
+    // در `mapMembershipApplication` به کلاینت فرستاده نمی‌شود.
+    basePayload.credit = { error: otpSend.error, raw: otpSend.data ?? null };
     basePayload.creditOk = false;
+    const matched =
+      typeof basePayload.shahkarMatched === 'boolean' ? basePayload.shahkarMatched : null;
     return {
-      zohalStatus: 'partial',
+      zohalStatus: resolveZohalStatus({
+        shahkarOk: basePayload.shahkarOk !== false && matched !== null,
+        matched,
+        creditOk: false,
+        bouncedOk: basePayload.bouncedOk !== false,
+        creditError: otpSend.error,
+      }),
       zohalPayload: basePayload as Prisma.InputJsonValue,
-      shahkarMatched:
-        typeof basePayload.shahkarMatched === 'boolean' ? basePayload.shahkarMatched : null,
+      shahkarMatched: matched,
       zohalCheckedAt: checkedAt,
       summary: buildZohalCreditSummary(basePayload),
     };
@@ -376,14 +419,21 @@ export async function completeZohalCreditOtp(input: {
 
   const verify = await zohalCreditVerifyOtp(otp, referenceId);
   if (!verify.ok) {
-    basePayload.credit = { error: verify.error };
+    basePayload.credit = { error: verify.error, raw: verify.data ?? null };
     basePayload.creditOk = false;
     basePayload.creditOtp = { ...(otpMeta || {}), reference_id: referenceId, status: 'failed' };
+    const verifyMatched =
+      typeof basePayload.shahkarMatched === 'boolean' ? basePayload.shahkarMatched : null;
     return {
-      zohalStatus: 'partial',
+      zohalStatus: resolveZohalStatus({
+        shahkarOk: basePayload.shahkarOk !== false && verifyMatched !== null,
+        matched: verifyMatched,
+        creditOk: false,
+        bouncedOk: basePayload.bouncedOk !== false,
+        creditError: verify.error,
+      }),
       zohalPayload: basePayload as Prisma.InputJsonValue,
-      shahkarMatched:
-        typeof basePayload.shahkarMatched === 'boolean' ? basePayload.shahkarMatched : null,
+      shahkarMatched: verifyMatched,
       zohalCheckedAt: checkedAt,
       summary: buildZohalCreditSummary(basePayload),
       referenceId,
@@ -392,7 +442,7 @@ export async function completeZohalCreditOtp(input: {
 
   const credit = await pollCreditResult(referenceId);
   if (!credit.ok) {
-    basePayload.credit = { error: credit.error };
+    basePayload.credit = { error: credit.error, raw: credit.data ?? null };
     basePayload.creditOk = false;
   } else {
     basePayload.credit = credit.data;
@@ -418,6 +468,7 @@ export async function completeZohalCreditOtp(input: {
     matched,
     creditOk: basePayload.creditOk === true,
     bouncedOk: basePayload.bouncedOk !== false && !hasServiceError(basePayload.bouncedCheque),
+    creditError: credit.ok ? undefined : credit.error,
   });
 
   return {

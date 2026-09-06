@@ -8,8 +8,11 @@ import {
   postAdminCommerce,
 } from "@/lib/commerce/client";
 import {
+  formatZohalCheckedAt,
+  ZOHAL_CREDIT_DISABLED,
   zohalCreditCheckNotice,
   zohalCreditStatusLabel,
+  zohalCreditStatusTone,
 } from "@/lib/zohal/run-credit-check";
 import { useEffect, useState } from "react";
 
@@ -23,6 +26,7 @@ type FacilityRequest = Record<string, unknown> & {
   status?: string;
   zohalStatus?: string;
   zohalSummary?: string;
+  zohalCheckedAt?: string;
   zohalShahkarMatched?: boolean | null;
 };
 
@@ -50,7 +54,11 @@ export default function AdminFacilitiesPage() {
       setSuccess(message);
       setNotice("");
       setError("");
-    } else if (status === "partial" || status === "otp_pending") {
+    } else if (
+      status === "partial" ||
+      status === "otp_pending" ||
+      status === ZOHAL_CREDIT_DISABLED
+    ) {
       setNotice(message);
       setSuccess("");
       setError("");
@@ -159,7 +167,10 @@ export default function AdminFacilitiesPage() {
         headers={["نام", "موبایل", "کد ملی", "مبلغ", "زحل", "خلاصه استعلام", "وضعیت", "عملیات"]}
         empty="درخواست تسهیلات تجهیزات ثبت نشده. (وام عضویت اینجا نیست — /admin/memberships)"
       >
-        {items.map((r) => (
+        {items.map((r) => {
+          const tone = zohalCreditStatusTone(r.zohalStatus);
+          const creditDisabled = r.zohalStatus === ZOHAL_CREDIT_DISABLED;
+          return (
           <tr key={String(r.id)} className="border-t border-slate-100 align-top">
             <td className="px-4 py-3">{String(r.name || "—")}</td>
             <td className="px-4 py-3 font-mono text-xs">{String(r.phone || "—")}</td>
@@ -168,11 +179,11 @@ export default function AdminFacilitiesPage() {
             <td className="px-4 py-3 text-xs font-medium">
               <span
                 className={
-                  r.zohalStatus === "partial" || r.zohalStatus === "otp_pending"
+                  tone === "warn"
                     ? "text-amber-700"
-                    : r.zohalStatus === "failed" || r.zohalStatus === "error"
+                    : tone === "danger"
                       ? "text-rose-700"
-                      : r.zohalStatus === "passed"
+                      : tone === "ok"
                         ? "text-teal-700"
                         : ""
                 }
@@ -182,6 +193,11 @@ export default function AdminFacilitiesPage() {
             </td>
             <td className="max-w-xs px-4 py-3 text-xs leading-5 whitespace-pre-line text-slate-600">
               {r.zohalSummary || "—"}
+              {r.zohalCheckedAt ? (
+                <p className="mt-1 text-[11px] text-slate-400">
+                  آخرین استعلام: {formatZohalCheckedAt(r.zohalCheckedAt)}
+                </p>
+              ) : null}
             </td>
             <td className="px-4 py-3">
               <AdminBadge
@@ -211,6 +227,12 @@ export default function AdminFacilitiesPage() {
                   ? "ارسال مجدد OTP"
                   : "استعلام اعتبار (OTP)"}
               </button>
+              {creditDisabled ? (
+                <p className="text-[11px] leading-4 text-amber-800">
+                  سرویس در پنل زحل فعال نیست. تلاش مجدد تا فعال‌سازی بی‌فایده است.
+                  درخواست را از همین‌جا می‌توانید دستی تأیید کنید.
+                </p>
+              ) : null}
               {r.zohalStatus === "otp_pending" ? (
                 <div className="flex flex-col gap-1">
                   <input
@@ -249,7 +271,8 @@ export default function AdminFacilitiesPage() {
               </FormSelect>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </AdminTable>
     </div>
   );
