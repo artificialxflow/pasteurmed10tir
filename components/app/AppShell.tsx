@@ -1,5 +1,6 @@
 "use client";
 
+import { SupportWidget } from "@/components/support/SupportWidget";
 import { Logo } from "@/components/ui/Card";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,7 @@ export function AppShell({
         <Logo className="h-9 w-auto max-w-[4.5rem]" />
       </header>
       <main className={cn("flex-1 overflow-y-auto px-4 py-4", showNav ? "pb-24" : "pb-4")}>{children}</main>
+      <SupportWidget variant="app" liftForNav={showNav} />
       {showNav ? (
         <nav className="absolute inset-x-3 bottom-3 z-40 grid h-[var(--app-nav-height)] grid-cols-5 gap-1 rounded-[1.35rem] border border-slate-200 bg-white/97 p-1.5 shadow-lg">
           {nav.map((item) => {

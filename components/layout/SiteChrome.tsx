@@ -1,5 +1,6 @@
 "use client";
 
+import { SupportWidget } from "@/components/support/SupportWidget";
 import { Logo } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { PASTEUR_DATA } from "@/lib/data";
@@ -176,6 +177,7 @@ export function SiteHeader() {
           </Link>
         ))}
       </nav>
+      <SupportWidget variant="web" />
     </>
   );
 }
