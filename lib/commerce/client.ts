@@ -111,6 +111,30 @@ export async function lookupVisitorApi(code: string) {
   );
 }
 
+export async function resolveReferralDiscount(amount: number, referralCode?: string) {
+  const { applyReferralDiscount, REFERRAL_CODE_NOT_FOUND } = await import(
+    '@/lib/commerce/referral-discount'
+  );
+  const code = (referralCode || '').trim().toUpperCase();
+  if (!code) {
+    return { payable: Math.max(0, Math.floor(Number(amount) || 0)) };
+  }
+  const { visitor } = await lookupVisitorApi(code);
+  if (!visitor) {
+    return {
+      payable: Math.max(0, Math.floor(Number(amount) || 0)),
+      error: REFERRAL_CODE_NOT_FOUND,
+    };
+  }
+  const discounted = applyReferralDiscount(amount);
+  return {
+    payable: discounted.payable,
+    referralCode: code,
+    referralDiscountPercent: discounted.discountPercent,
+    referralDiscountAmount: discounted.discountAmount,
+  };
+}
+
 export async function createMembershipApplicationApi(body: Record<string, unknown>) {
   return postPublicCommerce<{ application: Record<string, unknown> }>(
     '/api/commerce/membership-applications',
@@ -120,9 +144,41 @@ export async function createMembershipApplicationApi(body: Record<string, unknow
 
 export async function createLoanApplicationApi(body: Record<string, unknown>) {
   return postPatientCommerce<{ application: Record<string, unknown> }>(
-    '/api/commerce/membership-applications',
+    '/api/commerce/loan-applications',
     body,
   );
+}
+
+export async function getMyLoanDocumentsApi() {
+  return fetchPatientCommerce<{ items: Record<string, unknown>[] }>(
+    '/api/commerce/loan-documents',
+  );
+}
+
+export async function uploadLoanDocumentApi(kind: string, file: File) {
+  const form = new FormData();
+  form.append('kind', kind);
+  form.append('file', file);
+  const res = await fetch('/api/commerce/loan-documents', {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  const text = await res.text();
+  let data: { item?: Record<string, unknown>; error?: string };
+  try {
+    data = JSON.parse(text) as { item?: Record<string, unknown>; error?: string };
+  } catch {
+    throw new Error(!res.ok ? `خطا (${res.status})` : 'پاسخ نامعتبر از سرور.');
+  }
+  if (!res.ok) throw new Error(data.error || 'آپلود ناموفق بود.');
+  return data;
+}
+
+export async function deleteLoanDocumentApi(id: string) {
+  return fetchPatientCommerce<{ ok: boolean }>(`/api/commerce/loan-documents/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
 }
 
 export async function getMyMembershipApplicationsApi() {

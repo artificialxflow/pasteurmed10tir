@@ -12,12 +12,23 @@ export type PatientStatus = 'pending' | 'approved' | 'rejected';
 
 export type ZohalStatus = 'skipped' | 'pending' | 'passed' | 'failed' | 'error';
 
+export type PatientDependent = {
+  id: string;
+  name: string;
+  nationalId?: string;
+  birthDate?: string;
+  relation: string;
+  fileNumber?: string;
+  franchisePercent: number;
+};
+
 export type PatientProfile = {
   phone: string;
   name: string;
   nationalId?: string;
   /** شماره پرونده «سیستم لبخند» — فقط پرسنل/ادمین وارد می‌کنند */
   fileNumber?: string;
+  dependents?: PatientDependent[];
   baseInsuranceId?: string;
   complementaryInsuranceId?: string;
   /** درصد فرانشیز ۰–۱۰۰ (واحد صحیح v4) */

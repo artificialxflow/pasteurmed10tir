@@ -13,9 +13,15 @@ import type {
   InstallmentSource,
 } from '@prisma/client';
 
-export function buildDueDates(count: number, start = new Date()): string[] {
+/** قسط اول = start + ۱ ماه (پیش‌فرض). طرح‌های موجود را با firstDueOffsetMonths: 0 بازسازی کن. */
+export function buildDueDates(
+  count: number,
+  start = new Date(),
+  options?: { firstDueOffsetMonths?: number },
+): string[] {
   const dates: string[] = [];
   const cursor = new Date(start);
+  cursor.setMonth(cursor.getMonth() + (options?.firstDueOffsetMonths ?? 1));
   for (let i = 0; i < count; i += 1) {
     dates.push(cursor.toISOString());
     cursor.setMonth(cursor.getMonth() + 1);
@@ -104,7 +110,7 @@ async function ensureScheduleForPlan(planId: string) {
   const dates =
     plan.dueDates.length >= plan.installmentCount
       ? plan.dueDates
-      : buildDueDates(plan.installmentCount, plan.createdAt);
+      : buildDueDates(plan.installmentCount, plan.createdAt, { firstDueOffsetMonths: 0 });
 
   await prisma.installmentScheduleItem.createMany({
     data: amounts.map((amount, i) => {
@@ -145,9 +151,7 @@ export async function createCreditInstallmentPlan(input: {
 
   const settings = await loadWalletSettings();
   const count = settings.installmentMax || 6;
-  const start = new Date();
-  start.setMonth(start.getMonth() + (settings.graceMonths || 1));
-  const dueDates = buildDueDates(count, start);
+  const dueDates = buildDueDates(count);
 
   return prisma.installmentPlan.create({
     data: {

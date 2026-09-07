@@ -19,6 +19,12 @@ export type PendingPaymentBase = {
   patientName?: string;
   patientPhone?: string;
   referralCode?: string;
+  referralDiscountPercent?: number;
+  referralDiscountAmount?: number;
+  patientAddress?: string;
+  patientArea?: string;
+  patientLatitude?: number;
+  patientLongitude?: number;
   returnTo?: string;
   successTo?: string;
   status?: string;
@@ -39,6 +45,7 @@ export type PendingBookingPayment = PendingPaymentBase & {
   appointmentDateLabel?: string;
   timeValue?: string | number;
   timeLabel?: string;
+  dependentId?: string;
 };
 
 export type PendingMembershipPayment = PendingPaymentBase & {
@@ -94,6 +101,7 @@ export type PendingConsultationPayment = PendingPaymentBase & {
   preferredDateLabel?: string;
   preferredTime?: string;
   preferredTimeLabel?: string;
+  dependentId?: string;
 };
 
 export type PendingNursingPayment = PendingPaymentBase & {

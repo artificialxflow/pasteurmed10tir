@@ -1,4 +1,5 @@
 import { addClubPoints } from '@/lib/club/service';
+import { resolveOwnedDependent } from '@/lib/dependents';
 import { generateOperationId, mapConsultation } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
@@ -26,6 +27,7 @@ export type CreateConsultationInput = {
   preferredDateLabel?: string;
   preferredTime?: string;
   preferredTimeLabel?: string;
+  dependentId?: string | null;
 };
 
 export async function createConsultationRecord(body: CreateConsultationInput) {
@@ -34,14 +36,22 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
     throw new Error('شماره موبایل معتبر نیست.');
   }
 
-  const patientName = String(body.patientName || '').trim();
-  if (!patientName) throw new Error('نام را وارد کنید.');
-
   const session = await optionalPatient();
   const userId =
     session && normalizePhoneDigits(session.phone) === patientPhone
       ? session.userId
       : null;
+
+  const requestedDependentId = body.dependentId ? String(body.dependentId) : null;
+  const dependent = requestedDependentId
+    ? await resolveOwnedDependent(session?.userId, requestedDependentId)
+    : null;
+  if (requestedDependentId && !dependent) {
+    throw new Error('فرد تحت تکفل یافت نشد.');
+  }
+
+  const patientName = (dependent?.name || String(body.patientName || '').trim());
+  if (!patientName) throw new Error('نام را وارد کنید.');
 
   const row = await prisma.consultation.create({
     data: {
@@ -49,6 +59,7 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
       userId,
       patientPhone,
       patientName,
+      dependentId: dependent?.id ?? null,
       type: body.type ? String(body.type) : null,
       typeLabel: body.typeLabel ? String(body.typeLabel) : null,
       category: body.category ? String(body.category) : null,

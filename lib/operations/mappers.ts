@@ -23,7 +23,9 @@ export function generateOperationId(): string {
   return `PST-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function mapBooking(row: Booking) {
+export function mapBooking(
+  row: Booking & { dependent?: { name: string; fileNumber: string | null } | null },
+) {
   return {
     id: row.id,
     doctorId: row.doctorId ?? undefined,
@@ -44,10 +46,15 @@ export function mapBooking(row: Booking) {
     dateLabel: row.dateLabel ?? undefined,
     appointmentAt: row.appointmentAt?.toISOString(),
     referralCode: row.referralCode ?? undefined,
+    dependentId: row.dependentId ?? undefined,
+    dependentName: row.dependent?.name,
+    dependentFileNumber: row.dependent?.fileNumber ?? undefined,
   };
 }
 
-export function mapConsultation(row: Consultation) {
+export function mapConsultation(
+  row: Consultation & { dependent?: { name: string; fileNumber: string | null } | null },
+) {
   return {
     id: row.id,
     type: row.type ?? undefined,
@@ -72,6 +79,9 @@ export function mapConsultation(row: Consultation) {
     preferredTimeLabel: row.preferredTimeLabel ?? undefined,
     status: row.status,
     createdAt: row.createdAt.toISOString(),
+    dependentId: row.dependentId ?? undefined,
+    dependentName: row.dependent?.name,
+    dependentFileNumber: row.dependent?.fileNumber ?? undefined,
   };
 }
 

@@ -77,6 +77,10 @@ export async function softDeleteMembershipApplication(
       where: { linkedRequestId: id, deletedAt: null },
       data: { ...data, deleteNote: cascadeNote },
     }),
+    prisma.loanDocument.updateMany({
+      where: { applicationId: id, deletedAt: null },
+      data: { deletedAt: data.deletedAt },
+    }),
     prisma.membershipApplication.update({
       where: { id },
       data,

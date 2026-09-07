@@ -14,6 +14,7 @@ export async function GET(request: Request) {
 
   const rows = await prisma.booking.findMany({
     where: type && type !== 'all' ? { type } : undefined,
+    include: { dependent: { select: { name: true, fileNumber: true } } },
     orderBy: { createdAt: 'desc' },
   });
 

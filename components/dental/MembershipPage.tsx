@@ -31,7 +31,9 @@ import { ROUTES } from "@/lib/routes";
 import {
   createMembershipApplicationApi,
   lookupVisitorApi,
+  resolveReferralDiscount,
 } from "@/lib/commerce/client";
+import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, normalizePhone } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
@@ -225,15 +227,20 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const subtotal = unit * count;
     const durationDisc = plan?.discountPercent || 0;
     const groupDisc = resolveGroupDiscountPercent(count);
-    const total = applyMembershipDiscounts({
+    const afterPlan = applyMembershipDiscounts({
       subtotal,
       durationDiscountPercent: durationDisc,
       groupDiscountPercent: groupDisc,
     });
+    const referral = await resolveReferralDiscount(afterPlan, referralCode);
+    if (referral.error) throw new Error(referral.error);
+    const total = referral.payable;
     return {
       id: PasteurStorage.generateId(),
       date: form.date || new Date().toLocaleDateString("fa-IR"),
-      referralCode,
+      referralCode: referral.referralCode || referralCode,
+      referralDiscountPercent: referral.referralDiscountPercent,
+      referralDiscountAmount: referral.referralDiscountAmount,
       visitorName,
       patientName: form.name.trim(),
       nationalId: form.nationalId.trim(),
@@ -314,19 +321,21 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   async function submitApplication(e: FormEvent) {
     e.preventDefault();
     setError("");
-    const data = await buildApplication();
+    let data: Awaited<ReturnType<typeof buildApplication>>;
+    try {
+      data = await buildApplication();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ثبت درخواست ناموفق بود.");
+      return;
+    }
     if (data.patientName.length < 2 || normalizePhone(data.phone).length < 10) {
       setError("نام و شماره تماس را کامل وارد کنید.");
       return;
     }
     const loanNum = Number(data.loanAmount || 0);
     if (loanNum > 0) {
-      const nid = normalizeNationalId(String(data.nationalId || ""));
-      if (!nid || !isValidNationalId(nid)) {
-        setError("برای درخواست وام، کد ملی ۱۰ رقمی معتبر الزامی است.");
-        return;
-      }
-      data.nationalId = nid;
+      setError("درخواست وام را پس از ورود از پنل کاربری و با آپلود مدارک ثبت کنید.");
+      return;
     }
     try {
       await createMembershipApplicationApi(data as Record<string, unknown>);
@@ -342,6 +351,8 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       patientPhone: data.phone,
       amount: data.amountToman,
       referralCode: data.referralCode,
+      referralDiscountPercent: data.referralDiscountPercent,
+      referralDiscountAmount: data.referralDiscountAmount,
       validityLabel: data.validityLabel,
       membershipDurationLabel: data.membershipDurationLabel,
       discountPercent: data.discountPercent,
@@ -365,7 +376,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const membership = membershipPlans.find((m) => m.id === quick.tier);
     const durationDisc = plan?.discountPercent || 0;
     const groupDisc = resolveGroupDiscountPercent(count);
-    const payable = applyMembershipDiscounts({
+    const afterPlan = applyMembershipDiscounts({
       subtotal,
       durationDiscountPercent: durationDisc,
       groupDiscountPercent: groupDisc,
@@ -374,22 +385,30 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       setError("اطلاعات را کامل وارد کنید.");
       return;
     }
-    PasteurStorage.setPendingPayment({
-      kind: "membership",
-      planId: quick.tier,
-      planName: `${membership?.name || quick.tier} — عضویت ${membershipDurationLabel} — ${count} نفر`,
-      patientName: name,
-      patientPhone: phone,
-      amount: payable,
-      validityLabel: membershipDurationLabel,
-      membershipDurationLabel,
-      discountPercent: durationDisc,
-      groupDiscountPercent: groupDisc,
-      referralCode: quick.referral.trim().toUpperCase(),
-      successTo: successHref,
-      returnTo: returnHref,
+    void resolveReferralDiscount(afterPlan, quick.referral).then((referral) => {
+      if (referral.error) {
+        setError(referral.error);
+        return;
+      }
+      PasteurStorage.setPendingPayment({
+        kind: "membership",
+        planId: quick.tier,
+        planName: `${membership?.name || quick.tier} — عضویت ${membershipDurationLabel} — ${count} نفر`,
+        patientName: name,
+        patientPhone: phone,
+        amount: referral.payable,
+        validityLabel: membershipDurationLabel,
+        membershipDurationLabel,
+        discountPercent: durationDisc,
+        groupDiscountPercent: groupDisc,
+        referralCode: referral.referralCode || quick.referral.trim().toUpperCase(),
+        referralDiscountPercent: referral.referralDiscountPercent,
+        referralDiscountAmount: referral.referralDiscountAmount,
+        successTo: successHref,
+        returnTo: returnHref,
+      });
+      router.push(confirmHref);
     });
-    router.push(confirmHref);
   }
 
   const contractData = buildApplicationSync();
@@ -740,6 +759,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 onChange={(e) => onReferralChange(e.target.value)}
                 placeholder="PLUS100"
               />
+              <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
             </div>
             <div>
               <FormLabel>نام نماینده</FormLabel>
@@ -1095,6 +1115,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   onChange={(e) => setQuick((q) => ({ ...q, referral: e.target.value }))}
                   placeholder="مثلاً PLUS100"
                 />
+                <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
               </div>
               <p className="text-xs text-slate-500">
                 {membershipPlans.find((m) => m.id === quick.tier)?.terms}

@@ -25,15 +25,17 @@ export async function POST(request: Request) {
   const body = await parseJson<Record<string, unknown>>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  const phone = normalizePhoneDigits(String(body.phone || ''));
   const loanAmount =
     body.loanAmount === undefined || body.loanAmount === null ? null : Number(body.loanAmount);
+  const isLoan =
+    (loanAmount != null && loanAmount > 0) || String(body.source || '') === 'loan-request';
+  if (isLoan) {
+    return jsonError('برای درخواست وام ابتدا وارد شوید و از فرم وام استفاده کنید.', 401);
+  }
+
+  const phone = normalizePhoneDigits(String(body.phone || ''));
   let nationalId = body.nationalId ? normalizeNationalId(String(body.nationalId)) : '';
-  if (loanAmount != null && loanAmount > 0) {
-    if (!nationalId || !isValidNationalId(nationalId)) {
-      return jsonError('برای درخواست وام، کد ملی ۱۰ رقمی معتبر الزامی است.');
-    }
-  } else if (nationalId && !isValidNationalId(nationalId)) {
+  if (nationalId && !isValidNationalId(nationalId)) {
     return jsonError('کد ملی نامعتبر است.');
   }
 

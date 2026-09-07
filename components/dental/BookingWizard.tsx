@@ -1,8 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Badge, Card, FormInput, FormLabel } from "@/components/ui/Card";
+import { Badge, Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
+import { resolveReferralDiscount } from "@/lib/commerce/client";
+import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
+import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
+import { fetchPatientOps } from "@/lib/operations/client";
 import type { Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { checkBookingSlot } from "@/lib/operations/client";
@@ -31,6 +35,7 @@ type BookingState = {
   patientPhone: string;
   referralCode: string;
   onlineInsuranceCovered: boolean;
+  dependentId: string;
 };
 
 const STEP_LABELS: Record<StepName, string> = {
@@ -52,6 +57,7 @@ const INITIAL_STATE: BookingState = {
   patientPhone: "",
   referralCode: "",
   onlineInsuranceCovered: false,
+  dependentId: "",
 };
 
 function findDoctor(dentists: Dentist[], id: number | null): Dentist | undefined {
@@ -93,6 +99,9 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [dentistsLoading, setDentistsLoading] = useState(true);
   const { profile: sessionProfile } = usePatientProfile();
+  const [dependents, setDependents] = useState<
+    Array<{ id: string; name: string; relation: string }>
+  >([]);
 
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
 
@@ -156,6 +165,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       patientName: prev.patientName.trim() || sessionProfile.name || "",
       patientPhone: prev.patientPhone.trim() || sessionProfile.phone || "",
     }));
+    void fetchPatientOps<{ items: Array<{ id: string; name: string; relation: string }> }>(
+      "/api/auth/dependents",
+    )
+      .then((data) => setDependents(data.items || []))
+      .catch(() => setDependents([]));
   }, [hydrated, sessionProfile]);
 
   const doctor = findDoctor(dentists, state.doctorId);
@@ -274,32 +288,40 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           showError("این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید.");
           return;
         }
-        const amount = reservationFee;
-        PasteurStorage.setPendingPayment({
-          kind: "booking",
-          doctorId: doctor.id,
-          doctorName: doctor.name,
-          specialty: doctor.specialty,
-          type: state.type,
-          typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
-          day: state.day,
-          appointmentDate: state.appointmentDate,
-          appointmentDateLabel: state.appointmentDate
-            ? formatBookingDateLabel(state.appointmentDate)
-            : undefined,
-          timeValue: state.timeValue,
-          timeLabel: state.timeLabel,
-          patientName,
-          patientPhone: state.patientPhone.trim(),
-          amount,
-          visitFee: 350000,
-          isDeposit: true,
-          paymentLabel: "بیعانه رزرو نوبت",
-          referralCode: state.referralCode,
-          onlineInsuranceCovered: state.onlineInsuranceCovered,
+        return resolveReferralDiscount(reservationFee, state.referralCode).then((referral) => {
+          if (referral.error) {
+            showError(referral.error);
+            return;
+          }
+          PasteurStorage.setPendingPayment({
+            kind: "booking",
+            doctorId: doctor.id,
+            doctorName: doctor.name,
+            specialty: doctor.specialty,
+            type: state.type,
+            typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
+            day: state.day,
+            appointmentDate: state.appointmentDate,
+            appointmentDateLabel: state.appointmentDate
+              ? formatBookingDateLabel(state.appointmentDate)
+              : undefined,
+            timeValue: state.timeValue,
+            timeLabel: state.timeLabel,
+            patientName,
+            patientPhone: state.patientPhone.trim(),
+            dependentId: state.dependentId || undefined,
+            amount: referral.payable,
+            visitFee: 350000,
+            isDeposit: true,
+            paymentLabel: "بیعانه رزرو نوبت",
+            referralCode: referral.referralCode || state.referralCode,
+            referralDiscountPercent: referral.referralDiscountPercent,
+            referralDiscountAmount: referral.referralDiscountAmount,
+            onlineInsuranceCovered: state.onlineInsuranceCovered,
+          });
+          PasteurStorage.clearPendingBooking();
+          router.push(`${basePath}/confirm`);
         });
-        PasteurStorage.clearPendingBooking();
-        router.push(`${basePath}/confirm`);
       })
       .catch(() => showError("بررسی زمان رزرو ناموفق بود. دوباره تلاش کنید."));
   };
@@ -538,8 +560,36 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             {identityLocked ? (
               <Card hover={false} className="border-teal-100 bg-teal-50/60 p-3 text-xs leading-6 text-teal-900">
                 نام و موبایل از پروفایل شما ({sessionProfile?.name} · {sessionProfile?.phone})
-                استفاده می‌شود.
+                استفاده می‌شود. پیامک همیشه به همین شماره می‌رود.
               </Card>
+            ) : null}
+            {dependents.length ? (
+              <div>
+                <FormLabel>این نوبت برای چه کسی است؟</FormLabel>
+                <FormSelect
+                  value={state.dependentId}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const dep = dependents.find((d) => d.id === id);
+                    updateState({
+                      dependentId: id,
+                      patientName: dep?.name || sessionProfile?.name || state.patientName,
+                      patientPhone: sessionProfile?.phone || state.patientPhone,
+                    });
+                  }}
+                >
+                  <option value="">خودم — {sessionProfile?.name || "سرپرست"}</option>
+                  {dependents.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} (
+                      {DEPENDENT_RELATION_LABELS[
+                        d.relation as keyof typeof DEPENDENT_RELATION_LABELS
+                      ] || d.relation}
+                      )
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
             ) : null}
             <div>
               <FormLabel>نام و نام خانوادگی</FormLabel>
@@ -573,9 +623,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 }
                 placeholder="مثلاً PLUS100"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                اگر اپلیکیشن را از طریق ویزیتور شناختید، کد معرف را وارد کنید.
-              </p>
+              <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
             </div>
             {state.type === "visit" ? (
               <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">

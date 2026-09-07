@@ -25,12 +25,15 @@ model User {
   insuranceInquiries InsuranceInquiry[]
   reminders          Reminder[]
   doctorReviews      DoctorReview[]
+  serviceReviews     ServiceReview[]
   complaints         Complaint[]
   supportTickets     SupportTicket[]
   members            Member[]
   wallets            Wallet[]
   shopOrders         ShopOrder[]
   clubProfile        ClubProfile?
+  dependents         Dependent[]
+  homeVisitRequests  HomeVisitRequest[]
 }
 
 model PatientProfile {
@@ -51,6 +54,32 @@ model PatientProfile {
   zohalCheckedAt           DateTime?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
+}
+
+model Dependent {
+  id                       String        @id @default(cuid())
+  guardianUserId           String
+  guardian                 User          @relation(fields: [guardianUserId], references: [id], onDelete: Cascade)
+  name                     String
+  nationalId               String?
+  birthDate                DateTime?
+  relation                 String
+  fileNumber               String?       @unique
+  franchisePercent         Int           @default(10)
+  baseInsuranceId          String?
+  complementaryInsuranceId String?
+  verifiedAt               DateTime?
+  verifiedBy               String?
+  graduatedUserId          String?
+  deletedAt                DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  bookings                 Booking[]
+  consultations            Consultation[]
+
+  @@index([guardianUserId])
+  @@index([nationalId])
+  @@index([deletedAt])
 }
 
 model OtpChallenge {
@@ -293,6 +322,32 @@ enum ConsultationStatus {
   answered
 }
 
+enum FieldStaffKind {
+  nurse
+  physician
+}
+
+enum FieldStaffStatus {
+  available
+  busy
+  inactive
+}
+
+enum HomeVisitKind {
+  nursing
+  medical_home
+}
+
+enum HomeVisitStatus {
+  submitted
+  staff_assigned
+  staff_confirmed
+  en_route
+  completed
+  reviewed
+  cancelled
+}
+
 enum InsuranceInquiryStatus {
   pending
   approved
@@ -361,12 +416,15 @@ model Booking {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   reminders            Reminder[]
+  dependentId          String?
+  dependent            Dependent?    @relation(fields: [dependentId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([patientPhone])
   @@index([status])
   @@index([doctorId, day, type])
   @@index([appointmentAt])
+  @@index([dependentId])
 }
 
 model Consultation {
@@ -396,10 +454,13 @@ model Consultation {
   status                 ConsultationStatus @default(pending)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+  dependentId            String?
+  dependent              Dependent?         @relation(fields: [dependentId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([patientPhone])
   @@index([status])
+  @@index([dependentId])
 }
 
 model InsuranceInquiry {
@@ -679,9 +740,29 @@ model MembershipApplication {
   deletedAt                DateTime?
   deletedBy                String?
   deleteNote               String?
+  documents                LoanDocument[]
 
   @@index([phone])
   @@index([status])
+  @@index([deletedAt])
+}
+
+model LoanDocument {
+  id            String                 @id
+  applicationId String?
+  application   MembershipApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  phone         String
+  kind          String
+  filename      String
+  mime          String
+  sizeBytes     Int
+  storagePath   String
+  uploadedAt    DateTime               @default(now())
+  deletedAt     DateTime?
+
+  @@index([applicationId])
+  @@index([phone])
+  @@index([kind])
   @@index([deletedAt])
 }
 
@@ -950,4 +1031,88 @@ model DentalEducationClip {
   updatedAt     DateTime @updatedAt
 
   @@index([active, sortOrder])
+}
+
+model FieldStaff {
+  id           String           @id
+  name         String
+  kind         FieldStaffKind
+  phone        String           @default("")
+  image        String           @default("")
+  specialty    String           @default("")
+  serviceAreas String[]
+  status       FieldStaffStatus @default(available)
+  active       Boolean          @default(true)
+  sortOrder    Int              @default(0)
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  assignments  HomeVisitRequest[]
+
+  @@index([kind, active, status])
+  @@index([sortOrder])
+}
+
+model HomeVisitRequest {
+  id              String          @id
+  userId          String?
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone    String
+  patientName     String?
+  kind            HomeVisitKind
+  serviceTitle    String          @default("")
+  specialtyLabel  String?
+  description     String?
+  patientAddress  String
+  patientArea     String
+  latitude        Float?
+  longitude       Float?
+  amount          Int             @default(0)
+  consultationId  String?
+  assignedStaffId String?
+  assignedStaff   FieldStaff?     @relation(fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?
+  status          HomeVisitStatus @default(submitted)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  statusEvents    HomeVisitStatusEvent[]
+  serviceReview   ServiceReview?
+
+  @@index([userId])
+  @@index([patientPhone])
+  @@index([status])
+  @@index([kind])
+  @@index([assignedStaffId])
+  @@index([consultationId])
+}
+
+model HomeVisitStatusEvent {
+  id          String          @id
+  requestId   String
+  request     HomeVisitRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  status      HomeVisitStatus
+  adminUserId String?
+  createdAt   DateTime        @default(now())
+
+  @@index([requestId, createdAt])
+}
+
+model ServiceReview {
+  id           String           @id
+  userId       String?
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  requestId    String           @unique
+  request      HomeVisitRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  patientPhone String
+  staffId      String
+  staffName    String
+  staffKind    String
+  rating       Int
+  comment      String
+  status       ReviewStatus     @default(pending)
+  createdAt    DateTime         @default(now())
+
+  @@index([userId])
+  @@index([status])
 }

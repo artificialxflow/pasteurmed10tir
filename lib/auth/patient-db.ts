@@ -1,8 +1,12 @@
 import type { PatientProfile, PatientStatus } from '@/lib/patient';
 import { DEFAULT_FRANCHISE_PERCENT } from '@/lib/patient';
-import type { PatientProfile as DbPatientProfile, User } from '@prisma/client';
+import { mapDependent } from '@/lib/dependents';
+import type { Dependent, PatientProfile as DbPatientProfile, User } from '@prisma/client';
 
-type UserWithProfile = User & { profile: DbPatientProfile | null };
+type UserWithProfile = User & {
+  profile: DbPatientProfile | null;
+  dependents?: Dependent[];
+};
 
 export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
   const profile = user.profile;
@@ -11,6 +15,7 @@ export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
     name: user.name,
     nationalId: profile?.nationalId ?? undefined,
     fileNumber: profile?.fileNumber ?? undefined,
+    dependents: user.dependents?.filter((d) => !d.deletedAt).map(mapDependent),
     baseInsuranceId: profile?.baseInsuranceId ?? undefined,
     complementaryInsuranceId: profile?.complementaryInsuranceId ?? undefined,
     franchisePercent: profile?.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT,

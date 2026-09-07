@@ -8,7 +8,10 @@ export async function GET() {
   const auth = await requireAdmin('consultations');
   if (auth.error) return auth.error;
 
-  const rows = await prisma.consultation.findMany({ orderBy: { createdAt: 'desc' } });
+  const rows = await prisma.consultation.findMany({
+    include: { dependent: { select: { name: true, fileNumber: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
   return NextResponse.json({ items: rows.map(mapConsultation) });
 }
 

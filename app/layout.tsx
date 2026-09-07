@@ -13,6 +13,20 @@ export const metadata: Metadata = {
   },
   description:
     "درمانگاه پاستور پلاس — خدمات پزشکی، دندانپزشکی، نوبت‌دهی آنلاین و تجهیزات پزشکی.",
+  alternates: {
+    canonical: "https://pasteur.plus",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "پاستور پلاس | درمانگاه پزشکی و دندانپزشکی",
+    description:
+      "خدمات پزشکی، دندانپزشکی و نوبت‌دهی آنلاین در پاستور پلاس.",
+    images: ["/brand/clinique-pasteur-logo.png"],
+  },
   applicationName: "پاستور پلاس",
   keywords: [
     "پاستور پلاس",

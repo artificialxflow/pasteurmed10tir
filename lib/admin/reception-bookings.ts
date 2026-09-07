@@ -40,6 +40,9 @@ export type ReceptionItem = {
   status: string;
   isDeposit?: boolean;
   depositNonRefundable?: boolean;
+  dependentId?: string;
+  dependentName?: string;
+  dependentFileNumber?: string;
 };
 
 function parseHour(raw: unknown): number | null {
@@ -124,6 +127,11 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
     status: String(row.status || 'pending'),
     isDeposit: Boolean(row.isDeposit),
     depositNonRefundable: Boolean(row.depositNonRefundable),
+    dependentId: row.dependentId ? String(row.dependentId) : undefined,
+    dependentName: row.dependentName ? String(row.dependentName) : undefined,
+    dependentFileNumber: row.dependentFileNumber
+      ? String(row.dependentFileNumber)
+      : undefined,
   };
 }
 
@@ -147,6 +155,11 @@ export function mapConsultationToReception(row: Record<string, unknown>): Recept
     hour,
     amount: Number(row.amount || 0),
     status: String(row.status || 'pending'),
+    dependentId: row.dependentId ? String(row.dependentId) : undefined,
+    dependentName: row.dependentName ? String(row.dependentName) : undefined,
+    dependentFileNumber: row.dependentFileNumber
+      ? String(row.dependentFileNumber)
+      : undefined,
   };
 }
 

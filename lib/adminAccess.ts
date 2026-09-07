@@ -12,6 +12,7 @@ export type AdminPermission =
   | 'laserServices'
   | 'nursingServices'
   | 'dental-tariffs'
+  | 'fieldStaff'
   | 'doctors'
   | 'consultationPrices'
   | 'gallery'
@@ -70,6 +71,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'laserServices', label: 'لیزر', href: ROUTES.admin.laserServices },
   { id: 'nursingServices', label: 'پرستاری', href: ROUTES.admin.nursingServices },
   { id: 'dental-tariffs', label: 'تعرفه دندان', href: ROUTES.admin.dentalTariffs },
+  { id: 'fieldStaff', label: 'پرسنل میدانی', href: ROUTES.admin.fieldStaff },
   { id: 'doctors', label: 'پزشکان', href: ROUTES.admin.doctors },
   { id: 'consultationPrices', label: 'قیمت مشاوره', href: ROUTES.admin.consultationPrices },
   { id: 'gallery', label: 'گالری', href: ROUTES.admin.gallery },
@@ -106,7 +108,7 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
     id: 'ops',
     name: 'منشی / عملیات',
     description: 'رزرو، مشاوره و یادآور',
-    permissions: ['dashboard', 'bookings', 'consultations', 'reminders'],
+    permissions: ['dashboard', 'bookings', 'consultations', 'reminders', 'fieldStaff'],
   },
   {
     id: 'content',
@@ -118,6 +120,7 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
       'laserServices',
       'nursingServices',
       'dental-tariffs',
+      'fieldStaff',
       'doctors',
       'consultationPrices',
       'gallery',
@@ -183,6 +186,9 @@ export const DEFAULT_ADMIN_USERS: AdminUser[] = [
 ];
 
 export function permissionForPath(pathname: string): AdminPermission | null {
+  if (pathname === ROUTES.admin.homeVisits || pathname.startsWith(`${ROUTES.admin.homeVisits}/`)) {
+    return 'fieldStaff';
+  }
   const exact = ADMIN_PERMISSION_META.find((item) => item.href === pathname);
   if (exact) return exact.id;
   // nested admin paths under known prefixes

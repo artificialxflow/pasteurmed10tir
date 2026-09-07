@@ -2,10 +2,18 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { DocumentUploadField } from "@/components/account/DocumentUploadField";
 import {
   createLoanApplicationApi,
+  getMyLoanDocumentsApi,
   getMyMembershipApplicationsApi,
 } from "@/lib/commerce/client";
+import {
+  LOAN_CHECK_GUIDE,
+  LOAN_DOC_KIND_LABELS,
+  LOAN_DOC_REQUIRED_KINDS,
+  type LoanDocKind,
+} from "@/lib/loan-documents/constants";
 import {
   LOAN_REQUEST_TERM_OPTIONS,
   loanTermInterestLabel,
@@ -50,6 +58,7 @@ export function LoanRequestCard({
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<LoanApp[]>([]);
+  const [docs, setDocs] = useState<Record<string, unknown>[]>([]);
 
   const reload = useCallback(() => {
     void getMyMembershipApplicationsApi()
@@ -60,6 +69,9 @@ export function LoanRequestCard({
         );
       })
       .catch(() => setItems([]));
+    void getMyLoanDocumentsApi()
+      .then((data) => setDocs(data.items || []))
+      .catch(() => setDocs([]));
   }, []);
 
   useEffect(() => {
@@ -89,6 +101,12 @@ export function LoanRequestCard({
       setError("کد ملی ۱۰ رقمی معتبر الزامی است.");
       return;
     }
+    const draftDocs = docs.filter((d) => !d.applicationId);
+    const kinds = new Set(draftDocs.map((d) => String(d.kind)));
+    if (LOAN_DOC_REQUIRED_KINDS.some((k) => !kinds.has(k))) {
+      setError("چهار مدرک الزامی را آپلود کنید.");
+      return;
+    }
     setBusy(true);
     try {
       await createLoanApplicationApi({
@@ -102,6 +120,7 @@ export function LoanRequestCard({
         planTitle: "درخواست وام درمانی",
         status: "pending",
         date: new Date().toLocaleDateString("fa-IR"),
+        documentIds: draftDocs.map((d) => String(d.id)),
       });
       setOk("درخواست وام ثبت شد. پس از تأیید ادمین، طرح اقساط در صفحه اقساط دیده می‌شود.");
       setAmount("50000000");
@@ -172,9 +191,41 @@ export function LoanRequestCard({
             required
           />
         </div>
+        <div className="sm:col-span-2 space-y-2">
+          <p className="text-sm font-extrabold text-slate-900">مدارک</p>
+          {(
+            [
+              "birth-certificate",
+              "national-id",
+              "pay-stub",
+              "credit-report",
+              "guarantee-check",
+              "other",
+            ] as LoanDocKind[]
+          ).map((kind) => (
+            <DocumentUploadField
+              key={kind}
+              kind={kind}
+              label={LOAN_DOC_KIND_LABELS[kind]}
+              required={LOAN_DOC_REQUIRED_KINDS.includes(kind)}
+              hint={kind === "guarantee-check" ? LOAN_CHECK_GUIDE.hint : undefined}
+              items={docs.filter((d) => !d.applicationId) as { id?: string; kind?: string; filename?: string; mime?: string }[]}
+              onChange={reload}
+            />
+          ))}
+        </div>
         {error ? <p className="sm:col-span-2 text-sm font-bold text-rose-600">{error}</p> : null}
         {ok ? <p className="sm:col-span-2 text-sm font-bold text-teal-700">{ok}</p> : null}
-        <Button type="submit" disabled={busy} className="sm:col-span-2">
+        <Button
+          type="submit"
+          disabled={
+            busy ||
+            LOAN_DOC_REQUIRED_KINDS.some(
+              (k) => !docs.some((d) => !d.applicationId && d.kind === k),
+            )
+          }
+          className="sm:col-span-2"
+        >
           {busy ? "در حال ثبت…" : "ثبت درخواست وام"}
         </Button>
       </form>

@@ -37,7 +37,10 @@ export async function GET() {
 
   const users = await prisma.user.findMany({
     where: { profile: { isNot: null } },
-    include: { profile: true },
+    include: {
+      profile: true,
+      dependents: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
+    },
     orderBy: { updatedAt: 'desc' },
   });
 

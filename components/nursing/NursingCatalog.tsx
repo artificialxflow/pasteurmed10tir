@@ -1,5 +1,8 @@
 "use client";
 
+import { LocationPicker } from "@/components/home-visit/LocationPicker";
+import { ServiceAreaSelect } from "@/components/home-visit/ServiceAreaSelect";
+import type { LatLng } from "@/lib/home-visit/geo";
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
@@ -52,6 +55,9 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
+  const [area, setArea] = useState("");
+  const [location, setLocation] = useState<LatLng | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -125,6 +131,15 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
       setError("نام و موبایل الزامی است.");
       return;
     }
+    const homeAddress = address.trim();
+    if (!homeAddress) {
+      setError("آدرس منزل الزامی است.");
+      return;
+    }
+    if (!area) {
+      setError("منطقه را از فهرست انتخاب کنید.");
+      return;
+    }
 
     const itemTitle = selectedItem?.title || selectedCategory.title;
     const estimate = selectedItem
@@ -140,6 +155,11 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
       unit: selectedItem?.unit,
       patientName,
       patientPhone,
+      patientAddress: homeAddress,
+      patientArea: area,
+      ...(location
+        ? { patientLatitude: location.lat, patientLongitude: location.lng }
+        : {}),
       description: description.trim(),
       amount: payableAmount,
       amountToman: payableAmount,
@@ -269,9 +289,20 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
             </div>
           </div>
           <div>
+            <FormLabel>آدرس منزل</FormLabel>
+            <FormInput
+              required
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="آدرس کامل برای اعزام"
+            />
+          </div>
+          <ServiceAreaSelect required value={area} onChange={setArea} />
+          <LocationPicker value={location} onChange={setLocation} />
+          <div>
             <FormLabel>توضیحات (اختیاری)</FormLabel>
             <FormTextarea
-              placeholder="آدرس تقریبی، زمان ترجیحی یا شرح نیاز..."
+              placeholder="زمان ترجیحی یا شرح نیاز..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[90px]"

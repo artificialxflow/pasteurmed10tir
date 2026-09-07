@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "تخصص‌های پزشکی",
+  description: "تخصص‌های پزشکی و نوبت ویزیت در پاستور پلاس.",
 };
 
 export default function MedicalSpecialtyPage() {

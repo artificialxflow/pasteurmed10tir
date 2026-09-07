@@ -1,4 +1,5 @@
 import { mapShopOrder } from '@/lib/commerce/mappers';
+import { listPatientHomeVisits } from '@/lib/home-visit/service';
 import {
   mapBooking,
   mapConsultation,
@@ -14,7 +15,7 @@ export async function GET() {
 
   const phone = auth.session.phone;
 
-  const [bookings, inquiries, consultations, shopOrders] = await Promise.all([
+  const [bookings, inquiries, consultations, shopOrders, homeVisits] = await Promise.all([
     prisma.booking.findMany({
       where: { patientPhone: phone },
       orderBy: { createdAt: 'desc' },
@@ -37,6 +38,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       take: 12,
     }),
+    listPatientHomeVisits(phone),
   ]);
 
   return NextResponse.json({
@@ -44,5 +46,6 @@ export async function GET() {
     insuranceInquiries: inquiries.map(mapInsuranceInquiry),
     consultations: consultations.map(mapConsultation),
     shopOrders: shopOrders.map(mapShopOrder),
+    homeVisits,
   });
 }

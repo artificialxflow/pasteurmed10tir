@@ -9,6 +9,10 @@ import {
   payableFromFranchise,
   resolveFranchisePercent,
 } from "@/lib/patient";
+import {
+  applyReferralDiscount,
+  REFERRAL_DISCOUNT_PERCENT,
+} from "@/lib/commerce/referral-discount";
 import { PaymentFlow, type PendingPayment } from "@/lib/payment";
 import {
   completeFreeReservation,
@@ -75,6 +79,12 @@ function PaymentSummary({
         {pending.referralCode ? (
           <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
         ) : null}
+        {pending.referralDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف کد معرف:"
+            value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
         <SummaryRow
           label={amountLabel || "بیعانه رزرو نوبت:"}
           value={formatPrice(Number(pending.amount) || 0)}
@@ -98,10 +108,16 @@ function PaymentSummary({
         <h2 className="mb-1 text-lg font-bold">VIP تجهیزات</h2>
         <SummaryRow label="نام:" value={String(pending.patientName || "—")} />
         <SummaryRow label="موبایل:" value={String(pending.patientPhone || "—")} />
+        {pending.referralDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف کد معرف:"
+            value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
         <SummaryRow
           label="حق عضویت:"
           value={formatPrice(
-            Number(pending.amountToman || Number(pending.amount || 0) / 10) || 0,
+            Number(pending.amountToman || pending.amount || 0) || 0,
           )}
           last
         />
@@ -131,6 +147,12 @@ function PaymentSummary({
           <SummaryRow
             label="تخفیف مجموعه:"
             value={`${Number(pending.groupDiscountPercent).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
+        {pending.referralDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف کد معرف:"
+            value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
           />
         ) : null}
         <SummaryRow
@@ -275,10 +297,17 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
     }
     const percent = resolveFranchisePercent(profile);
     const visitFee = Number(pending.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
-    const payable = payableFromFranchise(visitFee, percent);
+    let payable = payableFromFranchise(visitFee, percent);
+    let referralDiscountAmount = pending.referralDiscountAmount;
+    if (pending.referralDiscountPercent) {
+      const discounted = applyReferralDiscount(payable);
+      payable = discounted.payable;
+      referralDiscountAmount = discounted.discountAmount;
+    }
     const next = {
       ...pending,
       amount: payable,
+      referralDiscountAmount,
       visitFee,
       franchisePercent: percent,
       insuranceInquiryId: id,

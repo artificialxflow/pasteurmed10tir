@@ -93,6 +93,8 @@ export default function AdminBookingsPage() {
       (row) =>
         row.patientPhone.includes(q) ||
         row.patientName.toLowerCase().includes(q) ||
+        (row.dependentName || "").toLowerCase().includes(q) ||
+        (row.dependentFileNumber || "").toLowerCase().includes(q) ||
         fileNumberFor(row.patientPhone).toLowerCase().includes(q),
     );
   }, [items, category, timeOfDay, doctor, search, fileNumberFor]);
@@ -285,10 +287,21 @@ export default function AdminBookingsPage() {
           return (
             <tr key={`${row.source}-${row.id}`} className="border-t border-slate-100 hover:bg-slate-50">
               <td className="max-w-[7rem] break-all px-4 py-3 font-mono text-[0.65rem]">{row.id}</td>
-              <td className="px-4 py-3">{row.patientName}</td>
+              <td className="px-4 py-3">
+                {row.dependentId || row.dependentName ? (
+                  <span>
+                    {row.dependentName || row.patientName}
+                    <span className="mt-0.5 block text-[0.65rem] text-slate-500">
+                      تحت تکفل · موبایل سرپرست
+                    </span>
+                  </span>
+                ) : (
+                  row.patientName
+                )}
+              </td>
               <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
               <td className="px-4 py-3 font-mono text-xs">
-                {fileNumberFor(row.patientPhone) || "—"}
+                {row.dependentFileNumber || fileNumberFor(row.patientPhone) || "—"}
               </td>
               <td className="px-4 py-3 text-xs font-bold text-slate-700">
                 {receptionCategoryLabel(row.category)}

@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
-import { checkShopVipApi } from "@/lib/commerce/client";
+import { checkShopVipApi, resolveReferralDiscount } from "@/lib/commerce/client";
+import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ShopCart } from "@/lib/shop";
 import { PasteurStorage } from "@/lib/storage";
@@ -66,19 +67,27 @@ export function ShopVip({ variant = "web" }: { variant?: ShopVariant }) {
       setMessage("نام و موبایل را کامل وارد کنید");
       return;
     }
-    PasteurStorage.setPendingPayment({
-      kind: "shop-vip",
-      planId: "shop-vip",
-      planName: vip.planName,
-      amount: vip.priceNum,
-      amountToman: vip.priceNum,
-      patientName: n,
-      patientPhone: p,
-      referralCode: referral.trim().toUpperCase(),
-      successTo: `${routes.catalog}?vip=paid`,
-      returnTo: routes.vip,
+    void resolveReferralDiscount(vip.priceNum, referral).then((result) => {
+      if (result.error) {
+        setMessage(result.error);
+        return;
+      }
+      PasteurStorage.setPendingPayment({
+        kind: "shop-vip",
+        planId: "shop-vip",
+        planName: vip.planName,
+        amount: result.payable,
+        amountToman: result.payable,
+        patientName: n,
+        patientPhone: p,
+        referralCode: result.referralCode || referral.trim().toUpperCase(),
+        referralDiscountPercent: result.referralDiscountPercent,
+        referralDiscountAmount: result.referralDiscountAmount,
+        successTo: `${routes.catalog}?vip=paid`,
+        returnTo: routes.vip,
+      });
+      router.push(routes.confirm);
     });
-    router.push(routes.confirm);
   }
 
   const shell = (
@@ -124,6 +133,7 @@ export function ShopVip({ variant = "web" }: { variant?: ShopVariant }) {
           <div>
             <FormLabel>کد معرف ویزیتور (اختیاری)</FormLabel>
             <FormInput value={referral} onChange={(e) => setReferral(e.target.value)} />
+            <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
           </div>
           <ul className="list-disc space-y-1 pr-4 text-xs text-slate-500">
             {vip.facilityTerms.map((t) => (

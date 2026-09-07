@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "تعرفه‌های دندانپزشکی",
+  description: "لیست تعرفه‌های خدمات دندانپزشکی پاستور پلاس.",
 };
 
 export default function DentalTariffsPage() {

@@ -21,6 +21,7 @@ import {
   fetchAdminOps,
   patchAdminOps,
 } from "@/lib/operations/client";
+import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
 import {
   FILE_NUMBER_LENGTH,
   normalizeFileNumber,
@@ -68,6 +69,9 @@ export default function AdminPatientsPage() {
   const [search, setSearch] = useState("");
   const [editPhone, setEditPhone] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [depDrafts, setDepDrafts] = useState<
+    Record<string, { fileNumber: string; franchisePercent: string }>
+  >({});
   const [exportBusy, setExportBusy] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -114,7 +118,13 @@ export default function AdminPatientsPage() {
         p.phone.includes(q) ||
         (p.name || "").toLowerCase().includes(q) ||
         (p.nationalId || "").includes(q) ||
-        (p.fileNumber || "").toLowerCase().includes(q)
+        (p.fileNumber || "").toLowerCase().includes(q) ||
+        (p.dependents || []).some(
+          (d) =>
+            d.name.toLowerCase().includes(q) ||
+            (d.fileNumber || "").toLowerCase().includes(q) ||
+            (d.nationalId || "").includes(q),
+        )
       );
     });
   }, [items, search, statusFilter]);
@@ -211,6 +221,14 @@ export default function AdminPatientsPage() {
       baseInsuranceId: p.baseInsuranceId || "",
       complementaryInsuranceId: p.complementaryInsuranceId || "",
     });
+    const drafts: Record<string, { fileNumber: string; franchisePercent: string }> = {};
+    for (const d of p.dependents || []) {
+      drafts[d.id] = {
+        fileNumber: d.fileNumber || "",
+        franchisePercent: String(d.franchisePercent ?? 10),
+      };
+    }
+    setDepDrafts(drafts);
   }
 
   async function saveEdit(e: FormEvent) {
@@ -229,6 +247,12 @@ export default function AdminPatientsPage() {
         baseInsuranceId: editForm.baseInsuranceId || null,
         complementaryInsuranceId: editForm.complementaryInsuranceId || null,
       });
+      for (const [depId, draft] of Object.entries(depDrafts)) {
+        await patchAdminOps(`/api/admin/operations/dependents/${encodeURIComponent(depId)}`, {
+          fileNumber: draft.fileNumber.trim(),
+          franchisePercent: Number(draft.franchisePercent),
+        });
+      }
       await reload();
       setSuccess(`مشخصات ${editPhone} به‌روز شد.`);
       setEditPhone(null);
@@ -399,7 +423,20 @@ export default function AdminPatientsPage() {
           const busy = busyPhone === p.phone;
           return (
             <tr key={p.phone} className="border-t border-slate-100 align-top">
-              <td className="px-4 py-3">{p.name || "—"}</td>
+              <td className="px-4 py-3">
+                <div>{p.name || "—"}</div>
+                {(p.dependents || []).length ? (
+                  <ul className="mt-1 space-y-0.5 text-[0.7rem] text-slate-500">
+                    {(p.dependents || []).map((d) => (
+                      <li key={d.id}>
+                        تحت تکفل: {d.name}
+                        {d.fileNumber ? ` · پرونده ${d.fileNumber}` : ""}
+                        {` · فرانشیز ${d.franchisePercent.toLocaleString("fa-IR")}٪`}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </td>
               <td className="px-4 py-3 font-mono text-xs">{p.phone}</td>
               <td className="px-4 py-3 font-mono text-xs">{p.nationalId || "—"}</td>
               <td className="px-4 py-3 font-mono text-xs">{p.fileNumber || "—"}</td>
@@ -590,6 +627,56 @@ export default function AdminPatientsPage() {
                   ))}
                 </FormSelect>
               </div>
+              {Object.keys(depDrafts).length ? (
+                <div className="sm:col-span-2 space-y-3 rounded-xl border border-slate-100 p-3">
+                  <p className="text-sm font-extrabold text-slate-800">افراد تحت تکفل</p>
+                  {(items.find((p) => p.phone === editPhone)?.dependents || []).map((d) => (
+                    <div key={d.id} className="grid gap-2 sm:grid-cols-2">
+                      <p className="sm:col-span-2 text-xs text-slate-600">
+                        {d.name} ·{" "}
+                        {DEPENDENT_RELATION_LABELS[
+                          d.relation as keyof typeof DEPENDENT_RELATION_LABELS
+                        ] || d.relation}
+                      </p>
+                      <div>
+                        <FormLabel>شماره پرونده</FormLabel>
+                        <FormInput
+                          value={depDrafts[d.id]?.fileNumber || ""}
+                          onChange={(e) =>
+                            setDepDrafts((prev) => ({
+                              ...prev,
+                              [d.id]: {
+                                fileNumber: normalizeFileNumber(e.target.value),
+                                franchisePercent: prev[d.id]?.franchisePercent || "10",
+                              },
+                            }))
+                          }
+                          inputMode="numeric"
+                          maxLength={FILE_NUMBER_LENGTH}
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>فرانشیز (درصد)</FormLabel>
+                        <FormInput
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={depDrafts[d.id]?.franchisePercent || "10"}
+                          onChange={(e) =>
+                            setDepDrafts((prev) => ({
+                              ...prev,
+                              [d.id]: {
+                                fileNumber: prev[d.id]?.fileNumber || "",
+                                franchisePercent: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2 sm:col-span-2">
                 <Button type="submit" disabled={Boolean(busyPhone)}>
                   ذخیره

@@ -1,7 +1,9 @@
 "use client";
 
+import { NearestStaffFromCoords } from "@/components/home-visit/NearestStaffFromCoords";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { serviceAreaLabel } from "@/lib/home-visit/areas";
 import type { PendingNursingPayment, PendingPayment } from "@/lib/payment";
 import {
   applyPaymentResultToStorage,
@@ -103,6 +105,12 @@ export function ConfirmNursingPayment({ basePath }: { basePath: NursingBasePath 
         <SummaryRow label="دسته:" value={String(pending.serviceTitle || "پرستاری")} />
         <SummaryRow label="خدمت / تعرفه:" value={String(pending.itemTitle || "—")} />
         {pending.unit ? <SummaryRow label="واحد:" value={String(pending.unit)} /> : null}
+        {pending.patientArea ? (
+          <SummaryRow label="منطقه:" value={serviceAreaLabel(String(pending.patientArea))} />
+        ) : null}
+        {pending.patientAddress ? (
+          <SummaryRow label="آدرس:" value={String(pending.patientAddress)} />
+        ) : null}
         {pending.description ? (
           <SummaryRow label="توضیحات:" value={String(pending.description)} />
         ) : null}
@@ -112,6 +120,13 @@ export function ConfirmNursingPayment({ basePath }: { basePath: NursingBasePath 
           last
         />
       </Card>
+      <div className="mb-6">
+        <NearestStaffFromCoords
+          kind="nurse"
+          lat={pending.patientLatitude}
+          lng={pending.patientLongitude}
+        />
+      </div>
 
       {note ? <p className="mb-3 text-sm font-bold text-red-600">{note}</p> : null}
 
@@ -174,7 +189,7 @@ export function NursingPaymentSuccess({ basePath }: { basePath: NursingBasePath 
       <p className="text-5xl">✅</p>
       <h1 className="mt-3 text-xl font-bold text-slate-900">پرداخت خدمت پرستاری ثبت شد</h1>
       <p className="mt-2 text-sm text-slate-600">
-        درخواست بر اساس تعرفه انتخاب‌شده ثبت شد. کارشناسان برای هماهنگی اعزام تماس می‌گیرند.
+        درخواست بر اساس تعرفه انتخاب‌شده ثبت شد. پس از تخصیص، نام و عکس نیرو در پنل کاربری دیده می‌شود.
       </p>
       {amount != null && amount > 0 ? (
         <p className="mt-4 text-lg font-extrabold text-teal-700">{formatPrice(amount)}</p>

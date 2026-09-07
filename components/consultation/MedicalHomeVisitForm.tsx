@@ -1,5 +1,8 @@
 "use client";
 
+import { LocationPicker } from "@/components/home-visit/LocationPicker";
+import { ServiceAreaSelect } from "@/components/home-visit/ServiceAreaSelect";
+import type { LatLng } from "@/lib/home-visit/geo";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import {
@@ -34,6 +37,8 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [area, setArea] = useState("");
+  const [location, setLocation] = useState<LatLng | null>(null);
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
@@ -76,6 +81,10 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
       setError("آدرس منزل الزامی است.");
       return;
     }
+    if (!area) {
+      setError("منطقه را از فهرست انتخاب کنید.");
+      return;
+    }
     if (pricing.amount < 100) {
       setError("تعرفه ویزیت در منزل تنظیم نشده است.");
       return;
@@ -91,7 +100,12 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
       specialtyLabel: specialtyName,
       patientName,
       patientPhone,
-      description: [homeAddress, description.trim()].filter(Boolean).join("\n"),
+      patientAddress: homeAddress,
+      patientArea: area,
+      ...(location
+        ? { patientLatitude: location.lat, patientLongitude: location.lng }
+        : {}),
+      description: description.trim(),
       estimate: pricing.label,
       amount: pricing.amount,
       priceSource: "home-visit",
@@ -187,6 +201,8 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
           placeholder="آدرس کامل برای اعزام پزشک"
         />
       </div>
+      <ServiceAreaSelect required value={area} onChange={setArea} />
+      <LocationPicker value={location} onChange={setLocation} />
 
       <div>
         <FormLabel>توضیحات</FormLabel>

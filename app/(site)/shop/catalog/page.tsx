@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "کاتالوگ تجهیزات",
+  description: "کاتالوگ تجهیزات پزشکی و دندانپزشکی پاستور پلاس.",
 };
 
 export default function ShopCatalogPage() {

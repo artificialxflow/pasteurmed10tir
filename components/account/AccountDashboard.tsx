@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { AssignedStaffCard } from "@/components/home-visit/AssignedStaffCard";
+import { DependentsCard } from "@/components/account/DependentsCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchMyActivityApi, patchPatientOps } from "@/lib/operations/client";
@@ -207,6 +209,8 @@ export function AccountDashboard({
         variant={variant}
       />
 
+      <DependentsCard />
+
       <p className="text-xs leading-6 text-slate-500">
         توجه: <strong>تأیید نوبت</strong> در ادمین رزروها جدا از <strong>تأیید استعلام بیمه</strong> است.
         وضعیت نوبت و بیمه را در کارت‌های زیر جدا ببینید.
@@ -394,6 +398,46 @@ export function AccountDashboard({
                   />
                 );
               })
+            )}
+          </Card>
+
+          <Card hover={false} className="p-4 lg:col-span-2">
+            <p className="mb-2 text-sm font-extrabold text-slate-900">اعزام خانگی</p>
+            {(activity.homeVisits || []).length === 0 ? (
+              <p className="text-xs text-slate-500">
+                درخواست پرستاری یا ویزیت در منزل ثبت نشده است. پس از تخصیص، نام و عکس نیرو اینجا دیده می‌شود.
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(activity.homeVisits || []).map((visit) => {
+                  const staff = (visit.assignedStaff as {
+                    name?: string;
+                    kind?: string;
+                    image?: string;
+                    specialty?: string;
+                  } | null) || null;
+                  const href =
+                    variant === "app"
+                      ? `${ROUTES.app.homeVisitTrack}/${visit.id}`
+                      : `${ROUTES.web.homeVisitTrack}/${visit.id}`;
+                  return (
+                    <Link
+                      key={String(visit.id)}
+                      href={href}
+                      className="block rounded-xl border border-slate-100 p-3 transition hover:border-teal-200 hover:bg-teal-50/40"
+                    >
+                      <AssignedStaffCard
+                        staff={staff}
+                        status={String(visit.status || "")}
+                        kind={String(visit.kind || "")}
+                        serviceTitle={String(visit.serviceTitle || visit.specialtyLabel || "")}
+                        areaLabel={String(visit.patientAreaLabel || "")}
+                      />
+                      <p className="mt-2 text-xs font-bold text-teal-700">مشاهده پیگیری</p>
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </Card>
 

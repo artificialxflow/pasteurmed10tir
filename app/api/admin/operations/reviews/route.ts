@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { listServiceReviews, updateServiceReviewStatus } from '@/lib/home-visit/service';
 import { mapDoctorReview } from '@/lib/operations/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -9,14 +10,15 @@ export async function GET() {
   if (auth.error) return auth.error;
 
   const rows = await prisma.doctorReview.findMany({ orderBy: { createdAt: 'desc' } });
-  return NextResponse.json({ items: rows.map(mapDoctorReview) });
+  const serviceReviews = await listServiceReviews();
+  return NextResponse.json({ items: rows.map(mapDoctorReview), serviceReviews });
 }
 
 export async function PATCH(request: Request) {
   const auth = await requireAdmin('reviews');
   if (auth.error) return auth.error;
 
-  const body = await parseJson<{ id?: string; status?: string }>(request);
+  const body = await parseJson<{ id?: string; status?: string; kind?: string }>(request);
   if (!body?.id) return jsonError('شناسه الزامی است.');
 
   const status =
@@ -24,6 +26,11 @@ export async function PATCH(request: Request) {
       ? body.status
       : undefined;
   if (!status) return jsonError('وضعیت نامعتبر است.');
+
+  if (body.kind === 'service') {
+    const item = await updateServiceReviewStatus(body.id, status);
+    return NextResponse.json({ item });
+  }
 
   const row = await prisma.doctorReview.update({
     where: { id: body.id },

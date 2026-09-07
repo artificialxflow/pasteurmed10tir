@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "تسهیلات VIP",
+  description: "درخواست تسهیلات خرید تجهیزات پزشکی از پاستور پلاس.",
 };
 
 export default function ShopFacilityPage() {

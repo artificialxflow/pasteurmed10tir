@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "دندانپزشکان",
+  description: "لیست دندانپزشکان پاستور پلاس و رزرو نوبت آنلاین.",
 };
 
 export default function DentalGeneralPage() {

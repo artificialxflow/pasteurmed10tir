@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "انتخاب پزشک",
+  description: "لیست پزشکان پاستور پلاس و انتخاب پزشک برای ویزیت.",
 };
 
 export default function MedicalDoctorsPage() {

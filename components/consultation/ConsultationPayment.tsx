@@ -1,7 +1,9 @@
 "use client";
 
+import { NearestStaffFromCoords } from "@/components/home-visit/NearestStaffFromCoords";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { serviceAreaLabel } from "@/lib/home-visit/areas";
 import { type PendingPayment } from "@/lib/payment";
 import {
   applyPaymentResultToStorage,
@@ -124,12 +126,30 @@ export function ConfirmConsultationPayment({ basePath }: { basePath: Consultatio
             value={`${String(pending.preferredDateLabel || "")} ${String(pending.preferredTimeLabel || "")}`.trim()}
           />
         ) : null}
+        {pending.patientArea ? (
+          <SummaryRow label="منطقه:" value={serviceAreaLabel(String(pending.patientArea))} />
+        ) : null}
+        {pending.patientAddress ? (
+          <SummaryRow label="آدرس:" value={String(pending.patientAddress)} />
+        ) : null}
+        {pending.description ? (
+          <SummaryRow label="توضیحات:" value={String(pending.description)} />
+        ) : null}
         <SummaryRow
           label={amountLabel}
           value={formatPrice(Number(pending.amount) || 0)}
           last
         />
       </Card>
+      {pending.category === "medical-home" ? (
+        <div className="mb-6">
+          <NearestStaffFromCoords
+            kind="physician"
+            lat={pending.patientLatitude}
+            lng={pending.patientLongitude}
+          />
+        </div>
+      ) : null}
 
       {!app ? (
         <Card className="mb-6 border-blue-200 bg-blue-50 p-4 text-sm leading-7 text-blue-800" hover={false}>

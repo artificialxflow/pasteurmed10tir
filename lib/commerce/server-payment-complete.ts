@@ -5,6 +5,7 @@ import {
 import { createShopOrderRecord } from '@/lib/commerce/shop-order-service';
 import { createBookingRecord } from '@/lib/operations/booking-service';
 import { createConsultationRecord } from '@/lib/operations/consultation-service';
+import { maybeCreateHomeVisitFromPayment } from '@/lib/home-visit/service';
 import type { PendingPayment } from '@/lib/payment';
 
 export async function completePendingPaymentOnServer(pending: PendingPayment) {
@@ -28,6 +29,7 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       isDeposit: pending.isDeposit !== false,
       depositNonRefundable: pending.depositNonRefundable !== false,
       referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
+      dependentId: pending.dependentId ? String(pending.dependentId) : undefined,
     });
     return { booking };
   }
@@ -127,8 +129,24 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       preferredTimeLabel: pending.preferredTimeLabel
         ? String(pending.preferredTimeLabel)
         : undefined,
+      dependentId: pending.dependentId ? String(pending.dependentId) : undefined,
     });
-    return { consultation };
+    const homeVisit = await maybeCreateHomeVisitFromPayment({
+      kind: 'consultation',
+      category: pending.category ? String(pending.category) : undefined,
+      patientName: pending.patientName ? String(pending.patientName) : undefined,
+      patientPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      serviceTitle: pending.typeLabel ? String(pending.typeLabel) : undefined,
+      specialtyLabel: pending.specialtyLabel ? String(pending.specialtyLabel) : undefined,
+      description: pending.description ? String(pending.description) : undefined,
+      patientAddress: pending.patientAddress ? String(pending.patientAddress) : undefined,
+      patientArea: pending.patientArea ? String(pending.patientArea) : undefined,
+      latitude: pending.patientLatitude,
+      longitude: pending.patientLongitude,
+      amount: Number(pending.amount || 0),
+      consultationId: consultation.id,
+    });
+    return { consultation, homeVisit };
   }
 
   if (pending.kind === 'nursing') {
@@ -151,7 +169,21 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       amount,
       priceSource: 'nursing-tariff',
     });
-    return { nursingRequest: consultation, consultation };
+    const homeVisit = await maybeCreateHomeVisitFromPayment({
+      kind: 'nursing',
+      patientName: pending.patientName ? String(pending.patientName) : undefined,
+      patientPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      serviceTitle: itemTitle,
+      specialtyLabel: serviceTitle,
+      description: pending.description ? String(pending.description) : undefined,
+      patientAddress: pending.patientAddress ? String(pending.patientAddress) : undefined,
+      patientArea: pending.patientArea ? String(pending.patientArea) : undefined,
+      latitude: pending.patientLatitude,
+      longitude: pending.patientLongitude,
+      amount,
+      consultationId: consultation.id,
+    });
+    return { nursingRequest: consultation, consultation, homeVisit };
   }
 
   if (pending.kind === 'laser') {

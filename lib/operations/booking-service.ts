@@ -6,6 +6,7 @@ import {
   iranDayBounds,
   persianWeekdayFromIsoDate,
 } from '@/lib/operations/booking-dates';
+import { resolveOwnedDependent } from '@/lib/dependents';
 import { generateOperationId, mapBooking } from '@/lib/operations/mappers';
 import { nextAppointmentAt } from '@/lib/operations/appointment-time';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
@@ -30,6 +31,7 @@ export type CreateBookingInput = {
   depositNonRefundable?: boolean;
   referralCode?: string;
   dateLabel?: string;
+  dependentId?: string | null;
 };
 
 export async function createBookingRecord(body: CreateBookingInput) {
@@ -83,7 +85,15 @@ export async function createBookingRecord(body: CreateBookingInput) {
       : null;
 
   const referralCode = body.referralCode ? String(body.referralCode) : null;
-  const patientName = String(body.patientName || '').trim() || null;
+  const requestedDependentId = body.dependentId ? String(body.dependentId) : null;
+  const dependent = requestedDependentId
+    ? await resolveOwnedDependent(session?.userId, requestedDependentId)
+    : null;
+  if (requestedDependentId && !dependent) {
+    throw new Error('فرد تحت تکفل یافت نشد.');
+  }
+  const patientName =
+    (dependent?.name || String(body.patientName || '').trim()) || null;
   const amount = Number(body.amount || 0);
   const appointmentAt = appointmentDate
     ? appointmentAtFromIsoAndHour(appointmentDate, timeValue)
@@ -113,6 +123,7 @@ export async function createBookingRecord(body: CreateBookingInput) {
       dateLabel,
       referralCode,
       appointmentAt,
+      dependentId: dependent?.id ?? null,
     },
   });
 

@@ -23,6 +23,7 @@ import {
   medicalVisitSlotsForDay,
 } from "@/lib/operations/medical-slots";
 import { fetchPublic } from "@/lib/content/client";
+import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
 import { fetchPatientOps } from "@/lib/operations/client";
 import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import { type PendingConsultationPayment } from "@/lib/payment";
@@ -81,6 +82,11 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   );
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [dependentId, setDependentId] = useState("");
+  const [dependents, setDependents] = useState<
+    Array<{ id: string; name: string; relation: string }>
+  >([]);
+  const [guardianName, setGuardianName] = useState("");
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState("");
@@ -186,8 +192,14 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         setHasComplementary(Boolean(session.complementaryInsuranceId));
         setPatientApproved(isPatientApproved(session));
         setFranchisePercent(resolveFranchisePercent(session));
+        setGuardianName(session.name);
         setName((prev) => prev || session.name);
         setPhone((prev) => prev || session.phone);
+        void fetchPatientOps<{ items: Array<{ id: string; name: string; relation: string }> }>(
+          "/api/auth/dependents",
+        )
+          .then((data) => setDependents(data.items || []))
+          .catch(() => setDependents([]));
       })
       .catch(() => {});
   }, []);
@@ -262,6 +274,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       doctorName: selectedDoctor?.name || undefined,
       patientName: name.trim(),
       patientPhone: phone.trim(),
+      dependentId: dependentId || undefined,
       description: description.trim(),
       estimate: pricing.label,
       amount: payableAmount,
@@ -588,6 +601,32 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
           variant === "app" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2",
         )}
       >
+        {dependents.length ? (
+          <div className="sm:col-span-2">
+            <FormLabel>این درخواست برای چه کسی است؟</FormLabel>
+            <FormSelect
+              value={dependentId}
+              onChange={(e) => {
+                const id = e.target.value;
+                const dep = dependents.find((d) => d.id === id);
+                setDependentId(id);
+                setName(dep?.name || guardianName || name);
+              }}
+            >
+              <option value="">خودم — {guardianName || name || "سرپرست"}</option>
+              {dependents.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} (
+                  {DEPENDENT_RELATION_LABELS[
+                    d.relation as keyof typeof DEPENDENT_RELATION_LABELS
+                  ] || d.relation}
+                  )
+                </option>
+              ))}
+            </FormSelect>
+            <p className="mt-1 text-xs text-slate-500">پیامک همیشه به موبایل سرپرست می‌رود.</p>
+          </div>
+        ) : null}
         <div>
           <FormLabel>نام و نام خانوادگی</FormLabel>
           <FormInput required value={name} onChange={(e) => setName(e.target.value)} />

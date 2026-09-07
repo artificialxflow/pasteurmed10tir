@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "رزرو نوبت",
+  description: "رزرو نوبت دندانپزشکی آنلاین در درمانگاه پاستور پلاس تبریز.",
 };
 
 export default function DentalBookingPage() {

@@ -44,6 +44,9 @@ type Application = Record<string, unknown> & {
   zohalCheckedAt?: string;
   zohalShahkarMatched?: boolean | null;
   reviewNote?: string | null;
+  documents?: { id?: string; kind?: string; filename?: string }[];
+  requiredDocumentsReady?: number;
+  requiredDocumentsTotal?: number;
 };
 
 type MemberRow = Member & { walletCeiling?: number | null };
@@ -272,6 +275,7 @@ export default function AdminMembershipsPage() {
             "زحل",
             "خلاصه",
             "وضعیت",
+            "مدارک",
             "عملیات",
           ]}
           empty="فرم عضویتی ثبت نشده است."
@@ -336,6 +340,22 @@ export default function AdminMembershipsPage() {
                       ? "رد"
                       : "در بررسی"}
                 </AdminBadge>
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {app.loanAmount
+                  ? `${Number(app.requiredDocumentsReady || 0).toLocaleString("fa-IR")} از ${Number(app.requiredDocumentsTotal || 4).toLocaleString("fa-IR")} الزامی`
+                  : "—"}
+                {(app.documents || []).map((doc) => (
+                  <a
+                    key={String(doc.id)}
+                    href={`/api/documents/${encodeURIComponent(String(doc.id))}?download=1`}
+                    className="mt-1 block font-bold text-teal-700 underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {doc.filename || doc.kind}
+                  </a>
+                ))}
               </td>
               <td className="px-4 py-3 space-y-2">
                 <button
