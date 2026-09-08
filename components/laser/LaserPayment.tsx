@@ -1,5 +1,6 @@
 "use client";
 
+import { REFERRAL_DISCOUNT_PERCENT } from "@/lib/commerce/referral-discount";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { PendingLaserPayment, PendingPayment } from "@/lib/payment";
@@ -137,6 +138,15 @@ export function ConfirmLaserPayment({ basePath }: { basePath: LaserBasePath }) {
         <SummaryRow label="ساعت:" value={String(pending.timeLabel || pending.timeValue || "—")} />
         {pending.description ? (
           <SummaryRow label="توضیحات:" value={String(pending.description)} />
+        ) : null}
+        {pending.referralCode ? (
+          <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
+        ) : null}
+        {pending.referralDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف کد معرف:"
+            value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
+          />
         ) : null}
         {tariff > 0 ? (
           <SummaryRow label="تعرفه خدمت:" value={formatPrice(tariff)} />

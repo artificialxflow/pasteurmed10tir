@@ -12,6 +12,7 @@ export async function GET(request: Request) {
       kind,
       latitude: searchParams.get('lat'),
       longitude: searchParams.get('lng'),
+      preferredGender: searchParams.get('preferredGender') || searchParams.get('gender'),
     });
     return NextResponse.json({ items });
   } catch (e) {

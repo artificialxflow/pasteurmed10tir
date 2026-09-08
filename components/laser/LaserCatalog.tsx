@@ -1,7 +1,9 @@
 "use client";
 
+import { ReferralCodeField } from "@/components/commerce/ReferralCodeField";
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { resolveReferralDiscount } from "@/lib/commerce/client";
 import { PASTEUR_DATA, type LaserCategory, type LaserService } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import {
@@ -74,6 +76,7 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
 
@@ -238,35 +241,44 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
 
         const dateLabel = dateOptions.find((d) => d.isoDate === appointmentDate)?.label
           || appointmentDate;
-        const pending: PendingLaserPayment = {
-          kind: "laser",
-          serviceId: selected.id,
-          serviceTitle: selected.title,
-          categoryId: selected.categoryId || categoryId || undefined,
-          categoryName:
-            selected.categoryName || selectedCategory?.name || undefined,
-          patientName,
-          patientPhone,
-          description: description.trim(),
-          day,
-          appointmentDate,
-          appointmentDateLabel: dateLabel,
-          timeValue,
-          timeLabel: timeLabel || formatLaserTimeLabel(timeValue),
-          amount: reservationFee,
-          amountToman: reservationFee,
-          tariffAmount,
-          estimate: formatServicePrice(selected),
-          isDeposit: true,
-          depositNonRefundable: true,
-          paymentLabel: "بیعانه رزرو نوبت لیزر",
-          returnTo: app ? ROUTES.app.laser : ROUTES.web.laser,
-          successTo: app ? ROUTES.app.laserSuccess : ROUTES.web.laserSuccess,
-        };
+        return resolveReferralDiscount(reservationFee, referralCode).then((referral) => {
+          if (referral.error) {
+            setError(referral.error);
+            return;
+          }
+          const pending: PendingLaserPayment = {
+            kind: "laser",
+            serviceId: selected.id,
+            serviceTitle: selected.title,
+            categoryId: selected.categoryId || categoryId || undefined,
+            categoryName:
+              selected.categoryName || selectedCategory?.name || undefined,
+            patientName,
+            patientPhone,
+            description: description.trim(),
+            day,
+            appointmentDate,
+            appointmentDateLabel: dateLabel,
+            timeValue,
+            timeLabel: timeLabel || formatLaserTimeLabel(timeValue),
+            amount: referral.payable,
+            amountToman: referral.payable,
+            tariffAmount,
+            estimate: formatServicePrice(selected),
+            isDeposit: true,
+            depositNonRefundable: true,
+            paymentLabel: "بیعانه رزرو نوبت لیزر",
+            referralCode: referral.referralCode,
+            referralDiscountPercent: referral.referralDiscountPercent,
+            referralDiscountAmount: referral.referralDiscountAmount,
+            returnTo: app ? ROUTES.app.laser : ROUTES.web.laser,
+            successTo: app ? ROUTES.app.laserSuccess : ROUTES.web.laserSuccess,
+          };
 
-        PasteurStorage.initPatientDomainIfNeeded();
-        PasteurStorage.setPendingPayment(pending);
-        router.push(app ? ROUTES.app.laserConfirm : ROUTES.web.laserConfirm);
+          PasteurStorage.initPatientDomainIfNeeded();
+          PasteurStorage.setPendingPayment(pending);
+          router.push(app ? ROUTES.app.laserConfirm : ROUTES.web.laserConfirm);
+        });
       })
       .catch(() => setError("بررسی زمان رزرو ناموفق بود. دوباره تلاش کنید."))
       .finally(() => setChecking(false));
@@ -527,6 +539,7 @@ export function LaserCatalog({ variant = "site" }: LaserCatalogProps) {
               className="min-h-[90px]"
             />
           </div>
+          <ReferralCodeField value={referralCode} onChange={setReferralCode} />
           {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
           <Button
             type="submit"

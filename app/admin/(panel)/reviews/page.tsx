@@ -17,6 +17,7 @@ type ServiceReviewRow = {
 export default function AdminReviewsPage() {
   const [items, setItems] = useState<DoctorReview[]>([]);
   const [serviceReviews, setServiceReviews] = useState<ServiceReviewRow[]>([]);
+  const [staffKind, setStaffKind] = useState("all");
 
   const reload = useCallback(async () => {
     const data = await fetchAdminOps<{ items: DoctorReview[]; serviceReviews?: ServiceReviewRow[] }>(
@@ -75,9 +76,23 @@ export default function AdminReviewsPage() {
       </AdminTable>
 
       <div>
-        <p className="mb-3 text-sm font-extrabold text-slate-900">امتیاز اعزام خانگی</p>
+        <p className="mb-1 text-lg font-extrabold text-slate-900">نظرات اعزام خانگی (پرستاری / پزشکی در منزل)</p>
+        <p className="mb-3 text-xs text-slate-500">
+          بیمار بعد از انجام خدمت در صفحه پیگیری امتیاز می‌دهد. اینجا تأیید یا مخفی کنید.
+        </p>
+        <select
+          className="mb-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+          value={staffKind}
+          onChange={(e) => setStaffKind(e.target.value)}
+        >
+          <option value="all">همه نیروها</option>
+          <option value="nurse">پرستار</option>
+          <option value="physician">پزشک</option>
+        </select>
         <AdminTable headers={["نیرو", "امتیاز", "نظر", "وضعیت", "عملیات"]} empty="امتیاز خانگی ثبت نشده.">
-          {serviceReviews.map((r) => (
+          {serviceReviews
+            .filter((r) => staffKind === "all" || r.staffKind === staffKind)
+            .map((r) => (
             <tr key={r.id} className="border-t border-slate-100">
               <td className="px-4 py-3">
                 {r.staffName}

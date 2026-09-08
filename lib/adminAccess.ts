@@ -198,6 +198,21 @@ export function permissionForPath(pathname: string): AdminPermission | null {
   return match?.id || null;
 }
 
+export function canAccessAdminPath(
+  permissions: AdminPermission[] | undefined,
+  pathname: string,
+): boolean {
+  if (
+    pathname === ROUTES.admin.staffCommissions ||
+    pathname.startsWith(`${ROUTES.admin.staffCommissions}/`)
+  ) {
+    return hasPermission(permissions, 'fieldStaff') || hasPermission(permissions, 'commissions');
+  }
+  const needed = permissionForPath(pathname);
+  if (!needed) return true;
+  return hasPermission(permissions, needed);
+}
+
 export function hasPermission(
   permissions: AdminPermission[] | undefined,
   permission: AdminPermission,

@@ -53,6 +53,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         ceilingAmount: row.requestedAmount,
         label: `اقساط اعتباری ${row.requestedAmount.toLocaleString('fa-IR')} تومان`,
         linkedRequestId: row.id,
+        installmentCount: row.installmentCount ?? undefined,
       });
       if (!plan) {
         return jsonError('ساخت طرح اقساط ناموفق بود. شماره موبایل یا مبلغ را بررسی کنید.');

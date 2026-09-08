@@ -1,3 +1,5 @@
+import { formatJalaliDate } from '@/lib/patient';
+
 export type ReceptionCategory =
   | 'all'
   | 'dental'
@@ -35,6 +37,7 @@ export type ReceptionItem = {
   categoryLabel: string;
   dateLabel: string;
   timeLabel: string;
+  timeOfDayLabel: string;
   hour: number | null;
   amount: number;
   status: string;
@@ -59,6 +62,14 @@ export function timeOfDayFromHour(hour: number | null): ReceptionTimeOfDay | 'al
   if (hour < 12) return 'morning';
   if (hour < 17) return 'afternoon';
   return 'evening';
+}
+
+export function timeOfDayLabel(hour: number | null): string {
+  const bucket = timeOfDayFromHour(hour);
+  if (bucket === 'morning') return 'صبح';
+  if (bucket === 'afternoon') return 'ظهر';
+  if (bucket === 'evening') return 'عصر';
+  return '—';
 }
 
 export function classifyBooking(row: {
@@ -120,8 +131,11 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
     doctorName: String(row.doctorName || '—'),
     typeLabel: String(row.typeLabel || row.type || '—'),
     categoryLabel: 'رزرو نوبت',
-    dateLabel: String(row.dateLabel || row.day || '—'),
+    dateLabel: row.appointmentAt
+      ? formatJalaliDate(String(row.appointmentAt))
+      : String(row.dateLabel || row.day || '—'),
     timeLabel: String(row.timeLabel || '—'),
+    timeOfDayLabel: timeOfDayLabel(hour),
     hour,
     amount: Number(row.amount || 0),
     status: String(row.status || 'pending'),
@@ -152,6 +166,7 @@ export function mapConsultationToReception(row: Record<string, unknown>): Recept
     categoryLabel: String(row.categoryLabel || row.category || 'مشاوره'),
     dateLabel: String(row.preferredDateLabel || row.preferredDate || '—'),
     timeLabel: String(row.preferredTimeLabel || row.preferredTime || '—'),
+    timeOfDayLabel: timeOfDayLabel(hour),
     hour,
     amount: Number(row.amount || 0),
     status: String(row.status || 'pending'),

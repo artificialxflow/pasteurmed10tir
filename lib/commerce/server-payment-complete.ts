@@ -1,3 +1,4 @@
+import { createCommission } from '@/lib/commerce/commission-service';
 import {
   completeMembershipPayment,
   completeShopVipPayment,
@@ -145,7 +146,18 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       longitude: pending.patientLongitude,
       amount: Number(pending.amount || 0),
       consultationId: consultation.id,
+      preferredGender: pending.preferredGender,
     });
+    if (pending.referralCode) {
+      await createCommission({
+        referralCode: String(pending.referralCode),
+        amount: Number(pending.amount || 0),
+        sourceType: 'consultation',
+        sourceLabel: pending.typeLabel ? String(pending.typeLabel) : 'مشاوره و ویزیت',
+        customerName: pending.patientName ? String(pending.patientName) : undefined,
+        customerPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      });
+    }
     return { consultation, homeVisit };
   }
 
@@ -182,7 +194,18 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       longitude: pending.patientLongitude,
       amount,
       consultationId: consultation.id,
+      preferredGender: pending.preferredGender,
     });
+    if (pending.referralCode) {
+      await createCommission({
+        referralCode: String(pending.referralCode),
+        amount,
+        sourceType: 'nursing',
+        sourceLabel: itemTitle,
+        customerName: pending.patientName ? String(pending.patientName) : undefined,
+        customerPhone: pending.patientPhone ? String(pending.patientPhone) : undefined,
+      });
+    }
     return { nursingRequest: consultation, consultation, homeVisit };
   }
 

@@ -21,3 +21,12 @@ export async function requireAdmin(permission?: AdminPermission): Promise<AdminR
 
   return { session };
 }
+
+export async function requireAdminAny(permissions: AdminPermission[]): Promise<AdminResult> {
+  const auth = await requireAdmin();
+  if (auth.error) return auth;
+  if (!permissions.some((permission) => auth.session.permissions.includes(permission))) {
+    return { error: jsonError('دسترسی ندارید.', 403) };
+  }
+  return auth;
+}

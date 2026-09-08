@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 type CreditRequest = {
   id?: string;
   requestedAmount?: number;
+  installmentCount?: number;
   status?: string;
   reviewNote?: string | null;
   createdAt?: string;
@@ -28,11 +29,16 @@ function statusLabel(status?: string) {
 export function CreditActivationCard({
   ceiling,
   variant,
+  installmentMin = 1,
+  installmentMax = 6,
 }: {
   ceiling: number;
   variant: "web" | "app";
+  installmentMin?: number;
+  installmentMax?: number;
 }) {
   const [amount, setAmount] = useState(ceiling > 0 ? String(ceiling) : "");
+  const [installmentCount, setInstallmentCount] = useState(String(installmentMax));
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,6 +58,10 @@ export function CreditActivationCard({
     if (ceiling > 0) setAmount(String(ceiling));
   }, [ceiling]);
 
+  useEffect(() => {
+    setInstallmentCount(String(installmentMax));
+  }, [installmentMax]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -65,9 +75,16 @@ export function CreditActivationCard({
       setError("مبلغ درخواستی نمی‌تواند از سقف اعتبار بیشتر باشد.");
       return;
     }
+    const count = Number(installmentCount);
+    if (!Number.isInteger(count) || count < installmentMin || count > installmentMax) {
+      setError(
+        `تعداد اقساط باید بین ${installmentMin.toLocaleString("fa-IR")} و ${installmentMax.toLocaleString("fa-IR")} باشد.`,
+      );
+      return;
+    }
     setBusy(true);
     try {
-      await createCreditActivationApi({ requestedAmount });
+      await createCreditActivationApi({ requestedAmount, installmentCount: count });
       setOk("درخواست فعال‌سازی ثبت شد. پس از تأیید ادمین، طرح اقساط در صفحه اقساط دیده می‌شود.");
       reload();
     } catch (err) {
@@ -119,7 +136,22 @@ export function CreditActivationCard({
               required
             />
             <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              باید بیشتر از صفر و حداکثر برابر سقف اعتبار باشد.
+              باید بیشتر از صفر و حداکثر برابر سقف اعتبار باشد. سقف کیف با تأیید عوض نمی‌شود؛ فقط طرح اقساط ساخته می‌شود.
+            </p>
+          </div>
+          <div>
+            <FormLabel>تعداد اقساط</FormLabel>
+            <FormInput
+              type="number"
+              min={installmentMin}
+              max={installmentMax}
+              step={1}
+              value={installmentCount}
+              onChange={(e) => setInstallmentCount(e.target.value)}
+              required
+            />
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+              بین {installmentMin.toLocaleString("fa-IR")} تا {installmentMax.toLocaleString("fa-IR")} ماه. قسط اول یک ماه بعد از تأیید است.
             </p>
           </div>
           {error ? <p className="text-sm font-bold text-rose-600">{error}</p> : null}
@@ -139,7 +171,12 @@ export function CreditActivationCard({
               className="rounded-xl border border-white bg-white/80 px-3 py-2 text-sm"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-bold">{formatPrice(Number(item.requestedAmount || 0))}</span>
+                <span className="font-bold">
+                  {formatPrice(Number(item.requestedAmount || 0))}
+                  {item.installmentCount
+                    ? ` · ${item.installmentCount.toLocaleString("fa-IR")} قسط`
+                    : ""}
+                </span>
                 <span
                   className={`text-xs font-bold ${
                     item.status === "rejected"

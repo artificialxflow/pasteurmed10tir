@@ -1,5 +1,6 @@
 "use client";
 
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import {
@@ -7,6 +8,7 @@ import {
   DEPENDENT_RELATIONS,
 } from "@/lib/dependents";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
+import { formatJalaliDate } from "@/lib/patient";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 type Dependent = {
@@ -104,10 +106,7 @@ export function DependentsCard() {
           <FormLabel>کد ملی</FormLabel>
           <FormInput value={nationalId} onChange={(e) => setNationalId(e.target.value)} />
         </div>
-        <div>
-          <FormLabel>تاریخ تولد</FormLabel>
-          <FormInput type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-        </div>
+        <JalaliBirthDateField value={birthDate} onChange={setBirthDate} />
         {error ? <p className="sm:col-span-2 text-sm font-bold text-rose-600">{error}</p> : null}
         <Button type="submit" disabled={busy} className="sm:col-span-2">
           {busy ? "…" : "افزودن فرد تحت تکفل"}
@@ -124,6 +123,7 @@ export function DependentsCard() {
               {DEPENDENT_RELATION_LABELS[item.relation as keyof typeof DEPENDENT_RELATION_LABELS] ||
                 item.relation}
               {item.fileNumber ? ` · پرونده ${item.fileNumber}` : ""}
+              {item.birthDate ? ` · تولد ${formatJalaliDate(item.birthDate)}` : ""}
             </span>
           </span>
           <button type="button" className="text-xs font-bold text-rose-700" onClick={() => void remove(item.id)}>

@@ -9,6 +9,7 @@ import {
   homeVisitStatusLabel,
   staffKindForVisit,
 } from "@/lib/home-visit/labels";
+import { preferredGenderLabel, staffGenderLabel } from "@/lib/home-visit/gender";
 import type { FieldStaffAdmin } from "@/lib/home-visit/mappers";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import { formatPrice } from "@/lib/utils";
@@ -26,6 +27,7 @@ type HomeVisitRow = {
   patientAddress?: string;
   latitude?: number | null;
   longitude?: number | null;
+  preferredGender?: "any" | "male" | "female";
   description?: string;
   amount?: number;
   status: string;
@@ -61,6 +63,11 @@ export default function AdminHomeVisitsPage() {
     const origin = parseLatLng(visit.latitude, visit.longitude);
     return assignable
       .filter((item) => item.kind === expected)
+      .filter((item) => {
+        const preferred = visit.preferredGender;
+        if (preferred === "male" || preferred === "female") return item.gender === preferred;
+        return true;
+      })
       .map((item) => {
         const point = parseLatLng(item.latitude, item.longitude);
         return {
@@ -128,6 +135,7 @@ export default function AdminHomeVisitsPage() {
               <td className="px-4 py-3 text-xs">
                 <p>{homeVisitKindLabel(item.kind)}</p>
                 <p className="text-slate-500">{item.serviceTitle || item.specialtyLabel || "—"}</p>
+                <p className="mt-1 text-teal-800">ترجیح: {preferredGenderLabel(item.preferredGender)}</p>
               </td>
               <td className="max-w-xs px-4 py-3 text-xs">
                 <p className="font-bold">{item.patientAreaLabel || "—"}</p>
@@ -160,6 +168,7 @@ export default function AdminHomeVisitsPage() {
                       <option key={s.id} value={s.id}>
                         {s.name}
                         {s.specialty ? ` — ${s.specialty}` : ""}
+                        {staffGenderLabel(s.gender) !== "—" ? ` · ${staffGenderLabel(s.gender)}` : ""}
                         {item.latitude != null && item.longitude != null
                           ? ` · ${formatApproxKm(s.distanceKm)}`
                           : ""}

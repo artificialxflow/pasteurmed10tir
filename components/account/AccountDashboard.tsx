@@ -433,7 +433,15 @@ export function AccountDashboard({
                         serviceTitle={String(visit.serviceTitle || visit.specialtyLabel || "")}
                         areaLabel={String(visit.patientAreaLabel || "")}
                       />
-                      <p className="mt-2 text-xs font-bold text-teal-700">مشاهده پیگیری</p>
+                      {visit.review ? (
+                        <p className="mt-2 text-xs text-slate-600">
+                          امتیاز شما: {"★".repeat(Number(visit.review.rating) || 0)}
+                          {visit.review.status === "pending" ? " · در انتظار تأیید ادمین" : ""}
+                        </p>
+                      ) : visit.status === "completed" ? (
+                        <p className="mt-2 text-xs font-bold text-amber-800">امتیاز هنوز ثبت نشده — از پیگیری ثبت کنید</p>
+                      ) : null}
+                      <p className="mt-2 text-xs font-bold text-teal-700">مشاهده پیگیری و امتیاز</p>
                     </Link>
                   );
                 })}

@@ -1,8 +1,11 @@
 "use client";
 
 import { LocationPicker } from "@/components/home-visit/LocationPicker";
+import { PreferredGenderField } from "@/components/home-visit/PreferredGenderField";
 import { ServiceAreaSelect } from "@/components/home-visit/ServiceAreaSelect";
+import { ReferralCodeField } from "@/components/commerce/ReferralCodeField";
 import type { LatLng } from "@/lib/home-visit/geo";
+import type { PreferredGender } from "@/lib/home-visit/gender";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import {
@@ -16,6 +19,7 @@ import {
 } from "@/lib/consultation/home-visit";
 import { PASTEUR_DATA } from "@/lib/data";
 import type { PendingConsultationPayment } from "@/lib/payment";
+import { resolveReferralDiscount } from "@/lib/commerce/client";
 import { fetchPatientOps } from "@/lib/operations/client";
 import type { PatientProfile } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
@@ -39,6 +43,8 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
   const [address, setAddress] = useState("");
   const [area, setArea] = useState("");
   const [location, setLocation] = useState<LatLng | null>(null);
+  const [preferredGender, setPreferredGender] = useState<PreferredGender>("any");
+  const [referralCode, setReferralCode] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
@@ -90,34 +96,44 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
       return;
     }
 
-    const pending: PendingConsultationPayment = {
-      kind: "consultation",
-      type: "home-visit",
-      typeLabel: "ویزیت در منزل",
-      category: "medical-home",
-      categoryLabel: cat?.label,
-      specialty: effectiveSpecialtyId,
-      specialtyLabel: specialtyName,
-      patientName,
-      patientPhone,
-      patientAddress: homeAddress,
-      patientArea: area,
-      ...(location
-        ? { patientLatitude: location.lat, patientLongitude: location.lng }
-        : {}),
-      description: description.trim(),
-      estimate: pricing.label,
-      amount: pricing.amount,
-      priceSource: "home-visit",
-      paymentLabel: "هزینه ویزیت پزشک در منزل",
-      returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
-      successTo:
-        variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
-    };
+    void resolveReferralDiscount(pricing.amount, referralCode).then((referral) => {
+      if (referral.error) {
+        setError(referral.error);
+        return;
+      }
+      const pending: PendingConsultationPayment = {
+        kind: "consultation",
+        type: "home-visit",
+        typeLabel: "ویزیت در منزل",
+        category: "medical-home",
+        categoryLabel: cat?.label,
+        specialty: effectiveSpecialtyId,
+        specialtyLabel: specialtyName,
+        patientName,
+        patientPhone,
+        patientAddress: homeAddress,
+        patientArea: area,
+        preferredGender,
+        ...(location
+          ? { patientLatitude: location.lat, patientLongitude: location.lng }
+          : {}),
+        description: description.trim(),
+        estimate: pricing.label,
+        amount: referral.payable,
+        priceSource: "home-visit",
+        paymentLabel: "هزینه ویزیت پزشک در منزل",
+        referralCode: referral.referralCode,
+        referralDiscountPercent: referral.referralDiscountPercent,
+        referralDiscountAmount: referral.referralDiscountAmount,
+        returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
+        successTo:
+          variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
+      };
 
-    PasteurStorage.initPatientDomainIfNeeded();
-    PasteurStorage.setPendingPayment(pending);
-    router.push(variant === "app" ? ROUTES.app.consultationConfirm : ROUTES.web.consultationConfirm);
+      PasteurStorage.initPatientDomainIfNeeded();
+      PasteurStorage.setPendingPayment(pending);
+      router.push(variant === "app" ? ROUTES.app.consultationConfirm : ROUTES.web.consultationConfirm);
+    });
   }
 
   return (
@@ -203,6 +219,8 @@ export function MedicalHomeVisitForm({ variant = "web" }: Props) {
       </div>
       <ServiceAreaSelect required value={area} onChange={setArea} />
       <LocationPicker value={location} onChange={setLocation} />
+      <PreferredGenderField value={preferredGender} onChange={setPreferredGender} />
+      <ReferralCodeField value={referralCode} onChange={setReferralCode} />
 
       <div>
         <FormLabel>توضیحات</FormLabel>

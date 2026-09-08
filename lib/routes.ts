@@ -116,6 +116,7 @@ export const ROUTES = {
     doctors: '/admin/doctors',
     fieldStaff: '/admin/field-staff',
     homeVisits: '/admin/home-visits',
+    staffCommissions: '/admin/staff-commissions',
     memberships: '/admin/memberships',
     laserServices: '/admin/laser-services',
     nursingServices: '/admin/nursing-services',

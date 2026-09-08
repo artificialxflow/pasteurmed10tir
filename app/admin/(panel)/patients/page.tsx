@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin/patient-report";
 import { fetchPublic } from "@/lib/content/client";
 import {
+  formatJalaliDate,
   patientStatusLabel,
   resolveFranchisePercent,
   type InsuranceCompany,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/operations/client";
 import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
 import {
+  FILE_NUMBER_HINT,
   FILE_NUMBER_LENGTH,
   normalizeFileNumber,
 } from "@/lib/validation/file-number";
@@ -432,6 +434,7 @@ export default function AdminPatientsPage() {
                         تحت تکفل: {d.name}
                         {d.fileNumber ? ` · پرونده ${d.fileNumber}` : ""}
                         {` · فرانشیز ${d.franchisePercent.toLocaleString("fa-IR")}٪`}
+                        {d.birthDate ? ` · تولد ${formatJalaliDate(d.birthDate)}` : ""}
                       </li>
                     ))}
                   </ul>
@@ -577,7 +580,7 @@ export default function AdminPatientsPage() {
                   maxLength={FILE_NUMBER_LENGTH}
                 />
                 <p className="mt-1 text-xs text-slate-500">
-                  {FILE_NUMBER_LENGTH} رقم، بدون تکرار. برای پاک کردن خالی بگذارید.
+                  {FILE_NUMBER_HINT}
                 </p>
               </div>
               <div>

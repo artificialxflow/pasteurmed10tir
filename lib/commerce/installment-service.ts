@@ -143,6 +143,7 @@ export async function createCreditInstallmentPlan(input: {
   ceilingAmount: number;
   label?: string;
   linkedRequestId?: string;
+  installmentCount?: number;
 }) {
   const phone = normalizePhoneDigits(input.phone || '');
   if (!phone) return null;
@@ -150,7 +151,10 @@ export async function createCreditInstallmentPlan(input: {
   if (!total) return null;
 
   const settings = await loadWalletSettings();
-  const count = settings.installmentMax || 6;
+  const min = settings.installmentMin || 1;
+  const max = settings.installmentMax || 6;
+  const requested = Number(input.installmentCount);
+  const count = Number.isInteger(requested) && requested >= min && requested <= max ? requested : max;
   const dueDates = buildDueDates(count);
 
   return prisma.installmentPlan.create({

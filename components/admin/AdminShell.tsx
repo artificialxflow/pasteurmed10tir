@@ -2,9 +2,9 @@
 
 import { Logo } from "@/components/ui/Card";
 import {
+  canAccessAdminPath,
   firstAllowedAdminPath,
   hasPermission,
-  permissionForPath,
   type AdminPermission,
   type AdminSession,
 } from "@/lib/adminAccess";
@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.bookings, label: "رزروها", permission: "bookings" },
       { href: ROUTES.admin.consultations, label: "مشاوره‌ها", permission: "consultations" },
       { href: ROUTES.admin.homeVisits, label: "اعزام خانگی", permission: "fieldStaff" },
+      { href: ROUTES.admin.staffCommissions, label: "پورسانت نیرو", permission: "fieldStaff" },
       { href: ROUTES.admin.patients, label: "تأیید کاربری", permission: "patients" },
       { href: ROUTES.admin.reminders, label: "یادآورها", permission: "reminders" },
     ],
@@ -52,6 +53,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.creditActivation, label: "فعال‌سازی اعتبار", permission: "wallets" },
       { href: ROUTES.admin.shop, label: "فروشگاه", permission: "shop" },
       { href: ROUTES.admin.commissions, label: "پورسانت‌ها", permission: "commissions" },
+      { href: ROUTES.admin.staffCommissions, label: "پورسانت نیرو", permission: "commissions" },
       { href: ROUTES.admin.facilities, label: "تسهیلات", permission: "facilities" },
       { href: ROUTES.admin.insurances, label: "بیمه‌ها و استعلام", permission: "insurances" },
       { href: ROUTES.admin.installments, label: "اقساط", permission: "installments" },
@@ -81,6 +83,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.consultations]: "درخواست‌های مشاوره و ویزیت",
   [ROUTES.admin.homeVisits]: "درخواست‌های اعزام خانگی",
   [ROUTES.admin.fieldStaff]: "پرسنل میدانی",
+  [ROUTES.admin.staffCommissions]: "پورسانت پرستار و پزشک اعزام",
   [ROUTES.admin.reminders]: "یادآورهای هوشمند",
   [ROUTES.admin.services]: "مدیریت سرویس‌ها",
   [ROUTES.admin.dentalEducation]: "کلیپ‌های آموزشی دندان",
@@ -237,8 +240,7 @@ export function AdminShell({
           return;
         }
 
-        const needed = permissionForPath(pathname);
-        if (needed && !hasPermission(current.permissions, needed)) {
+        if (!canAccessAdminPath(current.permissions, pathname)) {
           router.replace(firstAllowedAdminPath(current.permissions));
           return;
         }

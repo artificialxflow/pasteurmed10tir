@@ -125,6 +125,9 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
               {overdueAmount > 0 ? (
                 <p className="font-bold text-rose-700">
                   جمع معوقه: {formatPrice(overdueAmount)}
+                  {plan.overduePenalty
+                    ? ` · ضرر-زیان ${formatPrice(plan.overduePenalty)}`
+                    : ""}
                 </p>
               ) : null}
             </div>
@@ -148,7 +151,12 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
                             {plan.installmentCount.toLocaleString("fa-IR")}
                           </p>
                           <p className="text-xs text-slate-500">
-                            سررسید {formatJalaliDate(item.dueDate)} · {formatPrice(item.amount)}
+                            سررسید {formatJalaliDate(item.dueDate)} · اصل {formatPrice(item.amount)}
+                            {item.remaining > 0 ? ` · مانده ${formatPrice(item.remaining)}` : ""}
+                            {item.penalty ? ` · ضرر-زیان ${formatPrice(item.penalty)}` : ""}
+                            {item.payable && item.payable > item.remaining
+                              ? ` · قابل پرداخت ${formatPrice(item.payable)}`
+                              : ""}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">

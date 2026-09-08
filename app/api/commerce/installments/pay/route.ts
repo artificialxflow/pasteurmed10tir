@@ -1,4 +1,6 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { overduePenaltyToman } from '@/lib/commerce/overdue-penalty';
+import { deriveItemStatus } from '@/lib/commerce/installment-service';
 import { createZibalPaymentIntent } from '@/lib/commerce/zibal-intent-service';
 import { requirePatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
@@ -38,7 +40,19 @@ export async function POST(request: Request) {
     return jsonError('این قسط قبلاً پرداخت شده است.');
   }
 
-  const amount = item.amount - item.paidAmount;
+  const remaining = item.amount - item.paidAmount;
+  const status = deriveItemStatus({
+    dueDate: item.dueDate,
+    amount: item.amount,
+    paidAmount: item.paidAmount,
+  });
+  const penalty = overduePenaltyToman({
+    source: plan.source,
+    status,
+    dueDate: item.dueDate.toISOString(),
+    remaining,
+  });
+  const amount = remaining + penalty;
   const app = String(body.basePath || '').includes('/app');
   const successTo = app ? '/app/installments?paid=1' : '/installments?paid=1';
   const basePath = app ? '/app/installments' : '/installments';

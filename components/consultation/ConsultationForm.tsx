@@ -42,6 +42,8 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { ConsultationCallbackForm } from "./ConsultationCallbackForm";
 import { MedicalHomeVisitForm } from "./MedicalHomeVisitForm";
+import { ReferralCodeField } from "@/components/commerce/ReferralCodeField";
+import { resolveReferralDiscount } from "@/lib/commerce/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -96,6 +98,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [franchisePercent, setFranchisePercent] = useState(10);
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   const selectedSpecialty = useMemo(() => {
     if (!requestedSpecialty) return null;
@@ -262,41 +265,50 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       ? formatPreferredTimeLabel(preferredTime)
       : undefined;
 
-    const pending: PendingConsultationPayment = {
-      kind: "consultation",
-      type: selectedType,
-      typeLabel: type?.label,
-      category,
-      categoryLabel: cat?.label,
-      specialty: selectedSpecialty?.id || undefined,
-      specialtyLabel: selectedSpecialty?.name || undefined,
-      doctorId: selectedDoctor?.id,
-      doctorName: selectedDoctor?.name || undefined,
-      patientName: name.trim(),
-      patientPhone: phone.trim(),
-      dependentId: dependentId || undefined,
-      description: description.trim(),
-      estimate: pricing.label,
-      amount: payableAmount,
-      priceSource: pricing.source,
-      hasImage: Boolean(imagePreview),
-      onlineInsuranceCovered: onlineInsurance,
-      paymentLabel,
-      preferredDate: preferredDate || undefined,
-      preferredDateLabel,
-      preferredTime: preferredTime || undefined,
-      preferredTimeLabel,
-      returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
-      successTo:
-        variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
-    };
+    void resolveReferralDiscount(payableAmount, referralCode).then((referral) => {
+      if (referral.error) {
+        setSubmitError(referral.error);
+        return;
+      }
+      const pending: PendingConsultationPayment = {
+        kind: "consultation",
+        type: selectedType,
+        typeLabel: type?.label,
+        category,
+        categoryLabel: cat?.label,
+        specialty: selectedSpecialty?.id || undefined,
+        specialtyLabel: selectedSpecialty?.name || undefined,
+        doctorId: selectedDoctor?.id,
+        doctorName: selectedDoctor?.name || undefined,
+        patientName: name.trim(),
+        patientPhone: phone.trim(),
+        dependentId: dependentId || undefined,
+        description: description.trim(),
+        estimate: pricing.label,
+        amount: referral.payable,
+        priceSource: pricing.source,
+        hasImage: Boolean(imagePreview),
+        onlineInsuranceCovered: onlineInsurance,
+        paymentLabel,
+        preferredDate: preferredDate || undefined,
+        preferredDateLabel,
+        preferredTime: preferredTime || undefined,
+        preferredTimeLabel,
+        referralCode: referral.referralCode,
+        referralDiscountPercent: referral.referralDiscountPercent,
+        referralDiscountAmount: referral.referralDiscountAmount,
+        returnTo: variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation,
+        successTo:
+          variant === "app" ? ROUTES.app.consultationSuccess : ROUTES.web.consultationSuccess,
+      };
 
-    PasteurStorage.initPatientDomainIfNeeded();
-    PasteurStorage.setPendingPayment(pending);
-    setSubmitError("");
-    router.push(
-      variant === "app" ? ROUTES.app.consultationConfirm : ROUTES.web.consultationConfirm,
-    );
+      PasteurStorage.initPatientDomainIfNeeded();
+      PasteurStorage.setPendingPayment(pending);
+      setSubmitError("");
+      router.push(
+        variant === "app" ? ROUTES.app.consultationConfirm : ROUTES.web.consultationConfirm,
+      );
+    });
   }
 
   if (blockedNursing) {
@@ -714,6 +726,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
           {selectedSpecialty ? " و تخصص انتخاب‌شده" : ""} محاسبه شده است.
         </p>
       </Card>
+
+      <ReferralCodeField value={referralCode} onChange={setReferralCode} />
 
       <Button type="submit" variant="primary" className="w-full">
         {variant === "app" ? "ادامه و پرداخت" : "ادامه به پرداخت"}

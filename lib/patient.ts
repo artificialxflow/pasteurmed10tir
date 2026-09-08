@@ -108,6 +108,9 @@ export type InstallmentScheduleItem = {
   paidAmount: number;
   status: 'pending' | 'due' | 'overdue' | 'paid' | 'partial' | string;
   remaining: number;
+  penalty?: number;
+  payable?: number;
+  overdueMonths?: number;
 };
 
 export type InstallmentPaymentRecord = {
@@ -139,6 +142,7 @@ export type InstallmentPlan = {
   items?: InstallmentScheduleItem[];
   payments?: InstallmentPaymentRecord[];
   overdueAmount?: number;
+  overduePenalty?: number;
 };
 
 export const DEFAULT_FRANCHISE_PERCENT = 10;

@@ -1,6 +1,7 @@
 "use client";
 
 import { fieldStaffKindLabel } from "@/lib/home-visit/labels";
+import { staffGenderLabel } from "@/lib/home-visit/gender";
 import { formatApproxKm } from "@/lib/home-visit/geo";
 
 export type NearbyStaff = {
@@ -9,6 +10,7 @@ export type NearbyStaff = {
   kind?: string;
   image?: string;
   specialty?: string;
+  gender?: string | null;
   distanceKm?: number | null;
 };
 
@@ -38,7 +40,10 @@ export function NearestStaffList({
             <div className="min-w-0">
               <p className="text-sm font-bold text-slate-900">{staff.name}</p>
               <p className="text-xs text-slate-500">
-                {staff.specialty || fieldStaffKindLabel(staff.kind)} · {formatApproxKm(staff.distanceKm)}
+                {staff.specialty || fieldStaffKindLabel(staff.kind)}
+                {staffGenderLabel(staff.gender) !== "—" ? ` · ${staffGenderLabel(staff.gender)}` : ""}
+                {" · "}
+                {formatApproxKm(staff.distanceKm)}
               </p>
             </div>
           </li>

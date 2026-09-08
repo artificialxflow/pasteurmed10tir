@@ -1,11 +1,15 @@
 "use client";
 
 import { LocationPicker } from "@/components/home-visit/LocationPicker";
+import { PreferredGenderField } from "@/components/home-visit/PreferredGenderField";
 import { ServiceAreaSelect } from "@/components/home-visit/ServiceAreaSelect";
+import { ReferralCodeField } from "@/components/commerce/ReferralCodeField";
 import type { LatLng } from "@/lib/home-visit/geo";
+import type { PreferredGender } from "@/lib/home-visit/gender";
 import { Button } from "@/components/ui/Button";
 import { Card, EmptyState, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
+import { resolveReferralDiscount } from "@/lib/commerce/client";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchPatientOps } from "@/lib/operations/client";
 import type { PendingNursingPayment } from "@/lib/payment";
@@ -58,6 +62,8 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
   const [address, setAddress] = useState("");
   const [area, setArea] = useState("");
   const [location, setLocation] = useState<LatLng | null>(null);
+  const [preferredGender, setPreferredGender] = useState<PreferredGender>("any");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -146,32 +152,42 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
       ? formatItemPrice(selectedItem)
       : selectedCategory.price || formatPrice(payableAmount);
 
-    const pending: PendingNursingPayment = {
-      kind: "nursing",
-      serviceId: selectedCategory.id,
-      serviceTitle: selectedCategory.title,
-      itemId: selectedItem?.id,
-      itemTitle,
-      unit: selectedItem?.unit,
-      patientName,
-      patientPhone,
-      patientAddress: homeAddress,
-      patientArea: area,
-      ...(location
-        ? { patientLatitude: location.lat, patientLongitude: location.lng }
-        : {}),
-      description: description.trim(),
-      amount: payableAmount,
-      amountToman: payableAmount,
-      estimate,
-      paymentLabel: "مبلغ تعرفه خدمت پرستاری",
-      returnTo: app ? ROUTES.app.nursing : ROUTES.web.nursing,
-      successTo: app ? ROUTES.app.nursingSuccess : ROUTES.web.nursingSuccess,
-    };
+    void resolveReferralDiscount(payableAmount, referralCode).then((referral) => {
+      if (referral.error) {
+        setError(referral.error);
+        return;
+      }
+      const pending: PendingNursingPayment = {
+        kind: "nursing",
+        serviceId: selectedCategory.id,
+        serviceTitle: selectedCategory.title,
+        itemId: selectedItem?.id,
+        itemTitle,
+        unit: selectedItem?.unit,
+        patientName,
+        patientPhone,
+        patientAddress: homeAddress,
+        patientArea: area,
+        preferredGender,
+        ...(location
+          ? { patientLatitude: location.lat, patientLongitude: location.lng }
+          : {}),
+        description: description.trim(),
+        amount: referral.payable,
+        amountToman: referral.payable,
+        estimate,
+        paymentLabel: "مبلغ تعرفه خدمت پرستاری",
+        referralCode: referral.referralCode,
+        referralDiscountPercent: referral.referralDiscountPercent,
+        referralDiscountAmount: referral.referralDiscountAmount,
+        returnTo: app ? ROUTES.app.nursing : ROUTES.web.nursing,
+        successTo: app ? ROUTES.app.nursingSuccess : ROUTES.web.nursingSuccess,
+      };
 
-    PasteurStorage.initPatientDomainIfNeeded();
-    PasteurStorage.setPendingPayment(pending);
-    router.push(app ? ROUTES.app.nursingConfirm : ROUTES.web.nursingConfirm);
+      PasteurStorage.initPatientDomainIfNeeded();
+      PasteurStorage.setPendingPayment(pending);
+      router.push(app ? ROUTES.app.nursingConfirm : ROUTES.web.nursingConfirm);
+    });
   }
 
   return (
@@ -299,6 +315,8 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
           </div>
           <ServiceAreaSelect required value={area} onChange={setArea} />
           <LocationPicker value={location} onChange={setLocation} />
+          <PreferredGenderField value={preferredGender} onChange={setPreferredGender} />
+          <ReferralCodeField value={referralCode} onChange={setReferralCode} />
           <div>
             <FormLabel>توضیحات (اختیاری)</FormLabel>
             <FormTextarea

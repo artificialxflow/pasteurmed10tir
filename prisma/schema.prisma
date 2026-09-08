@@ -333,6 +333,17 @@ enum FieldStaffStatus {
   inactive
 }
 
+enum FieldStaffGender {
+  male
+  female
+}
+
+enum PreferredStaffGender {
+  any
+  male
+  female
+}
+
 enum HomeVisitKind {
   nursing
   medical_home
@@ -881,6 +892,7 @@ model CreditActivationRequest {
   patientName     String?
   nationalId      String?
   requestedAmount Int
+  installmentCount Int?
   status          String    @default("pending")
   reviewNote      String?
   reviewedAt      DateTime?
@@ -1034,21 +1046,25 @@ model DentalEducationClip {
 }
 
 model FieldStaff {
-  id           String           @id
-  name         String
-  kind         FieldStaffKind
-  phone        String           @default("")
-  image        String           @default("")
-  specialty    String           @default("")
-  serviceAreas String[]
-  status       FieldStaffStatus @default(available)
-  active       Boolean          @default(true)
-  sortOrder    Int              @default(0)
-  latitude     Float?
-  longitude    Float?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  assignments  HomeVisitRequest[]
+  id                    String           @id
+  name                  String
+  kind                  FieldStaffKind
+  phone                 String           @default("")
+  image                 String           @default("")
+  specialty             String           @default("")
+  medicalCouncilNumber  String           @default("")
+  gender                FieldStaffGender?
+  commissionPercent     Int              @default(0)
+  serviceAreas          String[]
+  status                FieldStaffStatus @default(available)
+  active                Boolean          @default(true)
+  sortOrder             Int              @default(0)
+  latitude              Float?
+  longitude             Float?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  assignments           HomeVisitRequest[]
+  commissions           StaffCommission[]
 
   @@index([kind, active, status])
   @@index([sortOrder])
@@ -1068,6 +1084,7 @@ model HomeVisitRequest {
   patientArea     String
   latitude        Float?
   longitude       Float?
+  preferredGender PreferredStaffGender @default(any)
   amount          Int             @default(0)
   consultationId  String?
   assignedStaffId String?
@@ -1085,6 +1102,23 @@ model HomeVisitRequest {
   @@index([kind])
   @@index([assignedStaffId])
   @@index([consultationId])
+}
+
+model StaffCommission {
+  id               String     @id
+  staffId          String
+  staff            FieldStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffName        String
+  staffKind        String
+  requestId        String     @unique
+  amount           Int        @default(0)
+  commissionRate   Int        @default(0)
+  commissionAmount Int        @default(0)
+  createdAt        DateTime   @default(now())
+
+  @@index([staffId])
+  @@index([staffKind])
+  @@index([createdAt])
 }
 
 model HomeVisitStatusEvent {

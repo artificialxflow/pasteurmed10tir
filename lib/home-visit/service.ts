@@ -4,14 +4,16 @@ import { optionalPatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
 import { isKnownServiceArea } from '@/lib/home-visit/areas';
 import { compareByDistance, haversineKm, parseLatLng } from '@/lib/home-visit/geo';
+import { parsePreferredGender, parseStaffGender } from '@/lib/home-visit/gender';
 import { staffKindForVisit } from '@/lib/home-visit/labels';
 import {
   mapFieldStaffAdmin,
   mapFieldStaffPublic,
   mapHomeVisitRequest,
   mapServiceReview,
+  mapStaffCommission,
 } from '@/lib/home-visit/mappers';
-import { notifyHomeVisitStatusSms } from '@/lib/home-visit/sms';
+import { notifyHomeVisitStaffAssignedSms, notifyHomeVisitStatusSms } from '@/lib/home-visit/sms';
 import {
   canAssignHomeVisit,
   canTransitionHomeVisit,
@@ -59,11 +61,16 @@ export async function createFieldStaff(input: {
   sortOrder?: number;
   latitude?: unknown;
   longitude?: unknown;
+  gender?: unknown;
+  medicalCouncilNumber?: string;
+  commissionPercent?: number;
 }) {
   const name = String(input.name || '').trim();
   if (name.length < 2) throw new Error('نام نیرو الزامی است.');
   const kind = input.kind === 'physician' ? 'physician' : input.kind === 'nurse' ? 'nurse' : null;
   if (!kind) throw new Error('نوع نیرو نامعتبر است.');
+  const gender = parseStaffGender(input.gender);
+  if (!gender) throw new Error('جنسیت نیرو (آقا / خانم) الزامی است.');
   const status: FieldStaffStatus =
     input.status === 'busy' || input.status === 'inactive' || input.status === 'available'
       ? input.status
@@ -79,6 +86,9 @@ export async function createFieldStaff(input: {
       phone: normalizePhoneDigits(input.phone || '') || String(input.phone || '').trim(),
       image: String(input.image || '').trim(),
       specialty: String(input.specialty || '').trim(),
+      medicalCouncilNumber: String(input.medicalCouncilNumber || '').trim(),
+      gender,
+      commissionPercent: Math.min(100, Math.max(0, Math.round(Number(input.commissionPercent || 0)))),
       serviceAreas: normalizeAreas(input.serviceAreas),
       status,
       active: input.active !== false,
@@ -104,6 +114,9 @@ export async function updateFieldStaff(
     sortOrder?: number;
     latitude?: unknown;
     longitude?: unknown;
+    gender?: unknown;
+    medicalCouncilNumber?: string;
+    commissionPercent?: number;
   },
 ) {
   const existing = await prisma.fieldStaff.findUnique({ where: { id } });
@@ -120,6 +133,9 @@ export async function updateFieldStaff(
     status = input.status;
   }
 
+  const nextGender =
+    input.gender !== undefined ? parseStaffGender(input.gender) : existing.gender;
+  if (!nextGender) throw new Error('جنسیت نیرو (آقا / خانم) الزامی است.');
   const nextCoords =
     input.latitude !== undefined || input.longitude !== undefined
       ? parseLatLng(input.latitude ?? existing.latitude, input.longitude ?? existing.longitude)
@@ -135,6 +151,15 @@ export async function updateFieldStaff(
           : existing.phone,
       image: input.image != null ? String(input.image).trim() : existing.image,
       specialty: input.specialty != null ? String(input.specialty).trim() : existing.specialty,
+      medicalCouncilNumber:
+        input.medicalCouncilNumber != null
+          ? String(input.medicalCouncilNumber).trim()
+          : existing.medicalCouncilNumber,
+      gender: nextGender,
+      commissionPercent:
+        input.commissionPercent != null && Number.isFinite(Number(input.commissionPercent))
+          ? Math.min(100, Math.max(0, Math.round(Number(input.commissionPercent))))
+          : existing.commissionPercent,
       serviceAreas: input.serviceAreas != null ? normalizeAreas(input.serviceAreas) : existing.serviceAreas,
       status,
       active: input.active != null ? Boolean(input.active) : existing.active,
@@ -169,6 +194,7 @@ export async function createHomeVisitRequest(input: {
   consultationId?: string | null;
   latitude?: unknown;
   longitude?: unknown;
+  preferredGender?: unknown;
 }) {
   const patientPhone = normalizePhoneDigits(input.patientPhone || '');
   if (!patientPhone || patientPhone.length < 10) {
@@ -199,6 +225,7 @@ export async function createHomeVisitRequest(input: {
       patientArea,
       latitude: coords?.lat ?? null,
       longitude: coords?.lng ?? null,
+      preferredGender: parsePreferredGender(input.preferredGender),
       amount: Number(input.amount || 0),
       consultationId: input.consultationId || null,
       status: 'submitted',
@@ -225,6 +252,7 @@ export async function maybeCreateHomeVisitFromPayment(input: {
   consultationId?: string | null;
   latitude?: unknown;
   longitude?: unknown;
+  preferredGender?: unknown;
 }) {
   const address = String(input.patientAddress || '').trim();
   const area = String(input.patientArea || '').trim();
@@ -253,6 +281,7 @@ export async function maybeCreateHomeVisitFromPayment(input: {
     consultationId: input.consultationId,
     latitude: input.latitude,
     longitude: input.longitude,
+    preferredGender: input.preferredGender,
   });
 }
 
@@ -260,13 +289,16 @@ export async function listNearbyStaff(input: {
   kind: FieldStaffKind;
   latitude?: unknown;
   longitude?: unknown;
+  preferredGender?: unknown;
 }) {
   const origin = parseLatLng(input.latitude, input.longitude);
+  const preferred = parsePreferredGender(input.preferredGender);
   const rows = await prisma.fieldStaff.findMany({
     where: { kind: input.kind, active: true, status: { not: 'inactive' } },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
   });
   return rows
+    .filter((row) => preferred === 'any' || row.gender === preferred)
     .map((row) => {
       const staffPoint = parseLatLng(row.latitude, row.longitude);
       return {
@@ -310,6 +342,7 @@ export async function getPatientHomeVisit(id: string, phone: string) {
         kind: staffKindForVisit(row.kind),
         latitude: row.latitude,
         longitude: row.longitude,
+        preferredGender: row.preferredGender,
       })
     : [];
   return { ...mapped, nearbyStaff };
@@ -329,6 +362,11 @@ export async function assignStaffToHomeVisit(
   const staff = await prisma.fieldStaff.findUnique({ where: { id: staffId } });
   if (!staff || !staff.active) throw new Error('نیرو یافت نشد یا غیرفعال است.');
   if (staff.status === 'inactive') throw new Error('این نیرو غیرفعال است.');
+
+  const preferred = parsePreferredGender(request.preferredGender);
+  if (preferred !== 'any' && staff.gender !== preferred) {
+    throw new Error('این نیرو با ترجیح جنسیتی بیمار هم‌خوان نیست.');
+  }
 
   const expectedKind = staffKindForVisit(request.kind);
   if (staff.kind !== expectedKind) {
@@ -360,6 +398,7 @@ export async function assignStaffToHomeVisit(
   if (firstAssign) {
     await notifyHomeVisitStatusSms(request.patientPhone, 'staff_assigned', requestId);
   }
+  await notifyHomeVisitStaffAssignedSms(staff.phone, requestId);
 
   const row = await prisma.homeVisitRequest.findUniqueOrThrow({
     where: { id: requestId },
@@ -401,6 +440,10 @@ export async function transitionHomeVisitStatus(
       },
     }),
   ]);
+
+  if (to === 'completed') {
+    await upsertStaffCommissionForRequest(requestId);
+  }
 
   await notifyHomeVisitStatusSms(request.patientPhone, to, requestId);
 
@@ -473,3 +516,67 @@ export async function updateServiceReviewStatus(id: string, status: 'pending' | 
   const row = await prisma.serviceReview.update({ where: { id }, data: { status } });
   return mapServiceReview(row);
 }
+
+async function upsertStaffCommissionForRequest(requestId: string) {
+  const request = await prisma.homeVisitRequest.findUnique({
+    where: { id: requestId },
+    include: { assignedStaff: true },
+  });
+  if (!request?.assignedStaff) return;
+  const staff = request.assignedStaff;
+  const amount = Math.max(0, Number(request.amount || 0));
+  const commissionRate = Math.min(100, Math.max(0, Number(staff.commissionPercent || 0)));
+  const commissionAmount = Math.round((amount * commissionRate) / 100);
+  await prisma.staffCommission.upsert({
+    where: { requestId },
+    create: {
+      id: generateOperationId(),
+      staffId: staff.id,
+      staffName: staff.name,
+      staffKind: staff.kind,
+      requestId,
+      amount,
+      commissionRate,
+      commissionAmount,
+    },
+    update: {
+      staffId: staff.id,
+      staffName: staff.name,
+      staffKind: staff.kind,
+      amount,
+      commissionRate,
+      commissionAmount,
+    },
+  });
+}
+
+export async function listStaffCommissions(options?: {
+  kind?: string;
+  from?: string;
+  to?: string;
+}) {
+  const kind = options?.kind === 'physician' || options?.kind === 'nurse' ? options.kind : undefined;
+  const fromDate = options?.from ? new Date(options.from) : null;
+  const toDate = options?.to ? new Date(options.to) : null;
+  const hasFrom = Boolean(fromDate && !Number.isNaN(fromDate.getTime()));
+  const hasTo = Boolean(toDate && !Number.isNaN(toDate.getTime()));
+  const createdAt =
+    hasFrom || hasTo
+      ? {
+          ...(hasFrom ? { gte: fromDate! } : {}),
+          ...(hasTo ? { lte: new Date(toDate!.getTime() + 24 * 60 * 60 * 1000 - 1) } : {}),
+        }
+      : undefined;
+
+  const rows = await prisma.staffCommission.findMany({
+    where: {
+      ...(kind ? { staffKind: kind } : {}),
+      ...(createdAt ? { createdAt } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  const items = rows.map(mapStaffCommission);
+  const total = items.reduce((sum, item) => sum + item.commissionAmount, 0);
+  return { items, total };
+}
+

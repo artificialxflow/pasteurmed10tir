@@ -7,7 +7,7 @@ import { isUniqueViolation } from '@/lib/prisma/route-error';
 import type { PatientStatus } from '@/lib/patient';
 import { clampFranchisePercent } from '@/lib/patient';
 import {
-  FILE_NUMBER_LENGTH,
+  FILE_NUMBER_INVALID_MESSAGE,
   isValidFileNumber,
   normalizeFileNumber,
 } from '@/lib/validation/file-number';
@@ -102,7 +102,7 @@ export async function PATCH(request: Request) {
     if (!raw) {
       fileNumber = null;
     } else if (!isValidFileNumber(raw)) {
-      return jsonError(`شماره پرونده باید دقیقاً ${FILE_NUMBER_LENGTH} رقم باشد.`);
+      return jsonError(FILE_NUMBER_INVALID_MESSAGE);
     } else {
       fileNumber = raw;
     }

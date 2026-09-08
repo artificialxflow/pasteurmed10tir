@@ -11,6 +11,7 @@ import type {
   Wallet,
   WalletTransaction,
 } from '@prisma/client';
+import { completeMonthsOverdue, overduePenaltyToman } from '@/lib/commerce/overdue-penalty';
 import type { WalletKind } from '@/lib/wallet';
 import { buildZohalCreditSummary } from '@/lib/zohal/run-credit-check';
 
@@ -258,6 +259,7 @@ export function mapCreditActivationRequest(row: CreditActivationRequest) {
     patientName: row.patientName ?? undefined,
     nationalId: row.nationalId ?? undefined,
     requestedAmount: row.requestedAmount,
+    installmentCount: row.installmentCount ?? undefined,
     status: row.status,
     reviewNote: row.reviewNote ?? undefined,
     reviewedAt: row.reviewedAt?.toISOString(),
@@ -291,10 +293,25 @@ export function mapInstallmentPlan(
     }>;
   },
 ) {
-  const items = (row.scheduleItems || []).map(mapInstallmentScheduleItem);
+  const items = (row.scheduleItems || []).map((item) => {
+    const mapped = mapInstallmentScheduleItem(item);
+    const penalty = overduePenaltyToman({
+      source: row.source,
+      status: mapped.status,
+      dueDate: mapped.dueDate,
+      remaining: mapped.remaining,
+    });
+    return {
+      ...mapped,
+      penalty,
+      payable: mapped.remaining + penalty,
+      overdueMonths: completeMonthsOverdue(mapped.dueDate),
+    };
+  });
   const overdueAmount = items
     .filter((i) => i.status === 'overdue' || i.status === 'partial')
     .reduce((sum, i) => sum + i.remaining, 0);
+  const overduePenalty = items.reduce((sum, i) => sum + i.penalty, 0);
   return {
     id: row.id,
     phone: row.phone,
@@ -311,5 +328,6 @@ export function mapInstallmentPlan(
     items,
     payments: (row.payments || []).map(mapInstallmentPayment),
     overdueAmount,
+    overduePenalty,
   };
 }

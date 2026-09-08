@@ -25,6 +25,7 @@ export type PendingPaymentBase = {
   patientArea?: string;
   patientLatitude?: number;
   patientLongitude?: number;
+  preferredGender?: string;
   returnTo?: string;
   successTo?: string;
   status?: string;

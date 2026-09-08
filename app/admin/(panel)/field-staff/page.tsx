@@ -14,6 +14,7 @@ import {
   fieldStaffKindLabel,
   fieldStaffStatusLabel,
 } from "@/lib/home-visit/labels";
+import { staffGenderLabel } from "@/lib/home-visit/gender";
 import type { FieldStaffAdmin } from "@/lib/home-visit/mappers";
 import {
   deleteAdminOps,
@@ -29,6 +30,9 @@ const emptyForm = {
   phone: "",
   image: "",
   specialty: "",
+  medicalCouncilNumber: "",
+  gender: "",
+  commissionPercent: 0,
   serviceAreas: [] as string[],
   status: "available",
   active: true,
@@ -70,6 +74,9 @@ export default function AdminFieldStaffPage() {
       phone: item.phone,
       image: item.image,
       specialty: item.specialty,
+      medicalCouncilNumber: item.medicalCouncilNumber || "",
+      gender: item.gender || "",
+      commissionPercent: item.commissionPercent || 0,
       serviceAreas: [...item.serviceAreas],
       status: item.status,
       active: item.active,
@@ -146,6 +153,34 @@ export default function AdminFieldStaffPage() {
               value={form.specialty}
               onChange={(e) => setForm((prev) => ({ ...prev, specialty: e.target.value }))}
               placeholder="مثلاً پرستاری عمومی یا داخلی"
+            />
+          </div>
+          <div>
+            <FormLabel>جنسیت</FormLabel>
+            <FormSelect
+              required
+              value={form.gender}
+              onChange={(e) => setForm((prev) => ({ ...prev, gender: e.target.value }))}
+            >
+              <option value="">انتخاب کنید</option>
+              <option value="male">آقا</option>
+              <option value="female">خانم</option>
+            </FormSelect>
+          </div>
+          <div>
+            <FormLabel>شماره نظام پزشکی / پرستاری</FormLabel>
+            <FormInput
+              value={form.medicalCouncilNumber}
+              onChange={(e) => setForm((prev) => ({ ...prev, medicalCouncilNumber: e.target.value }))}
+            />
+          </div>
+          <div>
+            <FormLabel>پورسانت نیرو (٪)</FormLabel>
+            <DraftNumberInput
+              min={0}
+              max={100}
+              value={form.commissionPercent}
+              onCommit={(commissionPercent) => setForm((prev) => ({ ...prev, commissionPercent }))}
             />
           </div>
           <div>
@@ -232,7 +267,7 @@ export default function AdminFieldStaffPage() {
         </form>
       </Card>
 
-      <AdminTable headers={["عکس", "نام", "نوع", "تخصص", "مناطق", "موقعیت", "وضعیت", "عملیات"]} empty="هنوز نیرویی ثبت نشده.">
+      <AdminTable headers={["عکس", "نام", "نوع", "جنسیت", "نظام", "تخصص", "مناطق", "موقعیت", "وضعیت", "عملیات"]} empty="هنوز نیرویی ثبت نشده.">
         {items.map((item) => (
           <tr key={item.id} className="border-t border-slate-100">
             <td className="px-4 py-3">
@@ -245,6 +280,8 @@ export default function AdminFieldStaffPage() {
             </td>
             <td className="px-4 py-3 font-bold">{item.name}</td>
             <td className="px-4 py-3">{fieldStaffKindLabel(item.kind)}</td>
+            <td className="px-4 py-3">{staffGenderLabel(item.gender)}</td>
+            <td className="px-4 py-3 font-mono text-xs">{item.medicalCouncilNumber || "—"}</td>
             <td className="px-4 py-3">{item.specialty || "—"}</td>
             <td className="px-4 py-3 text-xs">
               {item.serviceAreas.length

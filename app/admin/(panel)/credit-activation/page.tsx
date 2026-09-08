@@ -16,6 +16,7 @@ type CreditActivation = {
   patientName?: string;
   nationalId?: string;
   requestedAmount?: number;
+  installmentCount?: number;
   status?: string;
   reviewNote?: string | null;
   linkedPlanId?: string;
@@ -118,7 +119,7 @@ export default function AdminCreditActivationPage() {
         است.
       </p>
       <AdminTable
-        headers={["نام", "موبایل", "کد ملی", "مبلغ درخواستی", "وضعیت", "عملیات"]}
+        headers={["نام", "موبایل", "کد ملی", "مبلغ / اقساط", "وضعیت", "عملیات"]}
         empty="درخواست فعال‌سازی اعتبار ثبت نشده."
       >
         {items.map((row) => (
@@ -126,7 +127,12 @@ export default function AdminCreditActivationPage() {
             <td className="px-4 py-3">{String(row.patientName || "—")}</td>
             <td className="px-4 py-3 font-mono text-xs">{String(row.phone || "—")}</td>
             <td className="px-4 py-3 font-mono text-xs">{String(row.nationalId || "—")}</td>
-            <td className="px-4 py-3">{formatPrice(Number(row.requestedAmount || 0))}</td>
+            <td className="px-4 py-3">
+              {formatPrice(Number(row.requestedAmount || 0))}
+              {row.installmentCount
+                ? ` · ${row.installmentCount.toLocaleString("fa-IR")} قسط`
+                : ""}
+            </td>
             <td className="px-4 py-3">
               <AdminBadge
                 tone={

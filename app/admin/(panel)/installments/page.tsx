@@ -354,6 +354,7 @@ export default function AdminInstallmentsPage() {
                           قسط {item.index} · {formatJalaliDate(item.dueDate)} ·{" "}
                           {formatPrice(item.amount)} · {item.status}
                           {item.remaining > 0 ? ` · مانده ${formatPrice(item.remaining)}` : ""}
+                          {item.penalty ? ` · ضرر-زیان ${formatPrice(item.penalty)}` : ""}
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
                           {item.status !== "paid" && item.remaining > 0 ? (

@@ -24,3 +24,14 @@ export function validateRequestedAmount(amount: number, ceiling: number): string
   }
   return null;
 }
+
+export function validateInstallmentCount(
+  count: number,
+  min: number,
+  max: number,
+): string | null {
+  if (!Number.isInteger(count) || count < min || count > max) {
+    return `تعداد اقساط باید بین ${min.toLocaleString('fa-IR')} و ${max.toLocaleString('fa-IR')} باشد.`;
+  }
+  return null;
+}

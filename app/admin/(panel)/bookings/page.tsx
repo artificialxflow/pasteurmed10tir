@@ -275,7 +275,7 @@ export default function AdminBookingsPage() {
           "بخش",
           "پزشک",
           "نوع",
-          "زمان",
+          "تاریخ / نوبت",
           "مبلغ",
           "وضعیت",
           "عملیات",
@@ -316,8 +316,8 @@ export default function AdminBookingsPage() {
                 ) : null}
               </td>
               <td className="px-4 py-3 text-xs">
-                {row.dateLabel}
-                <br />
+                <p className="font-bold">{row.dateLabel}</p>
+                <p className="text-slate-600">{row.timeOfDayLabel}</p>
                 <span className="text-slate-500">{row.timeLabel}</span>
               </td>
               <td className="px-4 py-3">

@@ -3,7 +3,9 @@
 import { NearestStaffFromCoords } from "@/components/home-visit/NearestStaffFromCoords";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { REFERRAL_DISCOUNT_PERCENT } from "@/lib/commerce/referral-discount";
 import { serviceAreaLabel } from "@/lib/home-visit/areas";
+import { preferredGenderLabel } from "@/lib/home-visit/gender";
 import type { PendingNursingPayment, PendingPayment } from "@/lib/payment";
 import {
   applyPaymentResultToStorage,
@@ -114,6 +116,18 @@ export function ConfirmNursingPayment({ basePath }: { basePath: NursingBasePath 
         {pending.description ? (
           <SummaryRow label="توضیحات:" value={String(pending.description)} />
         ) : null}
+        {pending.preferredGender ? (
+          <SummaryRow label="ترجیح نیرو:" value={preferredGenderLabel(String(pending.preferredGender))} />
+        ) : null}
+        {pending.referralCode ? (
+          <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
+        ) : null}
+        {pending.referralDiscountPercent ? (
+          <SummaryRow
+            label="تخفیف کد معرف:"
+            value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
+          />
+        ) : null}
         <SummaryRow
           label={String(pending.paymentLabel || "مبلغ تعرفه")}
           value={formatPrice(amount)}
@@ -125,6 +139,7 @@ export function ConfirmNursingPayment({ basePath }: { basePath: NursingBasePath 
           kind="nurse"
           lat={pending.patientLatitude}
           lng={pending.patientLongitude}
+          preferredGender={pending.preferredGender ? String(pending.preferredGender) : undefined}
         />
       </div>
 

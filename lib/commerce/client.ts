@@ -187,7 +187,10 @@ export async function getMyMembershipApplicationsApi() {
   );
 }
 
-export async function createCreditActivationApi(body: { requestedAmount: number }) {
+export async function createCreditActivationApi(body: {
+  requestedAmount: number;
+  installmentCount?: number;
+}) {
   return postPatientCommerce<{ item: Record<string, unknown> }>(
     '/api/commerce/credit-activation',
     body,

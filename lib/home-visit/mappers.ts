@@ -1,4 +1,10 @@
-import type { FieldStaff, HomeVisitRequest, HomeVisitStatusEvent, ServiceReview } from '@prisma/client';
+import type {
+  FieldStaff,
+  HomeVisitRequest,
+  HomeVisitStatusEvent,
+  ServiceReview,
+  StaffCommission,
+} from '@prisma/client';
 import { serviceAreaLabel } from '@/lib/home-visit/areas';
 
 export type FieldStaffPublic = {
@@ -7,10 +13,14 @@ export type FieldStaffPublic = {
   kind: FieldStaff['kind'];
   image: string;
   specialty: string;
+  gender?: FieldStaff['gender'] | null;
 };
 
 export type FieldStaffAdmin = FieldStaffPublic & {
   phone: string;
+  medicalCouncilNumber: string;
+  gender: FieldStaff['gender'];
+  commissionPercent: number;
   serviceAreas: string[];
   status: FieldStaff['status'];
   active: boolean;
@@ -30,6 +40,7 @@ export function mapFieldStaffPublic(row: FieldStaff): FieldStaffPublic {
     kind: row.kind,
     image: row.image,
     specialty: row.specialty,
+    gender: row.gender,
   };
 }
 
@@ -37,6 +48,9 @@ export function mapFieldStaffAdmin(row: FieldStaff): FieldStaffAdmin {
   return {
     ...mapFieldStaffPublic(row),
     phone: row.phone,
+    medicalCouncilNumber: row.medicalCouncilNumber,
+    gender: row.gender,
+    commissionPercent: row.commissionPercent,
     serviceAreas: row.serviceAreas,
     status: row.status,
     active: row.active,
@@ -93,6 +107,7 @@ export function mapHomeVisitRequest(
     latitude: includeAddress ? row.latitude ?? undefined : undefined,
     longitude: includeAddress ? row.longitude ?? undefined : undefined,
     hasPatientLocation: row.latitude != null && row.longitude != null,
+    preferredGender: row.preferredGender,
     amount: row.amount,
     consultationId: row.consultationId ?? undefined,
     status: row.status,
@@ -101,5 +116,19 @@ export function mapHomeVisitRequest(
     assignedStaff: row.assignedStaff ? mapFieldStaffPublic(row.assignedStaff) : null,
     statusEvents: (row.statusEvents || []).map(mapStatusEvent),
     review: row.serviceReview ? mapServiceReview(row.serviceReview) : null,
+  };
+}
+
+export function mapStaffCommission(row: StaffCommission) {
+  return {
+    id: row.id,
+    staffId: row.staffId,
+    staffName: row.staffName,
+    staffKind: row.staffKind,
+    requestId: row.requestId,
+    amount: row.amount,
+    commissionRate: row.commissionRate,
+    commissionAmount: row.commissionAmount,
+    createdAt: row.createdAt.toISOString(),
   };
 }

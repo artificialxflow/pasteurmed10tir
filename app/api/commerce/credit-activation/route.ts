@@ -1,6 +1,8 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { loadWalletSettings } from '@/lib/commerce/wallet-service';
 import {
   parseRequestedAmount,
+  validateInstallmentCount,
   validateRequestedAmount,
 } from '@/lib/commerce/credit-activation';
 import { generateCommerceId, mapCreditActivationRequest } from '@/lib/commerce/mappers';
@@ -26,9 +28,12 @@ export async function POST(request: Request) {
   const auth = await requirePatient();
   if (auth.error) return auth.error;
 
-  const body = await parseJson<{ requestedAmount?: unknown; patientName?: unknown; nationalId?: unknown }>(
-    request,
-  );
+  const body = await parseJson<{
+    requestedAmount?: unknown;
+    installmentCount?: unknown;
+    patientName?: unknown;
+    nationalId?: unknown;
+  }>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
   const phone = normalizePhoneDigits(auth.session.phone || '');
@@ -39,6 +44,15 @@ export async function POST(request: Request) {
   const requestedAmount = parseRequestedAmount(body.requestedAmount);
   const amountError = validateRequestedAmount(requestedAmount, ceiling);
   if (amountError) return jsonError(amountError);
+
+  const settings = await loadWalletSettings();
+  const installmentCount = Number(body.installmentCount ?? settings.installmentMax ?? 6);
+  const countError = validateInstallmentCount(
+    installmentCount,
+    settings.installmentMin || 1,
+    settings.installmentMax || 6,
+  );
+  if (countError) return jsonError(countError);
 
   const pending = await prisma.creditActivationRequest.findFirst({
     where: { phone, status: 'pending', deletedAt: null },
@@ -59,6 +73,7 @@ export async function POST(request: Request) {
       patientName: user?.name || (body.patientName ? String(body.patientName) : null),
       nationalId: user?.profile?.nationalId || (body.nationalId ? String(body.nationalId) : null),
       requestedAmount,
+      installmentCount,
       status: 'pending',
     },
   });
