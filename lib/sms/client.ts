@@ -23,6 +23,7 @@ export function smsBodyIds() {
     reminder2h: Number(env('SMS_REMINDER_2H_BODY_ID') || 0),
     booking: Number(env('SMS_BOOKING_BODY_ID') || 0),
     consultation: Number(env('SMS_CONSULTATION_BODY_ID') || 0),
+    homeVisitStaff: Number(env('SMS_HOME_VISIT_STAFF_BODY_ID') || 0),
     installmentDue: Number(env('SMS_INSTALLMENT_DUE_BODY_ID') || 0),
     installmentOverdue: Number(env('SMS_INSTALLMENT_OVERDUE_BODY_ID') || 0),
   };
@@ -111,6 +112,16 @@ export async function sendConsultationSms(
   const id = smsBodyIds().consultation;
   if (!id) return { ok: false, error: 'پترن مشاوره تنظیم نشده.' };
   return sendByPattern(id, phone, [trackingCode]);
+}
+
+/** تخصیص اعزام خانگی به نیرو — پترن: درخواست اعزام… کد پیگیری: {0} */
+export async function sendHomeVisitStaffAssignedSms(
+  phone: string,
+  requestId: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().homeVisitStaff;
+  if (!id) return { ok: false, error: 'پترن تخصیص اعزام به نیرو تنظیم نشده.' };
+  return sendByPattern(id, phone, [requestId || '—']);
 }
 
 export async function sendBookingSms(

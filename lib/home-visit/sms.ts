@@ -1,6 +1,10 @@
 import { homeVisitStatusLabel } from '@/lib/home-visit/labels';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
-import { isSmsConfigured, sendConsultationSms } from '@/lib/sms/client';
+import {
+  isSmsConfigured,
+  sendConsultationSms,
+  sendHomeVisitStaffAssignedSms,
+} from '@/lib/sms/client';
 import type { HomeVisitStatus } from '@prisma/client';
 
 const SMS_STATUSES: HomeVisitStatus[] = ['staff_assigned', 'en_route', 'completed'];
@@ -23,7 +27,10 @@ export async function notifyHomeVisitStaffAssignedSms(phone: string, requestId: 
   const digits = normalizePhoneDigits(phone);
   if (!digits || digits.length < 10 || !isSmsConfigured()) return;
   try {
-    await sendConsultationSms(digits, `درخواست اعزام تخصیص داده شد ${requestId}`);
+    const result = await sendHomeVisitStaffAssignedSms(digits, requestId);
+    if (!result.ok) {
+      console.error('[sms] home-visit-staff', result.error);
+    }
   } catch (e) {
     console.error('[sms] home-visit-staff', e);
   }
