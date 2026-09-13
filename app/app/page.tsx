@@ -1,6 +1,7 @@
 "use client";
 
 import { AppShell } from "@/components/app/AppShell";
+import { CoveredInsurancesSection } from "@/components/home/CoveredInsurancesSection";
 import { Card } from "@/components/ui/Card";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
@@ -69,6 +70,10 @@ export default function AppHomePage() {
           ورود به پنل کاربری
         </Link>
       </section>
+
+      <div className="mb-5">
+        <CoveredInsurancesSection compact />
+      </div>
 
       <p className="mb-3 text-sm font-extrabold text-slate-900">خدمات اصلی</p>
       <div className="mb-5 grid grid-cols-2 gap-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import { HeroSlider } from "@/components/home/HeroSlider";
+import { CoveredInsurancesSection } from "@/components/home/CoveredInsurancesSection";
 import { Button } from "@/components/ui/Button";
 import { Card, Logo } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
@@ -87,6 +88,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <CoveredInsurancesSection />
 
       {/* Services */}
       <section className="py-12 sm:py-16" aria-labelledby="services-heading">

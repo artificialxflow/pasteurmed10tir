@@ -3,7 +3,25 @@ import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-type InsuranceBody = { id: string; name: string; active?: boolean };
+type InsuranceBody = {
+  id: string;
+  name: string;
+  active?: boolean;
+  showOnSite?: boolean;
+  logoUrl?: string | null;
+};
+
+function cleanList(list: InsuranceBody[] | undefined) {
+  return (list || [])
+    .map((i) => ({
+      id: String(i.id).trim(),
+      name: String(i.name).trim(),
+      active: i.active !== false,
+      showOnSite: Boolean(i.showOnSite),
+      logoUrl: i.logoUrl ? String(i.logoUrl).trim() : null,
+    }))
+    .filter((i) => i.id && i.name);
+}
 
 export async function GET() {
   const auth = await requireAdmin('insurances');
@@ -25,16 +43,8 @@ export async function PUT(request: Request) {
   }>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  const base = (body.base || []).map((i) => ({
-    id: String(i.id).trim(),
-    name: String(i.name).trim(),
-    active: i.active !== false,
-  }));
-  const complementary = (body.complementary || []).map((i) => ({
-    id: String(i.id).trim(),
-    name: String(i.name).trim(),
-    active: i.active !== false,
-  }));
+  const base = cleanList(body.base);
+  const complementary = cleanList(body.complementary);
 
   await prisma.$transaction([
     prisma.baseInsurance.deleteMany(),

@@ -267,15 +267,19 @@ model Product {
 }
 
 model BaseInsurance {
-  id     String  @id
-  name   String
-  active Boolean @default(true)
+  id         String  @id
+  name       String
+  active     Boolean @default(true)
+  showOnSite Boolean @default(false)
+  logoUrl    String?
 }
 
 model ComplementaryInsurance {
-  id     String  @id
-  name   String
-  active Boolean @default(true)
+  id         String  @id
+  name       String
+  active     Boolean @default(true)
+  showOnSite Boolean @default(false)
+  logoUrl    String?
 }
 
 model ConsultationType {

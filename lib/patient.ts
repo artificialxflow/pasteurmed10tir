@@ -6,6 +6,9 @@ export type InsuranceCompany = {
   id: string;
   name: string;
   active?: boolean;
+  /** Show on homepage /app marketing section (separate from patient dropdown). */
+  showOnSite?: boolean;
+  logoUrl?: string | null;
 };
 
 export type PatientStatus = 'pending' | 'approved' | 'rejected';
@@ -150,17 +153,36 @@ export const DEFAULT_FRANCHISE_PERCENT = 10;
 export const DEFAULT_VISIT_FEE_TOMAN = 350_000;
 
 export const DEFAULT_BASE_INSURANCES: InsuranceCompany[] = [
-  { id: 'tamin', name: 'تأمین اجتماعی', active: true },
-  { id: 'salamat', name: 'بیمه سلامت', active: true },
-  { id: 'niroo', name: 'نیروهای مسلح', active: true },
+  { id: 'tamin', name: 'تأمین اجتماعی', active: true, showOnSite: true },
+  { id: 'salamat', name: 'بیمه سلامت', active: true, showOnSite: false },
+  { id: 'niroo', name: 'نیروهای مسلح', active: true, showOnSite: false },
+  {
+    id: 'tamin-retirees',
+    name: 'بازنشستگان تامین اجتماعی',
+    active: false,
+    showOnSite: true,
+  },
 ];
 
+/** Patient dropdown defaults + v17/04 marketing names (showOnSite). */
 export const DEFAULT_COMPLEMENTARY_INSURANCES: InsuranceCompany[] = [
-  { id: 'dana', name: 'بیمه دانا', active: true },
-  { id: 'asia', name: 'بیمه آسیا', active: true },
-  { id: 'alborz', name: 'بیمه البرز', active: true },
-  { id: 'pasargad', name: 'بیمه پاسارگاد', active: true },
-  { id: 'saman', name: 'بیمه سامان', active: true },
+  { id: 'dana', name: 'دانا', active: true, showOnSite: true },
+  { id: 'asia', name: 'آسیا', active: true, showOnSite: true },
+  { id: 'alborz', name: 'البرز', active: true, showOnSite: false },
+  { id: 'pasargad', name: 'پاسارگاد', active: true, showOnSite: false },
+  { id: 'saman', name: 'سامان', active: true, showOnSite: false },
+  { id: 'ma', name: 'ما', active: false, showOnSite: true },
+  { id: 'moalem', name: 'معلم', active: false, showOnSite: true },
+  { id: 'mihan', name: 'میهن', active: false, showOnSite: true },
+  { id: 'bank-melli-sepah', name: 'بانک ملی و سپه', active: false, showOnSite: true },
+  { id: 'atieh-hafez', name: 'آتیه سازان حافظ', active: false, showOnSite: true },
+  { id: 'sos', name: 'Sos', active: false, showOnSite: true },
+  { id: 'sarmad', name: 'سرمد', active: false, showOnSite: true },
+  { id: 'tejarat-no', name: 'تجارت نو', active: false, showOnSite: true },
+  { id: 'razi', name: 'رازی', active: false, showOnSite: true },
+  { id: 'kosar', name: 'کوثر', active: false, showOnSite: true },
+  { id: 'iran', name: 'ایران', active: false, showOnSite: true },
+  { id: 'novin', name: 'نوین', active: false, showOnSite: true },
 ];
 
 export const DEFAULT_HELP_ITEMS: HelpItem[] = [
