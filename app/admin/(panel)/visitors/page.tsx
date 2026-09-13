@@ -1,10 +1,12 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { QrCodePanel } from "@/components/admin/QrCodePanel";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
+import { visitorRefPath } from "@/lib/commerce/referral-ref";
 import { type Visitor } from "@/lib/data";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -17,6 +19,7 @@ export default function AdminVisitorsPage() {
   const [rateShop, setRateShop] = useState("5");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [qrVisitorId, setQrVisitorId] = useState<number | null>(null);
 
   function reload() {
     void fetchAdminCommerce<{ items: Visitor[] }>("/api/admin/commerce/visitors")
@@ -132,13 +135,18 @@ export default function AdminVisitorsPage() {
     persist(next);
   }
 
+  const qrVisitor = visitors.find((v) => Number(v.id) === qrVisitorId) || null;
+
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {success ? <p className="text-sm text-teal-700">{success}</p> : null}
       <Card hover={false} className="border-cyan-100 bg-cyan-50/60 p-4 text-sm leading-7 text-slate-700">
         دو نرخ جدا: <strong>بالینی</strong> (رزرو دندان/پزشکی · عضویت) و <strong>فروشگاه</strong>{" "}
-        (VIP فروشگاه و سفارش‌های shop). جزئیات در صفحه پورسانت‌ها.
+        (VIP فروشگاه و سفارش‌های shop). جزئیات در صفحه پورسانت‌ها. لینک QR:{" "}
+        <code className="rounded bg-white px-1" dir="ltr">
+          /?ref=CODE
+        </code>
       </Card>
 
       <Card hover={false} className="max-w-xl p-6">
@@ -185,6 +193,45 @@ export default function AdminVisitorsPage() {
           </Button>
         </form>
       </Card>
+
+      {qrVisitor ? (
+        <Card hover={false} className="mx-auto max-w-sm space-y-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-bold text-slate-900">کارت QR — {qrVisitor.name}</h3>
+            <button
+              type="button"
+              className="text-xs text-slate-500"
+              onClick={() => setQrVisitorId(null)}
+            >
+              بستن
+            </button>
+          </div>
+          <QrCodePanel
+            href={visitorRefPath(qrVisitor.code)}
+            label={`کد ${qrVisitor.code}`}
+            fileName={`visitor-${qrVisitor.code}`}
+            size={200}
+          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <a
+              className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-center text-xs font-bold text-slate-800"
+              href={`/api/admin/commerce/visitors/${qrVisitor.id}/qr.png`}
+              download
+            >
+              دانلود PNG (سرور)
+            </a>
+            <a
+              className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-center text-xs font-bold text-slate-800"
+              href={`/api/admin/commerce/visitors/${qrVisitor.id}/qr.pdf`}
+              download
+              target="_blank"
+              rel="noreferrer"
+            >
+              دانلود PDF چاپ
+            </a>
+          </div>
+        </Card>
+      ) : null}
 
       <AdminTable
         headers={["نام", "کد", "تماس", "بالینی ٪", "فروشگاه ٪", "وضعیت", "عملیات"]}
@@ -242,6 +289,13 @@ export default function AdminVisitorsPage() {
               </AdminBadge>
             </td>
             <td className="space-x-2 space-x-reverse px-4 py-3">
+              <button
+                type="button"
+                className="text-xs font-semibold text-indigo-700"
+                onClick={() => setQrVisitorId(Number(v.id))}
+              >
+                QR
+              </button>
               <button
                 type="button"
                 className="text-xs font-semibold text-cyan-800"

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { CaptureReferralRef } from "@/components/commerce/CaptureReferralRef";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -67,7 +68,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" className="h-full antialiased">
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <CaptureReferralRef />
+        {children}
+      </body>
     </html>
   );
 }

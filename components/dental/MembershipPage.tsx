@@ -34,6 +34,7 @@ import {
   resolveReferralDiscount,
 } from "@/lib/commerce/client";
 import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
+import { readStoredReferralCode } from "@/lib/commerce/referral-ref";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, normalizePhone } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
@@ -139,6 +140,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
   useEffect(() => {
     void getMembershipPlansAsync().then(setMembershipPlans);
+  }, []);
+
+  useEffect(() => {
+    const storedRef = readStoredReferralCode();
+    if (!storedRef) return;
+    setForm((prev) => (prev.referral.trim() ? prev : { ...prev, referral: storedRef }));
+    setQuick((prev) => (prev.referral.trim() ? prev : { ...prev, referral: storedRef }));
   }, []);
 
   useEffect(() => {

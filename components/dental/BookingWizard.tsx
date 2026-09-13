@@ -5,6 +5,7 @@ import { Badge, Card, FormInput, FormLabel, FormSelect } from "@/components/ui/C
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { resolveReferralDiscount } from "@/lib/commerce/client";
 import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
+import { readStoredReferralCode } from "@/lib/commerce/referral-ref";
 import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
 import { fetchPatientOps } from "@/lib/operations/client";
 import type { Dentist } from "@/lib/data";
@@ -171,6 +172,15 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       .then((data) => setDependents(data.items || []))
       .catch(() => setDependents([]));
   }, [hydrated, sessionProfile]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const storedRef = readStoredReferralCode();
+    if (!storedRef) return;
+    setState((prev) =>
+      prev.referralCode.trim() ? prev : { ...prev, referralCode: storedRef },
+    );
+  }, [hydrated]);
 
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);

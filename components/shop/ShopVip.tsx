@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { checkShopVipApi, resolveReferralDiscount } from "@/lib/commerce/client";
 import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
+import { readStoredReferralCode } from "@/lib/commerce/referral-ref";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ShopCart } from "@/lib/shop";
 import { PasteurStorage } from "@/lib/storage";
@@ -34,6 +35,8 @@ export function ShopVip({ variant = "web" }: { variant?: ShopVariant }) {
         }
       });
     }
+    const storedRef = readStoredReferralCode();
+    if (storedRef) setReferral((prev) => prev || storedRef);
   }, []);
 
   function showActive(p: string) {
