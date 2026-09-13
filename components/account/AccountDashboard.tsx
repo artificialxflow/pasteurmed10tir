@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AssignedStaffCard } from "@/components/home-visit/AssignedStaffCard";
+import { AccountAccordionSection } from "@/components/account/AccountAccordionSection";
 import { DependentsCard } from "@/components/account/DependentsCard";
 import { FieldStaffAvailabilityCard } from "@/components/account/FieldStaffAvailabilityCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
@@ -203,14 +204,68 @@ export function AccountDashboard({
         وارد کردن دوباره نام و موبایل نیست.
       </Card>
 
-      <LoanRequestCard
-        phone={profile.phone}
-        name={profile.name}
-        nationalId={profile.nationalId}
-        variant={variant}
-      />
+      <Card hover={false} className="p-4" data-account-section="profile">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-extrabold text-slate-900">مشخصات ثبت‌شده</p>
+          <Button type="button" variant="outline" className="text-xs" onClick={onEditProfile}>
+            ویرایش مشخصات
+          </Button>
+        </div>
+        <div className="grid gap-2 text-sm sm:grid-cols-2">
+          <p>
+            <span className="text-slate-500">نام:</span>{" "}
+            <span className="font-bold">{profile.name}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">موبایل:</span>{" "}
+            <span className="font-bold font-mono text-xs">{profile.phone}</span>
+          </p>
+          <p>
+            <span className="text-slate-500">کد ملی:</span>{" "}
+            <span className="font-bold font-mono text-xs">{profile.nationalId || "—"}</span>
+          </p>
+          {profile.fileNumber ? (
+            <p>
+              <span className="text-slate-500">شماره پرونده:</span>{" "}
+              <span className="font-bold font-mono text-xs">{profile.fileNumber}</span>
+            </p>
+          ) : null}
+          <p>
+            <span className="text-slate-500">فرانشیز:</span>{" "}
+            <span className="font-bold">{franchisePercent}٪</span>
+          </p>
+        </div>
+        <p className="mt-3 text-xs leading-6 text-slate-500">
+          نمونه ویزیت {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {franchisePercent}٪ →{" "}
+          <strong className="text-teal-800">
+            {formatPrice(payableFromFranchise(DEFAULT_VISIT_FEE_TOMAN, franchisePercent))}
+          </strong>
+          . «تأیید استعلام رزرو» جدا از پروفایل است و در مرحله پرداخت رزرو انجام می‌شود.
+        </p>
+      </Card>
 
-      <DependentsCard />
+      <div data-account-section="dependents">
+        <DependentsCard />
+      </div>
+
+      <Card
+        hover={false}
+        className="border-dashed border-slate-300 bg-slate-50/80 p-4"
+        data-account-section="health-record"
+      >
+        <p className="text-sm font-extrabold text-slate-900">پرونده سلامت</p>
+        <p className="mt-1 text-xs leading-6 text-slate-600">
+          داشبورد پرونده سلامت به‌زودی در همین پنل فعال می‌شود. فعلاً می‌توانید مشخصات و تحت‌تکفل را
+          از بالا مدیریت کنید.
+        </p>
+        <button
+          type="button"
+          disabled
+          className="mt-3 cursor-not-allowed rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-400"
+        >
+          ورود به پرونده سلامت (به‌زودی)
+        </button>
+      </Card>
 
       <FieldStaffAvailabilityCard />
 
@@ -274,45 +329,89 @@ export function AccountDashboard({
         </div>
       </Card>
 
-      <Card hover={false} className="p-4">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-extrabold text-slate-900">مشخصات ثبت‌شده</p>
-          <Button type="button" variant="outline" className="text-xs" onClick={onEditProfile}>
-            ویرایش مشخصات
-          </Button>
-        </div>
-        <div className="grid gap-2 text-sm sm:grid-cols-2">
-          <p>
-            <span className="text-slate-500">نام:</span>{" "}
-            <span className="font-bold">{profile.name}</span>
+      <div className="space-y-3" data-account-section="finance-accordion">
+        <AccountAccordionSection
+          title="درخواست وام / اعتبار"
+          summary="فرم درخواست وام و اعتبار — فقط در صورت نیاز باز کنید"
+        >
+          <LoanRequestCard
+            phone={profile.phone}
+            name={profile.name}
+            nationalId={profile.nationalId}
+            variant={variant}
+          />
+        </AccountAccordionSection>
+
+        <AccountAccordionSection
+          title="اقساط"
+          summary="پیگیری طرح‌های اقساطی و جدول بازپرداخت"
+        >
+          <p className="mb-3 text-xs leading-6 text-slate-600">
+            جزئیات قسط‌ها، سررسید و وضعیت پرداخت در صفحه اقساط حساب شماست.
           </p>
-          <p>
-            <span className="text-slate-500">موبایل:</span>{" "}
-            <span className="font-bold font-mono text-xs">{profile.phone}</span>
-          </p>
-          <p>
-            <span className="text-slate-500">کد ملی:</span>{" "}
-            <span className="font-bold font-mono text-xs">{profile.nationalId || "—"}</span>
-          </p>
-          {profile.fileNumber ? (
+          <Link href={installmentsHref}>
+            <Button type="button" className="text-sm">
+              مشاهده اقساط
+            </Button>
+          </Link>
+        </AccountAccordionSection>
+
+        <AccountAccordionSection
+          title="بیمه"
+          summary={
+            hasInsuranceRegistered
+              ? `ثبت‌شده · فرانشیز ${franchisePercent}٪`
+              : "هنوز بیمه‌ای در پروفایل ثبت نشده"
+          }
+        >
+          <div className="space-y-3 text-sm">
             <p>
-              <span className="text-slate-500">شماره پرونده:</span>{" "}
-              <span className="font-bold font-mono text-xs">{profile.fileNumber}</span>
+              <span className="text-slate-500">پایه:</span>{" "}
+              <span className="font-bold">{insuranceName(baseList, profile.baseInsuranceId)}</span>
             </p>
-          ) : null}
-          <p>
-            <span className="text-slate-500">فرانشیز:</span>{" "}
-            <span className="font-bold">{franchisePercent}٪</span>
-          </p>
-        </div>
-        <p className="mt-3 text-xs leading-6 text-slate-500">
-          نمونه ویزیت {formatPrice(DEFAULT_VISIT_FEE_TOMAN)} با فرانشیز {franchisePercent}٪ →{" "}
-          <strong className="text-teal-800">
-            {formatPrice(payableFromFranchise(DEFAULT_VISIT_FEE_TOMAN, franchisePercent))}
-          </strong>
-          . «تأیید استعلام رزرو» جدا از پروفایل است و در مرحله پرداخت رزرو انجام می‌شود.
-        </p>
-      </Card>
+            <p>
+              <span className="text-slate-500">تکمیلی:</span>{" "}
+              <span className="font-bold">
+                {insuranceName(compList, profile.complementaryInsuranceId)}
+              </span>
+            </p>
+            <p>
+              <span className="text-slate-500">فرانشیز:</span>{" "}
+              <span className="font-bold">{franchisePercent}٪</span>
+            </p>
+            <Button type="button" variant="outline" className="text-xs" onClick={onEditProfile}>
+              ویرایش بیمه در مشخصات
+            </Button>
+            <div className="border-t border-slate-100 pt-3">
+              <p className="mb-2 text-sm font-extrabold text-slate-900">استعلام‌های بیمه (رزرو)</p>
+              {!activity ? (
+                <p className="text-xs text-slate-500">در حال بارگذاری…</p>
+              ) : activity.insuranceInquiries.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  استعلامی ثبت نشده. در صفحه تأیید رزرو (`/dental/confirm`) درخواست دهید.
+                </p>
+              ) : (
+                activity.insuranceInquiries.map((q) => {
+                  const st = String(q.status || "");
+                  const tone =
+                    st === "approved" ? "success" : st === "rejected" ? "danger" : "warn";
+                  const visitFee = Number(q.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
+                  const pct = Number(q.franchisePercent) || franchisePercent;
+                  return (
+                    <ActivityRow
+                      key={String(q.id)}
+                      title={`استعلام · ${String(q.mode || "—")}`}
+                      meta={`${new Date(String(q.createdAt)).toLocaleDateString("fa-IR")} · فرانشیز ${pct}٪ → ${formatPrice(payableFromFranchise(visitFee, pct))}`}
+                      status={insuranceInquiryStatusLabel(st)}
+                      tone={tone}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </AccountAccordionSection>
+      </div>
 
       {message ? <p className="text-sm font-bold text-cyan-800">{message}</p> : null}
       {cancelMessage ? (
@@ -373,32 +472,6 @@ export function AccountDashboard({
                       ) : null}
                     </div>
                   </div>
-                );
-              })
-            )}
-          </Card>
-
-          <Card hover={false} className="p-4">
-            <p className="mb-2 text-sm font-extrabold text-slate-900">استعلام‌های بیمه (رزرو)</p>
-            {activity.insuranceInquiries.length === 0 ? (
-              <p className="text-xs text-slate-500">
-                استعلامی ثبت نشده. در صفحه تأیید رزرو (`/dental/confirm`) درخواست دهید.
-              </p>
-            ) : (
-              activity.insuranceInquiries.map((q) => {
-                const st = String(q.status || "");
-                const tone =
-                  st === "approved" ? "success" : st === "rejected" ? "danger" : "warn";
-                const visitFee = Number(q.visitFee) || DEFAULT_VISIT_FEE_TOMAN;
-                const pct = Number(q.franchisePercent) || franchisePercent;
-                return (
-                  <ActivityRow
-                    key={String(q.id)}
-                    title={`استعلام · ${String(q.mode || "—")}`}
-                    meta={`${new Date(String(q.createdAt)).toLocaleDateString("fa-IR")} · فرانشیز ${pct}٪ → ${formatPrice(payableFromFranchise(visitFee, pct))}`}
-                    status={insuranceInquiryStatusLabel(st)}
-                    tone={tone}
-                  />
                 );
               })
             )}
