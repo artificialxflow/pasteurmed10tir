@@ -21,7 +21,7 @@ export const HEALTH_SECTIONS = [
 
 export type HealthSectionId = (typeof HEALTH_SECTIONS)[number]['id'];
 
-export const MVP_SECTION_IDS = new Set(
+export const MVP_SECTION_IDS = new Set<string>(
   HEALTH_SECTIONS.filter((s) => s.mvp).map((s) => s.id),
 );
 
