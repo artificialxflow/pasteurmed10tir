@@ -2,7 +2,8 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput } from "@/components/ui/Card";
+import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   deleteAdminCommerce,
   fetchAdminCommerce,
@@ -13,6 +14,7 @@ import {
 import { ROUTES } from "@/lib/routes";
 import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
+import { formatJalaliDate } from "@/lib/patient";
 import { type Member } from "@/lib/storage";
 import {
   formatZohalCheckedAt,
@@ -21,7 +23,7 @@ import {
   zohalCreditStatusLabel,
   zohalCreditStatusTone,
 } from "@/lib/zohal/run-credit-check";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Application = Record<string, unknown> & {
   id?: string;
@@ -51,28 +53,64 @@ type Application = Record<string, unknown> & {
 
 type MemberRow = Member & { walletCeiling?: number | null };
 
+type MembersSummary = {
+  count: number;
+  paidCount: number;
+  totalAmount: number;
+  paidAmount: number;
+};
+
 export default function AdminMembershipsPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
+  const [summary, setSummary] = useState<MembersSummary>({
+    count: 0,
+    paidCount: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+  });
   const [applications, setApplications] = useState<Application[]>([]);
   const [plans, setPlans] = useState<Membership[]>([]);
+  const [memberStatus, setMemberStatus] = useState("paid");
+  const [memberFrom, setMemberFrom] = useState("");
+  const [memberTo, setMemberTo] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [otpById, setOtpById] = useState<Record<string, string>>({});
 
+  const reloadMembers = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (memberStatus && memberStatus !== "all") params.set("status", memberStatus);
+    if (memberFrom) params.set("from", memberFrom);
+    if (memberTo) params.set("to", memberTo);
+    const qs = params.toString();
+    const membersData = await fetchAdminCommerce<{
+      members: MemberRow[];
+      summary?: MembersSummary;
+      applications: Application[];
+    }>(`/api/admin/commerce/members${qs ? `?${qs}` : ""}`);
+    setMembers(membersData.members);
+    setApplications(membersData.applications);
+    setSummary(
+      membersData.summary || {
+        count: membersData.members.length,
+        paidCount: membersData.members.filter((m) => m.status === "paid").length,
+        totalAmount: membersData.members.reduce((s, m) => s + Number(m.amount || 0), 0),
+        paidAmount: membersData.members
+          .filter((m) => m.status === "paid")
+          .reduce((s, m) => s + Number(m.amount || 0), 0),
+      },
+    );
+  }, [memberStatus, memberFrom, memberTo]);
+
   async function reload() {
     try {
-      const [plansData, membersData] = await Promise.all([
+      const [plansData] = await Promise.all([
         fetchAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans"),
-        fetchAdminCommerce<{
-          members: MemberRow[];
-          applications: Application[];
-        }>("/api/admin/commerce/members"),
+        reloadMembers(),
       ]);
       setPlans(plansData.items.map((p) => ({ ...p, features: [...p.features] })));
-      setMembers(membersData.members);
-      setApplications(membersData.applications);
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا در بارگذاری");
@@ -81,7 +119,19 @@ export default function AdminMembershipsPage() {
 
   useEffect(() => {
     void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load
   }, []);
+
+  useEffect(() => {
+    void reloadMembers().catch((e) =>
+      setError(e instanceof Error ? e.message : "خطا در بارگذاری اعضا"),
+    );
+  }, [reloadMembers]);
+
+  const memberReportHint = useMemo(() => {
+    if (!memberFrom && !memberTo) return "همه تاریخ‌ها";
+    return `${memberFrom ? formatJalaliDate(memberFrom) : "…"} تا ${memberTo ? formatJalaliDate(memberTo) : "…"}`;
+  }, [memberFrom, memberTo]);
 
   function updatePlan(index: number, patch: Partial<Membership>) {
     setPlans((prev) =>
@@ -266,6 +316,10 @@ export default function AdminMembershipsPage() {
             </a>
           </p>
         </div>
+        <p className="mb-3 text-sm text-slate-600">
+          این بخش فقط درخواست‌های وام/پیشنهاد است؛ لیست کسانی که حق عضویت پرداخت کرده‌اند پایین‌تر در
+          «گزارش اعضا» آمده است.
+        </p>
         <AdminTable
           headers={[
             "مشتری",
@@ -428,15 +482,74 @@ export default function AdminMembershipsPage() {
       </div>
 
       <div>
-        <h2 className="mb-4 text-lg font-bold">اعضا و پرداخت‌ها</h2>
+        <h2 className="mb-2 text-lg font-bold">گزارش اعضا (پرداخت حق عضویت)</h2>
+        <p className="mb-4 text-sm leading-7 text-slate-600">
+          کسانی که عضویت‌شان ثبت شده — موبایل، تاریخ عضویت/واریز (شمسی از زمان ثبت پرداخت)، مبلغ و
+          وضعیت. بازه فعلی: {memberReportHint}.
+        </p>
+
+        <div className="mb-4 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <FormLabel>وضعیت</FormLabel>
+            <FormSelect value={memberStatus} onChange={(e) => setMemberStatus(e.target.value)}>
+              <option value="paid">پرداخت‌شده</option>
+              <option value="pending">در انتظار</option>
+              <option value="all">همه</option>
+            </FormSelect>
+          </div>
+          <JalaliBirthDateField
+            label="از تاریخ عضویت (شمسی)"
+            value={memberFrom}
+            onChange={setMemberFrom}
+          />
+          <JalaliBirthDateField
+            label="تا تاریخ عضویت (شمسی)"
+            value={memberTo}
+            onChange={setMemberTo}
+          />
+          <Card hover={false} className="space-y-1 p-4">
+            <p className="text-2xl font-bold text-teal-700">
+              {summary.paidCount.toLocaleString("fa-IR")} نفر
+            </p>
+            <p className="text-sm text-slate-500">
+              جمع مبلغ پرداخت‌شده: {summary.paidAmount.toLocaleString("fa-IR")} تومان
+            </p>
+            <p className="text-xs text-slate-400">
+              در فیلتر فعلی: {summary.count.toLocaleString("fa-IR")} ردیف
+            </p>
+            {(memberFrom || memberTo) && (
+              <button
+                type="button"
+                className="text-xs font-bold text-teal-800 underline"
+                onClick={() => {
+                  setMemberFrom("");
+                  setMemberTo("");
+                }}
+              >
+                پاک کردن بازه
+              </button>
+            )}
+          </Card>
+        </div>
+
         <AdminTable
-          headers={["نام", "طرح", "مدت عضویت", "مبلغ", "سقف اعتبار", "وضعیت پرداخت"]}
-          empty="هنوز عضوی ثبت نشده است."
+          headers={[
+            "نام",
+            "موبایل",
+            "طرح",
+            "مدت عضویت",
+            "مبلغ",
+            "سقف اعتبار",
+            "تاریخ عضویت / واریز",
+            "وضعیت پرداخت",
+          ]}
+          empty="با این فیلتر عضوی نیست."
         >
           {members.map((m) => (
             <tr key={m.id} className="border-t border-slate-100">
-              <td className="px-4 py-3">{m.patientName}</td>
-              <td className="px-4 py-3">{m.planName}</td>
+              <td className="px-4 py-3">{m.patientName || "—"}</td>
+              <td className="px-4 py-3 font-mono text-xs">{m.patientPhone || "—"}</td>
+              <td className="px-4 py-3">{m.planName || "—"}</td>
               <td className="px-4 py-3">
                 {m.membershipDurationLabel || m.validityLabel || "—"}
               </td>
@@ -446,6 +559,7 @@ export default function AdminMembershipsPage() {
                   ? `${Number(m.walletCeiling).toLocaleString("fa-IR")} تومان`
                   : "—"}
               </td>
+              <td className="px-4 py-3 text-xs">{formatJalaliDate(m.createdAt)}</td>
               <td className="px-4 py-3">
                 <AdminBadge tone={m.status === "paid" ? "success" : "warn"}>
                   {m.status === "paid" ? "موفق" : "در انتظار"}

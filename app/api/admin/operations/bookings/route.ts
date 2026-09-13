@@ -11,9 +11,26 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
+  const fromRaw = searchParams.get('from');
+  const toRaw = searchParams.get('to');
+  const fromDate = fromRaw ? new Date(fromRaw) : null;
+  const toDate = toRaw ? new Date(toRaw) : null;
+  const hasFrom = Boolean(fromDate && !Number.isNaN(fromDate.getTime()));
+  const hasTo = Boolean(toDate && !Number.isNaN(toDate.getTime()));
+
+  const createdAt =
+    hasFrom || hasTo
+      ? {
+          ...(hasFrom ? { gte: fromDate! } : {}),
+          ...(hasTo ? { lte: new Date(toDate!.getTime() + 24 * 60 * 60 * 1000 - 1) } : {}),
+        }
+      : undefined;
 
   const rows = await prisma.booking.findMany({
-    where: type && type !== 'all' ? { type } : undefined,
+    where: {
+      ...(type && type !== 'all' ? { type } : {}),
+      ...(createdAt ? { createdAt } : {}),
+    },
     include: { dependent: { select: { name: true, fileNumber: true } } },
     orderBy: { createdAt: 'desc' },
   });

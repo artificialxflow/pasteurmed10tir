@@ -2,6 +2,7 @@
 
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import { fieldStaffKindLabel } from "@/lib/home-visit/labels";
 import { fetchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
@@ -51,11 +52,11 @@ export default function AdminStaffCommissionsPage() {
         <p className="font-extrabold text-teal-900">پورسانت پرستار / پزشک اعزام</p>
         <p>
           بعد از وضعیت «انجام‌شده»، درصد ثبت‌شده روی همان نیرو × مبلغ همان درخواست اعزام محاسبه
-          می‌شود. این گزارش جدا از پورسانت ویزیتور است.
+          می‌شود. این گزارش جدا از پورسانت ویزیتور است. تاریخ‌ها در جدول و فیلترها شمسی‌اند.
         </p>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <FormLabel>نوع نیرو</FormLabel>
           <FormSelect value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -64,27 +65,23 @@ export default function AdminStaffCommissionsPage() {
             <option value="physician">پزشک</option>
           </FormSelect>
         </div>
-        <div>
-          <FormLabel>از تاریخ</FormLabel>
-          <input
-            type="date"
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-        </div>
-        <div>
-          <FormLabel>تا تاریخ</FormLabel>
-          <input
-            type="date"
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
-        </div>
+        <JalaliBirthDateField label="از تاریخ (شمسی)" value={from} onChange={setFrom} />
+        <JalaliBirthDateField label="تا تاریخ (شمسی)" value={to} onChange={setTo} />
         <Card hover={false} className="p-4">
           <p className="text-2xl font-bold text-teal-700">{formatPrice(total)}</p>
           <p className="text-sm text-slate-500">جمع پورسانت</p>
+          {(from || to) && (
+            <button
+              type="button"
+              className="mt-2 text-xs font-bold text-teal-800 underline"
+              onClick={() => {
+                setFrom("");
+                setTo("");
+              }}
+            >
+              پاک کردن بازه
+            </button>
+          )}
         </Card>
       </div>
 

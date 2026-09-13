@@ -4,6 +4,7 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   filterReceptionItems,
   mapBookingToReception,
@@ -18,7 +19,7 @@ import {
 } from "@/lib/admin/reception-bookings";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
-import { normalizePatientPhone, type PatientProfile } from "@/lib/patient";
+import { formatJalaliDate, normalizePatientPhone, type PatientProfile } from "@/lib/patient";
 import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
 import Link from "next/link";
@@ -28,6 +29,8 @@ export default function AdminBookingsPage() {
   const [category, setCategory] = useState<ReceptionCategory>("all");
   const [timeOfDay, setTimeOfDay] = useState<ReceptionTimeOfDay>("all");
   const [doctor, setDoctor] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [items, setItems] = useState<ReceptionItem[]>([]);
   const [bookingById, setBookingById] = useState<Record<string, Booking>>({});
   const [fileNumberByPhone, setFileNumberByPhone] = useState<Record<string, string>>({});
@@ -86,7 +89,13 @@ export default function AdminBookingsPage() {
   );
 
   const filtered = useMemo(() => {
-    const base = filterReceptionItems(items, { category, timeOfDay, doctor });
+    const base = filterReceptionItems(items, {
+      category,
+      timeOfDay,
+      doctor,
+      from: dateFrom,
+      to: dateTo,
+    });
     const q = search.trim().toLowerCase();
     if (!q) return base;
     return base.filter(
@@ -97,7 +106,7 @@ export default function AdminBookingsPage() {
         (row.dependentFileNumber || "").toLowerCase().includes(q) ||
         fileNumberFor(row.patientPhone).toLowerCase().includes(q),
     );
-  }, [items, category, timeOfDay, doctor, search, fileNumberFor]);
+  }, [items, category, timeOfDay, doctor, dateFrom, dateTo, search, fileNumberFor]);
 
   const doctors = useMemo(() => uniqueDoctors(items), [items]);
 
@@ -222,6 +231,31 @@ export default function AdminBookingsPage() {
               {item.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <JalaliBirthDateField label="از تاریخ (شمسی)" value={dateFrom} onChange={setDateFrom} />
+        <JalaliBirthDateField label="تا تاریخ (شمسی)" value={dateTo} onChange={setDateTo} />
+        <div className="flex flex-col justify-end gap-2 sm:col-span-2">
+          <p className="text-xs leading-6 text-slate-500">
+            فیلتر روی تاریخ نوبت / ثبت است.
+            {dateFrom || dateTo
+              ? ` بازه: ${dateFrom ? formatJalaliDate(dateFrom) : "…"} تا ${dateTo ? formatJalaliDate(dateTo) : "…"}`
+              : " بدون بازه = همه تاریخ‌ها."}
+          </p>
+          {(dateFrom || dateTo) && (
+            <button
+              type="button"
+              className="self-start text-xs font-bold text-teal-800 underline"
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+            >
+              پاک کردن بازه تاریخ
+            </button>
+          )}
         </div>
       </div>
 

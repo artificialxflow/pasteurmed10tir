@@ -36,6 +36,8 @@ export type ReceptionItem = {
   typeLabel: string;
   categoryLabel: string;
   dateLabel: string;
+  /** YYYY-MM-DD برای فیلتر از/تا (نوبت یا createdAt) */
+  filterIsoDate: string | null;
   timeLabel: string;
   timeOfDayLabel: string;
   hour: number | null;
@@ -47,6 +49,15 @@ export type ReceptionItem = {
   dependentName?: string;
   dependentFileNumber?: string;
 };
+
+function toFilterIsoDate(raw: unknown): string | null {
+  if (raw == null || raw === '') return null;
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
 
 function parseHour(raw: unknown): number | null {
   if (raw == null || raw === '') return null;
@@ -117,6 +128,10 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
     parseHour(row.timeValue) ??
     parseHour(row.timeLabel) ??
     (row.appointmentAt ? new Date(String(row.appointmentAt)).getHours() : null);
+  const filterIsoDate =
+    toFilterIsoDate(row.appointmentAt) ||
+    toFilterIsoDate(row.day) ||
+    toFilterIsoDate(row.createdAt);
   return {
     id: String(row.id),
     source: 'booking',
@@ -133,7 +148,12 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
     categoryLabel: 'رزرو نوبت',
     dateLabel: row.appointmentAt
       ? formatJalaliDate(String(row.appointmentAt))
-      : String(row.dateLabel || row.day || '—'),
+      : row.day
+        ? formatJalaliDate(String(row.day))
+        : row.createdAt
+          ? formatJalaliDate(String(row.createdAt))
+          : String(row.dateLabel || '—'),
+    filterIsoDate,
     timeLabel: String(row.timeLabel || '—'),
     timeOfDayLabel: timeOfDayLabel(hour),
     hour,
@@ -151,6 +171,9 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
 
 export function mapConsultationToReception(row: Record<string, unknown>): ReceptionItem {
   const hour = parseHour(row.preferredTime) ?? parseHour(row.preferredTimeLabel);
+  const filterIsoDate =
+    toFilterIsoDate(row.preferredDate) || toFilterIsoDate(row.createdAt);
+  const preferredRaw = row.preferredDateLabel || row.preferredDate;
   return {
     id: String(row.id),
     source: 'consultation',
@@ -164,7 +187,14 @@ export function mapConsultationToReception(row: Record<string, unknown>): Recept
     doctorName: String(row.doctorName || '—'),
     typeLabel: String(row.typeLabel || row.type || '—'),
     categoryLabel: String(row.categoryLabel || row.category || 'مشاوره'),
-    dateLabel: String(row.preferredDateLabel || row.preferredDate || '—'),
+    dateLabel: preferredRaw
+      ? toFilterIsoDate(preferredRaw)
+        ? formatJalaliDate(String(preferredRaw))
+        : String(preferredRaw)
+      : row.createdAt
+        ? formatJalaliDate(String(row.createdAt))
+        : '—',
+    filterIsoDate,
     timeLabel: String(row.preferredTimeLabel || row.preferredTime || '—'),
     timeOfDayLabel: timeOfDayLabel(hour),
     hour,
@@ -184,9 +214,13 @@ export function filterReceptionItems(
     category: ReceptionCategory;
     timeOfDay: ReceptionTimeOfDay;
     doctor: string;
+    from?: string;
+    to?: string;
   },
 ): ReceptionItem[] {
   const doctor = input.doctor.trim();
+  const from = input.from?.trim() || '';
+  const to = input.to?.trim() || '';
   return items.filter((item) => {
     if (input.category !== 'all' && item.category !== input.category) return false;
     if (input.timeOfDay !== 'all') {
@@ -194,6 +228,12 @@ export function filterReceptionItems(
       if (bucket !== input.timeOfDay) return false;
     }
     if (doctor && doctor !== 'all' && item.doctorName !== doctor) return false;
+    if (from || to) {
+      const d = item.filterIsoDate;
+      if (!d) return false;
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+    }
     return true;
   });
 }
