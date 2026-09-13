@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { AssignedStaffCard } from "@/components/home-visit/AssignedStaffCard";
 import { DependentsCard } from "@/components/account/DependentsCard";
+import { FieldStaffAvailabilityCard } from "@/components/account/FieldStaffAvailabilityCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchMyActivityApi, patchPatientOps } from "@/lib/operations/client";
@@ -210,6 +211,8 @@ export function AccountDashboard({
       />
 
       <DependentsCard />
+
+      <FieldStaffAvailabilityCard />
 
       <p className="text-xs leading-6 text-slate-500">
         توجه: <strong>تأیید نوبت</strong> در ادمین رزروها جدا از <strong>تأیید استعلام بیمه</strong> است.

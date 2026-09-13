@@ -292,7 +292,23 @@ export default function AdminFieldStaffPage() {
               {item.latitude != null && item.longitude != null ? "ثبت شده" : "—"}
             </td>
             <td className="px-4 py-3">
-              {item.active ? fieldStaffStatusLabel(item.status) : "غیرفعال"}
+              {!item.active ? (
+                <span className="inline-flex rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
+                  غیرفعال
+                </span>
+              ) : item.status === "available" ? (
+                <span className="inline-flex rounded-full border border-teal-300 bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-800">
+                  در دسترس
+                </span>
+              ) : item.status === "busy" ? (
+                <span className="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-900">
+                  مشغول
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
+                  {fieldStaffStatusLabel(item.status)}
+                </span>
+              )}
             </td>
             <td className="px-4 py-3">
               <button

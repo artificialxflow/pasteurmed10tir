@@ -41,7 +41,7 @@ export async function listFieldStaff(options?: { assignableOnly?: boolean; kind?
     where: {
       ...(options?.kind ? { kind: options.kind } : {}),
       ...(options?.assignableOnly
-        ? { active: true, status: { not: 'inactive' } }
+        ? { active: true, status: 'available' as FieldStaffStatus }
         : {}),
     },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
@@ -174,6 +174,44 @@ export async function updateFieldStaff(
   return mapFieldStaffAdmin(row);
 }
 
+/** کادر میدانی متناظر با موبایل سشن بیمار (OTP مشترک — تصمیم فاز ۲). */
+export async function findFieldStaffByPhone(phone?: string | null) {
+  const key = normalizePhoneDigits(phone || '');
+  if (!key) return null;
+  const row = await prisma.fieldStaff.findFirst({
+    where: { phone: key, active: true },
+    orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
+  });
+  return row ? mapFieldStaffAdmin(row) : null;
+}
+
+/** خودخدمتی: فقط available / busy — نه inactive. */
+export async function setOwnFieldStaffAvailability(
+  phone: string | null | undefined,
+  nextStatus: string,
+) {
+  const key = normalizePhoneDigits(phone || '');
+  if (!key) throw new Error('شماره موبایل یافت نشد.');
+  if (nextStatus !== 'available' && nextStatus !== 'busy') {
+    throw new Error('وضعیت فقط می‌تواند در دسترس یا مشغول باشد.');
+  }
+
+  const existing = await prisma.fieldStaff.findFirst({
+    where: { phone: key, active: true },
+    orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
+  });
+  if (!existing) throw new Error('پروفایل کادر میدانی برای این شماره ثبت نشده است.');
+  if (existing.status === 'inactive') {
+    throw new Error('حساب نیرو غیرفعال است؛ با اپراتور تماس بگیرید.');
+  }
+
+  const row = await prisma.fieldStaff.update({
+    where: { id: existing.id },
+    data: { status: nextStatus },
+  });
+  return mapFieldStaffAdmin(row);
+}
+
 export async function deleteFieldStaff(id: string) {
   const existing = await prisma.fieldStaff.findUnique({ where: { id } });
   if (!existing) throw new Error('نیرو یافت نشد.');
@@ -294,7 +332,7 @@ export async function listNearbyStaff(input: {
   const origin = parseLatLng(input.latitude, input.longitude);
   const preferred = parsePreferredGender(input.preferredGender);
   const rows = await prisma.fieldStaff.findMany({
-    where: { kind: input.kind, active: true, status: { not: 'inactive' } },
+    where: { kind: input.kind, active: true, status: 'available' },
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
   });
   return rows
@@ -362,6 +400,9 @@ export async function assignStaffToHomeVisit(
   const staff = await prisma.fieldStaff.findUnique({ where: { id: staffId } });
   if (!staff || !staff.active) throw new Error('نیرو یافت نشد یا غیرفعال است.');
   if (staff.status === 'inactive') throw new Error('این نیرو غیرفعال است.');
+  if (staff.status !== 'available') {
+    throw new Error('این نیرو در حال حاضر در دسترس نیست.');
+  }
 
   const preferred = parsePreferredGender(request.preferredGender);
   if (preferred !== 'any' && staff.gender !== preferred) {
@@ -376,6 +417,10 @@ export async function assignStaffToHomeVisit(
   }
 
   const firstAssign = request.status === 'submitted';
+  const previousStaffId =
+    request.assignedStaffId && request.assignedStaffId !== staff.id
+      ? request.assignedStaffId
+      : null;
   await prisma.$transaction([
     prisma.homeVisitRequest.update({
       where: { id: requestId },
@@ -393,6 +438,18 @@ export async function assignStaffToHomeVisit(
         adminUserId: adminUserId || null,
       },
     }),
+    prisma.fieldStaff.update({
+      where: { id: staff.id },
+      data: { status: 'busy' },
+    }),
+    ...(previousStaffId
+      ? [
+          prisma.fieldStaff.update({
+            where: { id: previousStaffId },
+            data: { status: 'available' },
+          }),
+        ]
+      : []),
   ]);
 
   if (firstAssign) {

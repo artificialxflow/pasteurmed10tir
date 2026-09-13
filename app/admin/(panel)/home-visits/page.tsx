@@ -13,7 +13,7 @@ import { preferredGenderLabel, staffGenderLabel } from "@/lib/home-visit/gender"
 import type { FieldStaffAdmin } from "@/lib/home-visit/mappers";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import { formatPrice } from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type HomeVisitRow = {
   id: string;
@@ -53,16 +53,14 @@ export default function AdminHomeVisitsPage() {
     void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
 
-  const assignable = useMemo(
-    () => staff.filter((item) => item.active && item.status !== "inactive"),
-    [staff],
-  );
-
   function staffOptions(visit: HomeVisitRow) {
     const expected = staffKindForVisit(visit.kind);
     const origin = parseLatLng(visit.latitude, visit.longitude);
-    return assignable
+    const currentId = visit.assignedStaff?.id;
+    return staff
       .filter((item) => item.kind === expected)
+      .filter((item) => item.active)
+      .filter((item) => item.status === "available" || item.id === currentId)
       .filter((item) => {
         const preferred = visit.preferredGender;
         if (preferred === "male" || preferred === "female") return item.gender === preferred;
@@ -109,7 +107,8 @@ export default function AdminHomeVisitsPage() {
     <div className="space-y-4">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <p className="text-xs text-slate-500">
-        تخصیص نیرو توسط ادمین انجام می‌شود. بیمار فقط نام، تخصص و عکس نیرو را می‌بیند.
+        تخصیص نیرو توسط ادمین انجام می‌شود. فقط نیروهای «در دسترس» در لیست انتخاب می‌آیند؛ بعد از
+        تخصیص، وضعیت نیرو به «مشغول» می‌رود تا دوباره وقت برایش تنظیم نشود.
       </p>
       <AdminTable
         headers={[
