@@ -6,6 +6,7 @@ import {
   isFocusedConsultationCategory,
   isMedicalHomeCategory,
   isConsultationCallbackCategory,
+  MEDICAL_CLINIC_CATEGORIES,
 } from "@/lib/consultation/categories";
 import { PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
@@ -13,9 +14,18 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+function isMedicalClinicCategory(categoryId?: string | null): boolean {
+  return MEDICAL_CLINIC_CATEGORIES.includes(
+    categoryId as (typeof MEDICAL_CLINIC_CATEGORIES)[number],
+  );
+}
+
 function focusedIntro(categoryId: string): string {
   if (isMedicalHomeCategory(categoryId)) {
     return "نوع پزشک (عمومی یا متخصص) را انتخاب کنید؛ آدرس منزل را وارد کنید و هزینه ویزیت را پرداخت کنید.";
+  }
+  if (isMedicalClinicCategory(categoryId)) {
+    return "پزشک انتخاب‌شده را تأیید کنید؛ روز و نوبت ۱۵ دقیقه‌ای ویزیت را مشخص کنید و درخواست را ثبت کنید.";
   }
   if (isConsultationCallbackCategory(categoryId)) {
     return "درخواست شما ثبت می‌شود و کارشناس در اسرع وقت با شما تماس می‌گیرد. پرداخت آنلاین در این مرحله انجام نمی‌شود.";
@@ -27,15 +37,18 @@ function focusedIntro(categoryId: string): string {
 function ConsultationPageBody({ variant }: { variant: "web" | "app" }) {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
-  const focused = isFocusedConsultationCategory(category);
+  const doctor = searchParams.get("doctor");
+  /** ویزیت پزشک با category اختصاصی یا با doctor در query — Quick Links نامرتبط نشان داده نشود. */
+  const focused = isFocusedConsultationCategory(category) || Boolean(doctor);
   const consultationBase = variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation;
 
   const title = focused
-    ? PASTEUR_DATA.consultationCategories.find((c) => c.id === category)?.label || "مشاوره و ویزیت"
+    ? PASTEUR_DATA.consultationCategories.find((c) => c.id === category)?.label ||
+      (doctor ? "ویزیت پزشک" : "مشاوره و ویزیت")
     : "مشاوره و ویزیت";
 
   const intro = focused
-    ? focusedIntro(category)
+    ? focusedIntro(category || (doctor ? "medical" : ""))
     : "ابتدا درخواست خود را ثبت کنید؛ در مرحله بعد نوع ارتباط متنی، تصویری، اورژانسی یا صوتی هماهنگ می‌شود.";
 
   return (
@@ -82,11 +95,13 @@ export function ConsultationPageContent({ variant }: { variant: "web" | "app" })
 export function useConsultationPageTitle(): string {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
+  const doctor = searchParams.get("doctor");
   if (isFocusedConsultationCategory(category)) {
     return (
       PASTEUR_DATA.consultationCategories.find((c) => c.id === category)?.label ||
       "مشاوره و ویزیت"
     );
   }
+  if (doctor) return "ویزیت پزشک";
   return "مشاوره و ویزیت";
 }

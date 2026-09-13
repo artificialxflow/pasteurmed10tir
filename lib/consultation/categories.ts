@@ -11,9 +11,13 @@ export type ConsultationCallbackCategory = (typeof CONSULTATION_CALLBACK_CATEGOR
 
 export const MEDICAL_HOME_CATEGORY = "medical-home";
 
+/** ویزیت پزشک عمومی / تخصصی در کلینیک (با انتخاب پزشک و نوبت). */
+export const MEDICAL_CLINIC_CATEGORIES = ["medical", "medical-specialty"] as const;
+
 /** مسیرهای اختصاصی — Quick Links عمومی نمایش داده نمی‌شود. */
 export const FOCUSED_CONSULTATION_CATEGORIES = [
   MEDICAL_HOME_CATEGORY,
+  ...MEDICAL_CLINIC_CATEGORIES,
   ...CONSULTATION_CALLBACK_CATEGORIES,
 ] as const;
 

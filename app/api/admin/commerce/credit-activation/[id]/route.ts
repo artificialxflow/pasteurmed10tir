@@ -3,6 +3,7 @@ import { validateRequestedAmount } from '@/lib/commerce/credit-activation';
 import { createCreditInstallmentPlan } from '@/lib/commerce/installment-service';
 import { mapCreditActivationRequest } from '@/lib/commerce/mappers';
 import { SoftDeleteError, softDeleteCreditActivationRequest } from '@/lib/commerce/soft-delete';
+import { applyCreditActivationDraw, getOrCreateWallet } from '@/lib/commerce/wallet-service';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -39,9 +40,25 @@ export async function PATCH(request: Request, context: RouteContext) {
   let linkedPlanId = row.linkedPlanId;
 
   if (body.status === 'approved' && row.status !== 'approved') {
-    const wallet = await prisma.wallet.findUnique({ where: { phone: row.phone } });
+    const wallet = await getOrCreateWallet(row.phone);
     const amountError = validateRequestedAmount(row.requestedAmount, wallet?.ceiling ?? 0);
     if (amountError) return jsonError(amountError);
+
+    const available = Math.max(0, (wallet?.ceiling ?? 0) - (wallet?.balance ?? 0));
+    if (row.requestedAmount > available) {
+      return jsonError(
+        `اعتبار باقی‌مانده کافی نیست (${available.toLocaleString('fa-IR')} تومان).`,
+      );
+    }
+
+    const drawn = await applyCreditActivationDraw({
+      phone: row.phone,
+      amount: row.requestedAmount,
+      requestId: row.id,
+    });
+    if (!drawn) {
+      return jsonError('کسر از اعتبار باقی‌مانده ناموفق بود.');
+    }
 
     const already = await prisma.installmentPlan.findFirst({
       where: { linkedRequestId: row.id, source: 'credit', deletedAt: null },

@@ -249,14 +249,26 @@ export default function AdminPatientsPage() {
         baseInsuranceId: editForm.baseInsuranceId || null,
         complementaryInsuranceId: editForm.complementaryInsuranceId || null,
       });
-      for (const [depId, draft] of Object.entries(depDrafts)) {
-        await patchAdminOps(`/api/admin/operations/dependents/${encodeURIComponent(depId)}`, {
+      const deps =
+        items.find((p) => p.phone === editPhone)?.dependents || [];
+      for (const d of deps) {
+        const draft = depDrafts[d.id] || {
+          fileNumber: d.fileNumber || "",
+          franchisePercent: String(d.franchisePercent ?? 10),
+        };
+        const rawPct = Number(String(draft.franchisePercent).trim());
+        const franchisePercent = Number.isFinite(rawPct) ? rawPct : 10;
+        await patchAdminOps(`/api/admin/operations/dependents/${encodeURIComponent(d.id)}`, {
           fileNumber: draft.fileNumber.trim(),
-          franchisePercent: Number(draft.franchisePercent),
+          franchisePercent,
         });
       }
       await reload();
-      setSuccess(`مشخصات ${editPhone} به‌روز شد.`);
+      setSuccess(
+        deps.length
+          ? `مشخصات ${editPhone} و فرانشیز ${deps.length.toLocaleString("fa-IR")} فرد تحت تکفل به‌روز شد.`
+          : `مشخصات ${editPhone} به‌روز شد.`,
+      );
       setEditPhone(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "ذخیره ناموفق بود.");
@@ -630,12 +642,22 @@ export default function AdminPatientsPage() {
                   ))}
                 </FormSelect>
               </div>
-              {Object.keys(depDrafts).length ? (
-                <div className="sm:col-span-2 space-y-3 rounded-xl border border-slate-100 p-3">
-                  <p className="text-sm font-extrabold text-slate-800">افراد تحت تکفل</p>
-                  {(items.find((p) => p.phone === editPhone)?.dependents || []).map((d) => (
-                    <div key={d.id} className="grid gap-2 sm:grid-cols-2">
-                      <p className="sm:col-span-2 text-xs text-slate-600">
+              {(items.find((p) => p.phone === editPhone)?.dependents || []).length ? (
+                <div className="sm:col-span-2 space-y-3 rounded-xl border border-teal-100 bg-teal-50/40 p-3">
+                  <p className="text-sm font-extrabold text-teal-900">
+                    افراد تحت تکفل — فرانشیز و شماره پرونده (قابل ویرایش)
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    درصد فرانشیز هر فرد را جداگانه وارد کنید و ذخیره را بزنید.
+                  </p>
+                  {(items.find((p) => p.phone === editPhone)?.dependents || []).map((d) => {
+                    const draft = depDrafts[d.id] || {
+                      fileNumber: d.fileNumber || "",
+                      franchisePercent: String(d.franchisePercent ?? 10),
+                    };
+                    return (
+                    <div key={d.id} className="grid gap-2 rounded-lg border border-white bg-white/80 p-3 sm:grid-cols-2">
+                      <p className="sm:col-span-2 text-xs font-bold text-slate-700">
                         {d.name} ·{" "}
                         {DEPENDENT_RELATION_LABELS[
                           d.relation as keyof typeof DEPENDENT_RELATION_LABELS
@@ -644,13 +666,15 @@ export default function AdminPatientsPage() {
                       <div>
                         <FormLabel>شماره پرونده</FormLabel>
                         <FormInput
-                          value={depDrafts[d.id]?.fileNumber || ""}
+                          value={draft.fileNumber}
                           onChange={(e) =>
                             setDepDrafts((prev) => ({
                               ...prev,
                               [d.id]: {
                                 fileNumber: normalizeFileNumber(e.target.value),
-                                franchisePercent: prev[d.id]?.franchisePercent || "10",
+                                franchisePercent:
+                                  prev[d.id]?.franchisePercent ??
+                                  String(d.franchisePercent ?? 10),
                               },
                             }))
                           }
@@ -659,17 +683,19 @@ export default function AdminPatientsPage() {
                         />
                       </div>
                       <div>
-                        <FormLabel>فرانشیز (درصد)</FormLabel>
+                        <FormLabel>فرانشیز تحت تکفل (درصد ۰–۱۰۰)</FormLabel>
                         <FormInput
                           type="number"
                           min={0}
                           max={100}
-                          value={depDrafts[d.id]?.franchisePercent || "10"}
+                          step={1}
+                          value={draft.franchisePercent}
                           onChange={(e) =>
                             setDepDrafts((prev) => ({
                               ...prev,
                               [d.id]: {
-                                fileNumber: prev[d.id]?.fileNumber || "",
+                                fileNumber:
+                                  prev[d.id]?.fileNumber ?? d.fileNumber ?? "",
                                 franchisePercent: e.target.value,
                               },
                             }))
@@ -677,7 +703,8 @@ export default function AdminPatientsPage() {
                         />
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2 sm:col-span-2">

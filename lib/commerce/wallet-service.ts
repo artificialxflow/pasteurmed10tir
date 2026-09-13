@@ -156,6 +156,61 @@ export async function activateShopVip(phone?: string | null) {
   return upgradeWalletForUser(wallet.phone, planIdToWalletKinds('shop-vip'));
 }
 
+/**
+ * پس از تأیید فعال‌سازی کارت اعتباری: مبلغ درخواستی به «موجودی مصرف‌شده» اضافه می‌شود
+ * تا «اعتبار باقی‌مانده» (ceiling − balance) کم شود. سقف عوض نمی‌شود.
+ * Idempotent بر اساس وجود تراکنش با شناسه درخواست در توضیحات.
+ */
+export async function applyCreditActivationDraw(input: {
+  phone?: string | null;
+  amount: number;
+  requestId: string;
+}) {
+  const wallet = await getOrCreateWallet(input.phone);
+  if (!wallet) return null;
+
+  const amount = Math.max(0, Math.round(Number(input.amount) || 0));
+  if (!amount) return wallet;
+
+  const marker = `credit-activation:${input.requestId}`;
+  const already = await prisma.walletTransaction.findFirst({
+    where: { walletPhone: wallet.phone, description: { contains: marker } },
+  });
+  if (already) {
+    return prisma.wallet.findUnique({
+      where: { phone: wallet.phone },
+      include: { transactions: { orderBy: { createdAt: 'desc' } } },
+    });
+  }
+
+  const room = Math.max(0, wallet.ceiling - wallet.balance);
+  const draw = Math.min(amount, room);
+  const balanceAfter = wallet.balance + draw;
+
+  await prisma.$transaction([
+    prisma.wallet.update({
+      where: { phone: wallet.phone },
+      data: { balance: balanceAfter },
+    }),
+    prisma.walletTransaction.create({
+      data: {
+        id: generateCommerceId(),
+        walletPhone: wallet.phone,
+        type: 'credit',
+        amount: draw,
+        balanceAfter,
+        description: `فعال‌سازی کارت اعتباری ${draw.toLocaleString('fa-IR')} تومان (${marker})`,
+        status: 'completed',
+      },
+    }),
+  ]);
+
+  return prisma.wallet.findUnique({
+    where: { phone: wallet.phone },
+    include: { transactions: { orderBy: { createdAt: 'desc' } } },
+  });
+}
+
 export async function isShopVip(phone?: string | null): Promise<boolean> {
   const key = normalizePhoneDigits(phone || '');
   if (!key) return false;
