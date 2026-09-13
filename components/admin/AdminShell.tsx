@@ -83,7 +83,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.consultations]: "درخواست‌های مشاوره و ویزیت",
   [ROUTES.admin.homeVisits]: "درخواست‌های اعزام خانگی",
   [ROUTES.admin.fieldStaff]: "پرسنل میدانی",
-  [ROUTES.admin.staffCommissions]: "پورسانت پرستار و پزشک اعزام",
+  [ROUTES.admin.staffCommissions]: "پورسانت کادر / پزشک / مشاور",
   [ROUTES.admin.reminders]: "یادآورهای هوشمند",
   [ROUTES.admin.services]: "مدیریت سرویس‌ها",
   [ROUTES.admin.dentalEducation]: "کلیپ‌های آموزشی دندان",

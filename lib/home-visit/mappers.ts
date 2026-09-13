@@ -129,6 +129,10 @@ export function mapStaffCommission(row: StaffCommission) {
     amount: row.amount,
     commissionRate: row.commissionRate,
     commissionAmount: row.commissionAmount,
+    status: row.status || 'pending',
+    paidAt: row.paidAt?.toISOString() ?? null,
+    sourceType: row.sourceType || 'home_visit',
+    sourceLabel: row.sourceLabel ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }

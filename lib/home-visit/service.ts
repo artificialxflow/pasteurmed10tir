@@ -595,6 +595,9 @@ async function upsertStaffCommissionForRequest(requestId: string) {
       amount,
       commissionRate,
       commissionAmount,
+      status: 'pending',
+      sourceType: 'home_visit',
+      sourceLabel: request.serviceTitle || request.specialtyLabel || 'اعزام منزل',
     },
     update: {
       staffId: staff.id,
@@ -603,16 +606,120 @@ async function upsertStaffCommissionForRequest(requestId: string) {
       amount,
       commissionRate,
       commissionAmount,
+      sourceType: 'home_visit',
+      sourceLabel: request.serviceTitle || request.specialtyLabel || 'اعزام منزل',
     },
   });
 }
 
+export async function upsertConsultationStaffCommission(consultationId: string) {
+  const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
+  if (!row || row.status !== 'answered') return null;
+
+  const category = String(row.category || '').toLowerCase();
+  const amount = Math.max(0, Number(row.amount || 0));
+  if (!amount) return null;
+
+  const CONSULTANT_CATEGORIES = new Set(['psychology', 'nutrition', 'midwifery']);
+  const CLINIC_DOC_CATEGORIES = new Set(['medical', 'medical-specialty']);
+
+  let staffKind: string;
+  let staffId: string;
+  let staffName: string;
+  let commissionRate: number;
+  let sourceLabel: string;
+
+  if (CLINIC_DOC_CATEGORIES.has(category) && row.doctorId) {
+    const physicianId = Number(row.doctorId);
+    const physician = Number.isFinite(physicianId)
+      ? await prisma.physician.findUnique({ where: { id: physicianId } })
+      : null;
+    staffKind = 'physician';
+    staffId = `physician:${row.doctorId}`;
+    staffName = physician?.name || row.doctorName || 'پزشک';
+    commissionRate = Math.min(100, Math.max(0, Number(physician?.commissionPercent || 0)));
+    sourceLabel = row.specialtyLabel || row.categoryLabel || 'ویزیت کلینیک';
+  } else if (CONSULTANT_CATEGORIES.has(category)) {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } });
+    staffKind = 'consultant';
+    staffId = `consultant:${category}`;
+    staffName = row.categoryLabel || row.typeLabel || 'مشاور';
+    commissionRate = Math.min(
+      100,
+      Math.max(0, Number(settings?.consultantCommissionPercent ?? 10)),
+    );
+    sourceLabel = row.categoryLabel || category;
+  } else {
+    return null;
+  }
+
+  if (!commissionRate) return null;
+  const commissionAmount = Math.round((amount * commissionRate) / 100);
+  const requestId = `consultation:${consultationId}`;
+
+  const saved = await prisma.staffCommission.upsert({
+    where: { requestId },
+    create: {
+      id: generateOperationId(),
+      staffId,
+      staffName,
+      staffKind,
+      requestId,
+      amount,
+      commissionRate,
+      commissionAmount,
+      status: 'pending',
+      sourceType: 'consultation',
+      sourceLabel,
+    },
+    update: {
+      staffId,
+      staffName,
+      staffKind,
+      amount,
+      commissionRate,
+      commissionAmount,
+      sourceType: 'consultation',
+      sourceLabel,
+    },
+  });
+  return mapStaffCommission(saved);
+}
+
+export async function updateStaffCommissionStatus(
+  id: string,
+  status: 'pending' | 'approved' | 'paid',
+) {
+  const existing = await prisma.staffCommission.findUnique({ where: { id } });
+  if (!existing) throw new Error('پورسانت یافت نشد.');
+  const row = await prisma.staffCommission.update({
+    where: { id },
+    data: {
+      status,
+      paidAt: status === 'paid' ? new Date() : null,
+    },
+  });
+  return mapStaffCommission(row);
+}
+
 export async function listStaffCommissions(options?: {
   kind?: string;
+  status?: string;
   from?: string;
   to?: string;
 }) {
-  const kind = options?.kind === 'physician' || options?.kind === 'nurse' ? options.kind : undefined;
+  const kind =
+    options?.kind === 'physician' ||
+    options?.kind === 'nurse' ||
+    options?.kind === 'consultant'
+      ? options.kind
+      : undefined;
+  const status =
+    options?.status === 'pending' ||
+    options?.status === 'approved' ||
+    options?.status === 'paid'
+      ? options.status
+      : undefined;
   const fromDate = options?.from ? new Date(options.from) : null;
   const toDate = options?.to ? new Date(options.to) : null;
   const hasFrom = Boolean(fromDate && !Number.isNaN(fromDate.getTime()));
@@ -628,12 +735,28 @@ export async function listStaffCommissions(options?: {
   const rows = await prisma.staffCommission.findMany({
     where: {
       ...(kind ? { staffKind: kind } : {}),
+      ...(status ? { status } : {}),
       ...(createdAt ? { createdAt } : {}),
     },
     orderBy: { createdAt: 'desc' },
   });
   const items = rows.map(mapStaffCommission);
   const total = items.reduce((sum, item) => sum + item.commissionAmount, 0);
-  return { items, total };
+  const paidTotal = items
+    .filter((item) => item.status === 'paid')
+    .reduce((sum, item) => sum + item.commissionAmount, 0);
+  const pendingTotal = items
+    .filter((item) => item.status !== 'paid')
+    .reduce((sum, item) => sum + item.commissionAmount, 0);
+  return {
+    items,
+    total,
+    summary: {
+      count: items.length,
+      total,
+      paidTotal,
+      pendingTotal,
+    },
+  };
 }
 

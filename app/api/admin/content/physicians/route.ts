@@ -55,6 +55,10 @@ export async function PUT(request: Request) {
             status: item.status || 'available',
             schedule: (item.schedule || {}) as unknown as Prisma.InputJsonValue,
             sortOrder: index,
+            commissionPercent: Math.min(
+              100,
+              Math.max(0, Math.round(Number(item.commissionPercent ?? 0)) || 0),
+            ),
           },
         }),
       ),

@@ -3,7 +3,22 @@ import type { FieldStaffKind, FieldStaffStatus, HomeVisitKind } from '@prisma/cl
 export function fieldStaffKindLabel(kind?: string | null): string {
   if (kind === 'nurse') return 'پرستار';
   if (kind === 'physician') return 'پزشک';
+  if (kind === 'consultant') return 'مشاور';
   return '—';
+}
+
+export function staffCommissionStatusLabel(status?: string | null): string {
+  if (status === 'paid') return 'پرداخت‌شده';
+  if (status === 'approved') return 'تأیید شده';
+  if (status === 'pending') return 'در انتظار';
+  return '—';
+}
+
+export function staffCommissionSourceLabel(sourceType?: string | null): string {
+  if (sourceType === 'home_visit') return 'اعزام منزل';
+  if (sourceType === 'consultation') return 'مشاوره / ویزیت';
+  if (sourceType === 'booking') return 'رزرو';
+  return sourceType || '—';
 }
 
 export function fieldStaffStatusLabel(status?: string | null): string {

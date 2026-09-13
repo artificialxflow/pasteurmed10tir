@@ -8,6 +8,7 @@ const DEFAULT_ID = 'default';
 type SettingsBody = {
   dentalReservationFee?: number;
   laserReservationFee?: number;
+  consultantCommissionPercent?: number;
   wallet?: {
     regularCap?: number;
     membershipVipCap?: number;
@@ -35,6 +36,7 @@ export async function GET() {
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
     laserReservationFee: row.laserReservationFee,
+    consultantCommissionPercent: row.consultantCommissionPercent,
     wallet: {
       regularCap: row.walletRegularCap,
       membershipVipCap: row.walletMembershipVipCap,
@@ -57,9 +59,13 @@ export async function PUT(request: Request) {
       if (laserAuth.error || body.dentalReservationFee != null) return auth.error;
     }
   }
-  if (body.wallet) {
+  if (body.wallet || body.consultantCommissionPercent != null) {
     const auth = await requireAdmin('wallets');
-    if (auth.error) return auth.error;
+    if (auth.error) {
+      const cAuth = await requireAdmin('commissions');
+      if (cAuth.error && body.wallet) return auth.error;
+      if (cAuth.error && body.consultantCommissionPercent != null) return cAuth.error;
+    }
   }
 
   const current =
@@ -78,6 +84,10 @@ export async function PUT(request: Request) {
         body.laserReservationFee != null
           ? Number(body.laserReservationFee)
           : current.laserReservationFee,
+      consultantCommissionPercent:
+        body.consultantCommissionPercent != null
+          ? Math.min(100, Math.max(0, Math.round(Number(body.consultantCommissionPercent))))
+          : current.consultantCommissionPercent,
       walletRegularCap: w.regularCap != null ? Number(w.regularCap) : current.walletRegularCap,
       walletMembershipVipCap:
         w.membershipVipCap != null ? Number(w.membershipVipCap) : current.walletMembershipVipCap,
@@ -93,6 +103,7 @@ export async function PUT(request: Request) {
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
     laserReservationFee: row.laserReservationFee,
+    consultantCommissionPercent: row.consultantCommissionPercent,
     wallet: {
       regularCap: row.walletRegularCap,
       membershipVipCap: row.walletMembershipVipCap,

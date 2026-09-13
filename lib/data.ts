@@ -96,6 +96,8 @@ export interface Physician {
   hours?: string;
   status: DoctorStatus;
   schedule?: Record<string, DaySchedule>;
+  /** درصد سهم پزشک از مبلغ ویزیت/مشاوره */
+  commissionPercent?: number;
 }
 
 export interface NursingItem {

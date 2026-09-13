@@ -68,6 +68,7 @@ export function mapPhysician(row: DbPhysician) {
   const summary = summarizeDayHours(dayHours);
   return {
     ...base,
+    commissionPercent: Math.min(100, Math.max(0, Number(row.commissionPercent || 0))),
     schedule: Object.keys(healedSchedule).length ? healedSchedule : base.schedule,
     days: summary.days.length ? summary.days : base.days,
     hours: summary.hours || base.hours,
@@ -305,6 +306,7 @@ export type PhysicianBody = {
   status?: string;
   schedule?: Record<string, DaySchedule>;
   dayHours?: DayHoursMap;
+  commissionPercent?: number;
 };
 
 export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
@@ -328,6 +330,11 @@ export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
     days = Object.keys(schedule);
   }
 
+  const commissionPercent = Math.min(
+    100,
+    Math.max(0, Math.round(Number(raw.commissionPercent ?? 0)) || 0),
+  );
+
   return {
     id: Number(raw.id),
     name: String(raw.name || '').trim(),
@@ -339,5 +346,6 @@ export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
     hours,
     status: String(raw.status || 'available'),
     schedule,
+    commissionPercent,
   };
 }

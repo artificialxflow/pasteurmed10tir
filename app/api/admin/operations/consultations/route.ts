@@ -1,6 +1,7 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { mapConsultation } from '@/lib/operations/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { upsertConsultationStaffCommission } from '@/lib/home-visit/service';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -25,10 +26,21 @@ export async function PATCH(request: Request) {
   const status = body.status === 'answered' ? 'answered' : undefined;
   if (!status) return jsonError('وضعیت نامعتبر است.');
 
+  const existing = await prisma.consultation.findUnique({ where: { id: body.id } });
+  if (!existing) return jsonError('درخواست یافت نشد.', 404);
+
   const row = await prisma.consultation.update({
     where: { id: body.id },
     data: { status },
   });
+
+  if (existing.status !== 'answered') {
+    try {
+      await upsertConsultationStaffCommission(row.id);
+    } catch {
+      /* پورسانت جدا از پاسخ‌دهی؛ خطا گزارش نمی‌شود تا PATCH مشاوره نشکند */
+    }
+  }
 
   return NextResponse.json({ item: mapConsultation(row) });
 }

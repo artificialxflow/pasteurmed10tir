@@ -212,6 +212,8 @@ model Physician {
   status               String   @default("available")
   schedule             Json     @default("{}")
   sortOrder            Int      @default(0)
+  /** سهم پزشک کلینیک از مبلغ ویزیت/مشاوره (درصد) — فاز ۳ v17 */
+  commissionPercent    Int      @default(0)
 }
 
 model Dentist {
@@ -295,6 +297,8 @@ model SiteSettings {
   walletGraceMonths      Int    @default(1)
   walletInstallmentMin   Int    @default(4)
   walletInstallmentMax   Int    @default(6)
+  /** درصد پیش‌فرض سهم مشاور (تغذیه/روان/مامایی) وقتی ردیف جدا نیست */
+  consultantCommissionPercent Int @default(10)
 }
 
 model SpecialtyTariff {
@@ -1064,7 +1068,6 @@ model FieldStaff {
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   assignments           HomeVisitRequest[]
-  commissions           StaffCommission[]
 
   @@index([kind, active, status])
   @@index([sortOrder])
@@ -1105,19 +1108,28 @@ model HomeVisitRequest {
 }
 
 model StaffCommission {
-  id               String     @id
+  id               String    @id
+  /** شناسه نیرو: FieldStaff.id یا physician:{id} یا consultant:{category} */
   staffId          String
-  staff            FieldStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
   staffName        String
+  /** nurse | physician | consultant */
   staffKind        String
-  requestId        String     @unique
-  amount           Int        @default(0)
-  commissionRate   Int        @default(0)
-  commissionAmount Int        @default(0)
-  createdAt        DateTime   @default(now())
+  /** شناسه منبع یکتا (اعزام / مشاوره / …) */
+  requestId        String    @unique
+  amount           Int       @default(0)
+  commissionRate   Int       @default(0)
+  commissionAmount Int       @default(0)
+  /** pending | approved | paid */
+  status           String    @default("pending")
+  paidAt           DateTime?
+  /** home_visit | consultation | booking */
+  sourceType       String    @default("home_visit")
+  sourceLabel      String?
+  createdAt        DateTime  @default(now())
 
   @@index([staffId])
   @@index([staffKind])
+  @@index([status])
   @@index([createdAt])
 }
 

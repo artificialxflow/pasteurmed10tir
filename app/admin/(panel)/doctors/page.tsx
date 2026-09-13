@@ -186,6 +186,7 @@ export default function AdminDoctorsPage() {
   const [physicianSpecialty, setPhysicianSpecialty] = useState("");
   const [physicianSpecialtyId, setPhysicianSpecialtyId] = useState("");
   const [physicianMedicalCouncilNumber, setPhysicianMedicalCouncilNumber] = useState("");
+  const [physicianCommissionPercent, setPhysicianCommissionPercent] = useState(0);
   const [physicianDayHours, setPhysicianDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [physicianImage, setPhysicianImage] = useState("");
 
@@ -277,6 +278,10 @@ export default function AdminDoctorsPage() {
           schedule: patched.schedule || {},
           dayHours,
           status: patched.status || "available",
+          commissionPercent: Math.min(
+            100,
+            Math.max(0, Math.round(Number(patched.commissionPercent ?? 0)) || 0),
+          ),
         };
       })
       .filter((item) => item.name && item.specialty && item.days.length > 0);
@@ -358,6 +363,7 @@ export default function AdminDoctorsPage() {
           specialty: physicianSpecialty.trim(),
           specialtyId: physicianSpecialtyId.trim() || undefined,
           medicalCouncilNumber: physicianMedicalCouncilNumber.trim(),
+          commissionPercent: physicianCommissionPercent,
           image: physicianImage.trim() || "/uploads/placeholder.svg",
           days: summary.days,
           hours: summary.hours,
@@ -372,6 +378,7 @@ export default function AdminDoctorsPage() {
         setPhysicianSpecialty("");
         setPhysicianSpecialtyId("");
         setPhysicianMedicalCouncilNumber("");
+        setPhysicianCommissionPercent(0);
         setPhysicianDayHours(defaultNewDayHours());
         setPhysicianImage("");
         setError("");
@@ -603,6 +610,15 @@ export default function AdminDoctorsPage() {
                 onChange={(e) => setPhysicianMedicalCouncilNumber(e.target.value)}
                 placeholder="شماره نظام پزشکی"
               />
+              <div>
+                <p className="mb-1 text-xs font-bold text-slate-600">سهم پورسانت (٪)</p>
+                <DraftNumberInput
+                  min={0}
+                  max={100}
+                  value={physicianCommissionPercent}
+                  onCommit={setPhysicianCommissionPercent}
+                />
+              </div>
               <div className="md:col-span-2">
                 <p className="mb-2 text-xs font-bold text-slate-600">روز و ساعت حضور</p>
                 <DayHoursEditor value={physicianDayHours} onChange={setPhysicianDayHours} />
@@ -630,7 +646,10 @@ export default function AdminDoctorsPage() {
             </div>
           </div>
 
-          <AdminTable headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]} empty="متخصصی ثبت نشده.">
+          <AdminTable
+            headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "سهم٪", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
+            empty="متخصصی ثبت نشده."
+          >
             {physicians.map((p, index) => (
               <tr key={p.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
@@ -660,6 +679,14 @@ export default function AdminDoctorsPage() {
                     value={p.medicalCouncilNumber || ""}
                     onChange={(e) => updatePhysician(index, { medicalCouncilNumber: e.target.value })}
                     placeholder="شماره نظام"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <DraftNumberInput
+                    min={0}
+                    max={100}
+                    value={Number(p.commissionPercent || 0)}
+                    onCommit={(commissionPercent) => updatePhysician(index, { commissionPercent })}
                   />
                 </td>
                 <td className="px-4 py-3">
