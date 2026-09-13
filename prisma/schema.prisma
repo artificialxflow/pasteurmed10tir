@@ -34,6 +34,7 @@ model User {
   clubProfile        ClubProfile?
   dependents         Dependent[]
   homeVisitRequests  HomeVisitRequest[]
+  healthRecord       HealthRecord?
 }
 
 model PatientProfile {
@@ -1165,4 +1166,47 @@ model ServiceReview {
 
   @@index([userId])
   @@index([status])
+}
+
+/** پرونده سلامت بیمار — یک رکورد به‌ازای هر User */
+model HealthRecord {
+  id             String              @id
+  userId         String              @unique
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /** رزرو برای فاز ۷٫۲ — سه ویزیت رایگان عمومی/داخلی/دندان */
+  freeVisitsUsed Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  entries        HealthRecordEntry[]
+}
+
+model HealthRecordEntry {
+  id              String                    @id
+  recordId        String
+  record          HealthRecord              @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  /** vitals | general | dental | … (۱۸ بخش) */
+  section         String
+  /** تاریخ رویداد بالینی (ISO date در UI شمسی نمایش داده می‌شود) */
+  entryDate       DateTime                  @db.Date
+  /** فیلدهای بخش به‌صورت JSON */
+  payload         Json
+  createdByUserId String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  attachments     HealthRecordAttachment[]
+
+  @@index([recordId, section])
+  @@index([entryDate])
+}
+
+model HealthRecordAttachment {
+  id           String            @id
+  entryId      String
+  entry        HealthRecordEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  path         String
+  mimeType     String
+  originalName String
+  createdAt    DateTime          @default(now())
+
+  @@index([entryId])
 }

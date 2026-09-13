@@ -1,0 +1,132 @@
+import { generateOperationId } from '@/lib/operations/mappers';
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { isKnownSection, MVP_SECTION_IDS } from '@/lib/health-record/sections';
+
+export async function ensureHealthRecord(userId: string) {
+  const existing = await prisma.healthRecord.findUnique({ where: { userId } });
+  if (existing) return existing;
+  return prisma.healthRecord.create({
+    data: { id: generateOperationId(), userId },
+  });
+}
+
+export function mapAttachment(row: {
+  id: string;
+  path: string;
+  mimeType: string;
+  originalName: string;
+  createdAt: Date;
+}) {
+  return {
+    id: row.id,
+    path: row.path,
+    mimeType: row.mimeType,
+    originalName: row.originalName,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function mapEntry(row: {
+  id: string;
+  recordId: string;
+  section: string;
+  entryDate: Date;
+  payload: Prisma.JsonValue;
+  createdByUserId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  attachments?: Array<{
+    id: string;
+    path: string;
+    mimeType: string;
+    originalName: string;
+    createdAt: Date;
+  }>;
+}) {
+  return {
+    id: row.id,
+    recordId: row.recordId,
+    section: row.section,
+    date: row.entryDate.toISOString().slice(0, 10),
+    payload: row.payload,
+    createdByUserId: row.createdByUserId,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    attachments: (row.attachments || []).map(mapAttachment),
+  };
+}
+
+export async function createHealthEntry(input: {
+  userId: string;
+  section: string;
+  date: string;
+  payload: Record<string, unknown>;
+}) {
+  if (!isKnownSection(input.section)) {
+    throw new Error('بخش نامعتبر است.');
+  }
+  if (!MVP_SECTION_IDS.has(input.section)) {
+    throw new Error('این بخش هنوز فعال نشده است.');
+  }
+  const date = new Date(`${input.date}T12:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) throw new Error('تاریخ نامعتبر است.');
+
+  const record = await ensureHealthRecord(input.userId);
+  const row = await prisma.healthRecordEntry.create({
+    data: {
+      id: generateOperationId(),
+      recordId: record.id,
+      section: input.section,
+      entryDate: date,
+      payload: input.payload as Prisma.InputJsonValue,
+      createdByUserId: input.userId,
+    },
+    include: { attachments: true },
+  });
+  return mapEntry(row);
+}
+
+export async function listHealthEntries(userId: string, section?: string) {
+  const record = await ensureHealthRecord(userId);
+  const rows = await prisma.healthRecordEntry.findMany({
+    where: {
+      recordId: record.id,
+      ...(section ? { section } : {}),
+    },
+    include: { attachments: true },
+    orderBy: [{ entryDate: 'desc' }, { createdAt: 'desc' }],
+  });
+  return { recordId: record.id, items: rows.map(mapEntry) };
+}
+
+export async function getHealthEntryForUser(userId: string, entryId: string) {
+  const record = await prisma.healthRecord.findUnique({ where: { userId } });
+  if (!record) return null;
+  const row = await prisma.healthRecordEntry.findFirst({
+    where: { id: entryId, recordId: record.id },
+    include: { attachments: true },
+  });
+  return row ? mapEntry(row) : null;
+}
+
+export async function addHealthAttachment(input: {
+  userId: string;
+  entryId: string;
+  path: string;
+  mimeType: string;
+  originalName: string;
+}) {
+  const entry = await getHealthEntryForUser(input.userId, input.entryId);
+  if (!entry) throw new Error('رکورد یافت نشد.');
+  const row = await prisma.healthRecordAttachment.create({
+    data: {
+      id: generateOperationId(),
+      entryId: input.entryId,
+      path: input.path,
+      mimeType: input.mimeType,
+      originalName: input.originalName,
+    },
+  });
+  return mapAttachment(row);
+}

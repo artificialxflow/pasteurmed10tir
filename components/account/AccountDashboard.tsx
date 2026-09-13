@@ -255,16 +255,14 @@ export function AccountDashboard({
       >
         <p className="text-sm font-extrabold text-slate-900">پرونده سلامت</p>
         <p className="mt-1 text-xs leading-6 text-slate-600">
-          داشبورد پرونده سلامت به‌زودی در همین پنل فعال می‌شود. فعلاً می‌توانید مشخصات و تحت‌تکفل را
-          از بالا مدیریت کنید.
+          ثبت علائم حیاتی، شرح حال عمومی و یادداشت دندانپزشکی — سایر بخش‌ها به‌تدریج فعال می‌شوند.
         </p>
-        <button
-          type="button"
-          disabled
-          className="mt-3 cursor-not-allowed rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-400"
+        <Link
+          href={variant === "app" ? ROUTES.app.healthRecord : ROUTES.web.healthRecord}
+          className="mt-3 inline-flex rounded-xl border border-teal-600 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800"
         >
-          ورود به پرونده سلامت (به‌زودی)
-        </button>
+          ورود به پرونده سلامت
+        </Link>
       </Card>
 
       <FieldStaffAvailabilityCard />
