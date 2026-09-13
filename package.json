@@ -17,7 +17,9 @@
     "db:reset-all": "tsx scripts/reset-all.ts",
     "db:wipe-production": "tsx scripts/wipe-for-production.ts",
     "db:clean-demo": "tsx scripts/clean-demo-data.ts",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "db:restore-migrations": "node scripts/restore-migration-sql.cjs",
+    "db:build-restore-migrations": "node scripts/build-restore-migration-sql.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

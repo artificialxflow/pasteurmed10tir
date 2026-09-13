@@ -48,9 +48,13 @@ Admin passwords: copy `ADMIN-CREDENTIALS.example.json` → `ADMIN-CREDENTIALS.lo
 4. In Runflare terminal after deploy:
 
 ```bash
+# If Prisma P3015 (empty migration folders / missing migration.sql):
+npm run db:restore-migrations -- --prune-empty-unknown
 npx prisma migrate deploy
 # or: npm run db:deploy
 ```
+
+If deploy strips `*.sql` files, `db:restore-migrations` rewrites them from the bundled copy in `scripts/restore-migration-sql.cjs` (no DB deletes). After adding a new migration locally, run `npm run db:build-restore-migrations` before commit.
 
 **Fresh local dev** (optional seeds for testing):
 
