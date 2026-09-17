@@ -27,71 +27,116 @@ export function isKnownSection(id: string): id is HealthSectionId {
   return HEALTH_SECTIONS.some((s) => s.id === id);
 }
 
-export type HealthFieldKind = 'text' | 'number' | 'textarea';
+export type HealthFieldKind = 'text' | 'number' | 'textarea' | 'date';
 
 export type HealthSectionField = {
   key: string;
   label: string;
   kind: HealthFieldKind;
+  hint?: string;
 };
 
-const CLINIC_FIELDS: HealthSectionField[] = [
-  { key: 'complaint', label: 'شرح حال / شکایت', kind: 'textarea' },
-  { key: 'diagnosis', label: 'تشخیص', kind: 'text' },
-  { key: 'medications', label: 'دارو', kind: 'textarea' },
-  { key: 'notes', label: 'یادداشت', kind: 'text' },
+const VITALS_EXTRA: HealthSectionField[] = [
+  { key: 'age', label: 'سن', kind: 'number' },
+  { key: 'height', label: 'قد', kind: 'text' },
+  { key: 'weight', label: 'وزن', kind: 'text' },
+];
+
+const GENERAL_FIELDS: HealthSectionField[] = [
+  { key: 'doctorName', label: 'نام پزشک / ثبت‌کننده', kind: 'text' },
+  ...VITALS_EXTRA,
+  { key: 'diseaseHistory', label: 'سوابق بیماری', kind: 'textarea' },
+  { key: 'medications', label: 'داروهای مصرفی', kind: 'textarea' },
+  { key: 'surgeries', label: 'عمل‌های جراحی انجام‌شده', kind: 'textarea' },
+  { key: 'complaint', label: 'شکایت اصلی', kind: 'textarea' },
+  { key: 'diagnosis', label: 'تشخیص', kind: 'textarea' },
+  { key: 'recommendations', label: 'توصیه‌ها', kind: 'textarea' },
+  { key: 'care', label: 'مراقبت‌ها', kind: 'textarea' },
+];
+
+const DENTAL_FIELDS: HealthSectionField[] = [
+  { key: 'doctorName', label: 'نام دندانپزشک', kind: 'text' },
+  { key: 'needRestore', label: 'دندان‌های نیازمند ترمیم', kind: 'textarea', hint: 'متنی' },
+  { key: 'needExtract', label: 'دندان‌های نیازمند کشیدن', kind: 'textarea' },
+  { key: 'needSurgery', label: 'دندان‌های نیازمند جراحی', kind: 'textarea' },
+  { key: 'needRootCanal', label: 'دندان‌های نیازمند عصب‌کشی', kind: 'textarea' },
+  { key: 'needImplant', label: 'دندان‌های نیازمند ایمپلنت', kind: 'textarea' },
+  { key: 'servicesDone', label: 'خدمات انجام‌شده', kind: 'textarea' },
+];
+
+const SPECIALIST_FIELDS: HealthSectionField[] = [
+  { key: 'doctorName', label: 'نام پزشک', kind: 'text' },
+  ...VITALS_EXTRA,
+  { key: 'diagnosis', label: 'تشخیص', kind: 'textarea' },
+  { key: 'labTrackingCode', label: 'آزمایشات درخواستی (کد رهگیری)', kind: 'text' },
+  {
+    key: 'medications',
+    label: 'داروها',
+    kind: 'textarea',
+    hint: 'فارسی؛ دوز و ساعت مصرف',
+  },
+  { key: 'nextVisitDate', label: 'زمان ویزیت بعدی', kind: 'date' },
+  { key: 'recommendations', label: 'توصیه‌ها', kind: 'textarea' },
+  { key: 'care', label: 'مراقبت‌ها', kind: 'textarea' },
+  { key: 'otherNotes', label: 'سایر موارد', kind: 'textarea' },
 ];
 
 const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   vitals: [
+    { key: 'doctorName', label: 'نام ثبت‌کننده', kind: 'text' },
     { key: 'bpSystolic', label: 'فشار سیستول', kind: 'number' },
     { key: 'bpDiastolic', label: 'دیاستول', kind: 'number' },
     { key: 'hr', label: 'ضربان', kind: 'number' },
     { key: 'glucose', label: 'قند', kind: 'number' },
-    { key: 'notes', label: 'یادداشت', kind: 'text' },
+    { key: 'notes', label: 'یادداشت / نوار', kind: 'textarea' },
   ],
-  general: CLINIC_FIELDS,
-  dental: [
-    { key: 'note', label: 'یادداشت دندانپزشکی', kind: 'textarea' },
-    { key: 'notes', label: 'یادداشت اضافی', kind: 'text' },
-  ],
-  internal: CLINIC_FIELDS,
-  labs: [
-    { key: 'fbs', label: 'FBS', kind: 'number' },
-    { key: 'hba1c', label: 'HbA1c', kind: 'number' },
-    { key: 'otherLabs', label: 'سایر آزمایش‌ها', kind: 'textarea' },
-    { key: 'notes', label: 'یادداشت', kind: 'text' },
-  ],
-  neuro: CLINIC_FIELDS,
-  psych: CLINIC_FIELDS,
-  ent: CLINIC_FIELDS,
-  infect: CLINIC_FIELDS,
-  derm: CLINIC_FIELDS,
-  renal: CLINIC_FIELDS,
-  rheum: CLINIC_FIELDS,
-  endo: CLINIC_FIELDS,
-  cardio: CLINIC_FIELDS,
-  pulm: CLINIC_FIELDS,
-  imaging: [
-    { key: 'imagingType', label: 'نوع تصویربرداری', kind: 'text' },
-    { key: 'report', label: 'گزارش', kind: 'textarea' },
-    { key: 'notes', label: 'یادداشت', kind: 'text' },
-  ],
-  endo_proc: [
-    { key: 'procedureType', label: 'نوع اقدام', kind: 'text' },
-    { key: 'report', label: 'گزارش', kind: 'textarea' },
-    { key: 'notes', label: 'یادداشت', kind: 'text' },
-  ],
-  other: [
-    { key: 'title', label: 'عنوان', kind: 'text' },
-    { key: 'notes', label: 'شرح', kind: 'textarea' },
-  ],
+  general: GENERAL_FIELDS,
+  dental: DENTAL_FIELDS,
+  internal: SPECIALIST_FIELDS,
+  labs: SPECIALIST_FIELDS,
+  neuro: SPECIALIST_FIELDS,
+  psych: SPECIALIST_FIELDS,
+  ent: SPECIALIST_FIELDS,
+  infect: SPECIALIST_FIELDS,
+  derm: SPECIALIST_FIELDS,
+  renal: SPECIALIST_FIELDS,
+  rheum: SPECIALIST_FIELDS,
+  endo: SPECIALIST_FIELDS,
+  cardio: SPECIALIST_FIELDS,
+  pulm: SPECIALIST_FIELDS,
+  imaging: SPECIALIST_FIELDS,
+  endo_proc: SPECIALIST_FIELDS,
+  other: SPECIALIST_FIELDS,
 };
 
 export function fieldsForSection(id: HealthSectionId): HealthSectionField[] {
   return FIELDS_BY_SECTION[id];
 }
 
+export function fieldLabel(id: HealthSectionId, key: string): string {
+  return fieldsForSection(id).find((f) => f.key === key)?.label || key;
+}
+
+export function payloadDisplayRows(
+  section: string,
+  payload: Record<string, unknown> | null | undefined,
+): Array<{ label: string; value: string }> {
+  if (!payload) return [];
+  const id = isKnownSection(section) ? section : null;
+  return Object.entries(payload)
+    .filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== '')
+    .map(([key, v]) => ({
+      label: id ? fieldLabel(id, key) : key,
+      value: String(v),
+    }));
+}
+
 export function sectionAllowsUpload(id: HealthSectionId): boolean {
-  return id !== 'general';
+  return true;
+}
+
+export function sectionUploadHint(id: HealthSectionId): string {
+  if (id === 'dental') return 'عکس کلی دندان و عکس‌های اضافی';
+  if (id === 'vitals') return 'پیوست نوار / مدرک';
+  return 'پیوست مدرک در صورت نیاز';
 }

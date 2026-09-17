@@ -355,6 +355,21 @@ export async function listHomeVisitRequests() {
   return rows.map((row) => mapHomeVisitRequest(row, { includePatientAddress: true }));
 }
 
+export async function listStaffOwnJobs(phone: string) {
+  const staff = await findFieldStaffByPhone(phone);
+  if (!staff) return { item: null, items: [] as ReturnType<typeof mapHomeVisitRequest>[] };
+  const rows = await prisma.homeVisitRequest.findMany({
+    where: { assignedStaffId: staff.id },
+    include: DETAIL_INCLUDE,
+    orderBy: { createdAt: 'desc' },
+    take: 40,
+  });
+  return {
+    item: staff,
+    items: rows.map((row) => mapHomeVisitRequest(row, { includePatientAddress: true })),
+  };
+}
+
 export async function listPatientHomeVisits(phone: string) {
   const patientPhone = normalizePhoneDigits(phone);
   if (!patientPhone) return [];

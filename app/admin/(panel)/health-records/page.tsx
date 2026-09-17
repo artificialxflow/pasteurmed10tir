@@ -1,16 +1,18 @@
 "use client";
 
+import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
+import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
+  isKnownSection,
   type HealthSectionField,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
 import { fetchAdminOps, postAdminOps } from "@/lib/operations/client";
-import { formatJalaliDate } from "@/lib/patient";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Entry = {
@@ -195,25 +197,11 @@ export default function AdminHealthRecordsPage() {
             </select>
           </div>
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {fields.map((field) => (
-              <div key={field.key} className={field.kind === "textarea" ? "sm:col-span-2" : ""}>
-                <FormLabel>{field.label}</FormLabel>
-                {field.kind === "textarea" ? (
-                  <FormTextarea
-                    rows={3}
-                    value={values[field.key] || ""}
-                    onChange={(ev) => setValues((prev) => ({ ...prev, [field.key]: ev.target.value }))}
-                  />
-                ) : (
-                  <FormInput
-                    value={values[field.key] || ""}
-                    onChange={(ev) => setValues((prev) => ({ ...prev, [field.key]: ev.target.value }))}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <HealthRecordFormFields
+            fields={fields}
+            values={values}
+            onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+          />
           <Button type="submit" className="text-sm" disabled={!user}>
             ذخیره در پرونده
           </Button>
@@ -227,26 +215,12 @@ export default function AdminHealthRecordsPage() {
         ) : (
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-slate-100 p-3 text-sm">
-                <p className="font-bold text-slate-900">
-                  {HEALTH_SECTIONS.find((s) => s.id === item.section)?.label || item.section} ·{" "}
-                  {formatJalaliDate(item.date)}
-                </p>
-                <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-[0.7rem] text-slate-700">
-                  {JSON.stringify(item.payload, null, 2)}
-                </pre>
-                {(item.attachments || []).length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-xs">
-                    {item.attachments!.map((a) => (
-                      <li key={a.id}>
-                        <a className="text-teal-700 underline" href={a.path} target="_blank" rel="noreferrer">
-                          {a.originalName || a.path}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </li>
+              <HealthRecordEntryView
+                key={item.id}
+                item={item}
+                section={isKnownSection(item.section) ? item.section : writeSection}
+                title={HEALTH_SECTIONS.find((s) => s.id === item.section)?.label}
+              />
             ))}
           </ul>
         )}

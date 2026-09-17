@@ -1,17 +1,17 @@
 "use client";
 
+import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
+import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
-  sectionAllowsUpload,
   type HealthSectionField,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
-import { formatJalaliDate } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
@@ -32,13 +32,13 @@ function emptyValues(fields: HealthSectionField[]): Record<string, string> {
 
 export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const accountHref = variant === "app" ? ROUTES.app.account : ROUTES.web.account;
-  const [section, setSection] = useState<HealthSectionId>("vitals");
+  const [section, setSection] = useState<HealthSectionId>("general");
   const [items, setItems] = useState<Entry[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const fields = useMemo(() => fieldsForSection(section), [section]);
-  const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
+  const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("general")));
 
   useEffect(() => {
     setValues(emptyValues(fields));
@@ -71,8 +71,8 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       date,
       ...payload,
     })
-      .then((data) => {
-        setMessage(`ثبت شد: ${data.item.id}`);
+      .then(() => {
+        setMessage("در پرونده این بخش ثبت شد.");
         setValues(emptyValues(fields));
         reload();
       })
@@ -103,7 +103,9 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">پرونده سلامت</h1>
-          <p className="mt-1 text-xs text-slate-500">تاریخ‌ها در فرم و سوابق شمسی نمایش داده می‌شوند.</p>
+          <p className="mt-1 text-xs text-slate-500">
+            تاریخ شمسی است. ویزیت پزشک با نام پزشک در همان بخش تخصص دیده می‌شود.
+          </p>
         </div>
         <Link href={accountHref} className="text-xs font-bold text-teal-700">
           بازگشت به حساب
@@ -134,25 +136,11 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         </h2>
         <form onSubmit={submit} className="space-y-3">
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {fields.map((field) => (
-              <div key={field.key} className={field.kind === "textarea" ? "sm:col-span-2" : ""}>
-                <FormLabel>{field.label}</FormLabel>
-                {field.kind === "textarea" ? (
-                  <FormTextarea
-                    rows={3}
-                    value={values[field.key] || ""}
-                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                ) : (
-                  <FormInput
-                    value={values[field.key] || ""}
-                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <HealthRecordFormFields
+            fields={fields}
+            values={values}
+            onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+          />
           <Button type="submit" className="text-sm">
             ذخیره در پرونده
           </Button>
@@ -169,35 +157,12 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         ) : (
           <ul className="space-y-3">
             {items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-slate-100 p-3 text-sm">
-                <p className="font-bold text-slate-900">{formatJalaliDate(item.date)}</p>
-                <p className="mt-1 font-mono text-[0.65rem] text-slate-400">{item.id}</p>
-                <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-[0.7rem] text-slate-700">
-                  {JSON.stringify(item.payload, null, 2)}
-                </pre>
-                {(item.attachments || []).length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-xs">
-                    {item.attachments!.map((a) => (
-                      <li key={a.id}>
-                        <a className="text-teal-700 underline" href={a.path} target="_blank" rel="noreferrer">
-                          {a.originalName || a.path}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {sectionAllowsUpload(section) ? (
-                  <label className="mt-2 block text-xs font-bold text-slate-600">
-                    پیوست مدرک / تصویر
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="mt-1 block w-full text-xs"
-                      onChange={(ev) => void uploadFor(item.id, ev.target.files?.[0] || null)}
-                    />
-                  </label>
-                ) : null}
-              </li>
+              <HealthRecordEntryView
+                key={item.id}
+                item={item}
+                section={section}
+                onUpload={uploadFor}
+              />
             ))}
           </ul>
         )}
