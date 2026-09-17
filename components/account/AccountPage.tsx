@@ -18,6 +18,7 @@ import {
   type PatientProfile,
 } from "@/lib/patient";
 import { WEB_PAGE_CONTAINER } from "@/lib/layout";
+import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
