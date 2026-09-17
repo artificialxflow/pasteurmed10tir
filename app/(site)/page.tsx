@@ -98,7 +98,11 @@ export default function HomePage() {
               خدمات اصلی پاستور پلاس
             </h2>
             <p className="mx-auto max-w-xl text-slate-600">
-              خدمات اصلی با طراحی سریع، شفاف و مناسب موبایل
+              <span className="font-bold">لبخند</span>
+              {"، "}
+              <span className="font-bold">سلامتی</span>
+              {"، "}
+              <span className="font-bold">زندگی</span>
             </p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">

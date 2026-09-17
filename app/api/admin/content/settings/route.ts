@@ -2,6 +2,7 @@ import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
+import { parseShopFeaturedProductIds } from '@/lib/content/shop-featured-products';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
@@ -20,6 +21,7 @@ type SettingsBody = {
     installmentMax?: number;
   };
   shopHomeBanners?: unknown;
+  shopFeaturedProductIds?: unknown;
 };
 
 export async function GET() {
@@ -52,6 +54,7 @@ export async function GET() {
       installmentMax: row.walletInstallmentMax,
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
+    shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
   });
 }
 
@@ -66,7 +69,7 @@ export async function PUT(request: Request) {
       if (laserAuth.error || body.dentalReservationFee != null) return auth.error;
     }
   }
-  if (body.shopHomeBanners != null) {
+  if (body.shopHomeBanners != null || body.shopFeaturedProductIds != null) {
     const auth = await requireAdmin('shop');
     if (auth.error) return auth.error;
   }
@@ -112,6 +115,10 @@ export async function PUT(request: Request) {
         body.shopHomeBanners != null
           ? (parseShopHomeBanners(body.shopHomeBanners) as Prisma.InputJsonValue)
           : (parseShopHomeBanners(current.shopHomeBanners) as Prisma.InputJsonValue),
+      shopFeaturedProductIds:
+        body.shopFeaturedProductIds != null
+          ? (parseShopFeaturedProductIds(body.shopFeaturedProductIds) as Prisma.InputJsonValue)
+          : (parseShopFeaturedProductIds(current.shopFeaturedProductIds) as Prisma.InputJsonValue),
     },
   });
 
@@ -128,5 +135,6 @@ export async function PUT(request: Request) {
       installmentMax: row.walletInstallmentMax,
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
+    shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
   });
 }

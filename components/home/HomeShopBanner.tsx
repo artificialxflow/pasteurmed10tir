@@ -8,25 +8,37 @@ import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function pickFeaturedProducts(all: Product[], featuredIds: number[]) {
+  if (!featuredIds.length) return [];
+  const byId = new Map(all.map((p) => [p.id, p]));
+  return featuredIds
+    .map((id) => byId.get(id))
+    .filter((p): p is Product => Boolean(p && p.active !== false));
+}
+
 export function HomeShopBanner() {
   const [banners, setBanners] = useState<ShopHomeBanner[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [slide, setSlide] = useState(0);
 
   useEffect(() => {
-    void fetchPublic<{ shopHomeBanners?: ShopHomeBanner[] }>("/api/content/settings")
-      .then((data) => setBanners(Array.isArray(data.shopHomeBanners) ? data.shopHomeBanners : []))
-      .catch(() => setBanners([]));
-    void fetchPublic<{ items: Product[] }>("/api/content/products")
-      .then((data) =>
-        setProducts(
-          (data.items || [])
-            .filter((p) => p.active !== false && p.stock > 0)
-            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-            .slice(0, 8),
-        ),
-      )
-      .catch(() => setProducts([]));
+    void Promise.all([
+      fetchPublic<{ shopHomeBanners?: ShopHomeBanner[]; shopFeaturedProductIds?: number[] }>(
+        "/api/content/settings",
+      ),
+      fetchPublic<{ items: Product[] }>("/api/content/products"),
+    ])
+      .then(([settings, catalog]) => {
+        setBanners(Array.isArray(settings.shopHomeBanners) ? settings.shopHomeBanners : []);
+        const featuredIds = Array.isArray(settings.shopFeaturedProductIds)
+          ? settings.shopFeaturedProductIds
+          : [];
+        setProducts(pickFeaturedProducts(catalog.items || [], featuredIds));
+      })
+      .catch(() => {
+        setBanners([]);
+        setProducts([]);
+      });
   }, []);
 
   useEffect(() => {

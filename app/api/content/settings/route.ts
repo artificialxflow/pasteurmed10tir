@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
+import { parseShopFeaturedProductIds } from '@/lib/content/shop-featured-products';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_ID = 'default';
@@ -20,5 +21,6 @@ export async function GET() {
       installmentMax: row.walletInstallmentMax,
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
+    shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
   });
 }

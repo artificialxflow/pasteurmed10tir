@@ -307,6 +307,8 @@ model SiteSettings {
   consultantCommissionPercent Int @default(10)
   /** بنرهای فروشگاه پایین صفحه اصلی: [{ image, href?, title? }] */
   shopHomeBanners Json @default("[]")
+  /** شناسه محصولات پرفروش صفحه اصلی — ترتیب آرایه = ترتیب نمایش */
+  shopFeaturedProductIds Json @default("[]")
 }
 
 model SpecialtyTariff {

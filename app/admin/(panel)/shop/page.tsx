@@ -8,6 +8,10 @@ import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { slugifyFa } from "@/lib/content/product-slug";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import type { ShopHomeBanner } from "@/lib/content/shop-home-banners";
+import {
+  SHOP_FEATURED_PRODUCTS_MAX,
+  parseShopFeaturedProductIds,
+} from "@/lib/content/shop-featured-products";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { type Product } from "@/lib/data";
 import { productThumbnail } from "@/lib/shop/product-display";
@@ -129,6 +133,9 @@ export default function AdminShopPage() {
   const [error, setError] = useState("");
   const [homeBanners, setHomeBanners] = useState<ShopHomeBanner[]>([]);
   const [bannerSaving, setBannerSaving] = useState(false);
+  const [featuredProductIds, setFeaturedProductIds] = useState<number[]>([]);
+  const [featuredSaving, setFeaturedSaving] = useState(false);
+  const [featuredAddId, setFeaturedAddId] = useState("");
 
   async function loadCategories() {
     const data = await fetchAdmin<{ items: ProductCategory[] }>(
@@ -149,8 +156,13 @@ export default function AdminShopPage() {
     void fetchAdminCommerce<{ items: ShopOrder[] }>("/api/admin/commerce/orders")
       .then((data) => setOrders(data.items))
       .catch((e: Error) => setError(e.message));
-    void fetchAdmin<{ shopHomeBanners?: ShopHomeBanner[] }>("/api/admin/content/settings")
-      .then((data) => setHomeBanners(data.shopHomeBanners || []))
+    void fetchAdmin<{ shopHomeBanners?: ShopHomeBanner[]; shopFeaturedProductIds?: number[] }>(
+      "/api/admin/content/settings",
+    )
+      .then((data) => {
+        setHomeBanners(data.shopHomeBanners || []);
+        setFeaturedProductIds(parseShopFeaturedProductIds(data.shopFeaturedProductIds));
+      })
       .catch((e: Error) => setError(e.message));
   }
 
@@ -285,6 +297,41 @@ export default function AdminShopPage() {
     return map;
   }, [categories]);
 
+  const productById = useMemo(() => {
+    const map = new Map<number, Product>();
+    products.forEach((p) => map.set(p.id, p));
+    return map;
+  }, [products]);
+
+  const productsAvailableForFeatured = useMemo(
+    () => activeProducts.filter((p) => p.id > 0 && !featuredProductIds.includes(p.id)),
+    [activeProducts, featuredProductIds],
+  );
+
+  function moveFeaturedProduct(index: number, direction: -1 | 1) {
+    setFeaturedProductIds((prev) => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function addFeaturedProduct() {
+    const id = Number(featuredAddId);
+    if (!id || featuredProductIds.includes(id)) return;
+    if (featuredProductIds.length >= SHOP_FEATURED_PRODUCTS_MAX) {
+      setError(
+        `حداکثر ${SHOP_FEATURED_PRODUCTS_MAX.toLocaleString("fa-IR")} محصول قابل انتخاب است.`,
+      );
+      return;
+    }
+    setFeaturedProductIds((prev) => [...prev, id]);
+    setFeaturedAddId("");
+    setError("");
+  }
+
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -389,6 +436,123 @@ export default function AdminShopPage() {
             }}
           >
             {bannerSaving ? "…" : "ذخیره بنرها"}
+          </Button>
+        </div>
+      </Card>
+
+      <Card hover={false} className="bg-white p-6">
+        <h2 className="mb-2 font-bold">محصولات پرفروش صفحه اصلی</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          حداکثر {SHOP_FEATURED_PRODUCTS_MAX.toLocaleString("fa-IR")} محصول — ترتیب لیست زیر =
+          ترتیب نمایش در صفحه وب.
+        </p>
+        <div className="space-y-2">
+          {featuredProductIds.length ? (
+            featuredProductIds.map((id, index) => {
+              const product = productById.get(id);
+              return (
+                <div
+                  key={id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {product ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={productThumbnail(product)}
+                          className="h-10 w-10 rounded-lg border border-slate-200 object-cover"
+                          alt=""
+                        />
+                        <span className="truncate font-bold text-slate-900">{product.name}</span>
+                      </>
+                    ) : (
+                      <span className="font-bold text-amber-700">
+                        محصول #{id.toLocaleString("fa-IR")} (حذف‌شده)
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-bold text-slate-600 disabled:opacity-40"
+                      disabled={index === 0}
+                      onClick={() => moveFeaturedProduct(index, -1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-bold text-slate-600 disabled:opacity-40"
+                      disabled={index === featuredProductIds.length - 1}
+                      onClick={() => moveFeaturedProduct(index, 1)}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg px-2 py-1 text-xs font-bold text-red-600"
+                      onClick={() =>
+                        setFeaturedProductIds((prev) => prev.filter((itemId) => itemId !== id))
+                      }
+                    >
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+              هنوز محصولی انتخاب نشده — بلوک «محصولات پرفروش» در صفحه اصلی نمایش داده نمی‌شود.
+            </p>
+          )}
+        </div>
+        <div className="mt-4 flex flex-wrap items-end gap-2">
+          <div className="min-w-[14rem] flex-1">
+            <FormSelect
+              value={featuredAddId}
+              onChange={(e) => setFeaturedAddId(e.target.value)}
+              disabled={
+                !productsAvailableForFeatured.length ||
+                featuredProductIds.length >= SHOP_FEATURED_PRODUCTS_MAX
+              }
+            >
+              <option value="">افزودن محصول…</option>
+              {productsAvailableForFeatured.map((p) => (
+                <option key={p.id} value={String(p.id)}>
+                  {p.name}
+                </option>
+              ))}
+            </FormSelect>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={
+              !featuredAddId ||
+              featuredProductIds.length >= SHOP_FEATURED_PRODUCTS_MAX
+            }
+            onClick={addFeaturedProduct}
+          >
+            افزودن
+          </Button>
+          <Button
+            type="button"
+            disabled={featuredSaving}
+            onClick={() => {
+              setFeaturedSaving(true);
+              void putAdmin("/api/admin/content/settings", {
+                shopFeaturedProductIds: featuredProductIds,
+              })
+                .then(() => setError(""))
+                .catch((e) =>
+                  setError(e instanceof Error ? e.message : "ذخیره محصولات پرفروش ناموفق"),
+                )
+                .finally(() => setFeaturedSaving(false));
+            }}
+          >
+            {featuredSaving ? "…" : "ذخیره پرفروش‌ها"}
           </Button>
         </div>
       </Card>
