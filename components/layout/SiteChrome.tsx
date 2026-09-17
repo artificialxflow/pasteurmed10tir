@@ -24,7 +24,7 @@ const navItems = [
 const bottomNav = [
   { href: ROUTES.web.home, label: "خانه", icon: "🏠", id: "home" },
   { href: ROUTES.web.dentalGeneral, label: "رزرو", icon: "🦷", id: "dental" },
-  { href: ROUTES.web.shop, label: "تجهیزات", icon: "🛒", id: "shop" },
+  { href: ROUTES.web.healthRecord, label: "پرونده", icon: "📋", id: "health-record" },
   { href: ROUTES.web.support, label: "پشتیبانی", icon: "🎫", id: "support" },
   { href: ROUTES.web.account, label: "کاربری", icon: "👤", id: "account" },
 ];
@@ -32,6 +32,7 @@ const bottomNav = [
 function activeId(pathname: string) {
   if (pathname === "/") return "home";
   if (pathname.startsWith("/dental")) return "dental";
+  if (pathname.startsWith("/account/health-record")) return "health-record";
   if (pathname.startsWith("/shop")) return "shop";
   if (pathname.startsWith("/club")) return "club";
   if (pathname.startsWith("/consultation")) return "consultation";

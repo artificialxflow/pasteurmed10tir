@@ -300,14 +300,22 @@ export function AccountDashboard({
       >
         <p className="text-sm font-extrabold text-slate-900">پرونده سلامت</p>
         <p className="mt-1 text-xs leading-6 text-slate-600">
-          ثبت علائم حیاتی، شرح حال عمومی و یادداشت دندانپزشکی — سایر بخش‌ها به‌تدریج فعال می‌شوند.
+          ثبت علائم، یادداشت تخصصی و بارگذاری مدارک (jpg، pdf) — گزارش کلی پرونده هم از همان بخش در دسترس است.
         </p>
-        <Link
-          href={variant === "app" ? ROUTES.app.healthRecord : ROUTES.web.healthRecord}
-          className="mt-3 inline-flex rounded-xl border border-teal-600 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800"
-        >
-          ورود به پرونده سلامت
-        </Link>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href={healthHref}
+            className="inline-flex rounded-xl border border-teal-600 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800"
+          >
+            ورود به پرونده سلامت
+          </Link>
+          <Link
+            href={variant === "app" ? ROUTES.app.healthRecordReport : ROUTES.web.healthRecordReport}
+            className="inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700"
+          >
+            گزارش کلی
+          </Link>
+        </div>
       </Card>
 
       <FieldStaffAvailabilityCard />

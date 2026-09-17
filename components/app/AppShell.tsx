@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 const nav = [
   { href: ROUTES.app.home, label: "خانه", icon: "🏠", match: (p: string) => p === "/app" || p === "/app/" },
   { href: ROUTES.app.dentalGeneral, label: "رزرو", icon: "🦷", match: (p: string) => p.includes("/dental") },
-  { href: ROUTES.app.shop, label: "تجهیزات", icon: "🛒", match: (p: string) => p.includes("/shop") },
+  { href: ROUTES.app.healthRecord, label: "پرونده", icon: "📋", match: (p: string) => p.includes("/health-record") },
   { href: ROUTES.app.consultation, label: "مشاوره", icon: "💬", match: (p: string) => p.includes("/consultation") },
   {
     href: ROUTES.app.account,

@@ -3,8 +3,9 @@
 import { FormLabel } from "@/components/ui/Card";
 import {
   HEALTH_RECORD_FILE_ACCEPT,
+  sectionAllowsUpload,
   sectionCreateHint,
-  sectionIsAttachmentOnly,
+  sectionUploadHint,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
 
@@ -17,7 +18,7 @@ export function HealthRecordAttachmentFormField({
   file: File | null;
   onFileChange: (file: File | null) => void;
 }) {
-  if (!sectionIsAttachmentOnly(section)) return null;
+  if (!sectionAllowsUpload(section)) return null;
 
   const hint = sectionCreateHint(section);
 
@@ -25,7 +26,7 @@ export function HealthRecordAttachmentFormField({
     <div className="space-y-2 rounded-xl border border-dashed border-teal-200 bg-teal-50/40 p-3">
       {hint ? <p className="text-xs leading-6 text-slate-600">{hint}</p> : null}
       <div>
-        <FormLabel>بارگذاری گزارش (jpg، png، pdf)</FormLabel>
+        <FormLabel>{sectionUploadHint(section)}</FormLabel>
         <input
           type="file"
           accept={HEALTH_RECORD_FILE_ACCEPT}

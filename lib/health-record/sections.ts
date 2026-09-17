@@ -11,6 +11,8 @@ export const HEALTH_SECTIONS = [
   { id: 'derm', label: 'پوست', emoji: '🧴' },
   { id: 'renal', label: 'کلیه', emoji: '💧' },
   { id: 'rheum', label: 'روماتولوژی', emoji: '🦴' },
+  { id: 'ortho', label: 'ارتوپدی', emoji: '🩼' },
+  { id: 'ophthalm', label: 'چشم‌پزشکی', emoji: '👁️' },
   { id: 'endo', label: 'دیابت / غدد', emoji: '💉' },
   { id: 'cardio', label: 'قلب', emoji: '💓' },
   { id: 'pulm', label: 'ریه', emoji: '🌬️' },
@@ -104,6 +106,8 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   derm: SPECIALIST_FIELDS,
   renal: SPECIALIST_FIELDS,
   rheum: SPECIALIST_FIELDS,
+  ortho: SPECIALIST_FIELDS,
+  ophthalm: SPECIALIST_FIELDS,
   endo: SPECIALIST_FIELDS,
   cardio: SPECIALIST_FIELDS,
   pulm: SPECIALIST_FIELDS,
@@ -162,5 +166,7 @@ export function sectionCreateHint(id: HealthSectionId): string {
   if (id === 'labs') return 'تاریخ انجام آزمایش را انتخاب کنید و فایل گزارش (عکس یا PDF) را بارگذاری کنید.';
   if (id === 'imaging') return 'تاریخ سونوگرافی، ماموگرافی یا رادیولوژی — فقط تاریخ و فایل گزارش.';
   if (id === 'endo_proc') return 'تاریخ آندوسکوپی یا کولونوسکوپی — فقط تاریخ و فایل گزارش.';
-  return '';
+  if (id === 'vitals') return 'علائم حیاتی را ثبت کنید؛ در صورت داشتن نوار قلب یا مدرک، فایل را هم بارگذاری کنید.';
+  if (id === 'dental') return 'یادداشت دندانپزشکی و در صورت نیاز عکس دندان یا مدارک مرتبط را بارگذاری کنید.';
+  return 'در صورت نیاز مدرک، عکس یا PDF را بارگذاری کنید (jpg، png، pdf).';
 }

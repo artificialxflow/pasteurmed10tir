@@ -113,7 +113,7 @@ export default function AdminHealthRecordsPage() {
         if (pendingFile && data.item?.id) {
           await uploadFor(data.item.id, pendingFile);
           setPendingFile(null);
-          setMessage("تاریخ و گزارش ثبت شد.");
+          setMessage("ثبت شد و فایل پیوست شد.");
         } else {
           setMessage(
             sectionIsAttachmentOnly(writeSection)

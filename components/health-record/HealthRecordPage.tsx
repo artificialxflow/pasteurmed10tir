@@ -1,11 +1,13 @@
 "use client";
 
 import { HealthRecordAttachmentFormField } from "@/components/health-record/HealthRecordAttachmentFormField";
+import { HealthRecordBodyMap } from "@/components/health-record/HealthRecordBodyMap";
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
+import { HEALTH_GRID_ONLY_SECTIONS } from "@/lib/health-record/body-map";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
@@ -17,7 +19,7 @@ import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Entry = {
   id: string;
@@ -43,6 +45,14 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const fields = useMemo(() => fieldsForSection(section), [section]);
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("general")));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  function selectSection(id: HealthSectionId) {
+    setSection(id);
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
 
   useEffect(() => {
     setValues(emptyValues(fields));
@@ -80,7 +90,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         if (pendingFile && data.item?.id) {
           await uploadFor(data.item.id, pendingFile);
           setPendingFile(null);
-          setMessage("تاریخ و گزارش در پرونده ثبت شد.");
+          setMessage("در پرونده ثبت شد و فایل پیوست شد.");
         } else {
           setMessage(
             sectionIsAttachmentOnly(section)
@@ -122,30 +132,46 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
             تاریخ شمسی است. ویزیت پزشک با نام پزشک در همان بخش تخصص دیده می‌شود.
           </p>
         </div>
-        <Link href={accountHref} className="text-xs font-bold text-teal-700">
-          بازگشت به حساب
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={variant === "app" ? ROUTES.app.healthRecordReport : ROUTES.web.healthRecordReport}
+            className="text-xs font-bold text-cyan-800"
+          >
+            گزارش کلی پرونده
+          </Link>
+          <Link href={accountHref} className="text-xs font-bold text-teal-700">
+            بازگشت به حساب
+          </Link>
+        </div>
       </div>
 
-      <Card hover={false} className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 md:grid-cols-6">
-        {HEALTH_SECTIONS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setSection(s.id)}
-            className={`rounded-xl border px-2 py-3 text-center text-[0.7rem] font-bold transition ${
-              section === s.id
-                ? "border-teal-500 bg-teal-50 text-teal-900"
-                : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
-            }`}
-          >
-            <span className="block text-lg">{s.emoji}</span>
-            {s.label}
-          </button>
-        ))}
-      </Card>
+      <HealthRecordBodyMap activeSection={section} onSelect={selectSection} />
 
-      <Card hover={false} className="space-y-3 p-4">
+      {HEALTH_GRID_ONLY_SECTIONS.length ? (
+        <Card hover={false} className="space-y-2 p-3">
+          <p className="text-center text-xs font-bold text-slate-600">سایر بخش‌ها</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+            {HEALTH_GRID_ONLY_SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => selectSection(s.id)}
+                className={`rounded-xl border px-2 py-3 text-center text-[0.7rem] font-bold transition ${
+                  section === s.id
+                    ? "border-teal-500 bg-teal-50 text-teal-900"
+                    : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
+                }`}
+              >
+                <span className="block text-lg">{s.emoji}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      <div ref={formRef}>
+        <Card hover={false} className="space-y-3 p-4">
         <h2 className="text-sm font-extrabold text-slate-900">
           ثبت جدید — {HEALTH_SECTIONS.find((s) => s.id === section)?.label}
         </h2>
@@ -167,7 +193,8 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
             ذخیره در پرونده
           </Button>
         </form>
-      </Card>
+        </Card>
+      </div>
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm text-teal-800">{message}</p> : null}
