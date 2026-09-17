@@ -125,6 +125,10 @@ export default function AdminFieldStaffPage() {
         <p className="font-extrabold text-slate-900">
           {editingId ? "ویرایش نیرو" : "افزودن پرسنل میدانی"}
         </p>
+        <p className="text-xs leading-6 text-slate-600">
+          موبایل نیرو باید همان شماره‌ای باشد که با OTP وارد پنل حساب می‌شود؛ در غیر این صورت
+          دسترس‌پذیری و پورسانت در حساب کاربری دیده نمی‌شود.
+        </p>
         <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <div>
             <FormLabel>نام</FormLabel>
@@ -278,7 +282,12 @@ export default function AdminFieldStaffPage() {
                 "—"
               )}
             </td>
-            <td className="px-4 py-3 font-bold">{item.name}</td>
+            <td className="px-4 py-3 font-bold">
+              {item.name}
+              {!item.phone ? (
+                <span className="mt-1 block text-[0.65rem] font-bold text-amber-800">موبایل خالی — پنل حساب فعال نمی‌شود</span>
+              ) : null}
+            </td>
             <td className="px-4 py-3">{fieldStaffKindLabel(item.kind)}</td>
             <td className="px-4 py-3">{staffGenderLabel(item.gender)}</td>
             <td className="px-4 py-3 font-mono text-xs">{item.medicalCouncilNumber || "—"}</td>

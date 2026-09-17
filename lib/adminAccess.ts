@@ -90,6 +90,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'help', label: 'آموزش سامانه', href: ROUTES.admin.help },
   { id: 'installments', label: 'اقساط', href: ROUTES.admin.installments },
   { id: 'patients', label: 'تأیید کاربری / فرانشیز', href: ROUTES.admin.patients },
+  { id: 'patients', label: 'پرونده سلامت', href: ROUTES.admin.healthRecords },
   { id: 'access', label: 'سطح دسترسی', href: ROUTES.admin.access },
 ];
 
@@ -207,6 +208,12 @@ export function canAccessAdminPath(
     pathname.startsWith(`${ROUTES.admin.staffCommissions}/`)
   ) {
     return hasPermission(permissions, 'fieldStaff') || hasPermission(permissions, 'commissions');
+  }
+  if (
+    pathname === ROUTES.admin.healthRecords ||
+    pathname.startsWith(`${ROUTES.admin.healthRecords}/`)
+  ) {
+    return hasPermission(permissions, 'patients') || hasPermission(permissions, 'fieldStaff');
   }
   const needed = permissionForPath(pathname);
   if (!needed) return true;

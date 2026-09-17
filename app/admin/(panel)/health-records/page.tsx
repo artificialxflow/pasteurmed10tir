@@ -1,0 +1,206 @@
+"use client";
+
+import { Button } from "@/components/ui/Button";
+import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
+import {
+  HEALTH_SECTIONS,
+  fieldsForSection,
+  type HealthSectionField,
+  type HealthSectionId,
+} from "@/lib/health-record/sections";
+import { fetchAdminOps, postAdminOps } from "@/lib/operations/client";
+import { formatJalaliDate } from "@/lib/patient";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+
+type Entry = {
+  id: string;
+  section: string;
+  date: string;
+  payload: Record<string, unknown>;
+  attachments?: Array<{ id: string; path: string; originalName: string }>;
+};
+
+function emptyValues(fields: HealthSectionField[]): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const field of fields) next[field.key] = "";
+  return next;
+}
+
+export default function AdminHealthRecordsPage() {
+  const [phone, setPhone] = useState("");
+  const [section, setSection] = useState<HealthSectionId | "all">("all");
+  const [user, setUser] = useState<{ id: string; phone: string; name: string } | null>(null);
+  const [items, setItems] = useState<Entry[]>([]);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [writeSection, setWriteSection] = useState<HealthSectionId>("vitals");
+  const fields = useMemo(() => fieldsForSection(writeSection), [writeSection]);
+  const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
+
+  useEffect(() => {
+    setValues(emptyValues(fields));
+  }, [fields]);
+
+  async function search(e?: FormEvent) {
+    e?.preventDefault();
+    setError("");
+    setMessage("");
+    const qs = new URLSearchParams({ phone: phone.trim() });
+    if (section !== "all") qs.set("section", section);
+    try {
+      const data = await fetchAdminOps<{
+        user: { id: string; phone: string; name: string };
+        items: Entry[];
+      }>(`/api/admin/operations/health-records?${qs.toString()}`);
+      setUser(data.user);
+      setItems(data.items || []);
+    } catch (err) {
+      setUser(null);
+      setItems([]);
+      setError(err instanceof Error ? err.message : "جستجو ناموفق");
+    }
+  }
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    const payload: Record<string, unknown> = {};
+    for (const field of fields) {
+      const raw = (values[field.key] || "").trim();
+      if (!raw) continue;
+      payload[field.key] = field.kind === "number" ? Number(raw) : raw;
+    }
+    void postAdminOps<{ item: Entry }>("/api/admin/operations/health-records/entries", {
+      patientPhone: phone.trim(),
+      section: writeSection,
+      date,
+      ...payload,
+    })
+      .then(() => {
+        setMessage("ثبت شد.");
+        setValues(emptyValues(fields));
+        return search();
+      })
+      .catch((err: Error) => setError(err.message));
+  }
+
+  return (
+    <div className="space-y-6">
+      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {message ? <p className="text-sm text-teal-800">{message}</p> : null}
+
+      <Card hover={false} className="space-y-3 p-4">
+        <p className="font-extrabold text-slate-900">جستجوی پرونده بیمار</p>
+        <form onSubmit={(e) => void search(e)} className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <FormLabel>موبایل</FormLabel>
+            <FormInput value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          </div>
+          <div>
+            <FormLabel>بخش</FormLabel>
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+              value={section}
+              onChange={(e) => setSection(e.target.value as HealthSectionId | "all")}
+            >
+              <option value="all">همه</option>
+              {HEALTH_SECTIONS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" className="text-sm">
+              نمایش
+            </Button>
+          </div>
+        </form>
+        {user ? (
+          <p className="text-sm text-slate-600">
+            {user.name} · <span dir="ltr">{user.phone}</span>
+          </p>
+        ) : null}
+      </Card>
+
+      <Card hover={false} className="space-y-3 p-4">
+        <p className="font-extrabold text-slate-900">ثبت مورد جدید</p>
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <FormLabel>بخش ثبت</FormLabel>
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+              value={writeSection}
+              onChange={(e) => setWriteSection(e.target.value as HealthSectionId)}
+            >
+              {HEALTH_SECTIONS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {fields.map((field) => (
+              <div key={field.key} className={field.kind === "textarea" ? "sm:col-span-2" : ""}>
+                <FormLabel>{field.label}</FormLabel>
+                {field.kind === "textarea" ? (
+                  <FormTextarea
+                    rows={3}
+                    value={values[field.key] || ""}
+                    onChange={(ev) => setValues((prev) => ({ ...prev, [field.key]: ev.target.value }))}
+                  />
+                ) : (
+                  <FormInput
+                    value={values[field.key] || ""}
+                    onChange={(ev) => setValues((prev) => ({ ...prev, [field.key]: ev.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <Button type="submit" className="text-sm" disabled={!phone.trim()}>
+            ذخیره در پرونده
+          </Button>
+        </form>
+      </Card>
+
+      <Card hover={false} className="p-4">
+        <p className="mb-3 font-extrabold text-slate-900">سوابق</p>
+        {items.length === 0 ? (
+          <p className="text-xs text-slate-500">موردی نیست.</p>
+        ) : (
+          <ul className="space-y-3">
+            {items.map((item) => (
+              <li key={item.id} className="rounded-xl border border-slate-100 p-3 text-sm">
+                <p className="font-bold text-slate-900">
+                  {HEALTH_SECTIONS.find((s) => s.id === item.section)?.label || item.section} ·{" "}
+                  {formatJalaliDate(item.date)}
+                </p>
+                <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-[0.7rem] text-slate-700">
+                  {JSON.stringify(item.payload, null, 2)}
+                </pre>
+                {(item.attachments || []).length > 0 ? (
+                  <ul className="mt-2 space-y-1 text-xs">
+                    {item.attachments!.map((a) => (
+                      <li key={a.id}>
+                        <a className="text-teal-700 underline" href={a.path} target="_blank" rel="noreferrer">
+                          {a.originalName || a.path}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}

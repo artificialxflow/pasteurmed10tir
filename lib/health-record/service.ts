@@ -1,7 +1,8 @@
 import { generateOperationId } from '@/lib/operations/mappers';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
-import { isKnownSection, MVP_SECTION_IDS } from '@/lib/health-record/sections';
+import { isKnownSection } from '@/lib/health-record/sections';
+import { normalizePhoneDigits } from '@/lib/operations/phone';
 
 export async function ensureHealthRecord(userId: string) {
   const existing = await prisma.healthRecord.findUnique({ where: { userId } });
@@ -62,12 +63,10 @@ export async function createHealthEntry(input: {
   section: string;
   date: string;
   payload: Record<string, unknown>;
+  createdByUserId?: string | null;
 }) {
   if (!isKnownSection(input.section)) {
     throw new Error('بخش نامعتبر است.');
-  }
-  if (!MVP_SECTION_IDS.has(input.section)) {
-    throw new Error('این بخش هنوز فعال نشده است.');
   }
   const date = new Date(`${input.date}T12:00:00.000Z`);
   if (Number.isNaN(date.getTime())) throw new Error('تاریخ نامعتبر است.');
@@ -80,11 +79,53 @@ export async function createHealthEntry(input: {
       section: input.section,
       entryDate: date,
       payload: input.payload as Prisma.InputJsonValue,
-      createdByUserId: input.userId,
+      createdByUserId: input.createdByUserId ?? input.userId,
     },
     include: { attachments: true },
   });
   return mapEntry(row);
+}
+
+export async function findUserByPatientPhone(phone: string) {
+  const key = normalizePhoneDigits(phone);
+  if (!key) return null;
+  return prisma.user.findUnique({
+    where: { phone: key },
+    include: { profile: true, healthRecord: true },
+  });
+}
+
+export async function listHealthRecordsByPhone(phone: string) {
+  const user = await findUserByPatientPhone(phone);
+  if (!user) return { user: null, items: [] as ReturnType<typeof mapEntry>[] };
+  const listed = await listHealthEntries(user.id);
+  return {
+    user: {
+      id: user.id,
+      phone: user.phone,
+      name: user.name,
+      recordId: listed.recordId,
+    },
+    items: listed.items,
+  };
+}
+
+export async function createHealthEntryForPhone(input: {
+  patientPhone: string;
+  section: string;
+  date: string;
+  payload: Record<string, unknown>;
+  createdByAdminId?: string | null;
+}) {
+  const user = await findUserByPatientPhone(input.patientPhone);
+  if (!user) throw new Error('بیمار با این موبایل یافت نشد.');
+  return createHealthEntry({
+    userId: user.id,
+    section: input.section,
+    date: input.date,
+    payload: input.payload,
+    createdByUserId: input.createdByAdminId || user.id,
+  });
 }
 
 export async function listHealthEntries(userId: string, section?: string) {

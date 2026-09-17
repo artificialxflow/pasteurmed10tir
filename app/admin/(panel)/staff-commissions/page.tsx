@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { Button } from "@/components/ui/Button";
 import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
@@ -8,7 +9,7 @@ import {
   staffCommissionSourceLabel,
   staffCommissionStatusLabel,
 } from "@/lib/home-visit/labels";
-import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { downloadAdminOpsExport, fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { formatPrice } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
@@ -49,6 +50,7 @@ export default function AdminStaffCommissionsPage() {
   const [to, setTo] = useState("");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState<"xlsx" | "pdf" | "csv" | null>(null);
 
   const reload = useCallback(async () => {
     const params = new URLSearchParams();
@@ -84,6 +86,30 @@ export default function AdminStaffCommissionsPage() {
   useEffect(() => {
     void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
+
+  async function exportReport(format: "xlsx" | "pdf" | "csv") {
+    setError("");
+    setExportBusy(format);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const params = new URLSearchParams({ format });
+    if (kind === "nurse" || kind === "physician" || kind === "consultant") params.set("kind", kind);
+    if (status === "pending" || status === "approved" || status === "paid") params.set("status", status);
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    const path = `/api/admin/operations/staff-commissions/export?${params.toString()}`;
+    try {
+      if (format === "pdf") {
+        window.open(path, "_blank", "noopener,noreferrer");
+      } else {
+        const ext = format === "xlsx" ? "xlsx" : "csv";
+        await downloadAdminOpsExport(path, `staff-commissions-${stamp}.${ext}`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");
+    } finally {
+      setExportBusy(null);
+    }
+  }
 
   function setPayoutStatus(id: string, next: "approved" | "paid" | "pending") {
     setBusyId(id);
@@ -141,6 +167,36 @@ export default function AdminStaffCommissionsPage() {
         </div>
         <JalaliBirthDateField label="از تاریخ (شمسی)" value={from} onChange={setFrom} />
         <JalaliBirthDateField label="تا تاریخ (شمسی)" value={to} onChange={setTo} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("xlsx")}
+        >
+          {exportBusy === "xlsx" ? "در حال آماده‌سازی..." : "خروجی Excel"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("pdf")}
+        >
+          {exportBusy === "pdf" ? "در حال باز کردن..." : "خروجی PDF"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          disabled={exportBusy !== null}
+          onClick={() => void exportReport("csv")}
+        >
+          {exportBusy === "csv" ? "در حال آماده‌سازی..." : "خروجی CSV"}
+        </Button>
       </div>
 
       <AdminTable

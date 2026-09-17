@@ -18,7 +18,6 @@ export function CoveredInsurancesSection({ compact = false }: { compact?: boolea
           setItems(site);
           return;
         }
-        // fallback before migrate/seed: show active names
         setItems([...(data.base || []), ...(data.complementary || [])]);
       })
       .catch(() => setItems([]))
@@ -26,6 +25,8 @@ export function CoveredInsurancesSection({ compact = false }: { compact?: boolea
   }, []);
 
   if (loaded && items.length === 0) return null;
+
+  const track = [...items, ...items];
 
   return (
     <section
@@ -58,26 +59,24 @@ export function CoveredInsurancesSection({ compact = false }: { compact?: boolea
         {!loaded ? (
           <p className="text-center text-sm text-slate-400">در حال بارگذاری…</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex min-h-[3.25rem] items-center justify-center rounded-xl border border-cyan-100 bg-white px-3 py-2 text-center text-sm font-bold text-slate-800 shadow-[0_8px_24px_-20px_rgb(8_145_178_/_0.5)]"
-              >
-                {item.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+          <div className="overflow-hidden">
+            <ul className="insurance-slide-track flex w-max gap-3 hover:[animation-play-state:paused] sm:gap-4">
+              {track.map((item, index) => (
+                <li
+                  key={`${item.id}-${index}`}
+                  className="flex h-20 w-36 shrink-0 items-center justify-center rounded-2xl border border-cyan-100 bg-white px-3 shadow-[0_8px_24px_-20px_rgb(8_145_178_/_0.5)] sm:h-24 sm:w-44"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.logoUrl}
+                    src={item.logoUrl || `/api/content/insurance-mark/${encodeURIComponent(item.id)}`}
                     alt={item.name}
-                    className="max-h-10 max-w-full object-contain"
+                    className="max-h-14 max-w-full object-contain"
                     loading="lazy"
                   />
-                ) : (
-                  <span>{item.name}</span>
-                )}
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </section>

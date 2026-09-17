@@ -707,6 +707,7 @@ export async function listStaffCommissions(options?: {
   status?: string;
   from?: string;
   to?: string;
+  staffId?: string;
 }) {
   const kind =
     options?.kind === 'physician' ||
@@ -734,6 +735,7 @@ export async function listStaffCommissions(options?: {
 
   const rows = await prisma.staffCommission.findMany({
     where: {
+      ...(options?.staffId ? { staffId: options.staffId } : {}),
       ...(kind ? { staffKind: kind } : {}),
       ...(status ? { status } : {}),
       ...(createdAt ? { createdAt } : {}),

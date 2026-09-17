@@ -2,11 +2,19 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
-import { HEALTH_SECTIONS, type HealthSectionId } from "@/lib/health-record/sections";
+import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
+import {
+  HEALTH_SECTIONS,
+  fieldsForSection,
+  sectionAllowsUpload,
+  type HealthSectionField,
+  type HealthSectionId,
+} from "@/lib/health-record/sections";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
+import { formatJalaliDate } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type Entry = {
   id: string;
@@ -16,6 +24,12 @@ type Entry = {
   attachments?: Array<{ id: string; path: string; originalName: string }>;
 };
 
+function emptyValues(fields: HealthSectionField[]): Record<string, string> {
+  const next: Record<string, string> = {};
+  for (const field of fields) next[field.key] = "";
+  return next;
+}
+
 export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const accountHref = variant === "app" ? ROUTES.app.account : ROUTES.web.account;
   const [section, setSection] = useState<HealthSectionId>("vitals");
@@ -23,13 +37,12 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [bpSys, setBpSys] = useState("120");
-  const [bpDia, setBpDia] = useState("80");
-  const [hr, setHr] = useState("72");
-  const [glucose, setGlucose] = useState("");
-  const [notes, setNotes] = useState("");
-  const [complaint, setComplaint] = useState("");
-  const [dentalNote, setDentalNote] = useState("");
+  const fields = useMemo(() => fieldsForSection(section), [section]);
+  const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
+
+  useEffect(() => {
+    setValues(emptyValues(fields));
+  }, [fields]);
 
   const reload = useCallback(() => {
     void fetchPatientOps<{ items: Entry[] }>(
@@ -47,16 +60,11 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     e.preventDefault();
     setError("");
     setMessage("");
-    const payload: Record<string, unknown> = { notes: notes.trim() || undefined };
-    if (section === "vitals") {
-      payload.bpSystolic = Number(bpSys) || undefined;
-      payload.bpDiastolic = Number(bpDia) || undefined;
-      payload.hr = Number(hr) || undefined;
-      if (glucose.trim()) payload.glucose = Number(glucose);
-    } else if (section === "general") {
-      payload.complaint = complaint.trim();
-    } else if (section === "dental") {
-      payload.note = dentalNote.trim();
+    const payload: Record<string, unknown> = {};
+    for (const field of fields) {
+      const raw = (values[field.key] || "").trim();
+      if (!raw) continue;
+      payload[field.key] = field.kind === "number" ? Number(raw) : raw;
     }
     void postPatientOps<{ item: Entry }>("/api/operations/health-record/entries", {
       section,
@@ -65,9 +73,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     })
       .then((data) => {
         setMessage(`ثبت شد: ${data.item.id}`);
-        setNotes("");
-        setComplaint("");
-        setDentalNote("");
+        setValues(emptyValues(fields));
         reload();
       })
       .catch((err: Error) => setError(err.message));
@@ -97,7 +103,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">پرونده سلامت</h1>
-          <p className="mt-1 text-xs text-slate-500">تاریخ‌ها در سامانه به‌صورت میلادی ذخیره و در UI شمسی نمایش داده می‌شوند.</p>
+          <p className="mt-1 text-xs text-slate-500">تاریخ‌ها در فرم و سوابق شمسی نمایش داده می‌شوند.</p>
         </div>
         <Link href={accountHref} className="text-xs font-bold text-teal-700">
           بازگشت به حساب
@@ -109,19 +115,15 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
           <button
             key={s.id}
             type="button"
-            disabled={!s.mvp}
-            onClick={() => s.mvp && setSection(s.id)}
+            onClick={() => setSection(s.id)}
             className={`rounded-xl border px-2 py-3 text-center text-[0.7rem] font-bold transition ${
               section === s.id
                 ? "border-teal-500 bg-teal-50 text-teal-900"
-                : s.mvp
-                  ? "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
-                  : "cursor-not-allowed border-dashed border-slate-200 bg-slate-50 text-slate-400"
+                : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
             }`}
           >
             <span className="block text-lg">{s.emoji}</span>
             {s.label}
-            {!s.mvp ? <span className="mt-1 block text-[0.6rem]">به‌زودی</span> : null}
           </button>
         ))}
       </Card>
@@ -131,45 +133,25 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
           ثبت جدید — {HEALTH_SECTIONS.find((s) => s.id === section)?.label}
         </h2>
         <form onSubmit={submit} className="space-y-3">
-          <div>
-            <FormLabel>تاریخ (ISO)</FormLabel>
-            <FormInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-          </div>
-          {section === "vitals" ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div>
-                <FormLabel>فشار سیستول</FormLabel>
-                <FormInput value={bpSys} onChange={(e) => setBpSys(e.target.value)} />
+          <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {fields.map((field) => (
+              <div key={field.key} className={field.kind === "textarea" ? "sm:col-span-2" : ""}>
+                <FormLabel>{field.label}</FormLabel>
+                {field.kind === "textarea" ? (
+                  <FormTextarea
+                    rows={3}
+                    value={values[field.key] || ""}
+                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  />
+                ) : (
+                  <FormInput
+                    value={values[field.key] || ""}
+                    onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  />
+                )}
               </div>
-              <div>
-                <FormLabel>دیاستول</FormLabel>
-                <FormInput value={bpDia} onChange={(e) => setBpDia(e.target.value)} />
-              </div>
-              <div>
-                <FormLabel>ضربان</FormLabel>
-                <FormInput value={hr} onChange={(e) => setHr(e.target.value)} />
-              </div>
-              <div>
-                <FormLabel>قند</FormLabel>
-                <FormInput value={glucose} onChange={(e) => setGlucose(e.target.value)} />
-              </div>
-            </div>
-          ) : null}
-          {section === "general" ? (
-            <div>
-              <FormLabel>شکایت / شرح</FormLabel>
-              <FormTextarea value={complaint} onChange={(e) => setComplaint(e.target.value)} rows={3} />
-            </div>
-          ) : null}
-          {section === "dental" ? (
-            <div>
-              <FormLabel>یادداشت دندانپزشکی</FormLabel>
-              <FormTextarea value={dentalNote} onChange={(e) => setDentalNote(e.target.value)} rows={3} />
-            </div>
-          ) : null}
-          <div>
-            <FormLabel>یادداشت</FormLabel>
-            <FormInput value={notes} onChange={(e) => setNotes(e.target.value)} />
+            ))}
           </div>
           <Button type="submit" className="text-sm">
             ذخیره در پرونده
@@ -188,7 +170,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
           <ul className="space-y-3">
             {items.map((item) => (
               <li key={item.id} className="rounded-xl border border-slate-100 p-3 text-sm">
-                <p className="font-bold text-slate-900">{item.date}</p>
+                <p className="font-bold text-slate-900">{formatJalaliDate(item.date)}</p>
                 <p className="mt-1 font-mono text-[0.65rem] text-slate-400">{item.id}</p>
                 <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-2 text-[0.7rem] text-slate-700">
                   {JSON.stringify(item.payload, null, 2)}
@@ -204,17 +186,17 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
                     ))}
                   </ul>
                 ) : null}
-                {(section === "vitals" || section === "dental") && (
+                {sectionAllowsUpload(section) ? (
                   <label className="mt-2 block text-xs font-bold text-slate-600">
-                    پیوست تصویر (نوار / عکس)
+                    پیوست مدرک / تصویر
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.pdf"
                       className="mt-1 block w-full text-xs"
                       onChange={(ev) => void uploadFor(item.id, ev.target.files?.[0] || null)}
                     />
                   </label>
-                )}
+                ) : null}
               </li>
             ))}
           </ul>

@@ -13,7 +13,7 @@ function mapRow(i: {
     name: i.name,
     active: i.active,
     showOnSite: i.showOnSite,
-    logoUrl: i.logoUrl || null,
+    logoUrl: i.logoUrl || `/api/content/insurance-mark/${encodeURIComponent(i.id)}`,
   };
 }
 

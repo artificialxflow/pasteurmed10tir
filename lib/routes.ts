@@ -129,6 +129,7 @@ export const ROUTES = {
     shop: '/admin/shop',
     access: '/admin/access',
     patients: '/admin/patients',
+    healthRecords: '/admin/health-records',
     insurances: '/admin/insurances',
     reviews: '/admin/reviews',
     complaints: '/admin/complaints',

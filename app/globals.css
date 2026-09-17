@@ -186,6 +186,11 @@ p {
   }
 }
 
+@keyframes insurance-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 @keyframes shopCartFlash {
   0%,
   100% {
@@ -205,4 +210,8 @@ p {
 #shop-cart-button.shop-cart-flash,
 #shop-cart-button.shop-cart-flash > * {
   animation: shopCartFlash 1.4s ease;
+}
+
+.insurance-slide-track {
+  animation: insurance-slide 28s linear infinite;
 }
