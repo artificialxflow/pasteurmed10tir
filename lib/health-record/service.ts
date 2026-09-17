@@ -95,8 +95,29 @@ export async function findUserByPatientPhone(phone: string) {
   });
 }
 
-export async function listHealthRecordsByPhone(phone: string) {
-  const user = await findUserByPatientPhone(phone);
+export async function searchHealthRecordPatients(q: string) {
+  const raw = q.trim();
+  if (raw.length < 2) return [] as Array<{ id: string; name: string; phone: string }>;
+  const digits = normalizePhoneDigits(raw);
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { name: { contains: raw, mode: 'insensitive' } },
+        ...(digits.length >= 4 ? [{ phone: { contains: digits } }] : []),
+      ],
+    },
+    select: { id: true, name: true, phone: true },
+    orderBy: { updatedAt: 'desc' },
+    take: 20,
+  });
+  return users;
+}
+
+export async function listHealthRecordsByUserId(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { profile: true, healthRecord: true },
+  });
   if (!user) return { user: null, items: [] as ReturnType<typeof mapEntry>[] };
   const listed = await listHealthEntries(user.id);
   return {
@@ -108,6 +129,12 @@ export async function listHealthRecordsByPhone(phone: string) {
     },
     items: listed.items,
   };
+}
+
+export async function listHealthRecordsByPhone(phone: string) {
+  const user = await findUserByPatientPhone(phone);
+  if (!user) return { user: null, items: [] as ReturnType<typeof mapEntry>[] };
+  return listHealthRecordsByUserId(user.id);
 }
 
 export async function createHealthEntryForPhone(input: {

@@ -21,6 +21,8 @@ type Entry = {
   attachments?: Array<{ id: string; path: string; originalName: string }>;
 };
 
+type Match = { id: string; name: string; phone: string };
+
 function emptyValues(fields: HealthSectionField[]): Record<string, string> {
   const next: Record<string, string> = {};
   for (const field of fields) next[field.key] = "";
@@ -28,7 +30,8 @@ function emptyValues(fields: HealthSectionField[]): Record<string, string> {
 }
 
 export default function AdminHealthRecordsPage() {
-  const [phone, setPhone] = useState("");
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<Match[]>([]);
   const [section, setSection] = useState<HealthSectionId | "all">("all");
   const [user, setUser] = useState<{ id: string; phone: string; name: string } | null>(null);
   const [items, setItems] = useState<Entry[]>([]);
@@ -43,28 +46,49 @@ export default function AdminHealthRecordsPage() {
     setValues(emptyValues(fields));
   }, [fields]);
 
-  async function search(e?: FormEvent) {
+  async function searchMatches(e?: FormEvent) {
     e?.preventDefault();
     setError("");
     setMessage("");
-    const qs = new URLSearchParams({ phone: phone.trim() });
-    if (section !== "all") qs.set("section", section);
+    setUser(null);
+    setItems([]);
+    if (query.trim().length < 2) {
+      setError("حداقل دو حرف از نام یا بخشی از موبایل را وارد کنید.");
+      setMatches([]);
+      return;
+    }
     try {
-      const data = await fetchAdminOps<{
-        user: { id: string; phone: string; name: string };
-        items: Entry[];
-      }>(`/api/admin/operations/health-records?${qs.toString()}`);
-      setUser(data.user);
-      setItems(data.items || []);
+      const data = await fetchAdminOps<{ matches: Match[] }>(
+        `/api/admin/operations/health-records?q=${encodeURIComponent(query.trim())}`,
+      );
+      const list = data.matches || [];
+      setMatches(list);
+      if (list.length === 0) setError("بیماری با این نام یا موبایل یافت نشد.");
+      if (list.length === 1) await loadUser(list[0].id);
     } catch (err) {
-      setUser(null);
-      setItems([]);
+      setMatches([]);
       setError(err instanceof Error ? err.message : "جستجو ناموفق");
     }
   }
 
+  async function loadUser(userId: string) {
+    setError("");
+    const qs = new URLSearchParams({ userId });
+    if (section !== "all") qs.set("section", section);
+    const data = await fetchAdminOps<{
+      user: { id: string; phone: string; name: string };
+      items: Entry[];
+    }>(`/api/admin/operations/health-records?${qs.toString()}`);
+    setUser(data.user);
+    setItems(data.items || []);
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (!user) {
+      setError("ابتدا بیمار را از لیست انتخاب کنید.");
+      return;
+    }
     setError("");
     setMessage("");
     const payload: Record<string, unknown> = {};
@@ -74,7 +98,7 @@ export default function AdminHealthRecordsPage() {
       payload[field.key] = field.kind === "number" ? Number(raw) : raw;
     }
     void postAdminOps<{ item: Entry }>("/api/admin/operations/health-records/entries", {
-      patientPhone: phone.trim(),
+      patientPhone: user.phone,
       section: writeSection,
       date,
       ...payload,
@@ -82,7 +106,7 @@ export default function AdminHealthRecordsPage() {
       .then(() => {
         setMessage("ثبت شد.");
         setValues(emptyValues(fields));
-        return search();
+        return loadUser(user.id);
       })
       .catch((err: Error) => setError(err.message));
   }
@@ -94,13 +118,19 @@ export default function AdminHealthRecordsPage() {
 
       <Card hover={false} className="space-y-3 p-4">
         <p className="font-extrabold text-slate-900">جستجوی پرونده بیمار</p>
-        <form onSubmit={(e) => void search(e)} className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <FormLabel>موبایل</FormLabel>
-            <FormInput value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        <p className="text-xs text-slate-500">نام یا موبایل را بنویسید، از لیست انتخاب کنید.</p>
+        <form onSubmit={(e) => void searchMatches(e)} className="grid gap-3 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <FormLabel>نام یا موبایل</FormLabel>
+            <FormInput
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="مثلاً مجتبی یا 0912"
+              required
+            />
           </div>
           <div>
-            <FormLabel>بخش</FormLabel>
+            <FormLabel>بخش سوابق</FormLabel>
             <select
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
               value={section}
@@ -114,15 +144,35 @@ export default function AdminHealthRecordsPage() {
               ))}
             </select>
           </div>
-          <div className="flex items-end">
+          <div className="sm:col-span-3">
             <Button type="submit" className="text-sm">
-              نمایش
+              جستجو
             </Button>
           </div>
         </form>
+        {matches.length > 0 ? (
+          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-100">
+            {matches.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`flex w-full items-center justify-between px-3 py-2 text-right text-sm ${
+                    user?.id === item.id ? "bg-teal-50 font-bold text-teal-900" : "bg-white hover:bg-slate-50"
+                  }`}
+                  onClick={() => void loadUser(item.id).catch((err: Error) => setError(err.message))}
+                >
+                  <span>{item.name}</span>
+                  <span dir="ltr" className="font-mono text-xs text-slate-500">
+                    {item.phone}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {user ? (
           <p className="text-sm text-slate-600">
-            {user.name} · <span dir="ltr">{user.phone}</span>
+            انتخاب‌شده: {user.name} · <span dir="ltr">{user.phone}</span>
           </p>
         ) : null}
       </Card>
@@ -164,7 +214,7 @@ export default function AdminHealthRecordsPage() {
               </div>
             ))}
           </div>
-          <Button type="submit" className="text-sm" disabled={!phone.trim()}>
+          <Button type="submit" className="text-sm" disabled={!user}>
             ذخیره در پرونده
           </Button>
         </form>
