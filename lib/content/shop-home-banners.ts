@@ -6,17 +6,17 @@ export type ShopHomeBanner = {
 
 export function parseShopHomeBanners(raw: unknown): ShopHomeBanner[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const row = item as Record<string, unknown>;
-      const image = String(row.image || "").trim();
-      if (!image) return null;
-      return {
-        image,
-        href: String(row.href || "").trim() || undefined,
-        title: String(row.title || "").trim() || undefined,
-      };
-    })
-    .filter((item): item is ShopHomeBanner => Boolean(item));
+  const out: ShopHomeBanner[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const image = String(row.image || "").trim();
+    if (!image) continue;
+    out.push({
+      image,
+      href: String(row.href || "").trim() || undefined,
+      title: String(row.title || "").trim() || undefined,
+    });
+  }
+  return out;
 }
