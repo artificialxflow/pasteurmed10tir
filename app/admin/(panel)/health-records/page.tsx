@@ -113,6 +113,25 @@ export default function AdminHealthRecordsPage() {
       .catch((err: Error) => setError(err.message));
   }
 
+  async function uploadFor(entryId: string, file: File | null) {
+    if (!file || !user) return;
+    setError("");
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch(
+        `/api/admin/operations/health-records/entries/${encodeURIComponent(entryId)}/attachments`,
+        { method: "POST", body: fd, credentials: "include" },
+      );
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error || "آپلود ناموفق");
+      setMessage("عکس به همان تاریخ پیوست شد.");
+      await loadUser(user.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "آپلود ناموفق");
+    }
+  }
+
   return (
     <div className="space-y-6">
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
@@ -220,6 +239,7 @@ export default function AdminHealthRecordsPage() {
                 item={item}
                 section={isKnownSection(item.section) ? item.section : writeSection}
                 title={HEALTH_SECTIONS.find((s) => s.id === item.section)?.label}
+                onUpload={uploadFor}
               />
             ))}
           </ul>

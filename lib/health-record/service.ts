@@ -178,6 +178,26 @@ export async function getHealthEntryForUser(userId: string, entryId: string) {
   return row ? mapEntry(row) : null;
 }
 
+export async function addHealthAttachmentByEntryId(input: {
+  entryId: string;
+  path: string;
+  mimeType: string;
+  originalName: string;
+}) {
+  const row = await prisma.healthRecordEntry.findUnique({ where: { id: input.entryId } });
+  if (!row) throw new Error('رکورد یافت نشد.');
+  const saved = await prisma.healthRecordAttachment.create({
+    data: {
+      id: generateOperationId(),
+      entryId: input.entryId,
+      path: input.path,
+      mimeType: input.mimeType,
+      originalName: input.originalName,
+    },
+  });
+  return mapAttachment(saved);
+}
+
 export async function addHealthAttachment(input: {
   userId: string;
   entryId: string;

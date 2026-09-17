@@ -1,3 +1,4 @@
+import { defaultInsuranceLogoPath } from '@/lib/content/insurance-logo';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -13,7 +14,7 @@ function mapRow(i: {
     name: i.name,
     active: i.active,
     showOnSite: i.showOnSite,
-    logoUrl: i.logoUrl || `/api/content/insurance-mark/${encodeURIComponent(i.id)}`,
+    logoUrl: i.logoUrl || defaultInsuranceLogoPath(i.id),
   };
 }
 
@@ -27,10 +28,8 @@ export async function GET() {
   const complementaryAll = complementaryRows.map(mapRow);
 
   return NextResponse.json({
-    /** Patient dropdown: active only */
     base: baseAll.filter((i) => i.active),
     complementary: complementaryAll.filter((i) => i.active),
-    /** Homepage marketing: showOnSite (may include inactive-for-patient names) */
     site: [...baseAll, ...complementaryAll].filter((i) => i.showOnSite),
   });
 }

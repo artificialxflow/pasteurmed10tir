@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
@@ -144,25 +145,11 @@ export default function AdminInsurancesPage() {
                 </label>
               </div>
               <div className="mt-2">
-                <FormLabel>آدرس لوگو (اختیاری)</FormLabel>
-                <FormInput
-                  className="text-xs"
-                  dir="ltr"
+                <FormLabel>آرم / لوگو</FormLabel>
+                <ImageUploadField
                   value={i.logoUrl || ""}
+                  onChange={(logoUrl) => updateRow(kindKey, i.id, { logoUrl })}
                   placeholder="/uploads/insurance-logo.png"
-                  onChange={(e) => {
-                    const logoUrl = e.target.value;
-                    if (kindKey === "base") {
-                      setBase((prev) =>
-                        prev.map((row) => (row.id === i.id ? { ...row, logoUrl } : row)),
-                      );
-                    } else {
-                      setComp((prev) =>
-                        prev.map((row) => (row.id === i.id ? { ...row, logoUrl } : row)),
-                      );
-                    }
-                  }}
-                  onBlur={(e) => updateRow(kindKey, i.id, { logoUrl: e.target.value.trim() })}
                 />
               </div>
             </li>
@@ -177,8 +164,8 @@ export default function AdminInsurancesPage() {
       {message ? <p className="text-sm text-teal-800">{message}</p> : null}
 
       <Card hover={false} className="border-cyan-100 bg-cyan-50/50 p-4 text-sm leading-7 text-slate-700">
-        <strong>نمایش در سایت</strong> فقط سکشن «بیمه‌های تحت پوشش» صفحه اصلی/`/app` را پر می‌کند و با
-        دراپ‌داون بیمار (<strong>فعال</strong>) جداست. تا لوگو: نام نوشتاری کافی است.
+        <strong>نمایش در سایت</strong> سکشن پایین صفحه اصلی/`/app` را پر می‌کند. آرم را آپلود کنید یا
+        مسیر پیش‌فرض `/insurances/شناسه.svg` استفاده می‌شود.
       </Card>
 
       <Card hover={false} className="p-5">

@@ -71,10 +71,6 @@ export default function AppHomePage() {
         </Link>
       </section>
 
-      <div className="mb-5">
-        <CoveredInsurancesSection compact />
-      </div>
-
       <p className="mb-3 text-sm font-extrabold text-slate-900">خدمات اصلی</p>
       <div className="mb-5 grid grid-cols-2 gap-3">
         {services.map((s) => (
@@ -88,6 +84,8 @@ export default function AppHomePage() {
           <AppTile key={q.href} {...q} />
         ))}
       </div>
+
+      <CoveredInsurancesSection compact />
 
       <Link
         href={ROUTES.web.home}

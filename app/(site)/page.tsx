@@ -89,8 +89,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CoveredInsurancesSection />
-
       {/* Services */}
       <section className="py-12 sm:py-16" aria-labelledby="services-heading">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -282,6 +280,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <CoveredInsurancesSection />
     </main>
   );
 }

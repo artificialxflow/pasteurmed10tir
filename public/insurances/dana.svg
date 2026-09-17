@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120">
+  <rect width="200" height="120" rx="12" fill="#eff6ff"/>
+  <rect x="22" y="32" width="52" height="56" rx="8" fill="#1d4ed8"/>
+  <text x="48" y="68" text-anchor="middle" font-family="Tahoma,sans-serif" font-size="18" fill="#fff" font-weight="700">/</text>
+  <text x="86" y="66" font-family="Tahoma,sans-serif" font-size="22" font-weight="700" fill="#1e3a8a">/'F'</text>
+</svg>
