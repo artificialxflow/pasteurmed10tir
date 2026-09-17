@@ -11,6 +11,7 @@ import {
   type HealthSectionField,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
@@ -99,7 +100,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6" data-page="health-record">
+    <div className={`${WEB_PAGE_CONTAINER} space-y-6`} data-page="health-record">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">پرونده سلامت</h1>

@@ -1,6 +1,7 @@
 "use client";
 
 import { HeroSlider } from "@/components/home/HeroSlider";
+import { HomeShopBanner } from "@/components/home/HomeShopBanner";
 import { CoveredInsurancesSection } from "@/components/home/CoveredInsurancesSection";
 import { Button } from "@/components/ui/Button";
 import { Card, Logo } from "@/components/ui/Card";
@@ -94,7 +95,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <h2 id="services-heading" className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">
-              مسیرهای اصلی پاستور پلاس
+              خدمات اصلی پاستور پلاس
             </h2>
             <p className="mx-auto max-w-xl text-slate-600">
               خدمات اصلی با طراحی سریع، شفاف و مناسب موبایل
@@ -204,23 +205,16 @@ export default function HomePage() {
             خدمات هوشمند پاستور پلاس
           </h2>
           <p className="mx-auto mb-10 max-w-xl text-center text-slate-600">
-            مشاوره، گالری، باشگاه وفاداری و یادآور — همه در یک سامانه
+            مشاوره آنلاین، باشگاه وفاداری و یادآور — همه در یک سامانه
           </p>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 href: ROUTES.web.consultation,
                 emoji: "💬",
-                title: "مشاوره و ویزیت",
+                title: "مشاوره و ویزیت آنلاین",
                 desc: "پیش‌نمایش خدمت و تخمین هزینه",
                 hover: "hover:border-teal-500",
-              },
-              {
-                href: ROUTES.web.gallery,
-                emoji: "🖼️",
-                title: "گالری نتایج",
-                desc: "قبل و بعد — دندان، لیزر، زیبایی",
-                hover: "hover:border-cyan-500",
               },
               {
                 href: ROUTES.web.club,
@@ -256,30 +250,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Shop */}
-      <section className="py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-[1.25rem] border border-cyan-700 bg-gradient-to-bl from-cyan-700 via-cyan-800 to-slate-900 p-8 text-center text-white sm:p-12">
-            <div className="absolute -top-16 -right-16 h-44 w-44 rounded-full bg-amber-300/20 blur-2xl" />
-            <div className="absolute -bottom-16 -left-16 h-44 w-44 rounded-full bg-cyan-300/20 blur-2xl" />
-            <h2 className="relative mb-3 text-2xl font-bold sm:text-3xl">
-              فروشگاه تجهیزات پزشکی و دندانپزشکی
-            </h2>
-            <p className="relative mx-auto mb-6 max-w-lg text-cyan-100">
-              مشاهده محصولات، ثبت سفارش، فعال‌سازی مشتری VIP تجهیزات و درخواست تسهیلات خرید
-            </p>
-            <Link
-              href={ROUTES.web.shop}
-              className="relative inline-flex items-center gap-2 rounded-full border border-white bg-white px-8 py-3 font-bold text-cyan-900 transition-colors hover:bg-cyan-50"
-            >
-              ورود به فروشگاه تجهیزات
-              <svg className="h-5 w-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HomeShopBanner />
 
       <CoveredInsurancesSection />
     </main>

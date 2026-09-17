@@ -1,5 +1,6 @@
 import { PartnerRequestForm } from "@/components/partners/PartnerRequestForm";
 import { Card } from "@/components/ui/Card";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function PartnersPage() {
   return (
     <main className="flex-1 py-10">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+      <div className={WEB_PAGE_CONTAINER}>
         <Card
           hover={false}
           className="mb-8 border-cyan-200 bg-gradient-to-bl from-cyan-50 to-amber-50 p-6 sm:p-8"

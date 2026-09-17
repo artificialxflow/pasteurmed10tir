@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { postPublicOps } from "@/lib/operations/client";
 import { FormEvent, useState } from "react";
 
@@ -33,7 +34,7 @@ export function ComplaintsPage({ variant = "web" }: { variant?: "web" | "app" })
   }
 
   return (
-    <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-lg space-y-4 px-4 py-10"}>
+    <div className={variant === "app" ? "space-y-4" : `${WEB_PAGE_CONTAINER} space-y-4`}>
       <h1 className="text-xl font-extrabold text-slate-900">رسیدگی به شکایات</h1>
       <p className="text-sm text-slate-600">موضوع و شرح شکایت خود را ارسال کنید.</p>
       <Card hover={false} className="p-5">

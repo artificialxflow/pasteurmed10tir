@@ -33,6 +33,7 @@ export function mapDentist(row: DbDentist): DentistRecord {
     hours: row.hours || '',
     status: (row.status as DentistRecord['status']) || 'available',
     schedule,
+    bio: 'bio' in row && typeof row.bio === 'string' ? row.bio : '',
   };
   // Heal legacy rows where hours label was ignored and schedule stayed at 9–17.
   const dayHours = dayHoursFromDentist(base);
@@ -239,6 +240,7 @@ export type DentistBody = {
   hours?: string;
   status?: string;
   schedule?: Record<string, DaySchedule>;
+  bio?: string;
   /** When set, rebuilds schedule + days + hours summary. */
   dayHours?: DayHoursMap;
 };
@@ -271,6 +273,7 @@ export function normalizeDentistBody(raw: DentistBody): DentistBody {
     hours,
     status: String(raw.status || 'available'),
     schedule,
+    bio: String(raw.bio || '').trim(),
   };
 }
 
@@ -291,6 +294,7 @@ export function dentistToDbInput(
     status: normalized.status || 'available',
     schedule: normalized.schedule as unknown as Prisma.InputJsonValue,
     sortOrder,
+    bio: normalized.bio || '',
   };
 }
 

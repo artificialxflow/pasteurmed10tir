@@ -1,6 +1,8 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
+import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_ID = 'default';
@@ -17,6 +19,7 @@ type SettingsBody = {
     installmentMin?: number;
     installmentMax?: number;
   };
+  shopHomeBanners?: unknown;
 };
 
 export async function GET() {
@@ -25,7 +28,10 @@ export async function GET() {
     const walletAuth = await requireAdmin('wallets');
     if (walletAuth.error) {
       const laserAuth = await requireAdmin('laserServices');
-      if (laserAuth.error) return auth.error;
+      if (laserAuth.error) {
+        const shopAuth = await requireAdmin('shop');
+        if (shopAuth.error) return auth.error;
+      }
     }
   }
 
@@ -45,6 +51,7 @@ export async function GET() {
       installmentMin: row.walletInstallmentMin,
       installmentMax: row.walletInstallmentMax,
     },
+    shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
   });
 }
 
@@ -58,6 +65,10 @@ export async function PUT(request: Request) {
       const laserAuth = await requireAdmin('laserServices');
       if (laserAuth.error || body.dentalReservationFee != null) return auth.error;
     }
+  }
+  if (body.shopHomeBanners != null) {
+    const auth = await requireAdmin('shop');
+    if (auth.error) return auth.error;
   }
   if (body.wallet || body.consultantCommissionPercent != null) {
     const auth = await requireAdmin('wallets');
@@ -97,6 +108,10 @@ export async function PUT(request: Request) {
         w.installmentMin != null ? Number(w.installmentMin) : current.walletInstallmentMin,
       walletInstallmentMax:
         w.installmentMax != null ? Number(w.installmentMax) : current.walletInstallmentMax,
+      shopHomeBanners:
+        body.shopHomeBanners != null
+          ? (parseShopHomeBanners(body.shopHomeBanners) as Prisma.InputJsonValue)
+          : (parseShopHomeBanners(current.shopHomeBanners) as Prisma.InputJsonValue),
     },
   });
 
@@ -112,5 +127,6 @@ export async function PUT(request: Request) {
       installmentMin: row.walletInstallmentMin,
       installmentMax: row.walletInstallmentMax,
     },
+    shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
   });
 }

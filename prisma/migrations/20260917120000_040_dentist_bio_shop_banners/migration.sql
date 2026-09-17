@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Dentist" ADD COLUMN IF NOT EXISTS "bio" TEXT NOT NULL DEFAULT '';
+
+-- AlterTable
+ALTER TABLE "SiteSettings" ADD COLUMN IF NOT EXISTS "shopHomeBanners" JSONB NOT NULL DEFAULT '[]';

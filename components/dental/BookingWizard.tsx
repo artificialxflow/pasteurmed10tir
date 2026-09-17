@@ -12,8 +12,10 @@ import type { Dentist } from "@/lib/data";
 import { fetchPublic } from "@/lib/content/client";
 import { checkBookingSlot } from "@/lib/operations/client";
 import {
-  buildAvailableBookingDates,
+  buildPersianMonthCalendars,
   formatBookingDateLabel,
+  PERSIAN_WEEKDAY_ORDER,
+  persianDayNumber,
 } from "@/lib/operations/booking-dates";
 import { PasteurStorage } from "@/lib/storage";
 import { cn, formatHour, formatPrice, normalizePhone } from "@/lib/utils";
@@ -81,7 +83,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const steps = useMemo<StepName[]>(() => {
     if (doctorFromQuery && dayFromQuery) return ["type", "time", "info"];
     if (doctorFromQuery) return ["type", "day", "time", "info"];
-    return ["type", "doctor", "day", "time", "info"];
+    return ["doctor", "type", "day", "time", "info"];
   }, [doctorFromQuery, dayFromQuery]);
 
   const [state, setState] = useState<BookingState>(() => {
@@ -92,13 +94,14 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       day: dayFromQuery || null,
     };
   });
-  const [currentStep, setCurrentStep] = useState<StepName>("type");
+  const [currentStep, setCurrentStep] = useState<StepName>("doctor");
   const [error, setError] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [dentistsLoading, setDentistsLoading] = useState(true);
+  const [doctorTrack, setDoctorTrack] = useState<"general" | "specialty">("general");
   const { profile: sessionProfile } = usePatientProfile();
   const [dependents, setDependents] = useState<
     Array<{ id: string; name: string; relation: string }>
@@ -184,14 +187,25 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
-  const dateOptions = useMemo(() => {
+  const monthCalendars = useMemo(() => {
     if (!doctor) return [];
-    return buildAvailableBookingDates(Object.keys(doctor.schedule || {}), 8);
+    return buildPersianMonthCalendars(Object.keys(doctor.schedule || {}), 2);
   }, [doctor]);
+  const listedDentists = useMemo(() => {
+    return dentists.filter((d) => {
+      const id = String(d.specialtyId || "").toLowerCase();
+      const general = id === "general" || id === "" || d.specialty.includes("عمومی");
+      return doctorTrack === "general" ? general : !general;
+    });
+  }, [dentists, doctorTrack]);
 
   const stepHint = STEP_LABELS[currentStep] || "";
 
-  // Heal: landed on time without type → bounce back
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!steps.includes(currentStep)) setCurrentStep(steps[0] || "doctor");
+  }, [hydrated, steps, currentStep]);
+
   useEffect(() => {
     if (!hydrated) return;
     if (currentStep !== "time") return;
@@ -338,14 +352,14 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   if (!hydrated) {
     return (
-      <div className={cn(app ? "" : "mx-auto max-w-2xl px-4 py-10 sm:px-6")}>
+      <div className={cn(app ? "" : "mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8")}>
         <p className="text-center text-sm text-slate-500">در حال بارگذاری...</p>
       </div>
     );
   }
 
   return (
-    <div className={cn(app ? "space-y-4" : "mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10")}>
+    <div className={cn(app ? "space-y-4" : "mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8")}>
       {!app ? (
         <>
           <nav className="mb-4 text-sm text-slate-500">
@@ -385,11 +399,21 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             {doctor.medicalCouncilNumber ? (
               <p className="text-xs text-slate-500">نظام پزشکی: {doctor.medicalCouncilNumber}</p>
             ) : null}
+            {doctor.bio?.trim() ? (
+              <p className="mt-1 text-xs leading-6 text-slate-600">{doctor.bio.trim()}</p>
+            ) : null}
           </div>
         </div>
       ) : null}
 
-      <BookingProgress steps={steps} activeIndex={stepIndex} app={app} />
+      <BookingProgress
+        steps={steps}
+        activeIndex={stepIndex}
+        app={app}
+        onSelect={(i) => {
+          if (i < stepIndex) showStep(steps[i]);
+        }}
+      />
 
       {error ? (
         <div className="mb-4 rounded-lg border-2 border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -401,7 +425,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         <div className={cn("grid gap-4", app ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
           <TypeOption
             selected={state.type === "visit"}
-            onClick={() => updateState({ type: "visit", timeValue: null, timeLabel: null })}
+            onClick={() => {
+              const next = { ...state, type: "visit" as const, timeValue: null, timeLabel: null };
+              setState(next);
+              showStep("day", next);
+            }}
             emoji="🦷"
             title="ویزیت"
             desc="انتخاب ساعت کلی — ویزیت هر زمان قابل انتخاب است"
@@ -410,7 +438,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           />
           <TypeOption
             selected={state.type === "treatment"}
-            onClick={() => updateState({ type: "treatment", timeValue: null, timeLabel: null })}
+            onClick={() => {
+              const next = { ...state, type: "treatment" as const, timeValue: null, timeLabel: null };
+              setState(next);
+              showStep("day", next);
+            }}
             emoji="🪥"
             title="شروع یا ادامه درمان"
             desc="بازه‌های یک‌ساعته — هر خدمت دقیقاً یک ساعت"
@@ -422,8 +454,33 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
       {currentStep === "doctor" ? (
         <div className="space-y-3">
+          <div className="mb-2 flex gap-2">
+            {(
+              [
+                ["general", "عمومی"],
+                ["specialty", "تخصصی"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setDoctorTrack(id)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-bold",
+                  doctorTrack === id
+                    ? "border-teal-500 bg-teal-50 text-teal-900"
+                    : "border-slate-200 bg-white text-slate-600",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <p className="mb-1 text-sm text-slate-600">دندانپزشک مورد نظر را انتخاب کنید:</p>
-          {dentists.map((d) => {
+          {listedDentists.length === 0 && !dentistsLoading ? (
+            <p className="py-6 text-center text-sm text-slate-500">پزشکی در این گروه ثبت نشده است.</p>
+          ) : null}
+          {listedDentists.map((d) => {
             const selected = state.doctorId === d.id;
             const inactive = d.status === "inactive";
             return (
@@ -431,15 +488,18 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 key={d.id}
                 type="button"
                 disabled={inactive}
-                onClick={() =>
-                  updateState({
+                onClick={() => {
+                  const next = {
+                    ...state,
                     doctorId: d.id,
                     day: null,
                     appointmentDate: null,
                     timeValue: null,
                     timeLabel: null,
-                  })
-                }
+                  };
+                  setState(next);
+                  showStep("type", next);
+                }}
                 className={cn(
                   "flex w-full items-center gap-4 rounded-2xl border p-4 text-right transition",
                   selected
@@ -471,46 +531,76 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       ) : null}
 
       {currentStep === "day" ? (
-        <div>
-          <p className="mb-4 text-sm text-slate-600">
-            تاریخ نوبت را انتخاب کنید (تا ۸ هفته آینده):
+        <div className="space-y-6">
+          <p className="text-sm text-slate-600">
+            تقویم این ماه و ماه بعد — روزهای حضور پزشک روشن‌تر است.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {!doctor || !dateOptions.length ? (
-              <p className="col-span-full py-6 text-center text-slate-500">
-                {dentistsLoading
-                  ? "در حال بارگذاری برنامه پزشک…"
-                  : "تاریخی برای این پزشک ثبت نشده است."}
-              </p>
-            ) : (
-              dateOptions.map((opt) => {
-                const selected = state.appointmentDate === opt.isoDate;
-                return (
-                  <button
-                    key={opt.isoDate}
-                    type="button"
-                    onClick={() =>
-                      updateState({
-                        appointmentDate: opt.isoDate,
-                        day: opt.weekday,
-                        timeValue: null,
-                        timeLabel: null,
-                      })
-                    }
-                    className={cn(
-                      "rounded-2xl border px-4 py-3 text-right transition",
-                      selected
-                        ? "border-teal-500 bg-teal-50 ring-2 ring-teal-200"
-                        : "border-sky-200 bg-white hover:border-teal-400",
-                    )}
-                  >
-                    <span className="block text-xs text-slate-500">{opt.weekday}</span>
-                    <span className="block font-semibold text-slate-900">{opt.label}</span>
-                  </button>
-                );
-              })
-            )}
-          </div>
+          {!doctor || !monthCalendars.length ? (
+            <p className="py-6 text-center text-slate-500">
+              {dentistsLoading
+                ? "در حال بارگذاری برنامه پزشک…"
+                : "تاریخی برای این پزشک ثبت نشده است."}
+            </p>
+          ) : (
+            monthCalendars.map((month) => {
+              const firstWeekday = month.days[0]?.weekday;
+              const pad = Math.max(
+                0,
+                PERSIAN_WEEKDAY_ORDER.findIndex((w) => w === firstWeekday),
+              );
+              return (
+                <div key={month.key}>
+                  <p className="mb-2 text-sm font-extrabold text-slate-900">{month.label}</p>
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-center text-[0.65rem] font-bold text-slate-500">
+                      {PERSIAN_WEEKDAY_ORDER.map((wd) => (
+                        <div key={wd} className="px-1 py-2">
+                          {wd}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 p-2">
+                      {Array.from({ length: pad }).map((_, i) => (
+                        <div key={`pad-${month.key}-${i}`} className="min-h-[3rem]" />
+                      ))}
+                      {month.days.map((cell) => {
+                        const selected = state.appointmentDate === cell.isoDate;
+                        return (
+                          <button
+                            key={cell.isoDate}
+                            type="button"
+                            disabled={!cell.available}
+                            onClick={() => {
+                              const next = {
+                                ...state,
+                                appointmentDate: cell.isoDate,
+                                day: cell.scheduleDay,
+                                timeValue: null,
+                                timeLabel: null,
+                              };
+                              setState(next);
+                              showStep("time", next);
+                            }}
+                            className={cn(
+                              "flex min-h-[3rem] flex-col items-center justify-center rounded-xl border px-1 py-1 text-xs font-bold transition",
+                              cell.available
+                                ? selected
+                                  ? "border-teal-500 bg-teal-50 text-teal-900 ring-2 ring-teal-200"
+                                  : "border-teal-200 bg-teal-50/80 text-teal-900 hover:border-teal-400"
+                                : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400",
+                            )}
+                            title={cell.isoDate}
+                          >
+                            <span className="text-sm">{persianDayNumber(cell.isoDate)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       ) : null}
 
@@ -520,7 +610,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           dentistsLoading={dentistsLoading}
           state={state}
           occupiedSlots={occupiedSlots}
-          onSelect={(timeValue, timeLabel) => updateState({ timeValue, timeLabel })}
+          onSelect={(timeValue, timeLabel) => {
+            const next = { ...state, timeValue, timeLabel };
+            setState(next);
+            showStep("info", next);
+          }}
           onBackToType={() => showStep("type")}
           onBackToList={() => router.push(`${basePath}/general`)}
         />
@@ -657,20 +751,16 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         </div>
       ) : null}
 
-      <div className="mt-8 flex gap-3">
-        <Button variant="outline" onClick={back} className="rounded-lg px-5 py-2.5">
-          قبلی
-        </Button>
-        {currentStep === "info" ? (
+      {currentStep === "info" ? (
+        <div className="mt-8 flex gap-3">
+          <Button variant="outline" onClick={back} className="rounded-lg px-5 py-2.5">
+            قبلی
+          </Button>
           <Button onClick={() => submitBooking()} className="flex-1">
             ادامه و تأیید نهایی
           </Button>
-        ) : (
-          <Button onClick={next} className="flex-1">
-            مرحله بعد
-          </Button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -679,10 +769,12 @@ function BookingProgress({
   steps,
   activeIndex,
   app,
+  onSelect,
 }: {
   steps: StepName[];
   activeIndex: number;
   app: boolean;
+  onSelect?: (index: number) => void;
 }) {
   if (app) {
     return (
@@ -691,10 +783,12 @@ function BookingProgress({
           <div key={s} className="flex min-w-0 flex-1 items-center gap-1">
             <div className="flex flex-col items-center gap-1">
               <div
+                role={i < activeIndex ? "button" : undefined}
+                onClick={() => onSelect?.(i)}
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold",
                   i < activeIndex
-                    ? "border-teal-500 bg-teal-500 text-white"
+                    ? "cursor-pointer border-teal-500 bg-teal-500 text-white"
                     : i === activeIndex
                       ? "border-teal-500 bg-teal-500 text-white"
                       : "border-slate-300 bg-white text-slate-500",
@@ -728,11 +822,14 @@ function BookingProgress({
           className={cn("flex items-center gap-2", i < steps.length - 1 && "flex-1")}
         >
           <div
+            role={i < activeIndex ? "button" : undefined}
+            onClick={() => onSelect?.(i)}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-bold",
               i <= activeIndex
                 ? "border-teal-500 bg-teal-500 text-white"
                 : "border-teal-500 bg-white text-teal-700",
+              i < activeIndex && "cursor-pointer",
             )}
           >
             {i < activeIndex ? "✓" : i + 1}

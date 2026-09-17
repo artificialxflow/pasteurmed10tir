@@ -17,20 +17,12 @@ type HubItem = {
 
 const HUB_ITEMS: HubItem[] = [
   {
-    emoji: "👨‍⚕️",
-    title: "عمومی",
-    appTitle: "عمومی",
-    desc: "لیست دندانپزشکان و رزرو نوبت",
-    appDesc: "لیست دندانپزشکان و رزرو نوبت",
-    href: (base) => `${base}/general`,
-  },
-  {
-    emoji: "🔬",
-    title: "تخصصی",
-    appTitle: "تخصصی",
-    desc: "خدمات تخصصی دندانپزشکی",
-    appDesc: "خدمات تخصصی دندانپزشکی",
-    href: (base) => `${base}/specialty`,
+    emoji: "🦷",
+    title: "رزرو نوبت دندانپزشکی",
+    appTitle: "رزرو نوبت دندانپزشکی",
+    desc: "انتخاب پزشک عمومی یا تخصصی، تاریخ و ساعت",
+    appDesc: "انتخاب پزشک، تاریخ و ساعت",
+    href: (base) => `${base}/booking`,
   },
   {
     emoji: "💰",

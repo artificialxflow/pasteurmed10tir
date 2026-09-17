@@ -11,13 +11,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
 const navItems = [
-  { href: ROUTES.web.home, label: "خانه", id: "home" },
-  { href: ROUTES.web.shop, label: "تجهیزات", id: "shop" },
   { href: ROUTES.web.gallery, label: "گالری", id: "gallery" },
-  { href: ROUTES.web.club, label: "باشگاه", id: "club" },
   { href: ROUTES.web.dental, label: "دندانپزشکی", id: "dental" },
   { href: ROUTES.web.consultation, label: "مشاوره", id: "consultation" },
-  { href: ROUTES.web.account, label: "کاربری", id: "account" },
+  { href: ROUTES.web.account, label: "ثبت‌نام", id: "account" },
   { href: ROUTES.web.support, label: "پشتیبانی", id: "support" },
   { href: ROUTES.web.help, label: "آموزش", id: "help" },
   { href: ROUTES.web.contact, label: "تماس", id: "contact" },
@@ -54,8 +51,8 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const accountLabel = patientProfile
-    ? patientProfile.name.split(/\s+/)[0] || "کاربری"
-    : "کاربری";
+    ? patientProfile.name.split(/\s+/)[0] || "حساب"
+    : "ثبت‌نام";
 
   useEffect(() => {
     setOpen(false);
@@ -99,12 +96,12 @@ export function SiteHeader() {
                   key={item.id}
                   href={item.href}
                   className={cn(
-                    "shrink-0 rounded-full px-2 py-1.5 text-[0.7rem] font-bold tracking-tight transition-all xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
+                    "shrink-0 rounded-full border px-2 py-1.5 text-[0.7rem] font-bold tracking-tight transition-all xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
                     active === item.id
-                      ? "border border-cyan-300 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
-                      : "text-slate-600 hover:bg-white/90 hover:text-cyan-800",
+                      ? "border-cyan-400 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
+                      : "border-cyan-200/90 bg-white/70 text-slate-600 hover:border-cyan-300 hover:bg-white hover:text-cyan-800",
                     item.id === "account" && patientProfile && active !== item.id
-                      ? "border border-teal-200 bg-teal-50 text-teal-800"
+                      ? "border-teal-300 bg-teal-50 text-teal-800"
                       : "",
                   )}
                 >
@@ -150,10 +147,10 @@ export function SiteHeader() {
                   href={item.href}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    "rounded-xl px-3 py-3 text-sm font-bold transition-colors",
+                    "rounded-xl border px-3 py-3 text-sm font-bold transition-colors",
                     active === item.id
-                      ? "bg-cyan-50 text-cyan-800"
-                      : "text-slate-700 hover:bg-slate-50",
+                      ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-cyan-200 hover:bg-slate-50",
                     item.id === "account" && patientProfile ? "text-teal-800" : "",
                   )}
                 >

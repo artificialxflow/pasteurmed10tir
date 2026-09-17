@@ -164,6 +164,74 @@ export function buildAvailableBookingDates(
   return results;
 }
 
+export function todayIranIsoDate(): string {
+  const nowIr = new Date(Date.now() + IRAN_OFFSET_MS);
+  nowIr.setUTCHours(0, 0, 0, 0);
+  return isoFromIrDate(nowIr);
+}
+
+export type CalendarDayCell = {
+  isoDate: string;
+  weekday: string;
+  scheduleDay: string;
+  available: boolean;
+  past: boolean;
+};
+
+export type PersianMonthCalendar = {
+  key: string;
+  label: string;
+  days: CalendarDayCell[];
+};
+
+/** Current Jalali month + next month; all days listed, working days marked available. */
+export function buildPersianMonthCalendars(
+  workingDays: string[],
+  monthCount = 2,
+): PersianMonthCalendar[] {
+  const todayIso = todayIranIsoDate();
+  const nowIr = new Date(Date.now() + IRAN_OFFSET_MS);
+  nowIr.setUTCHours(0, 0, 0, 0);
+
+  const byMonth = new Map<string, CalendarDayCell[]>();
+  const monthOrder: string[] = [];
+
+  for (let i = -40; i <= 75; i += 1) {
+    const d = new Date(nowIr.getTime());
+    d.setUTCDate(d.getUTCDate() + i);
+    const isoDate = isoFromIrDate(d);
+    const key = persianMonthKey(isoDate);
+    if (!key) continue;
+    if (!byMonth.has(key)) {
+      byMonth.set(key, []);
+      monthOrder.push(key);
+    }
+    const weekday = PERSIAN_WEEKDAY_BY_DOW[d.getUTCDay()];
+    const matchedDay = workingDays.find((wd) => weekdayMatches(wd, weekday));
+    const past = isoDate < todayIso;
+    byMonth.get(key)!.push({
+      isoDate,
+      weekday,
+      scheduleDay: matchedDay || weekday,
+      available: Boolean(matchedDay) && !past,
+      past,
+    });
+  }
+
+  const todayKey = persianMonthKey(todayIso);
+  const start = Math.max(0, monthOrder.indexOf(todayKey));
+  const keys = monthOrder.slice(start, start + monthCount);
+
+  return keys.map((key) => {
+    const days = (byMonth.get(key) || []).sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+    return {
+      key,
+      label: days[0] ? persianMonthLabel(days[0].isoDate) : key,
+      days,
+    };
+  });
+}
+
 /** Upcoming dates for the next N calendar months. */
 export function buildAvailableBookingDatesForMonths(
   workingDays: string[],

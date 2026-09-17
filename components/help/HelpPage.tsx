@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PasteurStorage } from "@/lib/storage";
 import type { HelpItem } from "@/lib/patient";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -18,7 +19,7 @@ export function HelpPage({ variant = "web" }: { variant?: "web" | "app" }) {
   }, []);
 
   return (
-    <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-3xl space-y-6 px-4 py-10"}>
+    <div className={variant === "app" ? "space-y-4" : `${WEB_PAGE_CONTAINER} space-y-6`}>
       <div>
         <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">آموزش سامانه</h1>
         <p className="mt-2 text-sm text-slate-600">

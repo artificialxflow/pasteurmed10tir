@@ -7,6 +7,7 @@ import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { slugifyFa } from "@/lib/content/product-slug";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
+import type { ShopHomeBanner } from "@/lib/content/shop-home-banners";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
 import { type Product } from "@/lib/data";
 import { productThumbnail } from "@/lib/shop/product-display";
@@ -126,6 +127,8 @@ export default function AdminShopPage() {
   const [categoryDraft, setCategoryDraft] = useState<ProductCategory | null>(null);
   const [categorySlugTouched, setCategorySlugTouched] = useState(false);
   const [error, setError] = useState("");
+  const [homeBanners, setHomeBanners] = useState<ShopHomeBanner[]>([]);
+  const [bannerSaving, setBannerSaving] = useState(false);
 
   async function loadCategories() {
     const data = await fetchAdmin<{ items: ProductCategory[] }>(
@@ -145,6 +148,9 @@ export default function AdminShopPage() {
     void loadProducts().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
     void fetchAdminCommerce<{ items: ShopOrder[] }>("/api/admin/commerce/orders")
       .then((data) => setOrders(data.items))
+      .catch((e: Error) => setError(e.message));
+    void fetchAdmin<{ shopHomeBanners?: ShopHomeBanner[] }>("/api/admin/content/settings")
+      .then((data) => setHomeBanners(data.shopHomeBanners || []))
       .catch((e: Error) => setError(e.message));
   }
 
@@ -314,6 +320,78 @@ export default function AdminShopPage() {
           </Card>
         ) : null}
       </div>
+
+      <Card hover={false} className="bg-white p-6">
+        <h2 className="mb-2 font-bold">بنر فروشگاه صفحه اصلی</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          تصویر و لینک بنر پایین صفحه وب. چند اسلاید با دکمه افزودن.
+        </p>
+        <div className="space-y-4">
+          {homeBanners.map((banner, index) => (
+            <div key={index} className="grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-2">
+              <ImageUploadField
+                value={banner.image}
+                onChange={(path) =>
+                  setHomeBanners((prev) =>
+                    prev.map((item, i) => (i === index ? { ...item, image: path } : item)),
+                  )
+                }
+              />
+              <div className="space-y-2">
+                <FormInput
+                  value={banner.title || ""}
+                  onChange={(e) =>
+                    setHomeBanners((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, title: e.target.value } : item)),
+                    )
+                  }
+                  placeholder="عنوان روی بنر (اختیاری)"
+                />
+                <FormInput
+                  value={banner.href || ""}
+                  onChange={(e) =>
+                    setHomeBanners((prev) =>
+                      prev.map((item, i) => (i === index ? { ...item, href: e.target.value } : item)),
+                    )
+                  }
+                  placeholder="لینک — مثلاً /shop"
+                />
+                <button
+                  type="button"
+                  className="text-xs font-bold text-red-600"
+                  onClick={() => setHomeBanners((prev) => prev.filter((_, i) => i !== index))}
+                >
+                  حذف اسلاید
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setHomeBanners((prev) => [...prev, { image: "", href: "/shop", title: "" }])}
+          >
+            افزودن اسلاید
+          </Button>
+          <Button
+            type="button"
+            disabled={bannerSaving}
+            onClick={() => {
+              setBannerSaving(true);
+              void putAdmin("/api/admin/content/settings", {
+                shopHomeBanners: homeBanners.filter((b) => b.image.trim()),
+              })
+                .then(() => setError(""))
+                .catch((e) => setError(e instanceof Error ? e.message : "ذخیره بنر ناموفق"))
+                .finally(() => setBannerSaving(false));
+            }}
+          >
+            {bannerSaving ? "…" : "ذخیره بنرها"}
+          </Button>
+        </div>
+      </Card>
 
       <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

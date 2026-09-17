@@ -583,12 +583,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               محاسبه‌گر اقساط وام درمانی
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              مدت‌های ۱ تا ۳ ماهه بدون سود؛ بقیه با سود ۱۲٪. درخواست رسمی وام از پنل کاربری ثبت
-              می‌شود — اینجا فقط محاسبه‌گر است.
+              مدت‌های ۱ تا ۳ ماهه بدون سود؛ از ماه چهارم سود ۱۲٪ <strong>سالانه</strong> به‌نسبت مدت
+              (مثلاً ۲۴ ماه = ۲۴٪ ساده). درخواست رسمی وام از پنل کاربری ثبت می‌شود — اینجا فقط
+              محاسبه‌گر است.
             </p>
           </div>
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
-            {isZeroInterestLoanTerm(loanMonths) ? "سود ۰٪ (کوتاه‌مدت)" : "وام درمانی ۱۲٪"}
+            {isZeroInterestLoanTerm(loanMonths) ? "سود ۰٪ (کوتاه‌مدت)" : "سود ۱۲٪ سالانه"}
           </span>
         </div>
         <div className={cn("grid gap-4", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-4")}>
@@ -628,7 +629,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
           <div>
             <FormLabel>سود سالانه</FormLabel>
             <div className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
-              {isZeroInterestLoanTerm(loanMonths) ? "۰٪" : "۱۲٪"}
+              {isZeroInterestLoanTerm(loanMonths) ? "۰٪" : "۱۲٪ سالانه"}
             </div>
           </div>
         </div>
@@ -653,7 +654,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             <p className="text-xs text-slate-500">
               {isZeroInterestLoanTerm(loanMonths)
                 ? "جمع بازپرداخت (بدون سود)"
-                : "جمع بازپرداخت با سود ۱۲٪"}
+                : "جمع بازپرداخت با سود ۱۲٪ سالانه"}
             </p>
             <p className="mt-1 font-extrabold text-amber-800">
               {formatToman(loanResult.totalRepayment)}

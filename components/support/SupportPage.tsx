@@ -8,6 +8,7 @@ import {
   postPatientOps,
 } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type SupportMessage = {
@@ -131,7 +132,7 @@ export function SupportPage({ variant = "web" }: { variant?: "web" | "app" }) {
   }
 
   const shellClass =
-    variant === "app" ? "space-y-4" : "mx-auto max-w-3xl space-y-6 px-4 py-10";
+    variant === "app" ? "space-y-4" : `${WEB_PAGE_CONTAINER} space-y-6`;
 
   const nameMissing = Boolean(profile?.phone) && !(patientName.trim() || profile?.name?.trim());
 

@@ -107,11 +107,13 @@ export function clampLoanMonths(months: number | string | undefined, fallback = 
   return Math.min(36, Math.max(1, Math.round(value)));
 }
 
-/** Total repayment for medical loan installments (0% for 1–3 months, else +12%). */
+/** Total repayment: 1–3 months 0%; otherwise simple 12% per year × (months/12). */
 export function computeLoanRepaymentTotal(principal: number, months: number): number {
   const amount = Math.max(0, Number(principal || 0));
-  if (isZeroInterestLoanTerm(months)) return Math.round(amount);
-  return Math.round(amount * (1 + STANDARD_LOAN_INTEREST_RATE));
+  const term = clampLoanMonths(months, 12);
+  if (isZeroInterestLoanTerm(term)) return Math.round(amount);
+  const years = term / 12;
+  return Math.round(amount * (1 + STANDARD_LOAN_INTEREST_RATE * years));
 }
 
 export function loanTermInterestLabel(months: number, interestRate?: number): string {
@@ -120,7 +122,9 @@ export function loanTermInterestLabel(months: number, interestRate?: number): st
     (isZeroInterestLoanTerm(months) ? 0 : STANDARD_LOAN_INTEREST_RATE);
   const monthsLabel = Number(months).toLocaleString('fa-IR');
   if (rate <= 0) return `${monthsLabel} ماهه (سود ۰٪)`;
-  return `${monthsLabel} ماهه (سود ${(rate * 100).toLocaleString('fa-IR')}٪)`;
+  const years = Number(months) / 12;
+  const effective = rate * years * 100;
+  return `${monthsLabel} ماهه (سود سالانه ${(rate * 100).toLocaleString('fa-IR')}٪ · جمع حدود ${effective.toLocaleString('fa-IR')}٪)`;
 }
 
 export function getLoanMonthOptions(tier: MembershipTier, plans?: Membership[]): number[] {

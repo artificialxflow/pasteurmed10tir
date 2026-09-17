@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_ID = 'default';
@@ -18,5 +19,6 @@ export async function GET() {
       installmentMin: row.walletInstallmentMin,
       installmentMax: row.walletInstallmentMax,
     },
+    shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
   });
 }

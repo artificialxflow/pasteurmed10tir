@@ -229,6 +229,7 @@ model Dentist {
   status               String   @default("available")
   schedule             Json     @default("{}")
   sortOrder            Int      @default(0)
+  bio                  String   @default("")
 }
 
 model GalleryItem {
@@ -304,6 +305,8 @@ model SiteSettings {
   walletInstallmentMax   Int    @default(6)
   /** درصد پیش‌فرض سهم مشاور (تغذیه/روان/مامایی) وقتی ردیف جدا نیست */
   consultantCommissionPercent Int @default(10)
+  /** بنرهای فروشگاه پایین صفحه اصلی: [{ image, href?, title? }] */
+  shopHomeBanners Json @default("[]")
 }
 
 model SpecialtyTariff {

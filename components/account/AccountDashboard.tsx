@@ -111,6 +111,10 @@ export function AccountDashboard({
   const clubHref = variant === "app" ? ROUTES.app.club : ROUTES.web.club;
   const installmentsHref =
     variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
+  const helpHref = variant === "app" ? ROUTES.app.help : ROUTES.web.help;
+  const supportHref = variant === "app" ? ROUTES.app.support : ROUTES.web.support;
+  const complaintsHref = variant === "app" ? ROUTES.app.complaints : ROUTES.web.complaints;
+  const healthHref = variant === "app" ? ROUTES.app.healthRecord : ROUTES.web.healthRecord;
 
   useEffect(() => {
     void fetchPublic<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
@@ -200,7 +204,46 @@ export function AccountDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div
+      className={
+        variant === "web"
+          ? "grid items-start gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)]"
+          : ""
+      }
+    >
+      {variant === "web" ? (
+        <aside className="hidden lg:sticky lg:top-28 lg:block">
+          <nav className="space-y-1 rounded-2xl border border-sky-200 bg-white p-3 text-sm shadow-sm">
+            <p className="mb-2 px-2 text-xs font-extrabold text-slate-500">خلاصه فعالیت</p>
+            {[
+              { href: dentalHref, label: "رزرو نوبت دندان" },
+              { href: healthHref, label: "پرونده سلامت" },
+              { href: installmentsHref, label: "اقساط من" },
+              { href: shopHref, label: "فروشگاه" },
+              { href: clubHref, label: "باشگاه" },
+              { href: supportHref, label: "پشتیبانی" },
+              { href: helpHref, label: "آموزش سامانه" },
+              { href: complaintsHref, label: "شکایات" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block rounded-xl border border-transparent px-3 py-2 font-bold text-slate-700 hover:border-cyan-200 hover:bg-cyan-50"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <button
+              type="button"
+              onClick={onEditProfile}
+              className="block w-full rounded-xl px-3 py-2 text-right font-bold text-slate-700 hover:bg-slate-50"
+            >
+              ویرایش مشخصات
+            </button>
+          </nav>
+        </aside>
+      ) : null}
+      <div className="min-w-0 space-y-6">
       <Card hover={false} className="border-teal-200 bg-teal-50/50 p-4 text-sm text-teal-900">
         سلام {profile.name.split(/\s+/)[0] || "بیمار"} — پنل شما فعال است. برای رزرو دیگر نیازی به
         وارد کردن دوباره نام و موبایل نیست.
@@ -305,7 +348,7 @@ export function AccountDashboard({
         <div className="flex flex-wrap gap-2">
           <Link href={dentalHref}>
             <Button type="button" className="text-sm">
-              رزرو نوبت
+              رزرو نوبت دندان
             </Button>
           </Link>
           <Link href={consultationHref}>
@@ -597,6 +640,7 @@ export function AccountDashboard({
           </Card>
         </div>
       )}
+      </div>
     </div>
   );
 }

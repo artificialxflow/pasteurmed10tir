@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA } from "@/lib/data";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function ContactPage() {
 
   return (
     <main className="flex-1 py-10">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <div className={WEB_PAGE_CONTAINER}>
         <Card
           hover={false}
           className="mb-8 border-cyan-200 bg-gradient-to-bl from-cyan-50 to-amber-50 p-6 sm:p-8"
@@ -26,6 +27,15 @@ export default function ContactPage() {
           <p className="max-w-3xl leading-7 text-slate-600">
             برای هماهنگی نوبت، خدمات پرستاری، فروشگاه تجهیزات، مشاوره و پیگیری عضویت می‌توانید از
             شماره‌های تماس یا واتساپ استفاده کنید.
+          </p>
+        </Card>
+
+        <Card hover={false} className="mb-8 bg-white p-6 sm:p-8">
+          <h2 className="mb-2 text-lg font-extrabold text-slate-900">درباره کلینیک</h2>
+          <p className="leading-8 text-slate-600">
+            {institute.nameFa} ({institute.nameEn}) سامانه خدمات {institute.subtitle} است. مرکز در{" "}
+            {institute.address} فعالیت می‌کند و محدوده خدمات {institute.serviceArea} است.{" "}
+            {institute.welcome}
           </p>
         </Card>
 

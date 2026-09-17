@@ -17,7 +17,7 @@ import {
   type InsuranceCompany,
   type PatientProfile,
 } from "@/lib/patient";
-import { formatPrice, normalizePhone } from "@/lib/utils";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
@@ -242,7 +242,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
 
   if (!profile) {
     return (
-      <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-lg px-4 py-10"}>
+      <div className={variant === "app" ? "space-y-4" : WEB_PAGE_CONTAINER}>
         <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود به پنل کاربری</h1>
         <p className="mb-6 text-sm text-slate-600">
           اگر از قبل ثبت‌نام کرده‌اید فقط موبایل و کد کافی است. نام فقط برای ثبت‌نام اول لازم است.
@@ -326,7 +326,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const showDashboard = approved && !editing;
 
   return (
-    <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-6 px-4 py-10"}>
+    <div className={variant === "app" ? "space-y-4" : `${WEB_PAGE_CONTAINER} space-y-6`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">

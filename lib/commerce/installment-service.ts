@@ -225,7 +225,9 @@ export async function createLoanInstallmentPlan(input: {
   const months = clampLoanMonths(input.months, 12);
   const total = computeLoanRepaymentTotal(principal, months);
   const dueDates = buildDueDates(months);
-  const rateNote = isZeroInterestLoanTerm(months) ? 'سود ۰٪' : 'سود ۱۲٪';
+  const rateNote = isZeroInterestLoanTerm(months)
+    ? 'سود ۰٪'
+    : `سود ۱۲٪ سالانه × ${(months / 12).toLocaleString('fa-IR')} سال`;
 
   return prisma.installmentPlan.create({
     data: {

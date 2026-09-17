@@ -11,6 +11,7 @@ import {
   type InstallmentPlan,
   type InstallmentScheduleItem,
 } from "@/lib/patient";
+import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { formatPrice } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -95,7 +96,7 @@ export function InstallmentsPage({ variant = "web" }: { variant?: "web" | "app" 
   }
 
   return (
-    <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-2xl space-y-4 px-4 py-10"}>
+    <div className={variant === "app" ? "space-y-4" : `${WEB_PAGE_CONTAINER} space-y-4`}>
       <h1 className="text-xl font-extrabold text-slate-900">اقساط من</h1>
       <p className="text-sm text-slate-600">
         صورتحساب اقساط: لیست قسط‌به‌قسط، معوقه، تاریخچه واریزی و پرداخت آنلاین.

@@ -82,6 +82,8 @@ export interface Dentist {
   hours: string;
   status: DoctorStatus;
   schedule: Record<string, DaySchedule>;
+  /** معرفی کوتاه پزشک — از ادمین */
+  bio?: string;
 }
 
 export interface Physician {

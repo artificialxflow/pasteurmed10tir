@@ -3,7 +3,7 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormSelect } from "@/components/ui/Card";
+import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import {
   buildScheduleFromDayHours,
@@ -181,6 +181,7 @@ export default function AdminDoctorsPage() {
   const [dentistMedicalCouncilNumber, setDentistMedicalCouncilNumber] = useState("");
   const [dentistDayHours, setDentistDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [dentistImage, setDentistImage] = useState("");
+  const [dentistBio, setDentistBio] = useState("");
 
   const [physicianName, setPhysicianName] = useState("");
   const [physicianSpecialty, setPhysicianSpecialty] = useState("");
@@ -323,6 +324,7 @@ export default function AdminDoctorsPage() {
           specialtyId,
           medicalCouncilNumber: dentistMedicalCouncilNumber.trim(),
           image: dentistImage.trim() || "/uploads/placeholder.svg",
+          bio: dentistBio.trim(),
           days: summary.days,
           hours: summary.hours,
           status: "available",
@@ -337,6 +339,7 @@ export default function AdminDoctorsPage() {
         setDentistMedicalCouncilNumber("");
         setDentistDayHours(defaultNewDayHours());
         setDentistImage("");
+        setDentistBio("");
         setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
@@ -477,6 +480,12 @@ export default function AdminDoctorsPage() {
                 <DayHoursEditor value={dentistDayHours} onChange={setDentistDayHours} />
               </div>
               <ImageUploadField value={dentistImage} onChange={setDentistImage} className="md:col-span-2" />
+              <FormTextarea
+                className="md:col-span-2"
+                value={dentistBio}
+                onChange={(e) => setDentistBio(e.target.value)}
+                placeholder="معرفی کوتاه پزشک (نمایش بعد از انتخاب در رزرو)"
+              />
               <Button type="submit" className="md:col-span-2">
                 افزودن
               </Button>
@@ -500,7 +509,7 @@ export default function AdminDoctorsPage() {
           </div>
 
           <AdminTable
-            headers={["نام", "تخصص", "نظام پزشکی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
+            headers={["نام", "تخصص", "نظام پزشکی", "معرفی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="دندانپزشکی ثبت نشده."
           >
             {dentists.map((d, index) => (
@@ -537,6 +546,14 @@ export default function AdminDoctorsPage() {
                     value={d.medicalCouncilNumber || ""}
                     onChange={(e) => updateDentist(index, { medicalCouncilNumber: e.target.value })}
                     placeholder="شماره نظام"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <FormTextarea
+                    className="min-h-[72px] text-xs"
+                    value={d.bio || ""}
+                    onChange={(e) => updateDentist(index, { bio: e.target.value })}
+                    placeholder="معرفی پزشک"
                   />
                 </td>
                 <td className="px-4 py-3">
