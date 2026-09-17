@@ -1,5 +1,5 @@
 import { jsonError } from '@/lib/auth/api-utils';
-import { saveUploadedImage } from '@/lib/content/save-upload';
+import { saveHealthRecordAttachment } from '@/lib/content/save-upload';
 import { addHealthAttachment } from '@/lib/health-record/service';
 import { requirePatient } from '@/lib/operations/require-patient';
 import { NextResponse } from 'next/server';
@@ -23,7 +23,7 @@ export async function POST(request: Request, ctx: Ctx) {
   }
 
   try {
-    const uploaded = await saveUploadedImage(file);
+    const uploaded = await saveHealthRecordAttachment(file);
     const attachment = await addHealthAttachment({
       userId: auth.session.userId,
       entryId: id,

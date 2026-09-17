@@ -81,6 +81,9 @@ const SPECIALIST_FIELDS: HealthSectionField[] = [
   { key: 'otherNotes', label: 'سایر موارد', kind: 'textarea' },
 ];
 
+/** فقط تاریخ + پیوست (گزارش آزمایش / سونو / آندوسکوپی) */
+const ATTACHMENT_ONLY_FIELDS: HealthSectionField[] = [];
+
 const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   vitals: [
     { key: 'doctorName', label: 'نام ثبت‌کننده', kind: 'text' },
@@ -93,7 +96,7 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   general: GENERAL_FIELDS,
   dental: DENTAL_FIELDS,
   internal: SPECIALIST_FIELDS,
-  labs: SPECIALIST_FIELDS,
+  labs: ATTACHMENT_ONLY_FIELDS,
   neuro: SPECIALIST_FIELDS,
   psych: SPECIALIST_FIELDS,
   ent: SPECIALIST_FIELDS,
@@ -104,10 +107,23 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   endo: SPECIALIST_FIELDS,
   cardio: SPECIALIST_FIELDS,
   pulm: SPECIALIST_FIELDS,
-  imaging: SPECIALIST_FIELDS,
-  endo_proc: SPECIALIST_FIELDS,
+  imaging: ATTACHMENT_ONLY_FIELDS,
+  endo_proc: ATTACHMENT_ONLY_FIELDS,
   other: SPECIALIST_FIELDS,
 };
+
+export const HEALTH_RECORD_ATTACHMENT_SECTIONS = new Set<HealthSectionId>([
+  'labs',
+  'imaging',
+  'endo_proc',
+]);
+
+export const HEALTH_RECORD_FILE_ACCEPT =
+  'image/jpeg,image/png,image/webp,image/jpg,.jpg,.jpeg,.png,.webp,.pdf,application/pdf';
+
+export function sectionIsAttachmentOnly(id: HealthSectionId): boolean {
+  return HEALTH_RECORD_ATTACHMENT_SECTIONS.has(id);
+}
 
 export function fieldsForSection(id: HealthSectionId): HealthSectionField[] {
   return FIELDS_BY_SECTION[id];
@@ -136,7 +152,15 @@ export function sectionAllowsUpload(id: HealthSectionId): boolean {
 }
 
 export function sectionUploadHint(id: HealthSectionId): string {
+  if (sectionIsAttachmentOnly(id)) return 'افزودن یا جایگزینی گزارش (jpg، png، pdf)';
   if (id === 'dental') return 'عکس کلی دندان و عکس‌های اضافی';
   if (id === 'vitals') return 'پیوست نوار / مدرک';
   return 'پیوست مدرک در صورت نیاز';
+}
+
+export function sectionCreateHint(id: HealthSectionId): string {
+  if (id === 'labs') return 'تاریخ انجام آزمایش را انتخاب کنید و فایل گزارش (عکس یا PDF) را بارگذاری کنید.';
+  if (id === 'imaging') return 'تاریخ سونوگرافی، ماموگرافی یا رادیولوژی — فقط تاریخ و فایل گزارش.';
+  if (id === 'endo_proc') return 'تاریخ آندوسکوپی یا کولونوسکوپی — فقط تاریخ و فایل گزارش.';
+  return '';
 }

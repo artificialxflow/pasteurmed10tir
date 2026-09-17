@@ -1,5 +1,6 @@
 "use client";
 
+import { HealthRecordAttachmentFormField } from "@/components/health-record/HealthRecordAttachmentFormField";
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,7 @@ import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
+  sectionIsAttachmentOnly,
   type HealthSectionField,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
@@ -40,9 +42,11 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const fields = useMemo(() => fieldsForSection(section), [section]);
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("general")));
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     setValues(emptyValues(fields));
+    setPendingFile(null);
   }, [fields]);
 
   const reload = useCallback(() => {
@@ -72,8 +76,18 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       date,
       ...payload,
     })
-      .then(() => {
-        setMessage("در پرونده این بخش ثبت شد.");
+      .then(async (data) => {
+        if (pendingFile && data.item?.id) {
+          await uploadFor(data.item.id, pendingFile);
+          setPendingFile(null);
+          setMessage("تاریخ و گزارش در پرونده ثبت شد.");
+        } else {
+          setMessage(
+            sectionIsAttachmentOnly(section)
+              ? "تاریخ ثبت شد. از لیست پایین می‌توانید فایل گزارش را بارگذاری کنید."
+              : "در پرونده این بخش ثبت شد.",
+          );
+        }
         setValues(emptyValues(fields));
         reload();
       })
@@ -137,11 +151,18 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         </h2>
         <form onSubmit={submit} className="space-y-3">
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
-          <HealthRecordFormFields
-            fields={fields}
-            values={values}
-            onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+          <HealthRecordAttachmentFormField
+            section={section}
+            file={pendingFile}
+            onFileChange={setPendingFile}
           />
+          {!sectionIsAttachmentOnly(section) ? (
+            <HealthRecordFormFields
+              fields={fields}
+              values={values}
+              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+            />
+          ) : null}
           <Button type="submit" className="text-sm">
             ذخیره در پرونده
           </Button>

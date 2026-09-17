@@ -1,6 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { requireAdminAny } from '@/lib/content/require-admin';
-import { saveUploadedImage } from '@/lib/content/save-upload';
+import { saveHealthRecordAttachment } from '@/lib/content/save-upload';
 import { addHealthAttachmentByEntryId } from '@/lib/health-record/service';
 import { NextResponse } from 'next/server';
 
@@ -23,7 +23,7 @@ export async function POST(request: Request, ctx: Ctx) {
   }
 
   try {
-    const uploaded = await saveUploadedImage(file);
+    const uploaded = await saveHealthRecordAttachment(file);
     const attachment = await addHealthAttachmentByEntryId({
       entryId: id,
       path: uploaded.path,

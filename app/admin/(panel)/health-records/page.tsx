@@ -1,5 +1,6 @@
 "use client";
 
+import { HealthRecordAttachmentFormField } from "@/components/health-record/HealthRecordAttachmentFormField";
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +10,7 @@ import {
   HEALTH_SECTIONS,
   fieldsForSection,
   isKnownSection,
+  sectionIsAttachmentOnly,
   type HealthSectionField,
   type HealthSectionId,
 } from "@/lib/health-record/sections";
@@ -43,9 +45,11 @@ export default function AdminHealthRecordsPage() {
   const [writeSection, setWriteSection] = useState<HealthSectionId>("vitals");
   const fields = useMemo(() => fieldsForSection(writeSection), [writeSection]);
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   useEffect(() => {
     setValues(emptyValues(fields));
+    setPendingFile(null);
   }, [fields]);
 
   async function searchMatches(e?: FormEvent) {
@@ -105,8 +109,18 @@ export default function AdminHealthRecordsPage() {
       date,
       ...payload,
     })
-      .then(() => {
-        setMessage("ثبت شد.");
+      .then(async (data) => {
+        if (pendingFile && data.item?.id) {
+          await uploadFor(data.item.id, pendingFile);
+          setPendingFile(null);
+          setMessage("تاریخ و گزارش ثبت شد.");
+        } else {
+          setMessage(
+            sectionIsAttachmentOnly(writeSection)
+              ? "تاریخ ثبت شد. از لیست سوابق می‌توانید فایل را پیوست کنید."
+              : "ثبت شد.",
+          );
+        }
         setValues(emptyValues(fields));
         return loadUser(user.id);
       })
@@ -216,11 +230,18 @@ export default function AdminHealthRecordsPage() {
             </select>
           </div>
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
-          <HealthRecordFormFields
-            fields={fields}
-            values={values}
-            onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+          <HealthRecordAttachmentFormField
+            section={writeSection}
+            file={pendingFile}
+            onFileChange={setPendingFile}
           />
+          {!sectionIsAttachmentOnly(writeSection) ? (
+            <HealthRecordFormFields
+              fields={fields}
+              values={values}
+              onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+            />
+          ) : null}
           <Button type="submit" className="text-sm" disabled={!user}>
             ذخیره در پرونده
           </Button>
