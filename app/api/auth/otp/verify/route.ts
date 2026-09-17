@@ -17,16 +17,18 @@ export async function POST(request: Request) {
   const name = (body.name ?? '').trim();
 
   if (!phone || phone.length < 10) return jsonError('شماره موبایل معتبر نیست.');
-  if (!name) return jsonError('نام را وارد کنید.');
   if (!code) return jsonError('کد تأیید را وارد کنید.');
 
   const check = await verifyOtpCode(phone, code);
   if (!check.ok) return jsonError(check.error);
 
+  const existing = await prisma.user.findUnique({ where: { phone } });
+  if (!existing && !name) return jsonError('برای ثبت‌نام، نام و نام خانوادگی را وارد کنید.');
+
   const user = await prisma.user.upsert({
     where: { phone },
     create: { phone, name },
-    update: { name },
+    update: name ? { name } : {},
     include: { profile: true },
   });
 

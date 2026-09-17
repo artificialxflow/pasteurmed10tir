@@ -3,7 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormLabel, FormSelect } from "@/components/ui/Card";
-import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
+import { JalaliCalendarField } from "@/components/ui/JalaliCalendarField";
 import {
   fieldStaffKindLabel,
   staffCommissionSourceLabel,
@@ -165,8 +165,8 @@ export default function AdminStaffCommissionsPage() {
             <option value="paid">پرداخت‌شده</option>
           </FormSelect>
         </div>
-        <JalaliBirthDateField label="از تاریخ (شمسی)" value={from} onChange={setFrom} />
-        <JalaliBirthDateField label="تا تاریخ (شمسی)" value={to} onChange={setTo} />
+        <JalaliCalendarField label="از تاریخ (شمسی)" value={from} onChange={setFrom} />
+        <JalaliCalendarField label="تا تاریخ (شمسی)" value={to} onChange={setTo} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

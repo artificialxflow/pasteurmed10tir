@@ -34,6 +34,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [ready, setReady] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [editing, setEditing] = useState(false);
@@ -89,14 +90,24 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: digits }),
       });
-      const data = (await res.json()) as { error?: string; message?: string; mode?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        message?: string;
+        mode?: string;
+        registered?: boolean;
+      };
       if (!res.ok) {
         setMessage(data.error || "ارسال کد ناموفق بود.");
         setOtpSent(false);
         return;
       }
       setOtpSent(true);
-      setMessage(data.message || "کد ارسال شد.");
+      setRegistered(Boolean(data.registered));
+      setMessage(
+        data.registered
+          ? "حساب از قبل وجود دارد. کد را وارد کنید و وارد شوید."
+          : data.message || "کد ارسال شد. برای ثبت‌نام نام را هم وارد کنید.",
+      );
     } catch {
       setMessage("خطا در ارتباط با سرور.");
     } finally {
@@ -107,8 +118,12 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   async function login(e: FormEvent) {
     e.preventDefault();
     const digits = normalizePhone(phone);
-    if (digits.length < 10 || !name.trim() || !otpCode.trim()) {
-      setMessage("نام، موبایل و کد تأیید را وارد کنید.");
+    if (digits.length < 10 || !otpCode.trim()) {
+      setMessage("موبایل و کد تأیید را وارد کنید.");
+      return;
+    }
+    if (!registered && !name.trim()) {
+      setMessage("برای ثبت‌نام، نام و نام خانوادگی را وارد کنید.");
       return;
     }
     setMessage("");
@@ -120,7 +135,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         body: JSON.stringify({
           phone: digits,
           code: otpCode.trim(),
-          name: name.trim(),
+          ...(registered ? {} : { name: name.trim() }),
         }),
       });
       const data = (await res.json()) as { profile?: PatientProfile; error?: string };
@@ -228,33 +243,39 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   if (!profile) {
     return (
       <div className={variant === "app" ? "space-y-4" : "mx-auto max-w-lg px-4 py-10"}>
-        <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود / ثبت‌نام بیمار</h1>
+        <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود به پنل کاربری</h1>
         <p className="mb-6 text-sm text-slate-600">
-          مشخصات، بیمه پایه و تکمیلی و فرانشیز را در پنل کاربری مدیریت کنید.
+          اگر از قبل ثبت‌نام کرده‌اید فقط موبایل و کد کافی است. نام فقط برای ثبت‌نام اول لازم است.
         </p>
         <Card hover={false} className="mb-4 border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-6 text-slate-600">
-          <p className="font-bold text-slate-800">مراحل ورود / ثبت‌نام</p>
+          <p className="font-bold text-slate-800">مراحل</p>
           <ol className="mt-2 list-decimal space-y-1 pr-4">
-            <li>نام و موبایل را وارد کنید</li>
-            <li>«دریافت کد» — پیامک یا کد تست</li>
-            <li>کد را بنویسید و «ورود به پنل کاربری» را بزنید (بدون این مرحله حساب ساخته نمی‌شود)</li>
+            <li>موبایل را وارد کنید و «دریافت کد» بزنید</li>
+            <li>اگر حساب جدید باشد، نام و نام خانوادگی را بنویسید</li>
+            <li>کد را وارد کنید و «ورود به پنل کاربری» را بزنید</li>
           </ol>
         </Card>
         <Card hover={false} className="space-y-3 p-5">
           <form onSubmit={login} className="space-y-3">
             <div>
-              <FormLabel>نام و نام خانوادگی</FormLabel>
-              <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div>
               <FormLabel>موبایل</FormLabel>
               <FormInput
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setRegistered(false);
+                  setOtpSent(false);
+                }}
                 required
               />
             </div>
+            {otpSent && !registered ? (
+              <div>
+                <FormLabel>نام و نام خانوادگی (ثبت‌نام جدید)</FormLabel>
+                <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
+              </div>
+            ) : null}
             <div>
               <FormLabel>کد تأیید</FormLabel>
               <div className="flex gap-2">

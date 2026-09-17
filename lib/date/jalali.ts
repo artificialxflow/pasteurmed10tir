@@ -85,6 +85,25 @@ export function jalaliToIso(jy: number, jm: number, jd: number): string | null {
   return `${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`;
 }
 
+export function isJalaliLeapYear(jy: number): boolean {
+  return [1, 5, 9, 13, 17, 22, 26, 30].includes(((jy % 33) + 33) % 33);
+}
+
+export function jalaliMonthLength(jy: number, jm: number): number {
+  if (jm <= 6) return 31;
+  if (jm <= 11) return 30;
+  return isJalaliLeapYear(jy) ? 30 : 29;
+}
+
+/** Saturday = 0 … Friday = 6 */
+export function jalaliWeekdaySat0(jy: number, jm: number, jd: number): number {
+  const g = jalaliToGregorian(jy, jm, jd);
+  const date = new Date(Date.UTC(g.gy, g.gm - 1, g.gd, 12));
+  return (date.getUTCDay() + 1) % 7;
+}
+
+export const JALALI_WEEKDAYS_SHORT = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'] as const;
+
 export const JALALI_MONTHS = [
   'فروردین',
   'اردیبهشت',
