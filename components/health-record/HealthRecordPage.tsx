@@ -46,7 +46,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  function selectSection(id: HealthSectionId) {
+  function commitSection(id: HealthSectionId) {
     setSection(id);
     window.setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -144,7 +144,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         </div>
       </div>
 
-      <HealthRecordBodyMap activeSection={section} onSelect={selectSection} />
+      <HealthRecordBodyMap committedSection={section} onCommit={commitSection} />
 
       <div ref={formRef}>
         <Card hover={false} className="space-y-3 p-4">

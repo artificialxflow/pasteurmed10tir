@@ -11,36 +11,56 @@ import {
 } from "@/lib/health-record/body-map";
 import type { HealthSectionId } from "@/lib/health-record/sections";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+function displayLabel(id: HealthSectionId): string {
+  return id === "renal" ? renalDisplayLabel() : sectionLabel(id);
+}
 
 function PanelPill({
   sectionId,
-  active,
-  onSelect,
+  previewId,
+  committedSection,
+  onTap,
 }: {
   sectionId: HealthSectionId;
-  active: boolean;
-  onSelect: (id: HealthSectionId) => void;
+  previewId: HealthSectionId;
+  committedSection: HealthSectionId;
+  onTap: (id: HealthSectionId) => void;
 }) {
   const meta = sectionMeta(sectionId);
   if (!meta) return null;
-  const label = sectionId === "renal" ? renalDisplayLabel() : meta.label;
+  const label = displayLabel(sectionId);
+  const isPreview = previewId === sectionId;
+  const isCommitted = committedSection === sectionId;
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(sectionId)}
+      title={label}
+      aria-label={label}
+      aria-pressed={isPreview}
+      onClick={() => onTap(sectionId)}
       className={cn(
-        "flex w-full items-center gap-1.5 rounded-full border bg-white/95 px-2 py-1.5 text-right shadow-sm transition",
-        active
-          ? "border-cyan-500 bg-cyan-50 text-cyan-950 ring-2 ring-cyan-200"
-          : "border-slate-200/90 text-slate-800 hover:border-cyan-300 hover:bg-white",
+        "flex w-full items-center justify-center rounded-full border bg-white/95 shadow-sm transition md:justify-start md:gap-1 md:px-1.5 md:py-1",
+        isPreview
+          ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300/80"
+          : isCommitted
+            ? "border-cyan-500 bg-cyan-50/90"
+            : "border-slate-200/90 hover:border-cyan-300 hover:bg-white",
       )}
     >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-200 text-sm">
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-200 text-sm md:h-7 md:w-7",
+          isPreview && "from-amber-100 to-amber-200",
+        )}
+      >
         {meta.emoji}
       </span>
-      <span className="min-w-0 flex-1 text-[0.62rem] font-bold leading-tight">{label}</span>
+      <span className="hidden min-w-0 max-w-[5.5rem] flex-1 truncate text-[0.58rem] font-bold leading-tight text-slate-800 md:block">
+        {label}
+      </span>
     </button>
   );
 }
@@ -48,35 +68,47 @@ function PanelPill({
 function SidePanel({
   title,
   sectionIds,
-  activeSection,
-  onSelect,
+  previewId,
+  committedSection,
+  onTap,
 }: {
   title: string;
   sectionIds: HealthSectionId[];
-  activeSection: HealthSectionId;
-  onSelect: (id: HealthSectionId) => void;
+  previewId: HealthSectionId;
+  committedSection: HealthSectionId;
+  onTap: (id: HealthSectionId) => void;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <p className="mb-0.5 text-center text-[0.65rem] font-extrabold text-cyan-900/80">{title}</p>
+    <div className="flex w-10 shrink-0 flex-col gap-1 sm:w-11 md:w-[7.25rem] md:gap-1.5">
+      <p className="mb-0.5 hidden text-center text-[0.6rem] font-extrabold leading-tight text-cyan-900/80 sm:block md:text-[0.65rem]">
+        {title}
+      </p>
       {sectionIds.map((id) => (
-        <PanelPill key={id} sectionId={id} active={activeSection === id} onSelect={onSelect} />
+        <PanelPill
+          key={id}
+          sectionId={id}
+          previewId={previewId}
+          committedSection={committedSection}
+          onTap={onTap}
+        />
       ))}
     </div>
   );
 }
 
 function BodyFigure({
-  activeSection,
-  onSelect,
+  previewId,
+  committedSection,
+  onTap,
 }: {
-  activeSection: HealthSectionId;
-  onSelect: (id: HealthSectionId) => void;
+  previewId: HealthSectionId;
+  committedSection: HealthSectionId;
+  onTap: (id: HealthSectionId) => void;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
 
   return (
-    <div className="relative mx-auto aspect-[3/5] w-full max-w-[200px] select-none">
+    <div className="relative mx-auto aspect-[3/5] w-full min-w-0 max-w-none select-none sm:max-w-[300px] md:max-w-[360px] lg:max-w-[400px]">
       {!imgFailed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -123,19 +155,22 @@ function BodyFigure({
       )}
 
       {HEALTH_BODY_HOTSPOTS.map((spot) => {
-        const active = activeSection === spot.sectionId;
+        const isPreview = previewId === spot.sectionId;
+        const isCommitted = committedSection === spot.sectionId;
         return (
           <button
             key={spot.id}
             type="button"
             title={spot.label}
             aria-label={spot.label}
-            onClick={() => onSelect(spot.sectionId)}
+            onClick={() => onTap(spot.sectionId)}
             className={cn(
               "absolute cursor-pointer rounded-2xl border-0 bg-transparent p-0 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cyan-500",
-              active
-                ? "bg-amber-400/20 ring-2 ring-amber-400/80"
-                : "opacity-0 hover:opacity-100 hover:bg-cyan-400/10 focus-visible:opacity-100",
+              isPreview
+                ? "bg-amber-400/25 ring-2 ring-amber-400/90"
+                : isCommitted
+                  ? "bg-cyan-400/10 ring-1 ring-cyan-400/50"
+                  : "opacity-0 hover:opacity-100 hover:bg-cyan-400/10 focus-visible:opacity-100",
             )}
             style={{
               left: `${spot.left}%`,
@@ -151,41 +186,80 @@ function BodyFigure({
 }
 
 export function HealthRecordBodyMap({
-  activeSection,
-  onSelect,
+  committedSection,
+  onCommit,
 }: {
-  activeSection: HealthSectionId;
-  onSelect: (section: HealthSectionId) => void;
+  committedSection: HealthSectionId;
+  onCommit: (section: HealthSectionId) => void;
 }) {
+  const [previewId, setPreviewId] = useState<HealthSectionId>(committedSection);
+
+  useEffect(() => {
+    setPreviewId(committedSection);
+  }, [committedSection]);
+
+  function handleTap(id: HealthSectionId) {
+    if (previewId === id) {
+      onCommit(id);
+      return;
+    }
+    setPreviewId(id);
+  }
+
+  const previewLabel = displayLabel(previewId);
+  const canEnter = previewId !== committedSection;
+
   return (
     <div className="overflow-hidden rounded-[1.35rem] border border-sky-200/80 bg-gradient-to-br from-sky-100 via-cyan-50 to-blue-100 p-3 shadow-inner sm:p-4">
-      <div className="mb-3 text-center">
+      <div className="mb-2 text-center sm:mb-3">
         <p className="text-sm font-extrabold text-cyan-950">پرونده سلامت پاستور پلاس</p>
-        <p className="text-[0.65rem] text-cyan-800/80">روی بدن یا گزینه‌های کنار بزنید</p>
+        <p className="text-[0.62rem] leading-5 text-cyan-800/80 sm:text-[0.65rem]">
+          یک‌بار بزنید: پیش‌نمایش · دوباره همان گزینه: ورود به بخش
+        </p>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(130px,200px)_minmax(0,1fr)] items-start gap-2 sm:gap-3">
+      <div className="flex items-start justify-center gap-1 sm:gap-2 md:gap-4">
         <SidePanel
           title="گزینه‌های پرونده"
           sectionIds={HEALTH_BODY_PANEL_LEFT}
-          activeSection={activeSection}
-          onSelect={onSelect}
+          previewId={previewId}
+          committedSection={committedSection}
+          onTap={handleTap}
         />
-        <BodyFigure activeSection={activeSection} onSelect={onSelect} />
+        <div className="min-w-0 flex-1">
+          <BodyFigure
+            previewId={previewId}
+            committedSection={committedSection}
+            onTap={handleTap}
+          />
+        </div>
         <SidePanel
           title="تخصص‌ها"
           sectionIds={HEALTH_BODY_PANEL_RIGHT}
-          activeSection={activeSection}
-          onSelect={onSelect}
+          previewId={previewId}
+          committedSection={committedSection}
+          onTap={handleTap}
         />
       </div>
 
-      {activeSection ? (
-        <p className="mt-3 text-center text-xs font-bold text-cyan-900">
-          انتخاب‌شده:{" "}
-          {activeSection === "renal" ? renalDisplayLabel() : sectionLabel(activeSection)}
+      <div className="mt-3 rounded-xl border border-white/60 bg-white/75 px-3 py-2.5 text-center shadow-sm">
+        <p className="text-xs text-slate-700">
+          پیش‌نمایش: <span className="font-extrabold text-cyan-950">{previewLabel}</span>
         </p>
-      ) : null}
+        {canEnter ? (
+          <button
+            type="button"
+            onClick={() => onCommit(previewId)}
+            className="mt-1.5 text-xs font-bold text-teal-800 underline-offset-2 hover:underline"
+          >
+            ورود به «{previewLabel}» ↓
+          </button>
+        ) : (
+          <p className="mt-1 text-[0.62rem] text-slate-500">
+            در حال ثبت این بخش — برای مرور، گزینه دیگری را بزنید
+          </p>
+        )}
+      </div>
     </div>
   );
 }
