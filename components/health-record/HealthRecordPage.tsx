@@ -7,7 +7,6 @@ import { HealthRecordFormFields } from "@/components/health-record/HealthRecordF
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
-import { HEALTH_GRID_ONLY_SECTIONS } from "@/lib/health-record/body-map";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
@@ -146,29 +145,6 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       </div>
 
       <HealthRecordBodyMap activeSection={section} onSelect={selectSection} />
-
-      {HEALTH_GRID_ONLY_SECTIONS.length ? (
-        <Card hover={false} className="space-y-2 p-3">
-          <p className="text-center text-xs font-bold text-slate-600">سایر بخش‌ها</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-            {HEALTH_GRID_ONLY_SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => selectSection(s.id)}
-                className={`rounded-xl border px-2 py-3 text-center text-[0.7rem] font-bold transition ${
-                  section === s.id
-                    ? "border-teal-500 bg-teal-50 text-teal-900"
-                    : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
-                }`}
-              >
-                <span className="block text-lg">{s.emoji}</span>
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </Card>
-      ) : null}
 
       <div ref={formRef}>
         <Card hover={false} className="space-y-3 p-4">

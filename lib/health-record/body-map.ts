@@ -1,38 +1,74 @@
 import { HEALTH_SECTIONS, type HealthSectionId } from '@/lib/health-record/sections';
 
-export type BodyMapRegion = {
+export type BodyHotspot = {
   id: string;
   sectionId: HealthSectionId;
   label: string;
-  x: number;
-  y: number;
-  labelX: number;
-  labelY: number;
+  /** درصد نسبت به ناحیه تصویر بدن */
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
-/** Hotspotهای نقشه بدن — مختصات در viewBox 240×420 */
-export const HEALTH_BODY_MAP_REGIONS: BodyMapRegion[] = [
-  { id: 'neuro', sectionId: 'neuro', label: 'مغز و اعصاب', x: 120, y: 42, labelX: 168, labelY: 38 },
-  { id: 'ophthalm', sectionId: 'ophthalm', label: 'چشم‌پزشکی', x: 108, y: 58, labelX: 12, labelY: 52 },
-  { id: 'ent', sectionId: 'ent', label: 'گوش و حلق', x: 148, y: 62, labelX: 168, labelY: 58 },
-  { id: 'psych', sectionId: 'psych', label: 'روان', x: 92, y: 48, labelX: 12, labelY: 42 },
-  { id: 'dental', sectionId: 'dental', label: 'دندان', x: 120, y: 72, labelX: 168, labelY: 72 },
-  { id: 'vitals', sectionId: 'vitals', label: 'حیاتی / نوار', x: 120, y: 118, labelX: 12, labelY: 112 },
-  { id: 'cardio', sectionId: 'cardio', label: 'قلب', x: 108, y: 132, labelX: 168, labelY: 128 },
-  { id: 'pulm', sectionId: 'pulm', label: 'ریه', x: 138, y: 128, labelX: 168, labelY: 148 },
-  { id: 'internal', sectionId: 'internal', label: 'داخلی', x: 120, y: 168, labelX: 12, labelY: 162 },
-  { id: 'endo', sectionId: 'endo', label: 'دیابت / غدد', x: 120, y: 198, labelX: 168, labelY: 192 },
-  { id: 'renal', sectionId: 'renal', label: 'کلیه', x: 92, y: 188, labelX: 12, labelY: 188 },
-  { id: 'rheum', sectionId: 'rheum', label: 'روماتولوژی', x: 58, y: 148, labelX: 12, labelY: 132 },
-  { id: 'ortho', sectionId: 'ortho', label: 'ارتوپدی', x: 168, y: 280, labelX: 168, labelY: 272 },
-  { id: 'derm', sectionId: 'derm', label: 'پوست', x: 182, y: 168, labelX: 168, labelY: 212 },
+/** ناحیه‌های نامرئی روی بدن — فقط hit area */
+export const HEALTH_BODY_HOTSPOTS: BodyHotspot[] = [
+  { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 40, top: 3, width: 20, height: 13 },
+  { id: 'psych', sectionId: 'psych', label: 'روان', left: 34, top: 6, width: 32, height: 10 },
+  { id: 'eye', sectionId: 'ophthalm', label: 'چشم‌پزشکی', left: 36, top: 14, width: 28, height: 6 },
+  { id: 'nose', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 43, top: 19, width: 14, height: 8 },
+  { id: 'mouth', sectionId: 'dental', label: 'دندان', left: 40, top: 24, width: 20, height: 6 },
+  { id: 'vitals', sectionId: 'vitals', label: 'حیاتی / قند / نوار', left: 38, top: 30, width: 24, height: 8 },
+  { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 44, top: 33, width: 12, height: 10 },
+  { id: 'lung', sectionId: 'pulm', label: 'ریه', left: 32, top: 31, width: 36, height: 14 },
+  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 52, top: 40, width: 16, height: 10 },
+  { id: 'stomach', sectionId: 'internal', label: 'داخلی', left: 38, top: 42, width: 24, height: 10 },
+  { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 34, top: 44, width: 12, height: 8 },
+  { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 54, top: 44, width: 12, height: 8 },
+  { id: 'skin', sectionId: 'derm', label: 'پوست', left: 22, top: 28, width: 56, height: 42 },
+  { id: 'joint', sectionId: 'rheum', label: 'روماتولوژی', left: 12, top: 36, width: 16, height: 18 },
+  { id: 'bone', sectionId: 'ortho', label: 'ارتوپدی', left: 34, top: 62, width: 32, height: 30 },
+  { id: 'infect', sectionId: 'infect', label: 'عفونی', left: 36, top: 38, width: 28, height: 16 },
 ];
 
-const bodyMapSectionIds = new Set(HEALTH_BODY_MAP_REGIONS.map((r) => r.sectionId));
+/** ستون چپ — گزینه‌های پرونده (RTL: سمت راست صفحه) */
+export const HEALTH_BODY_PANEL_LEFT: HealthSectionId[] = [
+  'vitals',
+  'general',
+  'labs',
+  'imaging',
+  'endo_proc',
+  'other',
+];
 
-/** بخش‌هایی که فقط از گرید پایین انتخاب می‌شوند */
-export const HEALTH_GRID_ONLY_SECTIONS = HEALTH_SECTIONS.filter((s) => !bodyMapSectionIds.has(s.id));
+/** ستون راست — تخصص‌ها (RTL: سمت چپ صفحه) */
+export const HEALTH_BODY_PANEL_RIGHT: HealthSectionId[] = [
+  'dental',
+  'neuro',
+  'cardio',
+  'renal',
+  'ophthalm',
+  'ent',
+  'internal',
+  'endo',
+  'pulm',
+  'ortho',
+  'rheum',
+  'derm',
+  'psych',
+  'infect',
+];
+
+export const HEALTH_BODY_IMAGE = '/images/health-record/body-anatomy.jpg';
+
+export function sectionMeta(id: HealthSectionId) {
+  return HEALTH_SECTIONS.find((s) => s.id === id);
+}
 
 export function sectionLabel(id: HealthSectionId): string {
-  return HEALTH_SECTIONS.find((s) => s.id === id)?.label || id;
+  return sectionMeta(id)?.label || id;
+}
+
+export function renalDisplayLabel(): string {
+  return 'کلیه / اورولوژی';
 }

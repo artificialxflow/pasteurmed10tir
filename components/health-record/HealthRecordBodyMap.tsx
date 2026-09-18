@@ -1,7 +1,154 @@
 "use client";
 
-import { HEALTH_BODY_MAP_REGIONS, sectionLabel } from "@/lib/health-record/body-map";
+import {
+  HEALTH_BODY_HOTSPOTS,
+  HEALTH_BODY_IMAGE,
+  HEALTH_BODY_PANEL_LEFT,
+  HEALTH_BODY_PANEL_RIGHT,
+  renalDisplayLabel,
+  sectionLabel,
+  sectionMeta,
+} from "@/lib/health-record/body-map";
 import type { HealthSectionId } from "@/lib/health-record/sections";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+function PanelPill({
+  sectionId,
+  active,
+  onSelect,
+}: {
+  sectionId: HealthSectionId;
+  active: boolean;
+  onSelect: (id: HealthSectionId) => void;
+}) {
+  const meta = sectionMeta(sectionId);
+  if (!meta) return null;
+  const label = sectionId === "renal" ? renalDisplayLabel() : meta.label;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(sectionId)}
+      className={cn(
+        "flex w-full items-center gap-1.5 rounded-full border bg-white/95 px-2 py-1.5 text-right shadow-sm transition",
+        active
+          ? "border-cyan-500 bg-cyan-50 text-cyan-950 ring-2 ring-cyan-200"
+          : "border-slate-200/90 text-slate-800 hover:border-cyan-300 hover:bg-white",
+      )}
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-200 text-sm">
+        {meta.emoji}
+      </span>
+      <span className="min-w-0 flex-1 text-[0.62rem] font-bold leading-tight">{label}</span>
+    </button>
+  );
+}
+
+function SidePanel({
+  title,
+  sectionIds,
+  activeSection,
+  onSelect,
+}: {
+  title: string;
+  sectionIds: HealthSectionId[];
+  activeSection: HealthSectionId;
+  onSelect: (id: HealthSectionId) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <p className="mb-0.5 text-center text-[0.65rem] font-extrabold text-cyan-900/80">{title}</p>
+      {sectionIds.map((id) => (
+        <PanelPill key={id} sectionId={id} active={activeSection === id} onSelect={onSelect} />
+      ))}
+    </div>
+  );
+}
+
+function BodyFigure({
+  activeSection,
+  onSelect,
+}: {
+  activeSection: HealthSectionId;
+  onSelect: (id: HealthSectionId) => void;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <div className="relative mx-auto aspect-[3/5] w-full max-w-[200px] select-none">
+      {!imgFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={HEALTH_BODY_IMAGE}
+          alt=""
+          className="pointer-events-none h-full w-full object-contain drop-shadow-lg"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <svg viewBox="0 0 200 340" className="h-full w-full" aria-hidden>
+          <defs>
+            <radialGradient id="bodyBg" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#0369a1" stopOpacity="0.15" />
+            </radialGradient>
+            <radialGradient id="brainGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#0891b2" stopOpacity="0.2" />
+            </radialGradient>
+            <radialGradient id="heartGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#f87171" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#dc2626" stopOpacity="0.2" />
+            </radialGradient>
+            <radialGradient id="kidneyGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#ea580c" stopOpacity="0.25" />
+            </radialGradient>
+          </defs>
+          <ellipse cx="100" cy="170" rx="72" ry="155" fill="url(#bodyBg)" />
+          <ellipse cx="100" cy="48" rx="28" ry="32" fill="#38bdf8" fillOpacity="0.35" stroke="#7dd3fc" strokeOpacity="0.4" />
+          <path
+            d="M72 78 Q100 92 128 78 L138 200 Q100 218 62 200 Z"
+            fill="#38bdf8"
+            fillOpacity="0.28"
+            stroke="#7dd3fc"
+            strokeOpacity="0.35"
+          />
+          <path d="M78 200 L72 310 Q100 322 128 310 L122 200 Z" fill="#38bdf8" fillOpacity="0.28" />
+          <ellipse cx="100" cy="42" rx="14" ry="12" fill="url(#brainGlow)" />
+          <ellipse cx="96" cy="118" rx="11" ry="10" fill="url(#heartGlow)" />
+          <ellipse cx="78" cy="168" rx="9" ry="7" fill="url(#kidneyGlow)" />
+          <ellipse cx="122" cy="168" rx="9" ry="7" fill="url(#kidneyGlow)" />
+        </svg>
+      )}
+
+      {HEALTH_BODY_HOTSPOTS.map((spot) => {
+        const active = activeSection === spot.sectionId;
+        return (
+          <button
+            key={spot.id}
+            type="button"
+            title={spot.label}
+            aria-label={spot.label}
+            onClick={() => onSelect(spot.sectionId)}
+            className={cn(
+              "absolute cursor-pointer rounded-2xl border-0 bg-transparent p-0 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cyan-500",
+              active
+                ? "bg-amber-400/20 ring-2 ring-amber-400/80"
+                : "opacity-0 hover:opacity-100 hover:bg-cyan-400/10 focus-visible:opacity-100",
+            )}
+            style={{
+              left: `${spot.left}%`,
+              top: `${spot.top}%`,
+              width: `${spot.width}%`,
+              height: `${spot.height}%`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export function HealthRecordBodyMap({
   activeSection,
@@ -11,135 +158,32 @@ export function HealthRecordBodyMap({
   onSelect: (section: HealthSectionId) => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[1.25rem] border border-cyan-700/40 bg-gradient-to-b from-slate-900 via-cyan-950 to-slate-900 p-3 sm:p-4">
-      <div className="mb-2 text-center">
-        <p className="text-sm font-extrabold text-white">پاستور پلاس</p>
-        <p className="text-[0.65rem] text-cyan-100/90">سلامت شما، اولویت ماست</p>
+    <div className="overflow-hidden rounded-[1.35rem] border border-sky-200/80 bg-gradient-to-br from-sky-100 via-cyan-50 to-blue-100 p-3 shadow-inner sm:p-4">
+      <div className="mb-3 text-center">
+        <p className="text-sm font-extrabold text-cyan-950">پرونده سلامت پاستور پلاس</p>
+        <p className="text-[0.65rem] text-cyan-800/80">روی بدن یا گزینه‌های کنار بزنید</p>
       </div>
 
-      <svg
-        viewBox="0 0 240 420"
-        className="mx-auto h-auto w-full max-w-[280px]"
-        role="img"
-        aria-label="نقشه بدن — برای انتخاب بخش پرونده روی ناحیه بزنید"
-      >
-        <defs>
-          <linearGradient id="healthBodyFill" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#0e7490" stopOpacity="0.2" />
-          </linearGradient>
-          <filter id="healthBodyGlow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(130px,200px)_minmax(0,1fr)] items-start gap-2 sm:gap-3">
+        <SidePanel
+          title="گزینه‌های پرونده"
+          sectionIds={HEALTH_BODY_PANEL_LEFT}
+          activeSection={activeSection}
+          onSelect={onSelect}
+        />
+        <BodyFigure activeSection={activeSection} onSelect={onSelect} />
+        <SidePanel
+          title="تخصص‌ها"
+          sectionIds={HEALTH_BODY_PANEL_RIGHT}
+          activeSection={activeSection}
+          onSelect={onSelect}
+        />
+      </div>
 
-        {/* سیلوئت ساده بدن */}
-        <ellipse cx="120" cy="52" rx="30" ry="34" fill="url(#healthBodyFill)" stroke="#67e8f9" strokeOpacity="0.35" />
-        <path
-          d="M88 82 Q120 96 152 82 L162 210 Q120 228 78 210 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.35"
-        />
-        <path
-          d="M78 108 Q52 130 48 168 Q58 176 72 158 Q82 132 88 118 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.25"
-        />
-        <path
-          d="M162 108 Q188 130 192 168 Q182 176 168 158 Q158 132 152 118 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.25"
-        />
-        <path
-          d="M98 210 L92 330 Q120 342 148 330 L142 210 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.35"
-        />
-        <path
-          d="M92 330 L82 400 Q98 408 108 360 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.25"
-        />
-        <path
-          d="M148 330 L158 400 Q142 408 132 360 Z"
-          fill="url(#healthBodyFill)"
-          stroke="#67e8f9"
-          strokeOpacity="0.25"
-        />
-
-        {HEALTH_BODY_MAP_REGIONS.map((region) => {
-          const active = activeSection === region.sectionId;
-          return (
-            <g key={region.id}>
-              <line
-                x1={region.x}
-                y1={region.y}
-                x2={region.labelX + (region.labelX < region.x ? 28 : -28)}
-                y2={region.labelY}
-                stroke={active ? '#fbbf24' : '#67e8f9'}
-                strokeOpacity={active ? 0.9 : 0.45}
-                strokeWidth="1"
-              />
-              <foreignObject
-                x={region.labelX < region.x ? region.labelX - 4 : region.labelX - 56}
-                y={region.labelY - 12}
-                width="60"
-                height="24"
-              >
-                <button
-                  type="button"
-                  onClick={() => onSelect(region.sectionId)}
-                  className={`w-full rounded-full px-2 py-0.5 text-[0.55rem] font-bold leading-tight transition ${
-                    active
-                      ? 'bg-amber-400 text-slate-900 shadow-md'
-                      : 'bg-white/90 text-cyan-950 hover:bg-white'
-                  }`}
-                >
-                  {region.label}
-                </button>
-              </foreignObject>
-              <circle
-                cx={region.x}
-                cy={region.y}
-                r={active ? 11 : 9}
-                fill={active ? '#fbbf24' : '#22d3ee'}
-                fillOpacity={active ? 0.95 : 0.75}
-                stroke="#fff"
-                strokeWidth="1.5"
-                filter={active ? 'url(#healthBodyGlow)' : undefined}
-                className="cursor-pointer"
-                onClick={() => onSelect(region.sectionId)}
-              />
-              <circle
-                cx={region.x}
-                cy={region.y}
-                r="18"
-                fill="transparent"
-                className="cursor-pointer"
-                onClick={() => onSelect(region.sectionId)}
-              >
-                <title>{region.label}</title>
-              </circle>
-            </g>
-          );
-        })}
-      </svg>
-
-      <p className="mx-auto mt-2 max-w-xs rounded-full bg-white/10 px-3 py-1.5 text-center text-[0.65rem] text-cyan-50">
-        برای رفتن به بخش پرونده، روی ناحیه یا برچسب بزنید
-      </p>
       {activeSection ? (
-        <p className="mt-2 text-center text-xs font-bold text-amber-300">
-          انتخاب‌شده: {sectionLabel(activeSection)}
+        <p className="mt-3 text-center text-xs font-bold text-cyan-900">
+          انتخاب‌شده:{" "}
+          {activeSection === "renal" ? renalDisplayLabel() : sectionLabel(activeSection)}
         </p>
       ) : null}
     </div>
