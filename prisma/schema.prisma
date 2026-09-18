@@ -215,6 +215,8 @@ model Physician {
   sortOrder            Int      @default(0)
   /** سهم پزشک کلینیک از مبلغ ویزیت/مشاوره (درصد) — فاز ۳ v17 */
   commissionPercent    Int      @default(0)
+  /** موبایل برای ورود OTP و مشاهده پورسانت */
+  phone                String   @default("")
 }
 
 model Dentist {
@@ -230,6 +232,8 @@ model Dentist {
   schedule             Json     @default("{}")
   sortOrder            Int      @default(0)
   bio                  String   @default("")
+  /** موبایل برای ورود OTP و مشاهده پورسانت */
+  phone                String   @default("")
 }
 
 model GalleryItem {

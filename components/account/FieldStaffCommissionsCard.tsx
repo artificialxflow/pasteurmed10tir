@@ -40,7 +40,7 @@ export function FieldStaffCommissionsCard() {
     <Card hover={false} className="space-y-3 p-4">
       <p className="text-sm font-extrabold text-slate-900">پورسانت‌های من</p>
       <p className="text-xs leading-6 text-slate-500">
-        فقط مشاهده. تسویه از پنل ادمین انجام می‌شود.
+        فقط مشاهده. تسویه از پنل ادمین انجام می‌شود. برای پزشکان و کادر میدانی با همان موبایل ورود.
       </p>
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {items.length === 0 ? (

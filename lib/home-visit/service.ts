@@ -185,6 +185,59 @@ export async function findFieldStaffByPhone(phone?: string | null) {
   return row ? mapFieldStaffAdmin(row) : null;
 }
 
+export async function findPhysicianByPhone(phone?: string | null) {
+  const key = normalizePhoneDigits(phone || '');
+  if (!key) return null;
+  return prisma.physician.findFirst({
+    where: { phone: key },
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+  });
+}
+
+export async function findDentistByPhone(phone?: string | null) {
+  const key = normalizePhoneDigits(phone || '');
+  if (!key) return null;
+  return prisma.dentist.findFirst({
+    where: { phone: key },
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+  });
+}
+
+export async function listMyStaffCommissionsByPhone(phone: string) {
+  const staffIds: string[] = [];
+  let item: { kind: string; name: string; id: string } | null = null;
+
+  const fieldStaff = await findFieldStaffByPhone(phone);
+  if (fieldStaff) {
+    staffIds.push(fieldStaff.id);
+    item = { kind: 'field_staff', name: fieldStaff.name, id: fieldStaff.id };
+  }
+
+  const physician = await findPhysicianByPhone(phone);
+  if (physician) {
+    staffIds.push(`physician:${physician.id}`);
+    if (!item) item = { kind: 'physician', name: physician.name, id: String(physician.id) };
+  }
+
+  const dentist = await findDentistByPhone(phone);
+  if (dentist) {
+    staffIds.push(`dentist:${dentist.id}`);
+    if (!item) item = { kind: 'dentist', name: dentist.name, id: String(dentist.id) };
+  }
+
+  if (!staffIds.length) {
+    return {
+      item: null,
+      items: [],
+      total: 0,
+      summary: { count: 0, total: 0, paidTotal: 0, pendingTotal: 0 },
+    };
+  }
+
+  const result = await listStaffCommissions({ staffIds });
+  return { item, ...result };
+}
+
 /** خودخدمتی: فقط available / busy — نه inactive. */
 export async function setOwnFieldStaffAvailability(
   phone: string | null | undefined,
@@ -723,6 +776,7 @@ export async function listStaffCommissions(options?: {
   from?: string;
   to?: string;
   staffId?: string;
+  staffIds?: string[];
 }) {
   const kind =
     options?.kind === 'physician' ||
@@ -748,9 +802,17 @@ export async function listStaffCommissions(options?: {
         }
       : undefined;
 
+  const staffIds = (options?.staffIds || []).filter(Boolean);
+  const staffFilter =
+    staffIds.length > 0
+      ? { staffId: { in: staffIds } }
+      : options?.staffId
+        ? { staffId: options.staffId }
+        : {};
+
   const rows = await prisma.staffCommission.findMany({
     where: {
-      ...(options?.staffId ? { staffId: options.staffId } : {}),
+      ...staffFilter,
       ...(kind ? { staffKind: kind } : {}),
       ...(status ? { status } : {}),
       ...(createdAt ? { createdAt } : {}),

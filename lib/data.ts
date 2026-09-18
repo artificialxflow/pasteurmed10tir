@@ -84,6 +84,8 @@ export interface Dentist {
   schedule: Record<string, DaySchedule>;
   /** معرفی کوتاه پزشک — از ادمین */
   bio?: string;
+  /** موبایل برای ورود و مشاهده پورسانت */
+  phone?: string;
 }
 
 export interface Physician {
@@ -100,6 +102,8 @@ export interface Physician {
   schedule?: Record<string, DaySchedule>;
   /** درصد سهم پزشک از مبلغ ویزیت/مشاوره */
   commissionPercent?: number;
+  /** موبایل برای ورود و مشاهده پورسانت */
+  phone?: string;
 }
 
 export interface NursingItem {
@@ -1006,10 +1010,8 @@ export const PASTEUR_DATA = {
 
   clubTiers: [
     { minPoints: 0, name: 'تازه‌وارد', emoji: '🌱', discount: 0 },
-    { minPoints: 100, name: 'برنزی', emoji: '🥉', discount: 5 },
-    { minPoints: 300, name: 'نقره‌ای', emoji: '🥈', discount: 10 },
-    { minPoints: 600, name: 'طلایی', emoji: '🥇', discount: 15 },
-    { minPoints: 1000, name: 'VIP', emoji: '💎', discount: 20 },
+    { minPoints: 500, name: 'برنزی', emoji: '🥉', discount: 5 },
+    { minPoints: 2000, name: 'طلایی', emoji: '🥇', discount: 15 },
   ],
 
   clubRewards: [

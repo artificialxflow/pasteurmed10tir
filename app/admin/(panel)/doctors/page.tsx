@@ -182,6 +182,7 @@ export default function AdminDoctorsPage() {
   const [dentistDayHours, setDentistDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [dentistImage, setDentistImage] = useState("");
   const [dentistBio, setDentistBio] = useState("");
+  const [dentistPhone, setDentistPhone] = useState("");
 
   const [physicianName, setPhysicianName] = useState("");
   const [physicianSpecialty, setPhysicianSpecialty] = useState("");
@@ -190,6 +191,7 @@ export default function AdminDoctorsPage() {
   const [physicianCommissionPercent, setPhysicianCommissionPercent] = useState(0);
   const [physicianDayHours, setPhysicianDayHours] = useState<DayHoursMap>(defaultNewDayHours);
   const [physicianImage, setPhysicianImage] = useState("");
+  const [physicianPhone, setPhysicianPhone] = useState("");
 
   const reloadDentists = useCallback(async () => {
     const data = await fetchAdmin<{ items: Dentist[] }>("/api/admin/content/dentists");
@@ -242,6 +244,7 @@ export default function AdminDoctorsPage() {
           specialty: String(patched.specialty || "").trim() || "دندانپزشکی عمومی",
           specialtyId: patched.specialtyId?.trim() || "general",
           medicalCouncilNumber: String(patched.medicalCouncilNumber || "").trim(),
+          phone: String(patched.phone || "").trim(),
           image: String(patched.image || "").trim() || "/uploads/placeholder.svg",
           status: patched.status || "available",
         };
@@ -273,6 +276,7 @@ export default function AdminDoctorsPage() {
           specialty: String(patched.specialty || "").trim(),
           specialtyId: patched.specialtyId?.trim() || undefined,
           medicalCouncilNumber: String(patched.medicalCouncilNumber || "").trim(),
+          phone: String(patched.phone || "").trim(),
           image: String(patched.image || "").trim() || "/uploads/placeholder.svg",
           days: patched.days,
           hours: patched.hours || "",
@@ -323,6 +327,7 @@ export default function AdminDoctorsPage() {
           specialty: specialtyLabel(specialtyId),
           specialtyId,
           medicalCouncilNumber: dentistMedicalCouncilNumber.trim(),
+          phone: dentistPhone.trim(),
           image: dentistImage.trim() || "/uploads/placeholder.svg",
           bio: dentistBio.trim(),
           days: summary.days,
@@ -340,6 +345,7 @@ export default function AdminDoctorsPage() {
         setDentistDayHours(defaultNewDayHours());
         setDentistImage("");
         setDentistBio("");
+        setDentistPhone("");
         setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
@@ -366,6 +372,7 @@ export default function AdminDoctorsPage() {
           specialty: physicianSpecialty.trim(),
           specialtyId: physicianSpecialtyId.trim() || undefined,
           medicalCouncilNumber: physicianMedicalCouncilNumber.trim(),
+          phone: physicianPhone.trim(),
           commissionPercent: physicianCommissionPercent,
           image: physicianImage.trim() || "/uploads/placeholder.svg",
           days: summary.days,
@@ -384,6 +391,7 @@ export default function AdminDoctorsPage() {
         setPhysicianCommissionPercent(0);
         setPhysicianDayHours(defaultNewDayHours());
         setPhysicianImage("");
+        setPhysicianPhone("");
         setError("");
       })
       .catch((err) => setError(err instanceof Error ? err.message : "افزودن ناموفق"));
@@ -473,7 +481,12 @@ export default function AdminDoctorsPage() {
                 value={dentistMedicalCouncilNumber}
                 onChange={(e) => setDentistMedicalCouncilNumber(e.target.value)}
                 placeholder="شماره نظام پزشکی"
-                className="md:col-span-2"
+              />
+              <FormInput
+                type="tel"
+                value={dentistPhone}
+                onChange={(e) => setDentistPhone(e.target.value)}
+                placeholder="موبایل (ورود + پورسانت)"
               />
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
                 <p className="mb-2 text-sm font-bold text-slate-800">روز و ساعت حضور (جدا برای هر روز)</p>
@@ -509,7 +522,7 @@ export default function AdminDoctorsPage() {
           </div>
 
           <AdminTable
-            headers={["نام", "تخصص", "نظام پزشکی", "معرفی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
+            headers={["نام", "تخصص", "نظام پزشکی", "موبایل", "معرفی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="دندانپزشکی ثبت نشده."
           >
             {dentists.map((d, index) => (
@@ -546,6 +559,15 @@ export default function AdminDoctorsPage() {
                     value={d.medicalCouncilNumber || ""}
                     onChange={(e) => updateDentist(index, { medicalCouncilNumber: e.target.value })}
                     placeholder="شماره نظام"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="text-xs"
+                    type="tel"
+                    value={d.phone || ""}
+                    onChange={(e) => updateDentist(index, { phone: e.target.value })}
+                    placeholder="۰۹۱۲…"
                   />
                 </td>
                 <td className="px-4 py-3">
@@ -627,6 +649,12 @@ export default function AdminDoctorsPage() {
                 onChange={(e) => setPhysicianMedicalCouncilNumber(e.target.value)}
                 placeholder="شماره نظام پزشکی"
               />
+              <FormInput
+                type="tel"
+                value={physicianPhone}
+                onChange={(e) => setPhysicianPhone(e.target.value)}
+                placeholder="موبایل (ورود + پورسانت)"
+              />
               <div>
                 <p className="mb-1 text-xs font-bold text-slate-600">سهم پورسانت (٪)</p>
                 <DraftNumberInput
@@ -664,7 +692,7 @@ export default function AdminDoctorsPage() {
           </div>
 
           <AdminTable
-            headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "سهم٪", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
+            headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "موبایل", "سهم٪", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="متخصصی ثبت نشده."
           >
             {physicians.map((p, index) => (
@@ -696,6 +724,15 @@ export default function AdminDoctorsPage() {
                     value={p.medicalCouncilNumber || ""}
                     onChange={(e) => updatePhysician(index, { medicalCouncilNumber: e.target.value })}
                     placeholder="شماره نظام"
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="text-xs"
+                    type="tel"
+                    value={p.phone || ""}
+                    onChange={(e) => updatePhysician(index, { phone: e.target.value })}
+                    placeholder="۰۹۱۲…"
                   />
                 </td>
                 <td className="px-4 py-3">

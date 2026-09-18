@@ -476,9 +476,15 @@ export function AccountDashboard({
       ) : !activity ? (
         <p className="text-sm text-slate-500">در حال بارگذاری فعالیت‌ها…</p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card hover={false} className="p-4">
-            <p className="mb-2 text-sm font-extrabold text-slate-900">رزروهای اخیر</p>
+        <div className="space-y-3" data-account-section="activity-accordion">
+          <AccountAccordionSection
+            title="رزروهای اخیر"
+            summary={
+              activity.bookings.length === 0
+                ? "هنوز رزروی ثبت نشده"
+                : `${activity.bookings.length.toLocaleString("fa-IR")} رزرو`
+            }
+          >
             {activity.bookings.length === 0 ? (
               <p className="text-xs text-slate-500">هنوز رزروی ثبت نشده است.</p>
             ) : (
@@ -528,10 +534,16 @@ export function AccountDashboard({
                 );
               })
             )}
-          </Card>
+          </AccountAccordionSection>
 
-          <Card hover={false} className="p-4 lg:col-span-2">
-            <p className="mb-2 text-sm font-extrabold text-slate-900">اعزام خانگی</p>
+          <AccountAccordionSection
+            title="اعزام خانگی"
+            summary={
+              (activity.homeVisits || []).length === 0
+                ? "درخواستی ثبت نشده"
+                : `${(activity.homeVisits || []).length.toLocaleString("fa-IR")} درخواست`
+            }
+          >
             {(activity.homeVisits || []).length === 0 ? (
               <p className="text-xs text-slate-500">
                 درخواست پرستاری یا ویزیت در منزل ثبت نشده است. پس از تخصیص، نام و عکس نیرو اینجا دیده می‌شود.
@@ -576,10 +588,16 @@ export function AccountDashboard({
                 })}
               </div>
             )}
-          </Card>
+          </AccountAccordionSection>
 
-          <Card hover={false} className="p-4 lg:col-span-2">
-            <p className="mb-2 text-sm font-extrabold text-slate-900">مشاوره‌های اخیر</p>
+          <AccountAccordionSection
+            title="مشاوره‌های اخیر"
+            summary={
+              activity.consultations.length === 0
+                ? "درخواستی ثبت نشده"
+                : `${activity.consultations.length.toLocaleString("fa-IR")} مشاوره`
+            }
+          >
             {activity.consultations.length === 0 ? (
               <p className="text-xs text-slate-500">درخواست مشاوره‌ای ثبت نشده است.</p>
             ) : (
@@ -603,11 +621,18 @@ export function AccountDashboard({
                 })}
               </div>
             )}
-          </Card>
+          </AccountAccordionSection>
 
-          <Card hover={false} className="p-4 lg:col-span-2">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-extrabold text-slate-900">سفارشات فروشگاه</p>
+          <AccountAccordionSection
+            title="سفارشات فروشگاه"
+            summary={
+              (activity.shopOrders || []).length === 0
+                ? "هنوز سفارشی ثبت نشده"
+                : `${(activity.shopOrders || []).length.toLocaleString("fa-IR")} سفارش`
+            }
+          >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-slate-500">لیست سفارش‌های اخیر فروشگاه</p>
               <Link href={shopHref} className="text-xs font-bold text-teal-700 hover:underline">
                 ادامه خرید
               </Link>
@@ -645,7 +670,7 @@ export function AccountDashboard({
                 })}
               </div>
             )}
-          </Card>
+          </AccountAccordionSection>
         </div>
       )}
       </div>

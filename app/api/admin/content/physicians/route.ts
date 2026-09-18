@@ -59,6 +59,7 @@ export async function PUT(request: Request) {
               100,
               Math.max(0, Math.round(Number(item.commissionPercent ?? 0)) || 0),
             ),
+            phone: item.phone || '',
           },
         }),
       ),

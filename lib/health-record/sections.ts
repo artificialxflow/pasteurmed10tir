@@ -49,6 +49,8 @@ const GENERAL_FIELDS: HealthSectionField[] = [
   ...VITALS_EXTRA,
   { key: 'diseaseHistory', label: 'سوابق بیماری', kind: 'textarea' },
   { key: 'medications', label: 'داروهای مصرفی', kind: 'textarea' },
+  { key: 'medTrackingCode', label: 'دارو (کد رهگیری)', kind: 'text' },
+  { key: 'labTrackingCode', label: 'آزمایشات (کد رهگیری)', kind: 'text' },
   { key: 'surgeries', label: 'عمل‌های جراحی انجام‌شده', kind: 'textarea' },
   { key: 'complaint', label: 'شکایت اصلی', kind: 'textarea' },
   { key: 'diagnosis', label: 'تشخیص', kind: 'textarea' },

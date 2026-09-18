@@ -1,5 +1,6 @@
 import type { DaySchedule, Dentist } from '@/lib/data';
 import { buildTreatmentSlots, buildVisitHours } from '@/lib/data';
+import { normalizePhoneDigits } from '@/lib/operations/phone';
 import type { Dentist as DbDentist, Physician as DbPhysician, Prisma } from '@prisma/client';
 
 export type DentistRecord = Dentist;
@@ -34,6 +35,7 @@ export function mapDentist(row: DbDentist): DentistRecord {
     status: (row.status as DentistRecord['status']) || 'available',
     schedule,
     bio: 'bio' in row && typeof row.bio === 'string' ? row.bio : '',
+    phone: normalizePhoneDigits(row.phone || '') || undefined,
   };
   // Heal legacy rows where hours label was ignored and schedule stayed at 9–17.
   const dayHours = dayHoursFromDentist(base);
@@ -63,6 +65,7 @@ export function mapPhysician(row: DbPhysician) {
     hours: row.hours || '',
     status: (row.status as 'available' | 'busy' | 'inactive') || 'available',
     schedule,
+    phone: normalizePhoneDigits(row.phone || '') || undefined,
   };
   const dayHours = dayHoursFromDentist(base);
   const healedSchedule = buildScheduleFromDayHours(dayHours);
@@ -241,6 +244,7 @@ export type DentistBody = {
   status?: string;
   schedule?: Record<string, DaySchedule>;
   bio?: string;
+  phone?: string;
   /** When set, rebuilds schedule + days + hours summary. */
   dayHours?: DayHoursMap;
 };
@@ -274,6 +278,7 @@ export function normalizeDentistBody(raw: DentistBody): DentistBody {
     status: String(raw.status || 'available'),
     schedule,
     bio: String(raw.bio || '').trim(),
+    phone: normalizePhoneDigits(String(raw.phone || '')) || undefined,
   };
 }
 
@@ -295,6 +300,7 @@ export function dentistToDbInput(
     schedule: normalized.schedule as unknown as Prisma.InputJsonValue,
     sortOrder,
     bio: normalized.bio || '',
+    phone: normalized.phone || '',
   };
 }
 
@@ -311,6 +317,7 @@ export type PhysicianBody = {
   schedule?: Record<string, DaySchedule>;
   dayHours?: DayHoursMap;
   commissionPercent?: number;
+  phone?: string;
 };
 
 export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
@@ -351,5 +358,6 @@ export function normalizePhysicianBody(raw: PhysicianBody): PhysicianBody {
     status: String(raw.status || 'available'),
     schedule,
     commissionPercent,
+    phone: normalizePhoneDigits(String(raw.phone || '')) || undefined,
   };
 }
