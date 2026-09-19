@@ -114,14 +114,17 @@ export async function sendConsultationSms(
   return sendByPattern(id, phone, [trackingCode]);
 }
 
-/** تخصیص اعزام خانگی به نیرو — پترن: درخواست اعزام… کد پیگیری: {0} */
+/**
+ * تخصیص اعزام خانگی به نیرو — پترن payamak (۷ متغیر):
+ * {0} کد · {1} منطقه/خدمت · {2} بیمار · {3} آدرس · {4} تماس · {5} نقشه · {6} پنل
+ */
 export async function sendHomeVisitStaffAssignedSms(
   phone: string,
-  requestId: string,
+  vars: string[],
 ): Promise<SmsSendResult> {
   const id = smsBodyIds().homeVisitStaff;
   if (!id) return { ok: false, error: 'پترن تخصیص اعزام به نیرو تنظیم نشده.' };
-  return sendByPattern(id, phone, [requestId || '—']);
+  return sendByPattern(id, phone, vars.length ? vars : ['—']);
 }
 
 export async function sendBookingSms(

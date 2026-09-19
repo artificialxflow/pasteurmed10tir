@@ -42,3 +42,8 @@ export function compareByDistance(a: number | null, b: number | null): number {
   if (b == null) return -1;
   return a - b;
 }
+
+/** لینک باز کردن موقعیت در Google Maps (موبایل/وب) */
+export function buildMapsUrl(lat: number, lng: number): string {
+  return `https://maps.google.com/maps?q=${lat},${lng}&z=17&hl=fa`;
+}

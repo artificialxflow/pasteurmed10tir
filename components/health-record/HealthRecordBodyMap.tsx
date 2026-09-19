@@ -3,6 +3,7 @@
 import {
   HEALTH_BODY_HOTSPOTS,
   HEALTH_BODY_IMAGE,
+  HEALTH_BODY_PANEL_BOTTOM,
   HEALTH_BODY_PANEL_LEFT,
   HEALTH_BODY_PANEL_RIGHT,
   hotspotStyle,
@@ -23,11 +24,13 @@ function PanelPill({
   previewId,
   committedSection,
   onTap,
+  variant = "side",
 }: {
   sectionId: HealthSectionId;
   previewId: HealthSectionId;
   committedSection: HealthSectionId;
   onTap: (id: HealthSectionId) => void;
+  variant?: "side" | "bottom";
 }) {
   const meta = sectionMeta(sectionId);
   if (!meta) return null;
@@ -43,7 +46,10 @@ function PanelPill({
       aria-pressed={isPreview}
       onClick={() => onTap(sectionId)}
       className={cn(
-        "flex w-full items-center justify-center rounded-full border bg-white/95 shadow-sm transition md:justify-start md:gap-1.5 md:px-2 md:py-1.5",
+        "rounded-full border bg-white/95 shadow-sm transition",
+        variant === "side"
+          ? "flex w-full items-center justify-center md:justify-start md:gap-1.5 md:px-2 md:py-1.5"
+          : "flex min-w-[2.75rem] flex-col items-center gap-0.5 px-1 py-1 sm:min-w-[3.25rem] sm:px-1.5 sm:py-1.5 md:min-w-[4.5rem]",
         isPreview
           ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300/80"
           : isCommitted
@@ -53,15 +59,24 @@ function PanelPill({
     >
       <span
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-200 text-base md:h-9 md:w-9 md:text-sm",
+          "flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-100 to-sky-200",
+          variant === "side"
+            ? "h-10 w-10 text-base md:h-9 md:w-9 md:text-sm"
+            : "h-9 w-9 text-sm sm:h-10 sm:w-10",
           isPreview && "from-amber-100 to-amber-200",
         )}
       >
         {meta.emoji}
       </span>
-      <span className="hidden min-w-0 max-w-[6.5rem] flex-1 truncate text-xs font-bold leading-tight text-slate-800 md:block">
-        {label}
-      </span>
+      {variant === "side" ? (
+        <span className="hidden min-w-0 max-w-[6.5rem] flex-1 truncate text-xs font-bold leading-tight text-slate-800 md:block">
+          {label}
+        </span>
+      ) : (
+        <span className="max-w-[4.5rem] truncate text-center text-[9px] font-bold leading-tight text-slate-700 sm:text-[10px] md:max-w-[5.5rem] md:text-xs">
+          {label}
+        </span>
+      )}
     </button>
   );
 }
@@ -93,6 +108,35 @@ function SidePanel({
           onTap={onTap}
         />
       ))}
+    </div>
+  );
+}
+
+function BottomPanel({
+  sectionIds,
+  previewId,
+  committedSection,
+  onTap,
+}: {
+  sectionIds: HealthSectionId[];
+  previewId: HealthSectionId;
+  committedSection: HealthSectionId;
+  onTap: (id: HealthSectionId) => void;
+}) {
+  return (
+    <div className="mt-2 w-full max-w-[280px] sm:max-w-[320px] md:max-w-[380px]">
+      <div className="flex flex-wrap items-start justify-center gap-1 sm:gap-1.5">
+        {sectionIds.map((id) => (
+          <PanelPill
+            key={id}
+            variant="bottom"
+            sectionId={id}
+            previewId={previewId}
+            committedSection={committedSection}
+            onTap={onTap}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -214,7 +258,15 @@ export function HealthRecordBodyMap({
           committedSection={committedSection}
           onTap={handleTap}
         />
-        <BodyFigure previewId={previewId} committedSection={committedSection} onTap={handleTap} />
+        <div className="flex min-w-0 flex-col items-center">
+          <BodyFigure previewId={previewId} committedSection={committedSection} onTap={handleTap} />
+          <BottomPanel
+            sectionIds={HEALTH_BODY_PANEL_BOTTOM}
+            previewId={previewId}
+            committedSection={committedSection}
+            onTap={handleTap}
+          />
+        </div>
         <SidePanel
           title="تخصص‌ها"
           sectionIds={HEALTH_BODY_PANEL_RIGHT}

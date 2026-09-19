@@ -13,29 +13,30 @@ export type BodyHotspot = {
 
 /**
  * Hotspotهای نامرئی — ترتیب مهم است: نواحی بزرگ اول، اعضای دقیق آخر (روی هم).
- * مختصات برای body-anatomy.jpg با object-contain و inset ~8% تنظیم شده.
+ * مختصات برای body-anatomy.jpg (نمای روبرو) با object-contain تنظیم شده.
  */
 export const HEALTH_BODY_HOTSPOTS: BodyHotspot[] = [
-  // لایه‌های پهن (پایین‌ترین z-index)
-  { id: 'skin-l', sectionId: 'derm', label: 'پوست', left: 8, top: 34, width: 14, height: 28 },
-  { id: 'skin-r', sectionId: 'derm', label: 'پوست', left: 78, top: 34, width: 14, height: 28 },
-  { id: 'vitals', sectionId: 'vitals', label: 'حیاتی / قند / نوار', left: 36, top: 32, width: 28, height: 10 },
-  { id: 'lung', sectionId: 'pulm', label: 'ریه', left: 30, top: 31, width: 40, height: 14 },
-  { id: 'infect', sectionId: 'infect', label: 'عفونی', left: 34, top: 40, width: 32, height: 14 },
+  // لایه‌های پهن
+  { id: 'lung', sectionId: 'pulm', label: 'ریه', left: 26, top: 30, width: 48, height: 13 },
+  { id: 'stomach', sectionId: 'internal', label: 'داخلی', left: 35, top: 47, width: 30, height: 10 },
+  { id: 'bone-l', sectionId: 'ortho', label: 'ارتوپدی', left: 37, top: 57, width: 13, height: 17 },
+  { id: 'bone-r', sectionId: 'ortho', label: 'ارتوپدی', left: 50, top: 57, width: 13, height: 17 },
+  { id: 'hand-l', sectionId: 'derm', label: 'پوست', left: 4, top: 47, width: 16, height: 13 },
+  { id: 'hand-r', sectionId: 'derm', label: 'پوست', left: 80, top: 47, width: 16, height: 13 },
+  { id: 'knee-l', sectionId: 'rheum', label: 'روماتولوژی', left: 35, top: 69, width: 14, height: 11 },
+  { id: 'knee-r', sectionId: 'rheum', label: 'روماتولوژی', left: 51, top: 69, width: 14, height: 11 },
+  { id: 'throat', sectionId: 'infect', label: 'عفونی', left: 41, top: 28, width: 18, height: 6 },
+  { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 33, top: 42, width: 13, height: 8 },
+  { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 54, top: 42, width: 13, height: 8 },
+  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 26, top: 43, width: 15, height: 9 },
   // اعضای دقیق (بالاترین z-index)
-  { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 42, top: 9, width: 16, height: 11 },
-  { id: 'psych', sectionId: 'psych', label: 'روان', left: 38, top: 7, width: 24, height: 9 },
-  { id: 'eye', sectionId: 'ophthalm', label: 'چشم‌پزشکی', left: 38, top: 16, width: 24, height: 5 },
-  { id: 'nose', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 44, top: 20, width: 12, height: 7 },
-  { id: 'mouth', sectionId: 'dental', label: 'دندان', left: 43, top: 25, width: 14, height: 6 },
-  { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 45, top: 35, width: 11, height: 9 },
-  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 53, top: 41, width: 13, height: 8 },
-  { id: 'stomach', sectionId: 'internal', label: 'داخلی', left: 39, top: 46, width: 22, height: 9 },
-  { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 35, top: 45, width: 11, height: 7 },
-  { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 54, top: 45, width: 11, height: 7 },
-  { id: 'joint-l', sectionId: 'rheum', label: 'روماتولوژی', left: 10, top: 33, width: 12, height: 14 },
-  { id: 'joint-r', sectionId: 'rheum', label: 'روماتولوژی', left: 78, top: 33, width: 12, height: 14 },
-  { id: 'bone', sectionId: 'ortho', label: 'ارتوپدی', left: 34, top: 66, width: 32, height: 24 },
+  { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 43, top: 33, width: 14, height: 10 },
+  { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 39, top: 6, width: 22, height: 9 },
+  { id: 'psych', sectionId: 'psych', label: 'روان', left: 37, top: 12, width: 26, height: 7 },
+  { id: 'eye', sectionId: 'ophthalm', label: 'چشم‌پزشکی', left: 35, top: 16, width: 30, height: 5 },
+  { id: 'ent-l', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 26, top: 18, width: 11, height: 9 },
+  { id: 'ent-r', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 63, top: 18, width: 11, height: 9 },
+  { id: 'mouth', sectionId: 'dental', label: 'دندان', left: 41, top: 23, width: 18, height: 6 },
 ];
 
 /** inset تصویر داخل باکس (درصد) — برای هم‌ترازی hotspot */
@@ -56,7 +57,7 @@ export const HEALTH_BODY_PANEL_LEFT: HealthSectionId[] = [
   'other',
 ];
 
-/** ستون راست — تخصص‌ها (RTL: سمت چپ صفحه) */
+/** ستون راست — تخصص‌های بالایی (RTL: سمت چپ صفحه) */
 export const HEALTH_BODY_PANEL_RIGHT: HealthSectionId[] = [
   'dental',
   'neuro',
@@ -67,6 +68,10 @@ export const HEALTH_BODY_PANEL_RIGHT: HealthSectionId[] = [
   'internal',
   'endo',
   'pulm',
+];
+
+/** ردیف افقی زیر تصویر بدن */
+export const HEALTH_BODY_PANEL_BOTTOM: HealthSectionId[] = [
   'ortho',
   'rheum',
   'derm',

@@ -2,7 +2,7 @@ import { generateOperationId } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
-import { isKnownServiceArea } from '@/lib/home-visit/areas';
+import { isKnownServiceArea, serviceAreaLabel } from '@/lib/home-visit/areas';
 import { compareByDistance, haversineKm, parseLatLng } from '@/lib/home-visit/geo';
 import { parsePreferredGender, parseStaffGender } from '@/lib/home-visit/gender';
 import { staffKindForVisit } from '@/lib/home-visit/labels';
@@ -523,7 +523,17 @@ export async function assignStaffToHomeVisit(
   if (firstAssign) {
     await notifyHomeVisitStatusSms(request.patientPhone, 'staff_assigned', requestId);
   }
-  await notifyHomeVisitStaffAssignedSms(staff.phone, requestId);
+  await notifyHomeVisitStaffAssignedSms(staff.phone, {
+    requestId,
+    areaLabel: serviceAreaLabel(request.patientArea),
+    serviceTitle: request.serviceTitle,
+    specialtyLabel: request.specialtyLabel,
+    patientName: request.patientName,
+    patientAddress: request.patientAddress,
+    patientPhone: request.patientPhone,
+    latitude: request.latitude,
+    longitude: request.longitude,
+  });
 
   const row = await prisma.homeVisitRequest.findUniqueOrThrow({
     where: { id: requestId },
