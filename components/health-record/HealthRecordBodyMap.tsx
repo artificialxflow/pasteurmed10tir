@@ -3,6 +3,7 @@
 import {
   HEALTH_BODY_HOTSPOTS,
   HEALTH_BODY_IMAGE,
+  HEALTH_BODY_IMAGE_SIZE,
   HEALTH_BODY_PANEL_BOTTOM,
   HEALTH_BODY_PANEL_LEFT,
   HEALTH_BODY_PANEL_RIGHT,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/health-record/body-map";
 import type { HealthSectionId } from "@/lib/health-record/sections";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 function displayLabel(id: HealthSectionId): string {
   return id === "renal" ? renalDisplayLabel() : sectionLabel(id);
@@ -141,6 +142,29 @@ function BottomPanel({
   );
 }
 
+function useBodyFigureLayout() {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [imageSize, setImageSize] = useState(HEALTH_BODY_IMAGE_SIZE);
+
+  useLayoutEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    const measure = () => {
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSize({ w: rect.width, h: rect.height });
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return { boxRef, size, imageSize, setImageSize };
+}
+
 function BodyFigure({
   previewId,
   committedSection,
@@ -152,6 +176,7 @@ function BodyFigure({
 }) {
   const [imgFailed, setImgFailed] = useState(false);
   const previewLabel = displayLabel(previewId);
+  const { boxRef, size, imageSize, setImageSize } = useBodyFigureLayout();
 
   return (
     <div className="relative mx-auto w-full min-w-[140px] max-w-[220px] select-none sm:max-w-[280px] md:max-w-[340px] lg:max-w-[380px]">
@@ -162,13 +187,19 @@ function BodyFigure({
         <p className="text-xs font-extrabold text-amber-950">{previewLabel}</p>
       </div>
 
-      <div className="relative aspect-[3/5] w-full">
+      <div ref={boxRef} className="relative aspect-[3/5] w-full">
         {!imgFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={HEALTH_BODY_IMAGE}
             alt=""
             className="pointer-events-none h-full w-full object-contain drop-shadow-lg"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
+              }
+            }}
             onError={() => setImgFailed(true)}
           />
         ) : (
@@ -192,7 +223,13 @@ function BodyFigure({
         {HEALTH_BODY_HOTSPOTS.map((spot) => {
           const isPreview = previewId === spot.sectionId;
           const isCommitted = committedSection === spot.sectionId;
-          const pos = hotspotStyle(spot);
+          const pos = hotspotStyle(
+            spot,
+            size?.w,
+            size?.h,
+            imageSize.width,
+            imageSize.height,
+          );
           return (
             <button
               key={spot.id}
