@@ -115,8 +115,8 @@ export async function sendConsultationSms(
 }
 
 /**
- * تخصیص اعزام خانگی به نیرو — پترن payamak (۷ متغیر):
- * {0} کد · {1} منطقه/خدمت · {2} بیمار · {3} آدرس · {4} تماس · {5} نقشه · {6} پنل
+ * تخصیص اعزام خانگی به نیرو — پترن payamak (۱ متغیر):
+ * {0} لینک پنل کاربری
  */
 export async function sendHomeVisitStaffAssignedSms(
   phone: string,

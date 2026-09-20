@@ -42,7 +42,7 @@ export const HEALTH_BODY_HOTSPOTS: BodyHotspot[] = [
   { id: 'throat', sectionId: 'infect', label: 'عفونی', left: 38, top: 17, width: 24, height: 4 },
   { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 28, top: 37, width: 15, height: 7 },
   { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 57, top: 37, width: 15, height: 7 },
-  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 12, top: 30, width: 24, height: 12 },
+  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 22, top: 32, width: 28, height: 14 },
   { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 40, top: 25, width: 20, height: 8 },
   { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 36, top: 0, width: 28, height: 7 },
   { id: 'psych', sectionId: 'psych', label: 'روان', left: 32, top: 0, width: 36, height: 10 },
