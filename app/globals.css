@@ -215,3 +215,23 @@ p {
 .insurance-slide-track {
   animation: insurance-slide 28s linear infinite;
 }
+
+/* Health record report — print only report body, not site chrome */
+@media print {
+  body[data-print-page="health-record-report"] {
+    background: white !important;
+    padding-bottom: 0 !important;
+  }
+
+  body[data-print-page="health-record-report"] header,
+  body[data-print-page="health-record-report"] footer,
+  body[data-print-page="health-record-report"] .mobile-bottom-nav,
+  body[data-print-page="health-record-report"] [data-site-chrome="support-widget"] {
+    display: none !important;
+  }
+
+  body[data-print-page="health-record-report"] [data-page="health-record-report"] {
+    max-width: none;
+    padding: 0;
+  }
+}

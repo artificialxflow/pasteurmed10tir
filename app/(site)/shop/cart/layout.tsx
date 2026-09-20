@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   robots: PRIVATE_PAGE_ROBOTS,
 };
 
-export default function AppShellLayout({ children }: { children: ReactNode }) {
+export default function ShopCartLayout({ children }: { children: ReactNode }) {
   return children;
 }

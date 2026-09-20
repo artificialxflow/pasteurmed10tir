@@ -119,6 +119,7 @@ export function SupportWidget({
         />
       ) : null}
       <div
+        data-site-chrome="support-widget"
         className={cn(
           isApp ? "absolute z-30" : "fixed z-30",
           "left-3",

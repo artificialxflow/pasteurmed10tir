@@ -37,6 +37,13 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
     reload();
   }, [reload]);
 
+  useEffect(() => {
+    document.body.dataset.printPage = "health-record-report";
+    return () => {
+      delete document.body.dataset.printPage;
+    };
+  }, []);
+
   const grouped = useMemo(() => {
     const map = new Map<string, Entry[]>();
     for (const item of items) {
@@ -53,7 +60,10 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
   );
 
   return (
-    <div className={`${WEB_PAGE_CONTAINER} space-y-6`} data-page="health-record-report">
+    <div
+      className={`${WEB_PAGE_CONTAINER} space-y-6 print:max-w-none print:px-0 print:py-0`}
+      data-page="health-record-report"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">گزارش کلی پرونده سلامت</h1>
@@ -83,12 +93,17 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
       {loading ? (
         <p className="text-sm text-slate-500 print:hidden">در حال بارگذاری…</p>
       ) : sectionsWithData.length === 0 ? (
-        <Card hover={false} className="p-4 text-sm text-slate-600">
-          هنوز موردی در پرونده ثبت نشده است. از{" "}
-          <Link href={healthHref} className="font-bold text-teal-700">
-            صفحه پرونده سلامت
-          </Link>{" "}
-          می‌توانید ثبت کنید.
+        <Card hover={false} className="p-4 text-sm text-slate-600 print:border-0 print:shadow-none">
+          <span className="print:hidden">
+            هنوز موردی در پرونده ثبت نشده است. از{" "}
+            <Link href={healthHref} className="font-bold text-teal-700">
+              صفحه پرونده سلامت
+            </Link>{" "}
+            می‌توانید ثبت کنید.
+          </span>
+          <span className="hidden print:inline">
+            هنوز موردی در پرونده ثبت نشده است.
+          </span>
         </Card>
       ) : (
         sectionsWithData.map((section) => (

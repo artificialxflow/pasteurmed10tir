@@ -302,6 +302,9 @@ export function AccountDashboard({
         <p className="mt-1 text-xs leading-6 text-slate-600">
           ثبت علائم، یادداشت تخصصی و بارگذاری مدارک (jpg، pdf) — گزارش کلی پرونده هم از همان بخش در دسترس است.
         </p>
+        <p className="mt-2 text-xs leading-6 text-slate-600">
+          اطلاعات و سوابق پزشکی شما نزد ما به‌صورت کاملاً محرمانه و امن نگهداری می‌شود و حفظ حریم خصوصی شما، اولویت اول ماست.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
             href={healthHref}

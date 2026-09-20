@@ -1,7 +1,15 @@
 import { PASTEUR_DATA } from '@/lib/data';
 import { ROUTES } from '@/lib/routes';
+import type { Metadata } from 'next';
 
 const SITE = 'https://pasteur.plus';
+
+/** صفحات پنل کاربری، اپ و جریان پرداخت — بدون ایندکس در گوگل */
+export const PRIVATE_PAGE_ROBOTS: Metadata['robots'] = {
+  index: false,
+  follow: false,
+  googleBot: { index: false, follow: false },
+};
 
 /** مسیرهای عمومی سایت برای sitemap — بدون صفحات پرداخت و پنل کاربری */
 export const PUBLIC_SITEMAP_PATHS: Array<{ path: string; priority: number; changeFrequency: 'weekly' | 'monthly' }> = [

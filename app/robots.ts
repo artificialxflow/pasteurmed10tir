@@ -5,7 +5,20 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/api', '/uploads'],
+      disallow: [
+        '/admin',
+        '/api',
+        '/uploads',
+        '/account',
+        '/app',
+        '/installments',
+        '/wallet',
+        '/reminders',
+        '/shop/cart',
+        '/*/confirm',
+        '/*/success',
+        '/*/failed',
+      ],
     },
     sitemap: 'https://pasteur.plus/sitemap.xml',
   };
