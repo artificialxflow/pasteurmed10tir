@@ -4,40 +4,51 @@ export type BodyHotspot = {
   id: string;
   sectionId: HealthSectionId;
   label: string;
-  /** درصد نسبت به ابعاد طبیعی تصویر body-anatomy.jpg */
+  /** درصد نسبت به ناحیه بدن (HEALTH_BODY_CONTENT_BOUNDS) — نه کل فریم JPG */
   left: number;
   top: number;
   width: number;
   height: number;
 };
 
-/** ابعاد واقعی فایل JPG — برای object-contain */
+/** ابعاد واقعی فایل JPG */
 export const HEALTH_BODY_IMAGE_SIZE = { width: 853, height: 1280 };
 
 /**
- * Hotspotها — درصد نسبت به تصویر ۸۵۳×۱۲۸۰ (نمای روبرو).
+ * محدوده واقعی بدن داخل JPG (بدون پدینگ آبی).
+ * hotspotها نسبت به این مستطیل تعریف می‌شوند: ۰=بالای سر، ۱۰۰=پا.
+ */
+export const HEALTH_BODY_CONTENT_BOUNDS = {
+  left: 15,
+  top: 1,
+  right: 15,
+  bottom: 3,
+};
+
+/**
+ * Hotspotها — درصد نسبت به HEALTH_BODY_CONTENT_BOUNDS.
+ * کaliبره با لنگر دندان (top: 11) + آناتومی body-anatomy.jpg
  * ترتیب: نواحی بزرگ اول، اعضای دقیق آخر.
  */
 export const HEALTH_BODY_HOTSPOTS: BodyHotspot[] = [
-  { id: 'lung', sectionId: 'pulm', label: 'ریه', left: 27, top: 25, width: 46, height: 12 },
-  { id: 'stomach', sectionId: 'internal', label: 'داخلی', left: 36, top: 43, width: 28, height: 9 },
-  { id: 'bone-l', sectionId: 'ortho', label: 'ارتوپدی', left: 37, top: 56, width: 13, height: 15 },
-  { id: 'bone-r', sectionId: 'ortho', label: 'ارتوپدی', left: 50, top: 56, width: 13, height: 15 },
-  { id: 'hand-l', sectionId: 'derm', label: 'پوست', left: 7, top: 41, width: 15, height: 11 },
-  { id: 'hand-r', sectionId: 'derm', label: 'پوست', left: 78, top: 41, width: 15, height: 11 },
-  { id: 'knee-l', sectionId: 'rheum', label: 'روماتولوژی', left: 35, top: 70, width: 13, height: 10 },
-  { id: 'knee-r', sectionId: 'rheum', label: 'روماتولوژی', left: 52, top: 70, width: 13, height: 10 },
-  { id: 'throat', sectionId: 'infect', label: 'عفونی', left: 41, top: 23, width: 18, height: 5 },
-  { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 33, top: 37, width: 13, height: 7 },
-  { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 54, top: 37, width: 13, height: 7 },
-  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 25, top: 38, width: 14, height: 8 },
-  { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 43, top: 29, width: 14, height: 9 },
-  { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 38, top: 6, width: 24, height: 9 },
-  { id: 'psych', sectionId: 'psych', label: 'روان', left: 36, top: 10, width: 28, height: 7 },
-  { id: 'eye', sectionId: 'ophthalm', label: 'چشم‌پزشکی', left: 34, top: 14, width: 32, height: 4 },
-  { id: 'ent-l', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 24, top: 15, width: 11, height: 8 },
-  { id: 'ent-r', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 65, top: 15, width: 11, height: 8 },
-  { id: 'mouth', sectionId: 'dental', label: 'دندان', left: 40, top: 19, width: 20, height: 5 },
+  { id: 'lung', sectionId: 'pulm', label: 'ریه', left: 18, top: 20, width: 64, height: 12 },
+  { id: 'stomach', sectionId: 'internal', label: 'داخلی', left: 28, top: 34, width: 44, height: 16 },
+  { id: 'bone-l', sectionId: 'ortho', label: 'ارتوپدی', left: 34, top: 52, width: 16, height: 18 },
+  { id: 'bone-r', sectionId: 'ortho', label: 'ارتوپدی', left: 50, top: 52, width: 16, height: 18 },
+  { id: 'hand-l', sectionId: 'derm', label: 'پوست', left: 0, top: 48, width: 18, height: 14 },
+  { id: 'hand-r', sectionId: 'derm', label: 'پوست', left: 82, top: 48, width: 18, height: 14 },
+  { id: 'knee-l', sectionId: 'rheum', label: 'روماتولوژی', left: 33, top: 68, width: 15, height: 10 },
+  { id: 'knee-r', sectionId: 'rheum', label: 'روماتولوژی', left: 52, top: 68, width: 15, height: 10 },
+  { id: 'throat', sectionId: 'infect', label: 'عفونی', left: 38, top: 17, width: 24, height: 4 },
+  { id: 'kidney-l', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 28, top: 37, width: 15, height: 7 },
+  { id: 'kidney-r', sectionId: 'renal', label: 'کلیه / اورولوژی', left: 57, top: 37, width: 15, height: 7 },
+  { id: 'liver', sectionId: 'endo', label: 'دیابت / غدد', left: 12, top: 30, width: 24, height: 12 },
+  { id: 'heart', sectionId: 'cardio', label: 'قلب', left: 40, top: 25, width: 20, height: 8 },
+  { id: 'brain', sectionId: 'neuro', label: 'مغز و اعصاب', left: 36, top: 0, width: 28, height: 7 },
+  { id: 'psych', sectionId: 'psych', label: 'روان', left: 32, top: 0, width: 36, height: 10 },
+  { id: 'eye', sectionId: 'ophthalm', label: 'چشم‌پزشکی', left: 30, top: 5, width: 40, height: 3 },
+  { id: 'ent-face', sectionId: 'ent', label: 'گوش و حلق و بینی', left: 26, top: 7, width: 48, height: 14 },
+  { id: 'mouth', sectionId: 'dental', label: 'دندان', left: 38, top: 11, width: 24, height: 3 },
 ];
 
 /** ستون چپ — گزینه‌های پرونده (RTL: سمت راست صفحه) */
@@ -103,6 +114,19 @@ export function computeObjectContainRect(
   return { left: (containerW - width) / 2, top: 0, width, height };
 }
 
+/** تبدیل درصد ناحیه بدن → درصد کل تصویر JPG */
+export function spotToImagePercent(spot: Pick<BodyHotspot, 'left' | 'top' | 'width' | 'height'>) {
+  const b = HEALTH_BODY_CONTENT_BOUNDS;
+  const usableW = 100 - b.left - b.right;
+  const usableH = 100 - b.top - b.bottom;
+  return {
+    left: b.left + (spot.left / 100) * usableW,
+    top: b.top + (spot.top / 100) * usableH,
+    width: (spot.width / 100) * usableW,
+    height: (spot.height / 100) * usableH,
+  };
+}
+
 export function sectionMeta(id: HealthSectionId) {
   return HEALTH_SECTIONS.find((s) => s.id === id);
 }
@@ -115,7 +139,7 @@ export function renalDisplayLabel(): string {
   return 'کلیه / اورولوژی';
 }
 
-/** تبدیل hotspot (درصد تصویر) به درصد باکس — با object-contain */
+/** تبدیل hotspot به درصد باکس — content bounds + object-contain */
 export function hotspotStyle(
   spot: BodyHotspot,
   containerW?: number,
@@ -128,14 +152,15 @@ export function hotspotStyle(
   width: string;
   height: string;
 } {
+  const img = spotToImagePercent(spot);
   if (!containerW || !containerH) {
-    return hotspotStyleFallback(spot);
+    return hotspotStyleFallback(img);
   }
   const rect = computeObjectContainRect(containerW, containerH, imageW, imageH);
-  const leftPx = rect.left + (spot.left / 100) * rect.width;
-  const topPx = rect.top + (spot.top / 100) * rect.height;
-  const widthPx = (spot.width / 100) * rect.width;
-  const heightPx = (spot.height / 100) * rect.height;
+  const leftPx = rect.left + (img.left / 100) * rect.width;
+  const topPx = rect.top + (img.top / 100) * rect.height;
+  const widthPx = (img.width / 100) * rect.width;
+  const heightPx = (img.height / 100) * rect.height;
   return {
     left: `${(leftPx / containerW) * 100}%`,
     top: `${(topPx / containerH) * 100}%`,
@@ -144,8 +169,7 @@ export function hotspotStyle(
   };
 }
 
-/** fallback قبل از اندازه‌گیری باکس */
-function hotspotStyleFallback(spot: BodyHotspot) {
+function hotspotStyleFallback(img: ReturnType<typeof spotToImagePercent>) {
   const imageAspect = HEALTH_BODY_IMAGE_SIZE.width / HEALTH_BODY_IMAGE_SIZE.height;
   const containerAspect = 3 / 5;
   let offsetTop = 0;
@@ -155,12 +179,12 @@ function hotspotStyleFallback(spot: BodyHotspot) {
     offsetTop = (1 - renderedH) / 2;
     scaleH = renderedH;
   }
-  const top = offsetTop + (spot.top / 100) * scaleH;
-  const height = (spot.height / 100) * scaleH;
+  const top = offsetTop + (img.top / 100) * scaleH;
+  const height = (img.height / 100) * scaleH;
   return {
-    left: `${spot.left}%`,
+    left: `${img.left}%`,
     top: `${top * 100}%`,
-    width: `${spot.width}%`,
+    width: `${img.width}%`,
     height: `${height * 100}%`,
   };
 }
