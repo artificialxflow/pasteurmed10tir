@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const session = await getPatientSession();
   if (!session) {
-    return NextResponse.json({ profile: null }, { status: 401 });
+    return NextResponse.json({ profile: null });
   }
 
   const user = await prisma.user.findUnique({
@@ -14,7 +14,7 @@ export async function GET() {
     include: { profile: true },
   });
   if (!user) {
-    return NextResponse.json({ profile: null }, { status: 401 });
+    return NextResponse.json({ profile: null });
   }
 
   return NextResponse.json({ profile: mapDbToPatientProfile(user) });

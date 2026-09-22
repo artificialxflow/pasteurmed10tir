@@ -39,7 +39,7 @@ export async function requestOtp(
     return {
       ok: true,
       message:
-        'کد برای این شماره از قبل مشخص است. کد را وارد کنید و «ورود به پنل کاربری» را بزنید تا حساب ساخته شود.',
+        'برای این شماره پیامک ارسال نمی‌شود. کد تست را وارد کنید و «ورود / ثبت‌نام» را بزنید.',
       mode: 'dev',
     };
   }
@@ -88,7 +88,11 @@ export async function requestOtp(
     return { ok: false, error: sent.error || 'ارسال پیامک ناموفق بود.', status: 502 };
   }
 
-  return { ok: true, message: 'کد تأیید پیامک شد. کد را وارد کنید و «ورود به پنل کاربری» را بزنید.', mode: 'sms' };
+  return {
+    ok: true,
+    message: 'کد تأیید به موبایل شما پیامک شد. همان کد را وارد کنید.',
+    mode: 'sms',
+  };
 }
 
 export async function verifyOtpCode(

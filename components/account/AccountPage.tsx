@@ -35,6 +35,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [ready, setReady] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [otpMode, setOtpMode] = useState<"sms" | "dev" | "">("");
+  const [messageKind, setMessageKind] = useState<"error" | "success">("success");
+  const [resendIn, setResendIn] = useState(0);
   const [registered, setRegistered] = useState(false);
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
@@ -76,9 +79,16 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       .finally(() => setReady(true));
   }, [hydrate]);
 
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = window.setTimeout(() => setResendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => window.clearTimeout(t);
+  }, [resendIn]);
+
   async function sendOtp() {
     const digits = normalizePhone(phone);
     if (digits.length < 10) {
+      setMessageKind("error");
       setMessage("موبایل معتبر وارد کنید.");
       return;
     }
@@ -94,22 +104,29 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       const data = (await res.json()) as {
         error?: string;
         message?: string;
-        mode?: string;
+        mode?: "sms" | "dev";
         registered?: boolean;
       };
       if (!res.ok) {
+        setMessageKind("error");
         setMessage(data.error || "ارسال کد ناموفق بود.");
         setOtpSent(false);
         return;
       }
       setOtpSent(true);
+      setOtpMode(data.mode === "dev" ? "dev" : "sms");
       setRegistered(Boolean(data.registered));
-      setMessage(
-        data.registered
-          ? "حساب از قبل وجود دارد. کد را وارد کنید و وارد شوید."
-          : data.message || "کد ارسال شد. برای ثبت‌نام نام را هم وارد کنید.",
-      );
+      setResendIn(60);
+      setMessageKind("success");
+      if (data.mode === "dev") {
+        setMessage(data.message || "برای این شماره پیامک نمی‌آید. کد تست را وارد کنید.");
+      } else if (data.registered) {
+        setMessage("کد تأیید پیامک شد. همان کد را وارد کنید و وارد شوید.");
+      } else {
+        setMessage(data.message || "کد ارسال شد. برای ثبت‌نام نام را هم وارد کنید.");
+      }
     } catch {
+      setMessageKind("error");
       setMessage("خطا در ارتباط با سرور.");
     } finally {
       setSendingOtp(false);
@@ -118,12 +135,18 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
 
   async function login(e: FormEvent) {
     e.preventDefault();
+    if (!otpSent) {
+      await sendOtp();
+      return;
+    }
     const digits = normalizePhone(phone);
     if (digits.length < 10 || !otpCode.trim()) {
+      setMessageKind("error");
       setMessage("موبایل و کد تأیید را وارد کنید.");
       return;
     }
     if (!registered && !name.trim()) {
+      setMessageKind("error");
       setMessage("برای ثبت‌نام، نام و نام خانوادگی را وارد کنید.");
       return;
     }
@@ -141,18 +164,21 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       });
       const data = (await res.json()) as { profile?: PatientProfile; error?: string };
       if (!res.ok || !data.profile) {
+        setMessageKind("error");
         setMessage(data.error || "ورود ناموفق بود.");
         return;
       }
       hydrate(data.profile);
       notifyPatientAuthChanged();
       if (data.profile.status !== "approved") setEditing(true);
+      setMessageKind("success");
       setMessage(
         data.profile.status === "approved"
           ? "وارد شدید. پروفایل شما فعال است."
           : "وارد شدید. حساب در سامانه ثبت شد — کارشناس در «تأیید کاربری» ادمین بررسی می‌کند.",
       );
     } catch {
+      setMessageKind("error");
       setMessage("خطا در ارتباط با سرور.");
     }
   }
@@ -227,7 +253,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     setProfile(null);
     setOtpCode("");
     setOtpSent(false);
+    setOtpMode("");
     notifyPatientAuthChanged();
+    setMessageKind("success");
     setMessage("خارج شدید.");
   }
 
@@ -244,16 +272,16 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   if (!profile) {
     return (
       <div className={variant === "app" ? "space-y-4" : WEB_PAGE_CONTAINER}>
-        <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود به پنل کاربری</h1>
+        <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود / ثبت‌نام</h1>
         <p className="mb-6 text-sm text-slate-600">
-          اگر از قبل ثبت‌نام کرده‌اید فقط موبایل و کد کافی است. نام فقط برای ثبت‌نام اول لازم است.
+          با شماره موبایل کد تأیید بگیرید. اگر حساب ندارید بعد از ارسال کد، نام را هم وارد کنید.
         </p>
         <Card hover={false} className="mb-4 border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-6 text-slate-600">
           <p className="font-bold text-slate-800">مراحل</p>
           <ol className="mt-2 list-decimal space-y-1 pr-4">
-            <li>موبایل را وارد کنید و «دریافت کد» بزنید</li>
-            <li>اگر حساب جدید باشد، نام و نام خانوادگی را بنویسید</li>
-            <li>کد را وارد کنید و «ورود به پنل کاربری» را بزنید</li>
+            <li>موبایل را وارد کنید و «ارسال کد تأیید» بزنید</li>
+            <li>کد پیامک‌شده را وارد کنید (پیامک معمولاً چند ثانیه طول می‌کشد)</li>
+            <li>اگر اولین ورود است، نام و نام خانوادگی را بنویسید و وارد شوید</li>
           </ol>
         </Card>
         <Card hover={false} className="space-y-3 p-5">
@@ -262,57 +290,89 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
               <FormLabel>موبایل</FormLabel>
               <FormInput
                 type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="0912xxxxxxx"
                 value={phone}
                 onChange={(e) => {
                   setPhone(e.target.value);
                   setRegistered(false);
                   setOtpSent(false);
+                  setOtpMode("");
+                  setOtpCode("");
                 }}
                 required
               />
             </div>
-            {otpSent && !registered ? (
-              <div>
-                <FormLabel>نام و نام خانوادگی (ثبت‌نام جدید)</FormLabel>
-                <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
-              </div>
-            ) : null}
-            <div>
-              <FormLabel>کد تأیید</FormLabel>
-              <div className="flex gap-2">
-                <FormInput
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="00000"
-                  required
-                  className="flex-1"
-                />
+            {!otpSent ? (
+              <Button
+                type="button"
+                className="w-full"
+                disabled={sendingOtp}
+                onClick={sendOtp}
+              >
+                {sendingOtp ? "در حال ارسال…" : "ارسال کد تأیید"}
+              </Button>
+            ) : (
+              <>
+                {otpSent && !registered ? (
+                  <div>
+                    <FormLabel>نام و نام خانوادگی (ثبت‌نام جدید)</FormLabel>
+                    <FormInput
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoComplete="name"
+                      required
+                    />
+                  </div>
+                ) : null}
+                <div>
+                  <FormLabel>کد تأیید</FormLabel>
+                  <FormInput
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    placeholder="کد ۵ رقمی پیامک"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </div>
+                {otpMode === "dev" ? (
+                  <p className="text-xs font-bold text-amber-800">
+                    این شماره تست است؛ پیامک نمی‌آید. کد تست را وارد کنید.
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    اگر پیامک نیامد، پوشه اسپم پیامک را چک کنید یا پس از یک دقیقه دوباره ارسال کنید.
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="outline"
-                  className="shrink-0 text-sm"
-                  disabled={sendingOtp}
+                  className="w-full text-sm"
+                  disabled={sendingOtp || resendIn > 0}
                   onClick={sendOtp}
                 >
-                  {sendingOtp ? "..." : "دریافت کد"}
+                  {sendingOtp
+                    ? "در حال ارسال…"
+                    : resendIn > 0
+                      ? `ارسال مجدد تا ${resendIn} ثانیه`
+                      : "ارسال مجدد کد"}
                 </Button>
-              </div>
-            </div>
+                <Button type="submit" className="w-full">
+                  {registered ? "ورود به پنل کاربری" : "ثبت‌نام و ورود"}
+                </Button>
+              </>
+            )}
             {message ? (
               <p
-                className={`text-sm font-bold ${otpSent && !profile ? "text-teal-800" : "text-cyan-800"}`}
+                className={`text-sm font-bold ${
+                  messageKind === "error" ? "text-red-700" : "text-teal-800"
+                }`}
               >
                 {message}
               </p>
             ) : null}
-            {otpSent && !profile ? (
-              <p className="text-xs font-bold text-amber-800">
-                حالا کد را وارد کنید و دکمه «ورود به پنل کاربری» را بزنید.
-              </p>
-            ) : null}
-            <Button type="submit" className="w-full">
-              ورود به پنل کاربری
-            </Button>
           </form>
         </Card>
       </div>

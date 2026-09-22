@@ -14,7 +14,6 @@ const navItems = [
   { href: ROUTES.web.gallery, label: "گالری", id: "gallery" },
   { href: ROUTES.web.dental, label: "دندانپزشکی", id: "dental" },
   { href: ROUTES.web.consultation, label: "مشاوره", id: "consultation" },
-  { href: ROUTES.web.account, label: "ثبت‌نام", id: "account" },
   { href: ROUTES.web.support, label: "پشتیبانی", id: "support" },
   { href: ROUTES.web.help, label: "آموزش", id: "help" },
   { href: ROUTES.web.contact, label: "تماس", id: "contact" },
@@ -53,7 +52,7 @@ export function SiteHeader() {
   const menuId = useId();
   const accountLabel = patientProfile
     ? patientProfile.name.split(/\s+/)[0] || "حساب"
-    : "ثبت‌نام";
+    : "ورود / ثبت‌نام";
 
   useEffect(() => {
     setOpen(false);
@@ -88,7 +87,7 @@ export function SiteHeader() {
           </Link>
 
           <nav
-            className="hidden min-w-0 flex-1 items-center justify-end lg:flex"
+            className="hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex"
             aria-label="منوی اصلی"
           >
             <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto rounded-full border border-cyan-100/80 bg-gradient-to-l from-slate-50 to-cyan-50/50 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)]">
@@ -101,29 +100,48 @@ export function SiteHeader() {
                     active === item.id
                       ? "border-cyan-400 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
                       : "border-cyan-200/90 bg-white/70 text-slate-600 hover:border-cyan-300 hover:bg-white hover:text-cyan-800",
-                    item.id === "account" && patientProfile && active !== item.id
-                      ? "border-teal-300 bg-teal-50 text-teal-800"
-                      : "",
                   )}
                 >
-                  {item.id === "account" && patientProfile
-                    ? `${accountLabel} ✓`
-                    : item.label}
+                  {item.label}
                 </Link>
               ))}
             </div>
+            <Link
+              href={ROUTES.web.account}
+              className={cn(
+                "shrink-0 rounded-full px-4 py-2 text-xs font-extrabold shadow-sm transition xl:text-sm",
+                patientProfile
+                  ? "border border-teal-300 bg-teal-50 text-teal-900 hover:bg-teal-100"
+                  : "border border-cyan-900 bg-cyan-800 text-white hover:bg-cyan-900",
+              )}
+            >
+              {patientProfile ? `${accountLabel} ✓` : accountLabel}
+            </Link>
           </nav>
 
-          <button
-            type="button"
-            className="shrink-0 rounded-xl border border-cyan-200 bg-white/90 px-3 py-2 text-base font-bold text-slate-700 lg:hidden"
-            aria-label={open ? "بستن منو" : "باز کردن منو"}
-            aria-expanded={open}
-            aria-controls={menuId}
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? "✕" : "☰"}
-          </button>
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <Link
+              href={ROUTES.web.account}
+              className={cn(
+                "rounded-xl px-3 py-2 text-xs font-extrabold",
+                patientProfile
+                  ? "border border-teal-300 bg-teal-50 text-teal-900"
+                  : "border border-cyan-900 bg-cyan-800 text-white",
+              )}
+            >
+              {patientProfile ? accountLabel : "ورود"}
+            </Link>
+            <button
+              type="button"
+              className="rounded-xl border border-cyan-200 bg-white/90 px-3 py-2 text-base font-bold text-slate-700"
+              aria-label={open ? "بستن منو" : "باز کردن منو"}
+              aria-expanded={open}
+              aria-controls={menuId}
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? "✕" : "☰"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -142,6 +160,18 @@ export function SiteHeader() {
             className="absolute inset-x-0 top-[4.25rem] max-h-[min(calc(85dvh-4.25rem),32rem)] overflow-y-auto border-b border-cyan-100 bg-white px-3 py-3 shadow-xl sm:top-24 sm:max-h-[min(calc(85dvh-6rem),34rem)] animate-[appEnter_0.18s_ease]"
           >
             <div className="mx-auto flex max-w-7xl flex-col gap-1">
+              <Link
+                href={ROUTES.web.account}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "rounded-xl border px-3 py-3 text-center text-sm font-extrabold",
+                  patientProfile
+                    ? "border-teal-300 bg-teal-50 text-teal-900"
+                    : "border-cyan-800 bg-cyan-800 text-white",
+                )}
+              >
+                {patientProfile ? `${accountLabel} ✓` : accountLabel}
+              </Link>
               {navItems.map((item) => (
                 <Link
                   key={item.id}
@@ -152,12 +182,9 @@ export function SiteHeader() {
                     active === item.id
                       ? "border-cyan-300 bg-cyan-50 text-cyan-800"
                       : "border-slate-200 bg-white text-slate-700 hover:border-cyan-200 hover:bg-slate-50",
-                    item.id === "account" && patientProfile ? "text-teal-800" : "",
                   )}
                 >
-                  {item.id === "account" && patientProfile
-                    ? `${accountLabel} ✓`
-                    : item.label}
+                  {item.label}
                 </Link>
               ))}
             </div>
