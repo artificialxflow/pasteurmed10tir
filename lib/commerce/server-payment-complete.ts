@@ -66,6 +66,10 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
           ? undefined
           : Number(pending.groupDiscountPercent),
       referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
+      organizationId: pending.organizationId ? String(pending.organizationId) : undefined,
+      orgMemberIds: Array.isArray(pending.orgMemberIds)
+        ? (pending.orgMemberIds as unknown[]).map(String)
+        : undefined,
     });
     return result;
   }

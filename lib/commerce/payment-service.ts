@@ -9,7 +9,7 @@ import {
 import { addClubPoints } from '@/lib/club/service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { planIdToWalletKinds } from '@/lib/wallet';
-import { prisma } from '@/lib/prisma';
+import { clampGroupDiscountPercent } from '@/lib/membership/group-discount';
 
 export async function completeShopVipPayment(input: {
   patientName?: string;
@@ -69,6 +69,8 @@ export async function completeMembershipPayment(input: {
   discountPercent?: number;
   groupDiscountPercent?: number;
   referralCode?: string;
+  organizationId?: string;
+  orgMemberIds?: string[];
 }) {
   const phone = normalizePhoneDigits(input.patientPhone || '');
   if (!phone) throw new Error('شماره موبایل الزامی است.');
@@ -113,7 +115,9 @@ export async function completeMembershipPayment(input: {
         groupDiscountPercent:
           input.groupDiscountPercent === undefined || input.groupDiscountPercent === null
             ? undefined
-            : Number(input.groupDiscountPercent),
+            : clampGroupDiscountPercent(input.groupDiscountPercent),
+        organizationId: input.organizationId || undefined,
+        orgMemberIds: Array.isArray(input.orgMemberIds) ? input.orgMemberIds : undefined,
       },
       status: 'paid',
       source: 'payment-complete',
@@ -153,6 +157,25 @@ export async function completeMembershipPayment(input: {
     });
     if (!alreadyAwarded) {
       await addClubPoints(phone, 100, `عضویت طرح ${input.planName || planId}`);
+    }
+  }
+
+  const memberIds = (input.orgMemberIds || []).map(String).filter(Boolean);
+  if (memberIds.length && user) {
+    const org = await prisma.organization.findUnique({
+      where: { representativeUserId: user.id },
+      select: { id: true },
+    });
+    if (org) {
+      const perHead = Math.round(Number(input.amount || 0) / memberIds.length);
+      await prisma.organizationMember.updateMany({
+        where: { id: { in: memberIds }, organizationId: org.id },
+        data: {
+          membershipPaid: true,
+          membershipAmount: perHead,
+          lastPaidAt: new Date(),
+        },
+      });
     }
   }
 

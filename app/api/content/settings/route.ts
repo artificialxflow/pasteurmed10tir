@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
 import { parseShopFeaturedProductIds } from '@/lib/content/shop-featured-products';
+import { resolveHeroSlides } from '@/lib/content/hero-slides';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_ID = 'default';
@@ -22,5 +23,6 @@ export async function GET() {
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
     shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
+    heroSlides: resolveHeroSlides(row.heroSlides),
   });
 }

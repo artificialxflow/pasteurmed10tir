@@ -10,12 +10,16 @@ export async function POST(request: Request) {
   if (!result.ok) return jsonError(result.error, result.status);
   const phone = normalizePhone(body?.phone ?? '');
   const existing = phone
-    ? await prisma.user.findUnique({ where: { phone }, select: { id: true } })
+    ? await prisma.user.findUnique({
+        where: { phone },
+        select: { id: true, organization: { select: { id: true } } },
+      })
     : null;
   return NextResponse.json({
     ok: true,
     message: result.message,
     mode: result.mode,
     registered: Boolean(existing),
+    hasOrganization: Boolean(existing?.organization),
   });
 }

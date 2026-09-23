@@ -42,11 +42,17 @@ export function AppShell({
 
   return (
     <div className="app-device app-page-enter">
-      <div className="flex items-center justify-between bg-slate-950 px-4 py-1.5 text-[0.65rem] text-slate-300">
+      <div
+        data-site-chrome="app-status"
+        className="flex items-center justify-between bg-slate-950 px-4 py-1.5 text-[0.65rem] text-slate-300"
+      >
         <span>پاستور پلاس</span>
         <span>●●●</span>
       </div>
-      <header className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5">
+      <header
+        data-site-chrome="header"
+        className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5"
+      >
         {backHref ? (
           <Link href={backHref} className="rounded-lg border border-slate-200 px-2 py-1 text-sm font-bold text-slate-700">
             ←
@@ -60,7 +66,10 @@ export function AppShell({
       <main className={cn("flex-1 overflow-y-auto px-4 py-4", showNav ? "pb-24" : "pb-4")}>{children}</main>
       <SupportWidget variant="app" liftForNav={showNav} />
       {showNav ? (
-        <nav className="absolute inset-x-3 bottom-3 z-40 grid h-[var(--app-nav-height)] grid-cols-5 gap-1 rounded-[1.35rem] border border-slate-200 bg-white/97 p-1.5 shadow-lg">
+        <nav
+          data-site-chrome="app-nav"
+          className="absolute inset-x-3 bottom-3 z-40 grid h-[var(--app-nav-height)] grid-cols-5 gap-1 rounded-[1.35rem] border border-slate-200 bg-white/97 p-1.5 shadow-lg"
+        >
           {nav.map((item) => {
             const active = item.match(pathname);
             return (

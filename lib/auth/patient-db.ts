@@ -8,7 +8,10 @@ type UserWithProfile = User & {
   dependents?: Dependent[];
 };
 
-export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
+export function mapDbToPatientProfile(
+  user: UserWithProfile,
+  extras?: { organizationName?: string; isOrganizationRep?: boolean },
+): PatientProfile {
   const profile = user.profile;
   return {
     phone: user.phone,
@@ -27,5 +30,7 @@ export function mapDbToPatientProfile(user: UserWithProfile): PatientProfile {
     zohalCheckedAt: profile?.zohalCheckedAt?.toISOString(),
     createdAt: profile?.createdAt.toISOString() ?? user.createdAt.toISOString(),
     updatedAt: profile?.updatedAt.toISOString() ?? user.updatedAt.toISOString(),
+    organizationName: extras?.organizationName,
+    isOrganizationRep: extras?.isOrganizationRep,
   };
 }

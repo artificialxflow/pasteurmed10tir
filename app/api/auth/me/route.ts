@@ -1,4 +1,4 @@
-import { mapDbToPatientProfile } from '@/lib/auth/patient-db';
+import { mapUserProfileWithOrg } from '@/lib/auth/map-profile-org';
 import { getPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -17,5 +17,5 @@ export async function GET() {
     return NextResponse.json({ profile: null });
   }
 
-  return NextResponse.json({ profile: mapDbToPatientProfile(user) });
+  return NextResponse.json({ profile: await mapUserProfileWithOrg(user) });
 }

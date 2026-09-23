@@ -25,6 +25,9 @@ import {
 } from "@/lib/membership";
 import {
   applyMembershipDiscounts,
+  clampGroupDiscountPercent,
+  GROUP_DISCOUNT_CHOICES,
+  MAX_GROUP_DISCOUNT_PERCENT,
   resolveGroupDiscountPercent,
 } from "@/lib/membership/group-discount";
 import { ROUTES } from "@/lib/routes";
@@ -59,6 +62,7 @@ type ApplicationForm = {
   planId: string;
   tier: MembershipTier;
   memberCount: string;
+  groupDiscountPercent: string;
   medicalHistory: string;
   loanAmount: string;
   dependents: [string, string, string, string];
@@ -72,6 +76,7 @@ type QuickModalState = {
   memberCount: string;
   planId: string;
   referral: string;
+  groupDiscountPercent: string;
 };
 
 const INITIAL_FORM: ApplicationForm = {
@@ -89,6 +94,7 @@ const INITIAL_FORM: ApplicationForm = {
   planId: "one-year",
   tier: "regular",
   memberCount: "1",
+  groupDiscountPercent: "0",
   medicalHistory: "",
   loanAmount: "",
   dependents: ["", "", "", ""],
@@ -121,6 +127,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     memberCount: "1",
     planId: "one-year",
     referral: "",
+    groupDiscountPercent: "0",
   });
 
   const monthOptions = useMemo(
@@ -174,7 +181,8 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   const durationPlan = durationOptions.find((p) => p.id === form.planId);
   const validityLabel = getValidityLabel(form.tier, form.planId);
   const discountPercent = durationPlan?.discountPercent || 0;
-  const groupDiscountPercent = resolveGroupDiscountPercent(memberCount);
+  const suggestedGroupDiscount = resolveGroupDiscountPercent(memberCount);
+  const groupDiscountPercent = clampGroupDiscountPercent(form.groupDiscountPercent);
   const finalAmountToman = applyMembershipDiscounts({
     subtotal: subtotalToman,
     durationDiscountPercent: discountPercent,
@@ -234,7 +242,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const unit = getUnitPrice(form.tier, form.planId);
     const subtotal = unit * count;
     const durationDisc = plan?.discountPercent || 0;
-    const groupDisc = resolveGroupDiscountPercent(count);
+    const groupDisc = clampGroupDiscountPercent(form.groupDiscountPercent);
     const afterPlan = applyMembershipDiscounts({
       subtotal,
       durationDiscountPercent: durationDisc,
@@ -286,7 +294,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const unit = getUnitPrice(form.tier, form.planId);
     const subtotal = unit * count;
     const durationDisc = plan?.discountPercent || 0;
-    const groupDisc = resolveGroupDiscountPercent(count);
+    const groupDisc = clampGroupDiscountPercent(form.groupDiscountPercent);
     const total = applyMembershipDiscounts({
       subtotal,
       durationDiscountPercent: durationDisc,
@@ -383,7 +391,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const plan = durationOptions.find((p) => p.id === quick.planId);
     const membership = membershipPlans.find((m) => m.id === quick.tier);
     const durationDisc = plan?.discountPercent || 0;
-    const groupDisc = resolveGroupDiscountPercent(count);
+    const groupDisc = clampGroupDiscountPercent(quick.groupDiscountPercent);
     const afterPlan = applyMembershipDiscounts({
       subtotal,
       durationDiscountPercent: durationDisc,
@@ -525,6 +533,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                       memberCount: "1",
                       planId: "one-year",
                       referral: "",
+                      groupDiscountPercent: "0",
                     });
                   }}
                 >
@@ -886,6 +895,25 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               />
             </div>
             <div>
+              <FormLabel>تخفیف مجموعه</FormLabel>
+              <FormSelect
+                value={String(groupDiscountPercent)}
+                onChange={(e) => updateForm("groupDiscountPercent", e.target.value)}
+              >
+                {GROUP_DISCOUNT_CHOICES.map((pct) => (
+                  <option key={pct} value={pct}>
+                    {pct === 0 ? "بدون تخفیف" : `${pct.toLocaleString("fa-IR")}٪`}
+                  </option>
+                ))}
+              </FormSelect>
+              <p className="mt-1 text-xs text-slate-500">
+                حداکثر {MAX_GROUP_DISCOUNT_PERCENT.toLocaleString("fa-IR")}٪. پیشنهاد برای این تعداد:{" "}
+                {suggestedGroupDiscount
+                  ? `${suggestedGroupDiscount.toLocaleString("fa-IR")}٪`
+                  : "بدون تخفیف"}
+              </p>
+            </div>
+            <div>
               <FormLabel>حق عضویت محاسبه‌شده</FormLabel>
               <div className="rounded-xl border border-sky-200 bg-cyan-50 px-3 py-2.5 text-sm font-bold text-cyan-800">
                 {amountPreview}
@@ -1081,6 +1109,24 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 />
               </div>
               <div>
+                <FormLabel>تخفیف مجموعه</FormLabel>
+                <FormSelect
+                  value={quick.groupDiscountPercent}
+                  onChange={(e) =>
+                    setQuick((q) => ({ ...q, groupDiscountPercent: e.target.value }))
+                  }
+                >
+                  {GROUP_DISCOUNT_CHOICES.map((pct) => (
+                    <option key={pct} value={pct}>
+                      {pct === 0 ? "بدون تخفیف" : `${pct.toLocaleString("fa-IR")}٪`}
+                    </option>
+                  ))}
+                </FormSelect>
+                <p className="mt-1 text-xs text-slate-500">
+                  حداکثر {MAX_GROUP_DISCOUNT_PERCENT.toLocaleString("fa-IR")}٪ — بدون نیاز به پنل سازمانی
+                </p>
+              </div>
+              <div>
                 <FormLabel>مدت عضویت</FormLabel>
                 <FormSelect
                   value={quick.planId}
@@ -1100,7 +1146,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   const plan = durationOptions.find((p) => p.id === quick.planId);
                   const subtotal = unit * count;
                   const durationDisc = plan?.discountPercent || 0;
-                  const groupDisc = resolveGroupDiscountPercent(count);
+                  const groupDisc = clampGroupDiscountPercent(quick.groupDiscountPercent);
                   const payable = applyMembershipDiscounts({
                     subtotal,
                     durationDiscountPercent: durationDisc,

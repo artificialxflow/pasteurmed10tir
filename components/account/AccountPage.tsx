@@ -39,6 +39,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [messageKind, setMessageKind] = useState<"error" | "success">("success");
   const [resendIn, setResendIn] = useState(0);
   const [registered, setRegistered] = useState(false);
+  const [hasOrganization, setHasOrganization] = useState(false);
+  const [loginKind, setLoginKind] = useState<"person" | "organization">("person");
+  const [organizationName, setOrganizationName] = useState("");
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [editing, setEditing] = useState(false);
@@ -106,6 +109,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         message?: string;
         mode?: "sms" | "dev";
         registered?: boolean;
+        hasOrganization?: boolean;
       };
       if (!res.ok) {
         setMessageKind("error");
@@ -116,6 +120,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       setOtpSent(true);
       setOtpMode(data.mode === "dev" ? "dev" : "sms");
       setRegistered(Boolean(data.registered));
+      setHasOrganization(Boolean(data.hasOrganization));
       setResendIn(60);
       setMessageKind("success");
       if (data.mode === "dev") {
@@ -147,7 +152,16 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     }
     if (!registered && !name.trim()) {
       setMessageKind("error");
-      setMessage("برای ثبت‌نام، نام و نام خانوادگی را وارد کنید.");
+      setMessage(
+        loginKind === "organization"
+          ? "نام نماینده سازمان را وارد کنید."
+          : "برای ثبت‌نام، نام و نام خانوادگی را وارد کنید.",
+      );
+      return;
+    }
+    if (loginKind === "organization" && !hasOrganization && !organizationName.trim()) {
+      setMessageKind("error");
+      setMessage("نام سازمان را وارد کنید.");
       return;
     }
     setMessage("");
@@ -159,7 +173,11 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         body: JSON.stringify({
           phone: digits,
           code: otpCode.trim(),
+          loginKind,
           ...(registered ? {} : { name: name.trim() }),
+          ...(loginKind === "organization" && !hasOrganization
+            ? { organizationName: organizationName.trim() }
+            : {}),
         }),
       });
       const data = (await res.json()) as { profile?: PatientProfile; error?: string };
@@ -274,8 +292,32 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       <div className={variant === "app" ? "space-y-4" : WEB_PAGE_CONTAINER}>
         <h1 className="mb-2 text-xl font-extrabold text-slate-900">ورود / ثبت‌نام</h1>
         <p className="mb-6 text-sm text-slate-600">
-          با شماره موبایل کد تأیید بگیرید. اگر حساب ندارید بعد از ارسال کد، نام را هم وارد کنید.
+          ورود اشخاص یا ورود سازمان — نماینده سازمان با همان موبایل کد تأیید می‌گیرد.
         </p>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className={`rounded-xl border px-3 py-2 text-sm font-extrabold ${
+              loginKind === "person"
+                ? "border-cyan-700 bg-cyan-800 text-white"
+                : "border-slate-200 bg-white text-slate-700"
+            }`}
+            onClick={() => setLoginKind("person")}
+          >
+            ورود اشخاص
+          </button>
+          <button
+            type="button"
+            className={`rounded-xl border px-3 py-2 text-sm font-extrabold ${
+              loginKind === "organization"
+                ? "border-cyan-700 bg-cyan-800 text-white"
+                : "border-slate-200 bg-white text-slate-700"
+            }`}
+            onClick={() => setLoginKind("organization")}
+          >
+            ورود سازمان
+          </button>
+        </div>
         <Card hover={false} className="mb-4 border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-6 text-slate-600">
           <p className="font-bold text-slate-800">مراحل</p>
           <ol className="mt-2 list-decimal space-y-1 pr-4">
@@ -317,11 +359,24 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
               <>
                 {otpSent && !registered ? (
                   <div>
-                    <FormLabel>نام و نام خانوادگی (ثبت‌نام جدید)</FormLabel>
+                    <FormLabel>
+                      {loginKind === "organization" ? "نام نماینده سازمان" : "نام و نام خانوادگی (ثبت‌نام جدید)"}
+                    </FormLabel>
                     <FormInput
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       autoComplete="name"
+                      required
+                    />
+                  </div>
+                ) : null}
+                {otpSent && loginKind === "organization" && !hasOrganization ? (
+                  <div>
+                    <FormLabel>نام سازمان</FormLabel>
+                    <FormInput
+                      value={organizationName}
+                      onChange={(e) => setOrganizationName(e.target.value)}
+                      placeholder="مثلاً شرکت ماشین‌سازی تبریز"
                       required
                     />
                   </div>

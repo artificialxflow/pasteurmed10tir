@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { parseShopHomeBanners } from '@/lib/content/shop-home-banners';
 import { parseShopFeaturedProductIds } from '@/lib/content/shop-featured-products';
+import { parseHeroSlides } from '@/lib/content/hero-slides';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
@@ -22,6 +23,7 @@ type SettingsBody = {
   };
   shopHomeBanners?: unknown;
   shopFeaturedProductIds?: unknown;
+  heroSlides?: unknown;
 };
 
 export async function GET() {
@@ -32,7 +34,10 @@ export async function GET() {
       const laserAuth = await requireAdmin('laserServices');
       if (laserAuth.error) {
         const shopAuth = await requireAdmin('shop');
-        if (shopAuth.error) return auth.error;
+        if (shopAuth.error) {
+          const galleryAuth = await requireAdmin('gallery');
+          if (galleryAuth.error) return auth.error;
+        }
       }
     }
   }
@@ -55,6 +60,7 @@ export async function GET() {
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
     shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
+    heroSlides: parseHeroSlides(row.heroSlides),
   });
 }
 
@@ -71,6 +77,10 @@ export async function PUT(request: Request) {
   }
   if (body.shopHomeBanners != null || body.shopFeaturedProductIds != null) {
     const auth = await requireAdmin('shop');
+    if (auth.error) return auth.error;
+  }
+  if (body.heroSlides != null) {
+    const auth = await requireAdmin('gallery');
     if (auth.error) return auth.error;
   }
   if (body.wallet || body.consultantCommissionPercent != null) {
@@ -119,6 +129,10 @@ export async function PUT(request: Request) {
         body.shopFeaturedProductIds != null
           ? (parseShopFeaturedProductIds(body.shopFeaturedProductIds) as Prisma.InputJsonValue)
           : (parseShopFeaturedProductIds(current.shopFeaturedProductIds) as Prisma.InputJsonValue),
+      heroSlides:
+        body.heroSlides != null
+          ? (parseHeroSlides(body.heroSlides) as Prisma.InputJsonValue)
+          : (parseHeroSlides(current.heroSlides) as Prisma.InputJsonValue),
     },
   });
 
@@ -136,5 +150,6 @@ export async function PUT(request: Request) {
     },
     shopHomeBanners: parseShopHomeBanners(row.shopHomeBanners),
     shopFeaturedProductIds: parseShopFeaturedProductIds(row.shopFeaturedProductIds),
+    heroSlides: parseHeroSlides(row.heroSlides),
   });
 }

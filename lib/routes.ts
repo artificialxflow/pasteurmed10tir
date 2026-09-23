@@ -113,6 +113,7 @@ export const ROUTES = {
     dentalEducation: '/admin/dental-education',
     club: '/admin/club',
     gallery: '/admin/gallery',
+    heroSlider: '/admin/hero-slider',
     visitors: '/admin/visitors',
     commissions: '/admin/commissions',
     facilities: '/admin/facilities',

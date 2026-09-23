@@ -22,11 +22,13 @@ export function HealthRecordEntryView({
   section,
   onUpload,
   title,
+  className = "",
 }: {
   item: Entry;
   section: HealthSectionId;
   onUpload?: (entryId: string, file: File | null) => void;
   title?: string;
+  className?: string;
 }) {
   const attachmentOnly = sectionIsAttachmentOnly(section);
   const rows = payloadDisplayRows(item.section, item.payload);
@@ -40,7 +42,7 @@ export function HealthRecordEntryView({
   );
 
   return (
-    <li className="rounded-xl border border-slate-100 p-3 text-sm">
+    <li className={`rounded-xl border border-slate-100 p-3 text-sm ${className}`}>
       <p className="font-bold text-slate-900">
         {title ? `${title} · ` : ""}
         {formatJalaliDate(item.date)}
@@ -73,7 +75,7 @@ export function HealthRecordEntryView({
         </ul>
       ) : null}
       {onUpload ? (
-        <label className="mt-2 block text-xs font-bold text-slate-600">
+        <label className="mt-2 block text-xs font-bold text-slate-600 print:hidden">
           {sectionUploadHint(section)}
           <input
             type="file"

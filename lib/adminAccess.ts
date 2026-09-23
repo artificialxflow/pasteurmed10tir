@@ -75,6 +75,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'doctors', label: 'پزشکان', href: ROUTES.admin.doctors },
   { id: 'consultationPrices', label: 'قیمت مشاوره', href: ROUTES.admin.consultationPrices },
   { id: 'gallery', label: 'گالری', href: ROUTES.admin.gallery },
+  { id: 'gallery', label: 'اسلایدر صفحه اصلی', href: ROUTES.admin.heroSlider },
   { id: 'memberships', label: 'عضویت‌ها', href: ROUTES.admin.memberships },
   { id: 'wallets', label: 'کیف اعتبار', href: ROUTES.admin.wallets },
   { id: 'wallets', label: 'فعال‌سازی اعتبار', href: ROUTES.admin.creditActivation },

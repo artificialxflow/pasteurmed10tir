@@ -46,6 +46,8 @@ export type PatientProfile = {
   zohalCheckedAt?: string;
   createdAt: string;
   updatedAt: string;
+  organizationName?: string;
+  isOrganizationRep?: boolean;
 };
 
 export type InsuranceMode = 'none' | 'base' | 'complementary' | 'both';

@@ -35,6 +35,34 @@ model User {
   dependents         Dependent[]
   homeVisitRequests  HomeVisitRequest[]
   healthRecord       HealthRecord?
+  organization       Organization?
+}
+
+model Organization {
+  id                   String               @id @default(cuid())
+  name                 String
+  representativeUserId String               @unique
+  representative       User                 @relation(fields: [representativeUserId], references: [id], onDelete: Cascade)
+  members              OrganizationMember[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+}
+
+model OrganizationMember {
+  id                String       @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name              String
+  phone             String
+  nationalId        String?
+  membershipPaid    Boolean      @default(false)
+  membershipAmount  Int?
+  lastPaidAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([phone])
 }
 
 model PatientProfile {
@@ -311,6 +339,8 @@ model SiteSettings {
   consultantCommissionPercent Int @default(10)
   /** بنرهای فروشگاه پایین صفحه اصلی: [{ image, href?, title? }] */
   shopHomeBanners Json @default("[]")
+  /** اسلایدر هیرو صفحه اصلی: [{ src, alt, href }] */
+  heroSlides Json @default("[]")
   /** شناسه محصولات پرفروش صفحه اصلی — ترتیب آرایه = ترتیب نمایش */
   shopFeaturedProductIds Json @default("[]")
 }

@@ -44,6 +44,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.fieldStaff, label: "پرسنل میدانی", permission: "fieldStaff" },
       { href: ROUTES.admin.consultationPrices, label: "قیمت مشاوره", permission: "consultationPrices" },
       { href: ROUTES.admin.gallery, label: "گالری", permission: "gallery" },
+      { href: ROUTES.admin.heroSlider, label: "اسلایدر صفحه اصلی", permission: "gallery" },
     ],
   },
   {
@@ -93,6 +94,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.dentalTariffs]: "تعرفه‌های دندانپزشکی",
   [ROUTES.admin.club]: "باشگاه مشتریان",
   [ROUTES.admin.gallery]: "مدیریت گالری نتایج",
+  [ROUTES.admin.heroSlider]: "اسلایدر صفحه اصلی",
   [ROUTES.admin.visitors]: "مدیریت ویزیتورها و کد معرف",
   [ROUTES.admin.commissions]: "گزارش پورسانت ویزیتورها",
   [ROUTES.admin.facilities]: "درخواست‌های تسهیلات تجهیزات",

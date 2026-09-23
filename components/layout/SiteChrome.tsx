@@ -74,7 +74,10 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-[70] border-b border-cyan-100 bg-white/90 shadow-sm backdrop-blur-xl">
+      <header
+        data-site-chrome="header"
+        className="sticky top-0 z-[70] border-b border-cyan-100 bg-white/90 shadow-sm backdrop-blur-xl"
+      >
         <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-3 sm:h-24 sm:gap-4 sm:px-6 lg:px-8">
           <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Logo className="h-11 w-auto max-w-[7.5rem] sm:h-14 sm:max-w-[11rem]" />
@@ -210,7 +213,7 @@ export function SiteHeader() {
 export function SiteFooter() {
   const { institute } = PASTEUR_DATA;
   return (
-    <footer className="mt-auto border-t-2 border-slate-200 bg-white">
+    <footer data-site-chrome="footer" className="mt-auto border-t-2 border-slate-200 bg-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
         <div>
           <div className="mb-4 flex items-center gap-3 sm:gap-4">
