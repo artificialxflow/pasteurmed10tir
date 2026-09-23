@@ -99,10 +99,10 @@ export function SiteHeader() {
                   key={item.id}
                   href={item.href}
                   className={cn(
-                    "shrink-0 rounded-full border px-2 py-1.5 text-[0.7rem] font-bold tracking-tight transition-all xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
+                    "shrink-0 rounded-full border px-2 py-1.5 text-[0.7rem] font-semibold tracking-tight transition-colors xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
                     active === item.id
-                      ? "border-cyan-400 bg-white text-cyan-900 shadow-sm shadow-cyan-900/10"
-                      : "border-cyan-200/90 bg-white/70 text-slate-600 hover:border-cyan-300 hover:bg-white hover:text-cyan-800",
+                      ? "border-cyan-200 bg-white text-cyan-800 shadow-sm"
+                      : "border-transparent bg-white/70 text-slate-600 hover:border-cyan-200 hover:bg-white hover:text-cyan-700",
                   )}
                 >
                   {item.label}
@@ -112,10 +112,10 @@ export function SiteHeader() {
             <Link
               href={ROUTES.web.account}
               className={cn(
-                "shrink-0 rounded-full px-4 py-2 text-xs font-extrabold shadow-sm transition xl:text-sm",
+                "shrink-0 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors xl:text-sm",
                 patientProfile
-                  ? "border border-teal-300 bg-teal-50 text-teal-900 hover:bg-teal-100"
-                  : "border border-cyan-900 bg-cyan-800 text-white hover:bg-cyan-900",
+                  ? "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
+                  : "border border-cyan-600 bg-cyan-600 text-white hover:bg-cyan-700",
               )}
             >
               {patientProfile ? `${accountLabel} ✓` : accountLabel}
@@ -126,10 +126,10 @@ export function SiteHeader() {
             <Link
               href={ROUTES.web.account}
               className={cn(
-                "rounded-xl px-3 py-2 text-xs font-extrabold",
+                "rounded-xl px-3 py-2 text-xs font-semibold",
                 patientProfile
-                  ? "border border-teal-300 bg-teal-50 text-teal-900"
-                  : "border border-cyan-900 bg-cyan-800 text-white",
+                  ? "border border-teal-200 bg-teal-50 text-teal-800"
+                  : "border border-cyan-600 bg-cyan-600 text-white",
               )}
             >
               {patientProfile ? accountLabel : "ورود"}
@@ -153,7 +153,7 @@ export function SiteHeader() {
         <div className="fixed inset-0 z-[60] lg:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-950/45 backdrop-blur-[1px]"
+            className="absolute inset-0 bg-slate-800/35 backdrop-blur-[1px]"
             aria-label="بستن منو"
             onClick={() => setOpen(false)}
           />
@@ -167,10 +167,10 @@ export function SiteHeader() {
                 href={ROUTES.web.account}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "rounded-xl border px-3 py-3 text-center text-sm font-extrabold",
+                  "rounded-xl border px-3 py-3 text-center text-sm font-semibold",
                   patientProfile
-                    ? "border-teal-300 bg-teal-50 text-teal-900"
-                    : "border-cyan-800 bg-cyan-800 text-white",
+                    ? "border-teal-200 bg-teal-50 text-teal-800"
+                    : "border-cyan-600 bg-cyan-600 text-white",
                 )}
               >
                 {patientProfile ? `${accountLabel} ✓` : accountLabel}

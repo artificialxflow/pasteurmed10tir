@@ -11,14 +11,14 @@ type Variant = "primary" | "accent" | "danger" | "ghost" | "outline";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-cyan-800 text-white border border-cyan-950 shadow-md shadow-cyan-950/25 hover:bg-cyan-900 hover:-translate-y-0.5 [color:#fff]",
+    "bg-cyan-600 text-white border border-cyan-700 shadow-sm shadow-cyan-700/15 hover:bg-cyan-700 [color:#fff]",
   accent:
-    "bg-amber-600 text-white border border-amber-800 shadow-md shadow-amber-900/25 hover:bg-amber-700 hover:-translate-y-0.5 [color:#fff]",
+    "bg-amber-500 text-white border border-amber-600 shadow-sm shadow-amber-700/15 hover:bg-amber-600 [color:#fff]",
   danger:
-    "bg-white text-red-700 border-2 border-red-200 hover:bg-red-50",
+    "bg-white text-red-700 border border-red-200 hover:bg-red-50",
   ghost: "bg-transparent text-slate-700 hover:bg-slate-100 border border-transparent",
   outline:
-    "bg-white text-slate-900 border-2 border-slate-800 hover:bg-slate-50",
+    "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300",
 };
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -36,7 +36,7 @@ export function Button({
   ...props
 }: Props) {
   const cls = cn(
-    "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition-colors disabled:opacity-50",
     variants[variant],
     className,
   );

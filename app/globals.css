@@ -65,9 +65,8 @@
 
 body {
   background:
-    radial-gradient(circle at 12% 12%, rgb(207 250 254 / 0.9), transparent 28rem),
-    radial-gradient(circle at 88% 0%, rgb(254 243 199 / 0.95), transparent 24rem),
-    linear-gradient(180deg, #f8fdff 0%, var(--color-surface) 42%, #f8fafc 100%);
+    radial-gradient(circle at 10% 0%, rgb(207 250 254 / 0.45), transparent 22rem),
+    linear-gradient(180deg, #f8fafc 0%, var(--color-surface) 55%, #f8fafc 100%);
   color: var(--foreground);
   font-family: "BYekan", Tahoma, sans-serif;
   font-size: 1rem;
@@ -88,7 +87,7 @@ h4 {
 }
 
 h1 {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 h2,

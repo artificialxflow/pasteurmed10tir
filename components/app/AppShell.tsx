@@ -44,7 +44,7 @@ export function AppShell({
     <div className="app-device app-page-enter">
       <div
         data-site-chrome="app-status"
-        className="flex items-center justify-between bg-slate-950 px-4 py-1.5 text-[0.65rem] text-slate-300"
+        className="flex items-center justify-between bg-slate-700 px-4 py-1.5 text-[0.65rem] text-slate-200"
       >
         <span>پاستور پلاس</span>
         <span>●●●</span>
@@ -60,7 +60,7 @@ export function AppShell({
         ) : (
           <Logo className="h-9 w-auto max-w-[4.5rem]" />
         )}
-        <h1 className="flex-1 text-center text-sm font-extrabold text-slate-900">{title}</h1>
+        <h1 className="flex-1 text-center text-sm font-bold text-slate-800">{title}</h1>
         <Logo className="h-9 w-auto max-w-[4.5rem]" />
       </header>
       <main className={cn("flex-1 overflow-y-auto px-4 py-4", showNav ? "pb-24" : "pb-4")}>{children}</main>
@@ -68,7 +68,7 @@ export function AppShell({
       {showNav ? (
         <nav
           data-site-chrome="app-nav"
-          className="absolute inset-x-3 bottom-3 z-40 grid h-[var(--app-nav-height)] grid-cols-5 gap-1 rounded-[1.35rem] border border-slate-200 bg-white/97 p-1.5 shadow-lg"
+          className="absolute inset-x-3 bottom-3 z-40 grid h-[var(--app-nav-height)] grid-cols-5 gap-1 rounded-[1.35rem] border border-slate-200 bg-white/97 p-1.5 shadow-md"
         >
           {nav.map((item) => {
             const active = item.match(pathname);

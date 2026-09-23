@@ -141,7 +141,7 @@ function NavLink({
     <Link
       href={item.href}
       className={cn(
-        "block rounded-xl px-3 py-2.5 text-[0.9375rem] font-extrabold leading-snug transition-colors",
+        "block rounded-xl px-3 py-2.5 text-[0.9375rem] font-semibold leading-snug transition-colors",
         active
           ? "bg-cyan-600 text-white shadow-sm shadow-cyan-900/15"
           : "text-slate-700 hover:bg-cyan-50 hover:text-cyan-950",
@@ -172,7 +172,7 @@ function SidebarNavGroup({
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-right text-sm font-extrabold leading-snug transition-colors",
+          "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-right text-sm font-semibold leading-snug transition-colors",
           open || hasActiveChild
             ? "bg-cyan-50 text-cyan-950"
             : "text-slate-700 hover:bg-slate-50 hover:text-slate-900",
@@ -274,12 +274,12 @@ export function AdminShell({
           <div className="flex items-center gap-3">
             <Logo className="h-12 w-auto max-w-[9rem]" />
             <div>
-              <p className="text-base font-extrabold text-slate-900">پاستور پلاس</p>
+              <p className="text-base font-bold text-slate-900">پاستور پلاس</p>
               <p className="text-xs font-bold text-cyan-800">پنل مدیریت</p>
             </div>
           </div>
           <div className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50/70 px-3 py-2">
-            <p className="text-sm font-extrabold text-slate-900">{session.displayName}</p>
+            <p className="text-sm font-bold text-slate-900">{session.displayName}</p>
             <p className="text-xs font-bold text-cyan-800">{session.roleName}</p>
           </div>
         </div>
@@ -320,12 +320,12 @@ export function AdminShell({
               <p className="text-xs font-bold text-cyan-700 lg:hidden">
                 {session.displayName} · {session.roleName}
               </p>
-              <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{heading}</h1>
+              <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{heading}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                className="rounded-full border border-cyan-200 bg-white px-3 py-2 text-xs font-extrabold text-cyan-900 transition hover:bg-cyan-50 lg:hidden"
+                className="rounded-full border border-cyan-200 bg-white px-3 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50 lg:hidden"
                 onClick={() => setMobileNavOpen(true)}
               >
                 منو
@@ -360,7 +360,7 @@ export function AdminShell({
             />
             <div className="absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-cyan-100 bg-white shadow-xl">
               <div className="flex items-center justify-between border-b border-cyan-50 px-4 py-4">
-                <p className="font-extrabold text-slate-900">منوی ادمین</p>
+                <p className="font-bold text-slate-900">منوی ادمین</p>
                 <button
                   type="button"
                   className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold"
