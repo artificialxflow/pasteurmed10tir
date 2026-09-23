@@ -7,6 +7,7 @@ import { DependentsCard } from "@/components/account/DependentsCard";
 import { FieldStaffAvailabilityCard } from "@/components/account/FieldStaffAvailabilityCard";
 import { FieldStaffCommissionsCard } from "@/components/account/FieldStaffCommissionsCard";
 import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
+import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { fetchPublic } from "@/lib/content/client";
 import { fetchMyActivityApi, fetchPatientOps, patchPatientOps } from "@/lib/operations/client";
