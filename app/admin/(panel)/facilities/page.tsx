@@ -15,6 +15,7 @@ import {
   zohalCreditStatusLabel,
   zohalCreditStatusTone,
 } from "@/lib/zohal/run-credit-check";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useEffect, useState } from "react";
 
 type FacilityRequest = Record<string, unknown> & {
@@ -150,6 +151,7 @@ export default function AdminFacilitiesPage() {
 
   function updateStatus(id: string | undefined, status: string) {
     if (!id || busyId) return;
+    if (!confirmAction("وضعیت این درخواست تسهیلات تغییر کند؟")) return;
     setError("");
     setSuccess("");
     setBusyId(id);

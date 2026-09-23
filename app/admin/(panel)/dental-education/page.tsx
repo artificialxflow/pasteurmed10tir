@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA } from "@/lib/data";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Clip = {
@@ -197,7 +198,10 @@ export default function AdminDentalEducationPage() {
               <button
                 type="button"
                 className="text-xs font-bold text-red-600"
-                onClick={() => void persist(items.filter((_, i) => i !== index))}
+                onClick={() => {
+                  if (!confirmAction("این کلیپ آموزشی حذف شود؟")) return;
+                  void persist(items.filter((_, i) => i !== index));
+                }}
               >
                 حذف
               </button>

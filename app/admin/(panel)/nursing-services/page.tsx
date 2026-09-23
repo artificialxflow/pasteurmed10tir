@@ -7,6 +7,7 @@ import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA, type NursingItem, type NursingService } from "@/lib/data";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 function makeNursingId(title: string) {
@@ -125,6 +126,7 @@ export default function AdminNursingServicesPage() {
   }
 
   function deleteItem(categoryIndex: number, itemIndex: number) {
+    if (!confirmAction("این آیتم پرستاری حذف شود؟")) return;
     setServices((prev) =>
       prev.map((category, ci) => {
         if (ci !== categoryIndex) return category;
@@ -137,6 +139,7 @@ export default function AdminNursingServicesPage() {
   }
 
   function deleteCategory(index: number) {
+    if (!confirmAction("این دسته پرستاری حذف شود؟")) return;
     void persist(services.filter((_, i) => i !== index)).catch((e) =>
       setError(e instanceof Error ? e.message : "حذف ناموفق"),
     );
@@ -172,6 +175,7 @@ export default function AdminNursingServicesPage() {
   }
 
   function resetDefaults() {
+    if (!confirmAction("خدمات پرستاری به پیش‌فرض بازنشانی شود؟")) return;
     void persist(
       PASTEUR_DATA.nursingServices.map((s) => ({
         ...s,

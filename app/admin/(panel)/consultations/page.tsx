@@ -2,6 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 
 type Consultation = Record<string, unknown> & {
@@ -34,6 +35,7 @@ export default function AdminConsultationsPage() {
   }, [reload]);
 
   function markAnswered(id: string) {
+    if (!confirmAction("این مشاوره به‌عنوان پاسخ‌داده‌شده ثبت شود؟")) return;
     void patchAdminOps("/api/admin/operations/consultations", { id, status: "answered" })
       .then(() => reload())
       .catch((e) => setError(e instanceof Error ? e.message : "خطا"));

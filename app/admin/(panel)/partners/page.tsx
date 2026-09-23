@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { FormSelect } from "@/components/ui/Card";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 
 type PartnerRequest = Record<string, unknown> & {
@@ -39,6 +40,8 @@ export default function AdminPartnersPage() {
   }, [reload]);
 
   function updateStatus(id: string, status: string) {
+    const label = statusMeta[status]?.label || status;
+    if (!confirmAction(`وضعیت درخواست همکاری به «${label}» تغییر کند؟`)) return;
     void patchAdminOps("/api/admin/operations/partners", { id, status }).then(() => reload());
   }
 

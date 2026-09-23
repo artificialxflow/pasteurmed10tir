@@ -15,6 +15,7 @@ import {
 } from "@/lib/content/doctor-mappers";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA, type Dentist, type Physician } from "@/lib/data";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { cn } from "@/lib/utils";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
@@ -406,24 +407,28 @@ export default function AdminDoctorsPage() {
   }
 
   function deleteDentist(index: number) {
+    if (!confirmAction("این دندانپزشک حذف شود؟")) return;
     void persistDentists(dentists.filter((_, i) => i !== index)).catch((e) =>
       setError(e instanceof Error ? e.message : "حذف ناموفق"),
     );
   }
 
   function deletePhysician(index: number) {
+    if (!confirmAction("این پزشک حذف شود؟")) return;
     void persistPhysicians(physicians.filter((_, i) => i !== index)).catch((e) =>
       setError(e instanceof Error ? e.message : "حذف ناموفق"),
     );
   }
 
   function resetDentists() {
+    if (!confirmAction("فهرست دندانپزشکان به پیش‌فرض بازنشانی شود؟")) return;
     void persistDentists(
       PASTEUR_DATA.dentists.map((d) => ({ ...d, days: [...d.days], schedule: { ...d.schedule } })),
     ).catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
   function resetPhysicians() {
+    if (!confirmAction("فهرست پزشکان به پیش‌فرض بازنشانی شود؟")) return;
     void persistPhysicians(PASTEUR_DATA.physicians.map((p) => ({ ...p, days: [...p.days] }))).catch((e) =>
       setError(e instanceof Error ? e.message : "بازنشانی ناموفق"),
     );

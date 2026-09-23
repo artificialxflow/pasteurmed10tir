@@ -10,6 +10,7 @@ import { getDurationOptions, getUnitPrice, getValidityLabel, type MembershipTier
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice, normalizePhone } from "@/lib/utils";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -104,6 +105,7 @@ export function OrganizationPanel({
   }
 
   async function removeMember(id: string) {
+    if (!confirmAction("این عضو از لیست سازمان حذف شود؟")) return;
     setError("");
     try {
       await fetchPatientOps(`/api/operations/organization/members/${id}`, { method: "DELETE" });

@@ -16,6 +16,7 @@ import {
 } from "@/lib/data";
 import { formatPrice } from "@/lib/utils";
 import { resetConsultationPricingCache } from "@/lib/consultationPrice";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 
 function HomeVisitTariffInput({
@@ -138,6 +139,7 @@ export default function AdminConsultationPricesPage() {
   }
 
   function resetDefaults() {
+    if (!confirmAction("قیمت‌های مشاوره به پیش‌فرض بازنشانی شود؟")) return;
     setSuccess("");
     void putAdmin("/api/admin/content/consultation-pricing", {
       consultationTypes: PASTEUR_DATA.consultationTypes.map((t) => ({ ...t })),

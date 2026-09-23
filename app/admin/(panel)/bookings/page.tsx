@@ -19,6 +19,7 @@ import {
 } from "@/lib/admin/reception-bookings";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatJalaliDate, normalizePatientPhone, type PatientProfile } from "@/lib/patient";
 import type { Booking } from "@/lib/storage";
 import { cn, formatPrice } from "@/lib/utils";
@@ -161,6 +162,7 @@ export default function AdminBookingsPage() {
   }
 
   function resetReservationFee() {
+    if (!confirmAction("بیعانه رزرو به مقدار پیش‌فرض برگردد؟")) return;
     void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
       dentalReservationFee: 200000,
     })
@@ -169,6 +171,7 @@ export default function AdminBookingsPage() {
   }
 
   function markConsultationAnswered(id: string) {
+    if (!confirmAction("این مشاوره به‌عنوان پاسخ‌داده‌شده ثبت شود؟")) return;
     void patchAdminOps("/api/admin/operations/consultations", { id, status: "answered" })
       .then(() => reload())
       .catch((e) => setError(e instanceof Error ? e.message : "خطا"));

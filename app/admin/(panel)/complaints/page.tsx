@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import type { Complaint } from "@/lib/patient";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 
 export default function AdminComplaintsPage() {
@@ -39,6 +40,7 @@ export default function AdminComplaintsPage() {
               type="button"
               className="text-cyan-800"
               onClick={() => {
+                if (!confirmAction("این شکایت به وضعیت «در بررسی» برود؟")) return;
                 void patchAdminOps("/api/admin/operations/complaints", {
                   id: c.id,
                   status: "reviewing",
@@ -51,6 +53,7 @@ export default function AdminComplaintsPage() {
               type="button"
               className="text-teal-700"
               onClick={() => {
+                if (!confirmAction("این شکایت بسته شود؟")) return;
                 void patchAdminOps("/api/admin/operations/complaints", {
                   id: c.id,
                   status: "closed",

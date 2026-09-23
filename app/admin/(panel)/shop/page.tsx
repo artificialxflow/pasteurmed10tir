@@ -13,6 +13,7 @@ import {
   parseShopFeaturedProductIds,
 } from "@/lib/content/shop-featured-products";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { type Product } from "@/lib/data";
 import { productThumbnail } from "@/lib/shop/product-display";
 import { scrollToAdminProductForm } from "@/lib/shop/cart-ui";
@@ -286,6 +287,7 @@ export default function AdminShopPage() {
   }
 
   function updateOrderStatus(id: string, status: string) {
+    if (!confirmAction("وضعیت این سفارش فروشگاه تغییر کند؟")) return;
     void patchAdminCommerce("/api/admin/commerce/orders", { id, status })
       .then(() => reload())
       .catch((e: Error) => setError(e.message));
@@ -406,7 +408,10 @@ export default function AdminShopPage() {
                 <button
                   type="button"
                   className="text-xs font-bold text-red-600"
-                  onClick={() => setHomeBanners((prev) => prev.filter((_, i) => i !== index))}
+                  onClick={() => {
+                    if (!confirmAction("این بنر فروشگاه حذف شود؟")) return;
+                    setHomeBanners((prev) => prev.filter((_, i) => i !== index));
+                  }}
                 >
                   حذف اسلاید
                 </button>

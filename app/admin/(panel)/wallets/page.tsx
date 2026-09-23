@@ -6,6 +6,7 @@ import { Card, FormLabel } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatToman } from "@/lib/membership";
 import {
   type Wallet,
@@ -62,18 +63,21 @@ export default function AdminWalletsPage() {
   }
 
   function resetSettings() {
+    if (!confirmAction("تنظیمات کیف اعتبار به پیش‌فرض بازنشانی شود؟")) return;
     void putAdmin<{ wallet: WalletSettings }>("/api/admin/content/settings", {
       wallet: DEFAULT_WALLET_SETTINGS,
     }).then((data) => setSettings(data.wallet));
   }
 
   function updateWalletStatus(phone: string, status: WalletStatus) {
+    if (!confirmAction("وضعیت این کیف اعتبار تغییر کند؟")) return;
     void patchAdminCommerce("/api/admin/commerce/wallets", { phone, status })
       .then(() => reload())
       .catch((e: Error) => setError(e.message));
   }
 
   function updateTxStatus(phone: string, txId: string, status: WalletTransactionStatus) {
+    if (!confirmAction("وضعیت این تراکنش کیف تغییر کند؟")) return;
     void patchAdminCommerce("/api/admin/commerce/wallets", {
       phone,
       transactionId: txId,

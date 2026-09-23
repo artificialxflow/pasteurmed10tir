@@ -12,6 +12,7 @@ import {
 import { preferredGenderLabel, staffGenderLabel } from "@/lib/home-visit/gender";
 import type { FieldStaffAdmin } from "@/lib/home-visit/mappers";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatPrice } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -88,6 +89,7 @@ export default function AdminHomeVisitsPage() {
 
   function assign(id: string, assignedStaffId: string) {
     if (!assignedStaffId) return;
+    if (!confirmAction("این نیرو به درخواست تخصیص داده شود؟")) return;
     setBusyId(id);
     void patchAdminOps("/api/admin/operations/home-visits", { id, assignedStaffId })
       .then(() => reload())
@@ -96,6 +98,7 @@ export default function AdminHomeVisitsPage() {
   }
 
   function setStatus(id: string, status: string) {
+    if (!confirmAction(`وضعیت اعزام به «${homeVisitStatusLabel(status)}» تغییر کند؟`)) return;
     setBusyId(id);
     void patchAdminOps("/api/admin/operations/home-visits", { id, status })
       .then(() => reload())

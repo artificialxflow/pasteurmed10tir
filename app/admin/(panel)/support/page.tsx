@@ -4,6 +4,7 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { fetchAdminOps, postAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useEffect, useState } from "react";
 
 type SupportMessage = {
@@ -72,6 +73,7 @@ export default function AdminSupportPage() {
 
   function updateStatus(status: string) {
     if (!selected || busy) return;
+    if (!confirmAction("وضعیت این تیکت پشتیبانی تغییر کند؟")) return;
     setBusy(true);
     void patchAdminOps<{ item: SupportTicket }>(
       `/api/admin/operations/support/tickets/${encodeURIComponent(selected.id)}`,

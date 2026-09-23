@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import type { HelpItem } from "@/lib/patient";
 import { PasteurStorage } from "@/lib/storage";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminHelpPage() {
@@ -42,6 +43,7 @@ export default function AdminHelpPage() {
   }
 
   function remove(id: string) {
+    if (!confirmAction("این مورد آموزشی حذف شود؟")) return;
     PasteurStorage.saveHelpItems(items.filter((i) => i.id !== id));
     reload();
   }

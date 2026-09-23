@@ -10,6 +10,7 @@ import { QR_PRESET_PATHS } from "@/lib/content/qr-url";
 import { inferServiceHref } from "@/lib/content/service-href";
 import { PASTEUR_DATA } from "@/lib/data";
 import type { ServiceItem } from "@/lib/storage";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 const COLORS = ["teal", "blue", "rose", "purple", "amber"] as const;
@@ -86,6 +87,7 @@ export default function AdminServicesPage() {
   }
 
   async function deleteService(index: number) {
+    if (!confirmAction("این سرویس حذف شود؟")) return;
     setError("");
     try {
       await persist(services.filter((_, i) => i !== index));
@@ -123,6 +125,7 @@ export default function AdminServicesPage() {
   }
 
   async function resetDefaults() {
+    if (!confirmAction("سرویس‌ها به پیش‌فرض بازنشانی شود؟")) return;
     setError("");
     try {
       await persist(

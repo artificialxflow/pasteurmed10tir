@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { type GalleryItem } from "@/lib/data";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 export default function AdminGalleryPage() {
@@ -51,6 +52,7 @@ export default function AdminGalleryPage() {
   }
 
   function deleteItem(index: number) {
+    if (!confirmAction("این مورد گالری حذف شود؟")) return;
     void persist(items.filter((_, i) => i !== index)).catch((e) =>
       setError(e instanceof Error ? e.message : "حذف ناموفق"),
     );

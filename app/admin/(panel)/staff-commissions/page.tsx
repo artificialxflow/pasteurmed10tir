@@ -10,6 +10,7 @@ import {
   staffCommissionStatusLabel,
 } from "@/lib/home-visit/labels";
 import { downloadAdminOpsExport, fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatJalaliDate } from "@/lib/patient";
 import { formatPrice } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
@@ -112,6 +113,7 @@ export default function AdminStaffCommissionsPage() {
   }
 
   function setPayoutStatus(id: string, next: "approved" | "paid" | "pending") {
+    if (!confirmAction(`وضعیت پورسانت به «${staffCommissionStatusLabel(next)}» تغییر کند؟`)) return;
     setBusyId(id);
     void patchAdminOps("/api/admin/operations/staff-commissions", { id, status: next })
       .then(() => reload())

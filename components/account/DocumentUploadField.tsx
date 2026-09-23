@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteLoanDocumentApi, uploadLoanDocumentApi } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import type { LoanDocKind } from "@/lib/loan-documents/constants";
 import { useState, type ChangeEvent } from "react";
 
@@ -48,6 +49,7 @@ export function DocumentUploadField({
 
   async function remove(id?: string) {
     if (!id) return;
+    if (!confirmAction("این فایل حذف شود؟")) return;
     setBusy(true);
     setError("");
     try {

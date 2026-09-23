@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Card } from "@/components/ui/Card";
 import { fetchAdminCommerce, patchAdminCommerce } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { commissionBasisLabel, commissionSourceTypeLabel } from "@/lib/commission";
 import { type Commission } from "@/lib/storage";
 import { useEffect, useState } from "react";
@@ -28,6 +29,7 @@ export default function AdminCommissionsPage() {
   const pending = total - paid;
 
   function markPaid(id: string) {
+    if (!confirmAction("این پورسانت به‌عنوان پرداخت‌شده ثبت شود؟")) return;
     void patchAdminCommerce("/api/admin/commerce/commissions", { id, status: "paid" })
       .then(() => reload())
       .catch((e: Error) => setError(e.message));

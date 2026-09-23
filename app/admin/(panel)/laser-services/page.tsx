@@ -11,6 +11,7 @@ import {
   type LaserService,
 } from "@/lib/data";
 import { DEFAULT_LASER_RESERVATION_FEE } from "@/lib/operations/laser-slots";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 function makeLaserId(title: string) {
@@ -117,6 +118,7 @@ export default function AdminLaserServicesPage() {
   }
 
   function deleteService(index: number) {
+    if (!confirmAction("این خدمت لیزر حذف شود؟")) return;
     void persist(
       services.filter((_, i) => i !== index),
       categories,
@@ -124,6 +126,7 @@ export default function AdminLaserServicesPage() {
   }
 
   function deleteCategory(index: number) {
+    if (!confirmAction("این دسته لیزر حذف شود؟")) return;
     const removed = categories[index];
     const nextCats = categories.filter((_, i) => i !== index);
     const nextServices = services.map((s) =>
@@ -186,6 +189,7 @@ export default function AdminLaserServicesPage() {
   }
 
   function resetDefaults() {
+    if (!confirmAction("خدمات لیزر به پیش‌فرض بازنشانی شود؟")) return;
     void persist(
       PASTEUR_DATA.laserServices.map((s) => ({ ...s, active: true })),
       PASTEUR_DATA.laserCategories.map((c) => ({ ...c, active: true })),

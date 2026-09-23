@@ -2,6 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 import type { DoctorReview } from "@/lib/patient";
 
@@ -50,6 +51,7 @@ export default function AdminReviewsPage() {
                 type="button"
                 className="text-teal-700"
                 onClick={() => {
+                  if (!confirmAction("این نظر تأیید و در سایت نمایش داده شود؟")) return;
                   void patchAdminOps("/api/admin/operations/reviews", {
                     id: r.id,
                     status: "approved",
@@ -62,6 +64,7 @@ export default function AdminReviewsPage() {
                 type="button"
                 className="text-slate-600"
                 onClick={() => {
+                  if (!confirmAction("این نظر مخفی شود؟")) return;
                   void patchAdminOps("/api/admin/operations/reviews", {
                     id: r.id,
                     status: "hidden",
@@ -110,6 +113,7 @@ export default function AdminReviewsPage() {
                   type="button"
                   className="text-teal-700"
                   onClick={() => {
+                    if (!confirmAction("این نظر تأیید و در سایت نمایش داده شود؟")) return;
                     void patchAdminOps("/api/admin/operations/reviews", {
                       id: r.id,
                       status: "approved",
@@ -123,6 +127,7 @@ export default function AdminReviewsPage() {
                   type="button"
                   className="text-slate-600"
                   onClick={() => {
+                    if (!confirmAction("این نظر مخفی شود؟")) return;
                     void patchAdminOps("/api/admin/operations/reviews", {
                       id: r.id,
                       status: "hidden",

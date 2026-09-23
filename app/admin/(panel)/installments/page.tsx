@@ -16,6 +16,7 @@ import {
   patchAdminCommerce,
   postAdminCommerce,
 } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import {
   formatJalaliDate,
   installmentSourceLabel,
@@ -81,6 +82,7 @@ export default function AdminInstallmentsPage() {
   }
 
   async function manualPay(planId: string, scheduleItemId: string, amount: number) {
+    if (!confirmAction("این قسط به‌صورت دستی پرداخت‌شده ثبت شود؟")) return;
     setError("");
     setSuccess("");
     setBusyId(scheduleItemId);
@@ -382,7 +384,8 @@ export default function AdminInstallmentsPage() {
                                 variant="outline"
                                 className="px-2 py-1 text-[0.65rem]"
                                 disabled={busyId === `${item.id}-rm`}
-                                onClick={() =>
+                                onClick={() => {
+                                  if (!confirmAction("این قسط از جدول حذف شود؟")) return;
                                   void patchPlan(
                                     p.id,
                                     {
@@ -391,8 +394,8 @@ export default function AdminInstallmentsPage() {
                                       note: editNote.trim() || undefined,
                                     },
                                     `${item.id}-rm`,
-                                  )
-                                }
+                                  );
+                                }}
                               >
                                 حذف
                               </Button>

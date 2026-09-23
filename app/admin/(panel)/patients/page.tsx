@@ -23,6 +23,7 @@ import {
   patchAdminOps,
 } from "@/lib/operations/client";
 import { DEPENDENT_RELATION_LABELS } from "@/lib/dependents";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import {
   FILE_NUMBER_HINT,
   FILE_NUMBER_LENGTH,
@@ -160,6 +161,13 @@ export default function AdminPatientsPage() {
 
   async function setStatus(phone: string, status: PatientStatus) {
     if (busyPhone) return;
+    if (
+      !confirmAction(
+        `وضعیت این کاربر به «${patientStatusLabel(status)}» تغییر کند؟ این کار ممکن است دسترسی بیمار را عوض کند.`,
+      )
+    ) {
+      return;
+    }
     setError("");
     setSuccess("");
     setBusyPhone(phone);

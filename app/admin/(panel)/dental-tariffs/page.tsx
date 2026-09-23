@@ -6,6 +6,7 @@ import { Card, FormInput, FormTextarea } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import type { DentalTariffCategory, DentalTariffItem } from "@/lib/dental-tariffs";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 function makeCategoryId(title: string) {
@@ -110,6 +111,7 @@ export default function AdminDentalTariffsPage() {
   }
 
   function deleteItem(categoryIndex: number, itemIndex: number) {
+    if (!confirmAction("این ردیف تعرفه حذف شود؟")) return;
     setCategories((prev) =>
       prev.map((category, ci) => {
         if (ci !== categoryIndex) return category;
@@ -122,6 +124,7 @@ export default function AdminDentalTariffsPage() {
   }
 
   function deleteCategory(index: number) {
+    if (!confirmAction("این دسته تعرفه حذف شود؟")) return;
     void persist(categories.filter((_, i) => i !== index)).catch((e) =>
       setError(e instanceof Error ? e.message : "حذف ناموفق"),
     );

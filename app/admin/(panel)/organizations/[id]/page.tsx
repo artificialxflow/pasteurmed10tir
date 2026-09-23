@@ -10,6 +10,7 @@ import {
   postAdminCommerce,
 } from "@/lib/commerce/client";
 import { ROUTES } from "@/lib/routes";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -105,6 +106,15 @@ export default function AdminOrganizationDetailPage() {
   }
 
   async function togglePaid(member: MemberRow) {
+    if (
+      !confirmAction(
+        member.membershipPaid
+          ? "حق عضویت این نفر به‌عنوان پرداخت‌نشده ثبت شود؟"
+          : "حق عضویت این نفر به‌عنوان پرداخت‌شده ثبت شود؟",
+      )
+    ) {
+      return;
+    }
     setError("");
     try {
       await patchAdminCommerce(`/api/admin/commerce/organizations/${id}/members/${member.id}`, {
@@ -117,6 +127,7 @@ export default function AdminOrganizationDetailPage() {
   }
 
   async function removeMember(memberId: string) {
+    if (!confirmAction("این عضو از سازمان حذف شود؟")) return;
     setError("");
     try {
       await deleteAdminCommerce(`/api/admin/commerce/organizations/${id}/members/${memberId}`);

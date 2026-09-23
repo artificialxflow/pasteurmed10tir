@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { DEFAULT_HERO_SLIDES, type HeroSlide } from "@/lib/content/hero-slides";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useCallback, useEffect, useState } from "react";
 
 export default function AdminHeroSliderPage() {
@@ -88,7 +89,10 @@ export default function AdminHeroSliderPage() {
                   <button
                     type="button"
                     className="text-xs font-bold text-red-600"
-                    onClick={() => setSlides((prev) => prev.filter((_, i) => i !== index))}
+                    onClick={() => {
+                      if (!confirmAction("این اسلاید حذف شود؟")) return;
+                      setSlides((prev) => prev.filter((_, i) => i !== index));
+                    }}
                   >
                     حذف اسلاید
                   </button>

@@ -12,6 +12,7 @@ import {
   putAdminCommerce,
 } from "@/lib/commerce/client";
 import { ROUTES } from "@/lib/routes";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { type Membership } from "@/lib/data";
 import { formatToman } from "@/lib/membership";
 import { formatJalaliDate } from "@/lib/patient";
@@ -154,6 +155,7 @@ export default function AdminMembershipsPage() {
   }
 
   function resetPlans() {
+    if (!confirmAction("طرح‌های عضویت به پیش‌فرض بازنشانی شود؟")) return;
     void putAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans", {
       reset: true,
     })
@@ -268,6 +270,7 @@ export default function AdminMembershipsPage() {
 
   function updateApplicationStatus(id: string | undefined, status: string) {
     if (!id || busyId) return;
+    if (!confirmAction("وضعیت این درخواست وام تغییر کند؟")) return;
     let reviewNote: string | undefined;
     if (status === "rejected") {
       const note = window.prompt("توضیح رد برای وام‌گیرنده (الزامی):");

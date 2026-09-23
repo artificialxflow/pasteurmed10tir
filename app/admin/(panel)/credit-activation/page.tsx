@@ -8,6 +8,7 @@ import {
   patchAdminCommerce,
 } from "@/lib/commerce/client";
 import { formatPrice } from "@/lib/utils";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { useEffect, useState } from "react";
 
 type CreditActivation = {
@@ -66,6 +67,7 @@ export default function AdminCreditActivationPage() {
 
   function updateStatus(id: string | undefined, status: string) {
     if (!id || busyId) return;
+    if (!confirmAction("وضعیت این درخواست فعال‌سازی اعتبار تغییر کند؟")) return;
     let reviewNote: string | undefined;
     if (status === "rejected") {
       const note = window.prompt("توضیح رد برای بیمار (الزامی):");

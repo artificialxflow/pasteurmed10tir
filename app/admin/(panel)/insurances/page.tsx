@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import {
   DEFAULT_BASE_INSURANCES,
   DEFAULT_COMPLEMENTARY_INSURANCES,
@@ -238,6 +239,7 @@ export default function AdminInsurancesPage() {
                     type="button"
                     className="text-teal-700"
                     onClick={() => {
+                      if (!confirmAction("این استعلام بیمه تأیید شود؟")) return;
                       void patchAdminOps("/api/admin/operations/insurance-inquiries", {
                         id: inq.id,
                         status: "approved",
@@ -250,6 +252,7 @@ export default function AdminInsurancesPage() {
                     type="button"
                     className="text-red-700"
                     onClick={() => {
+                      if (!confirmAction("این استعلام بیمه رد شود؟")) return;
                       void patchAdminOps("/api/admin/operations/insurance-inquiries", {
                         id: inq.id,
                         status: "rejected",

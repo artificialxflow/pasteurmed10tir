@@ -8,6 +8,7 @@ import {
   DEPENDENT_RELATIONS,
 } from "@/lib/dependents";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatJalaliDate } from "@/lib/patient";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
@@ -62,6 +63,7 @@ export function DependentsCard() {
   }
 
   async function remove(id: string) {
+    if (!confirmAction("این فرد تحت تکفل حذف شود؟")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/auth/dependents/${encodeURIComponent(id)}`, {
