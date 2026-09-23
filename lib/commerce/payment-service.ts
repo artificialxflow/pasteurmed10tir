@@ -10,6 +10,7 @@ import { addClubPoints } from '@/lib/club/service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { planIdToWalletKinds } from '@/lib/wallet';
 import { clampGroupDiscountPercent } from '@/lib/membership/group-discount';
+import { prisma } from '@/lib/prisma';
 
 export async function completeShopVipPayment(input: {
   patientName?: string;
