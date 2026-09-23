@@ -5,8 +5,6 @@ import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import {
   applyMembershipDiscounts,
-  clampGroupDiscountPercent,
-  GROUP_DISCOUNT_CHOICES,
 } from "@/lib/membership/group-discount";
 import { getDurationOptions, getUnitPrice, getValidityLabel, type MembershipTier } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
@@ -32,7 +30,7 @@ type OrgMember = {
 };
 
 type OrgPayload = {
-  organization: { id: string; name: string } | null;
+  organization: { id: string; name: string; contractDiscountPercent?: number } | null;
   members: OrgMember[];
 };
 
@@ -60,7 +58,6 @@ export function OrganizationPanel({
   const [selected, setSelected] = useState<string[]>([]);
   const [tier, setTier] = useState<MembershipTier>("regular");
   const [planId, setPlanId] = useState("one-year");
-  const [groupDiscount, setGroupDiscount] = useState("0");
 
   const reload = useCallback(async () => {
     const next = await fetchPatientOps<OrgPayload>("/api/operations/organization");
@@ -77,12 +74,12 @@ export function OrganizationPanel({
   const count = Math.max(1, selectedMembers.length);
   const unit = getUnitPrice(tier, planId);
   const durationDisc = durationOptions.find((p) => p.id === planId)?.discountPercent || 0;
-  const groupDisc = clampGroupDiscountPercent(groupDiscount);
+  const contractDisc = org?.contractDiscountPercent ?? 0;
   const payable = selectedMembers.length
     ? applyMembershipDiscounts({
         subtotal: unit * selectedMembers.length,
         durationDiscountPercent: durationDisc,
-        groupDiscountPercent: groupDisc,
+        contractDiscountPercent: contractDisc,
       })
     : 0;
 
@@ -132,7 +129,7 @@ export function OrganizationPanel({
       validityLabel: getValidityLabel(tier, planId),
       membershipDurationLabel: getValidityLabel(tier, planId),
       discountPercent: durationDisc,
-      groupDiscountPercent: groupDisc,
+      groupDiscountPercent: contractDisc,
       organizationId: org.id,
       orgMemberIds: selectedMembers.map((m) => m.id),
       successTo: successHref,
@@ -155,7 +152,7 @@ export function OrganizationPanel({
       <Card hover={false} className="p-4">
         <p className="text-sm font-extrabold text-slate-900">{org.name}</p>
         <p className="mt-1 text-xs text-slate-500">
-          اعضا را اضافه کنید، تخفیف را انتخاب کنید و حق عضویت گروهی را بپردازید.
+          اعضا را اضافه کنید. تخفیف قرارداد را ادمین تعیین می‌کند؛ سپس حق عضویت گروهی را بپردازید.
         </p>
       </Card>
 
@@ -229,7 +226,7 @@ export function OrganizationPanel({
 
       <Card hover={false} className="space-y-3 p-4">
         <p className="text-sm font-extrabold">پرداخت حق عضویت گروهی</p>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           <div>
             <FormLabel>نوع پوشش</FormLabel>
             <FormSelect value={tier} onChange={(e) => setTier(e.target.value as MembershipTier)}>
@@ -247,21 +244,15 @@ export function OrganizationPanel({
               ))}
             </FormSelect>
           </div>
-          <div>
-            <FormLabel>تخفیف مجموعه</FormLabel>
-            <FormSelect value={groupDiscount} onChange={(e) => setGroupDiscount(e.target.value)}>
-              {GROUP_DISCOUNT_CHOICES.map((pct) => (
-                <option key={pct} value={pct}>
-                  {pct === 0 ? "بدون تخفیف" : `${pct}٪`}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
         </div>
+        <p className="text-xs text-slate-500">
+          تخفیف قرارداد این مجموعه:{" "}
+          {contractDisc ? `${contractDisc.toLocaleString("fa-IR")}٪` : "بدون تخفیف (توسط ادمین تنظیم می‌شود)"}
+        </p>
         <p className="text-sm font-bold text-teal-800">
           {selectedMembers.length
             ? `${formatPrice(unit)} × ${count.toLocaleString("fa-IR")} نفر${
-                groupDisc ? ` با ${groupDisc}٪ تخفیف` : ""
+                contractDisc ? ` با ${contractDisc}٪ تخفیف قرارداد` : ""
               } → ${formatPrice(payable)}`
             : "اعضا را از لیست بالا انتخاب کنید."}
         </p>

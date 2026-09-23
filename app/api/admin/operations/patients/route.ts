@@ -1,6 +1,7 @@
 import { mapDbToPatientProfile } from '@/lib/auth/patient-db';
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { organizationLookupByPhones } from '@/lib/org/service';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
 import { isUniqueViolation } from '@/lib/prisma/route-error';
@@ -35,17 +36,26 @@ export async function GET() {
   const auth = await requireAdmin('patients');
   if (auth.error) return auth.error;
 
-  const users = await prisma.user.findMany({
-    where: { profile: { isNot: null } },
-    include: {
-      profile: true,
-      dependents: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
-    },
-    orderBy: { updatedAt: 'desc' },
-  });
+  const [users, orgByPhone] = await Promise.all([
+    prisma.user.findMany({
+      where: { profile: { isNot: null } },
+      include: {
+        profile: true,
+        dependents: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    organizationLookupByPhones(),
+  ]);
 
   return NextResponse.json({
-    items: users.map((u) => mapDbToPatientProfile(u)),
+    items: users.map((u) => {
+      const org = orgByPhone.get(u.phone);
+      return mapDbToPatientProfile(u, {
+        organizationName: org?.name,
+        isOrganizationRep: org?.isRep,
+      });
+    }),
   });
 }
 

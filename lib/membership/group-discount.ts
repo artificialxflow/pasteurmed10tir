@@ -39,14 +39,28 @@ export function clampGroupDiscountPercent(value: unknown): number {
   return Math.min(MAX_GROUP_DISCOUNT_PERCENT, n);
 }
 
+/** سقف تخفیف قرارداد سازمانی که ادمین روی هر شرکت می‌گذارد */
+export const MAX_CONTRACT_DISCOUNT_PERCENT = 50;
+
+export function clampContractDiscountPercent(value: unknown): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(MAX_CONTRACT_DISCOUNT_PERCENT, n);
+}
+
 export function applyMembershipDiscounts(input: {
   subtotal: number;
   durationDiscountPercent?: number;
   groupDiscountPercent?: number;
+  /** اگر باشد، به‌جای سقف ۵٪ فرم عمومی از تخفیف قرارداد استفاده می‌شود */
+  contractDiscountPercent?: number;
 }): number {
   let amount = Math.max(0, input.subtotal);
   const duration = Math.min(100, Math.max(0, input.durationDiscountPercent ?? 0));
-  const group = clampGroupDiscountPercent(input.groupDiscountPercent);
+  const group =
+    input.contractDiscountPercent != null
+      ? clampContractDiscountPercent(input.contractDiscountPercent)
+      : clampGroupDiscountPercent(input.groupDiscountPercent);
   amount = Math.round(amount * (1 - duration / 100));
   amount = Math.round(amount * (1 - group / 100));
   return amount;

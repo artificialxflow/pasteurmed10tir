@@ -123,6 +123,7 @@ export const ROUTES = {
     homeVisits: '/admin/home-visits',
     staffCommissions: '/admin/staff-commissions',
     memberships: '/admin/memberships',
+    organizations: '/admin/organizations',
     laserServices: '/admin/laser-services',
     nursingServices: '/admin/nursing-services',
     dentalTariffs: '/admin/dental-tariffs',

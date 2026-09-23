@@ -121,6 +121,7 @@ export default function AdminPatientsPage() {
         (p.name || "").toLowerCase().includes(q) ||
         (p.nationalId || "").includes(q) ||
         (p.fileNumber || "").toLowerCase().includes(q) ||
+        (p.organizationName || "").toLowerCase().includes(q) ||
         (p.dependents || []).some(
           (d) =>
             d.name.toLowerCase().includes(q) ||
@@ -421,6 +422,7 @@ export default function AdminPatientsPage() {
       <AdminTable
         headers={[
           "نام",
+          "سازمان",
           "موبایل",
           "کد ملی",
           "شماره پرونده",
@@ -451,6 +453,18 @@ export default function AdminPatientsPage() {
                     ))}
                   </ul>
                 ) : null}
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {p.organizationName ? (
+                  <>
+                    {p.organizationName}
+                    {p.isOrganizationRep ? (
+                      <span className="mt-0.5 block text-[0.65rem] text-cyan-800">نماینده</span>
+                    ) : null}
+                  </>
+                ) : (
+                  "—"
+                )}
               </td>
               <td className="px-4 py-3 font-mono text-xs">{p.phone}</td>
               <td className="px-4 py-3 font-mono text-xs">{p.nationalId || "—"}</td>

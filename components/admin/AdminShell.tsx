@@ -51,6 +51,7 @@ const navGroups: NavGroup[] = [
     title: "مالی",
     items: [
       { href: ROUTES.admin.memberships, label: "عضویت‌ها", permission: "memberships" },
+      { href: ROUTES.admin.organizations, label: "سازمان‌ها", permission: "memberships" },
       { href: ROUTES.admin.wallets, label: "کیف اعتبار", permission: "wallets" },
       { href: ROUTES.admin.creditActivation, label: "فعال‌سازی اعتبار", permission: "wallets" },
       { href: ROUTES.admin.shop, label: "فروشگاه", permission: "shop" },
@@ -101,6 +102,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.partners]: "درخواست‌های همکاری",
   [ROUTES.admin.doctors]: "مدیریت پزشکان",
   [ROUTES.admin.memberships]: "مدیریت عضویت",
+  [ROUTES.admin.organizations]: "سازمان‌ها و قرارداد مجموعه",
   [ROUTES.admin.consultationPrices]: "قیمت مشاوره و تعرفه تخصصی",
   [ROUTES.admin.wallets]: "مدیریت کیف اعتبار",
   [ROUTES.admin.creditActivation]: "درخواست‌های فعال‌سازی کارت اعتباری",
@@ -117,12 +119,21 @@ const titles: Record<string, string> = {
 };
 
 function titleFromPath(pathname: string) {
+  if (pathname.startsWith(`${ROUTES.admin.organizations}/`)) {
+    return "جزئیات سازمان";
+  }
   return titles[pathname] || "پنل ادمین";
+}
+
+function pathMatchesItem(pathname: string, href: string) {
+  if (pathname === href) return true;
+  if (href === ROUTES.admin.dashboard) return false;
+  return pathname.startsWith(`${href}/`);
 }
 
 function findGroupForPath(groups: NavGroup[], pathname: string): string | null {
   for (const group of groups) {
-    if (group.items.some((item) => item.href === pathname)) {
+    if (group.items.some((item) => pathMatchesItem(pathname, item.href))) {
       return group.title;
     }
   }
@@ -136,7 +147,7 @@ function NavLink({
   item: NavItem;
   pathname: string;
 }) {
-  const active = pathname === item.href;
+  const active = pathMatchesItem(pathname, item.href);
   return (
     <Link
       href={item.href}
@@ -163,7 +174,7 @@ function SidebarNavGroup({
   open: boolean;
   onToggle: () => void;
 }) {
-  const hasActiveChild = group.items.some((item) => item.href === pathname);
+  const hasActiveChild = group.items.some((item) => pathMatchesItem(pathname, item.href));
 
   return (
     <div className="rounded-xl border border-transparent transition-colors">

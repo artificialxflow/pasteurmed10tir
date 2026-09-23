@@ -1,0 +1,1 @@
+ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "contractDiscountPercent" INTEGER NOT NULL DEFAULT 0;
