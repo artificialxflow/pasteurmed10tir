@@ -6,6 +6,7 @@ export type SatisfactionRole = 'doctor' | 'assistants' | 'reception';
 export type SatisfactionStats = {
   serviceCategory: FollowUpServiceCategory | 'all';
   role: SatisfactionRole;
+  doctorName: string | null;
   average: number | null;
   count: number;
   dissatisfied: Array<{
@@ -34,11 +35,17 @@ export function computeSatisfactionStats(
   rows: FollowUpCase[],
   serviceCategory: FollowUpServiceCategory | 'all',
   role: SatisfactionRole,
+  doctorName?: string | null,
 ): SatisfactionStats {
-  const filtered =
+  let filtered =
     serviceCategory === 'all'
       ? rows
       : rows.filter((r) => r.serviceCategory === serviceCategory);
+
+  const doctorFilter = doctorName?.trim();
+  if (doctorFilter) {
+    filtered = filtered.filter((r) => r.doctorName.trim() === doctorFilter);
+  }
 
   const ratings = filtered
     .map((r) => ratingForRole(r, role))
@@ -61,6 +68,7 @@ export function computeSatisfactionStats(
   return {
     serviceCategory,
     role,
+    doctorName: doctorFilter || null,
     average: avg(ratings),
     count: ratings.length,
     dissatisfied,

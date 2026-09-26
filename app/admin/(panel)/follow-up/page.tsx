@@ -96,6 +96,10 @@ function RatingSelect({
   );
 }
 
+function categoryUsesDoctorPicklist(category: string): boolean {
+  return category === "dental" || category === "medical";
+}
+
 export default function AdminFollowUpPage() {
   const [tab, setTab] = useState<FollowUpTab>("new");
   const [items, setItems] = useState<CaseItem[]>([]);
@@ -104,7 +108,10 @@ export default function AdminFollowUpPage() {
   const [followUpFilterDate, setFollowUpFilterDate] = useState("");
   const [satisfactionCategory, setSatisfactionCategory] = useState("all");
   const [satisfactionRole, setSatisfactionRole] = useState("doctor");
+  const [satisfactionDoctorName, setSatisfactionDoctorName] = useState("");
   const [stats, setStats] = useState<SatisfactionStats | null>(null);
+  const [formDoctorNames, setFormDoctorNames] = useState<string[]>([]);
+  const [satisfactionDoctorNames, setSatisfactionDoctorNames] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     patientName: "",
@@ -139,11 +146,57 @@ export default function AdminFollowUpPage() {
       serviceCategory: satisfactionCategory,
       role: satisfactionRole,
     });
+    if (satisfactionDoctorName) {
+      params.set("doctorName", satisfactionDoctorName);
+    }
     const data = await fetchAdminOps<SatisfactionStats>(
       `/api/admin/operations/follow-up/satisfaction?${params}`,
     );
     setStats(data);
-  }, [satisfactionCategory, satisfactionRole]);
+  }, [satisfactionCategory, satisfactionRole, satisfactionDoctorName]);
+
+  const loadFormDoctorNames = useCallback(async (serviceCategory: string) => {
+    if (!categoryUsesDoctorPicklist(serviceCategory)) {
+      setFormDoctorNames([]);
+      return;
+    }
+    const data = await fetchAdminOps<{ names: string[] }>(
+      `/api/admin/operations/follow-up/doctors?serviceCategory=${encodeURIComponent(serviceCategory)}`,
+    );
+    setFormDoctorNames(data.names || []);
+  }, []);
+
+  const loadSatisfactionDoctorNames = useCallback(async (serviceCategory: string) => {
+    const data = await fetchAdminOps<{ names: string[] }>(
+      `/api/admin/operations/follow-up/doctors?serviceCategory=${encodeURIComponent(serviceCategory)}`,
+    );
+    setSatisfactionDoctorNames(data.names || []);
+  }, []);
+
+  useEffect(() => {
+    void loadFormDoctorNames(form.serviceCategory).catch(() => setFormDoctorNames([]));
+  }, [form.serviceCategory, loadFormDoctorNames]);
+
+  useEffect(() => {
+    if (tab !== "satisfaction") return;
+    void loadSatisfactionDoctorNames(satisfactionCategory).catch(() =>
+      setSatisfactionDoctorNames([]),
+    );
+  }, [tab, satisfactionCategory, loadSatisfactionDoctorNames]);
+
+  useEffect(() => {
+    if (!categoryUsesDoctorPicklist(form.serviceCategory)) return;
+    setForm((f) => {
+      if (!f.doctorName || formDoctorNames.includes(f.doctorName)) return f;
+      return { ...f, doctorName: "" };
+    });
+  }, [form.serviceCategory, formDoctorNames]);
+
+  useEffect(() => {
+    if (satisfactionDoctorName && !satisfactionDoctorNames.includes(satisfactionDoctorName)) {
+      setSatisfactionDoctorName("");
+    }
+  }, [satisfactionDoctorNames, satisfactionDoctorName]);
 
   useEffect(() => {
     if (tab === "satisfaction") {
@@ -248,18 +301,19 @@ export default function AdminFollowUpPage() {
                   />
                 </div>
                 <div>
-                  <FormLabel>نام دکتر</FormLabel>
-                  <FormInput
-                    required
-                    value={form.doctorName}
-                    onChange={(e) => setForm((f) => ({ ...f, doctorName: e.target.value }))}
-                  />
-                </div>
-                <div>
                   <FormLabel>خدمات انجام‌شده</FormLabel>
                   <FormSelect
                     value={form.serviceCategory}
-                    onChange={(e) => setForm((f) => ({ ...f, serviceCategory: e.target.value }))}
+                    onChange={(e) => {
+                      const serviceCategory = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        serviceCategory,
+                        doctorName: categoryUsesDoctorPicklist(serviceCategory)
+                          ? ""
+                          : f.doctorName,
+                      }));
+                    }}
                   >
                     {FOLLOW_UP_SERVICE_OPTIONS.map((o) => (
                       <option key={o.id} value={o.id}>
@@ -267,6 +321,40 @@ export default function AdminFollowUpPage() {
                       </option>
                     ))}
                   </FormSelect>
+                </div>
+                <div>
+                  <FormLabel>نام دکتر</FormLabel>
+                  {categoryUsesDoctorPicklist(form.serviceCategory) ? (
+                    <FormSelect
+                      required
+                      value={form.doctorName}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, doctorName: e.target.value }))
+                      }
+                    >
+                      <option value="">انتخاب کنید…</option>
+                      {formDoctorNames.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </FormSelect>
+                  ) : (
+                    <>
+                      <FormInput
+                        required
+                        value={form.doctorName}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, doctorName: e.target.value }))
+                        }
+                        placeholder="نام مسئول درمان"
+                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        برای پرستاری و لیزر از لیست پزشکان استفاده نمی‌شود؛ نام را دستی وارد
+                        کنید.
+                      </p>
+                    </>
+                  )}
                 </div>
                 <RatingSelect
                   label="رضایت از دکتر"
@@ -490,17 +578,34 @@ export default function AdminFollowUpPage() {
 
       {tab === "satisfaction" ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
               <FormLabel>بخش</FormLabel>
               <FormSelect
                 value={satisfactionCategory}
-                onChange={(e) => setSatisfactionCategory(e.target.value)}
+                onChange={(e) => {
+                  setSatisfactionCategory(e.target.value);
+                  setSatisfactionDoctorName("");
+                }}
               >
                 <option value="all">همه</option>
                 {FOLLOW_UP_SERVICE_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.label}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
+            <div>
+              <FormLabel>پزشک / دندانپزشک</FormLabel>
+              <FormSelect
+                value={satisfactionDoctorName}
+                onChange={(e) => setSatisfactionDoctorName(e.target.value)}
+              >
+                <option value="">همه — میانگین بخش</option>
+                {satisfactionDoctorNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
                   </option>
                 ))}
               </FormSelect>
@@ -520,10 +625,14 @@ export default function AdminFollowUpPage() {
           <Card hover={false} className="p-5">
             <p className="text-lg font-extrabold text-teal-900">
               میانگین:{" "}
-              {stats?.average != null ? stats.average.toLocaleString("fa-IR") : "—"} از ۵
+              {stats && stats.count > 0 && stats.average != null
+                ? stats.average.toLocaleString("fa-IR")
+                : "—"}{" "}
+              از ۵
             </p>
             <p className="text-sm text-slate-600">
               بر اساس {stats?.count.toLocaleString("fa-IR") ?? 0} امتیاز ثبت‌شده
+              {satisfactionDoctorName ? ` — ${satisfactionDoctorName}` : ""}
             </p>
           </Card>
           <h3 className="font-bold text-slate-800">بیماران ناراضی</h3>

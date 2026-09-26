@@ -28,13 +28,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const serviceCategory = parseCategory(searchParams.get('serviceCategory'));
   const role = parseRole(searchParams.get('role'));
+  const doctorName = searchParams.get('doctorName')?.trim() || null;
 
   const rows = await prisma.followUpCase.findMany({
     orderBy: { createdAt: 'desc' },
     take: 5000,
   });
 
-  const stats = computeSatisfactionStats(rows, serviceCategory, role);
+  const stats = computeSatisfactionStats(rows, serviceCategory, role, doctorName);
   return NextResponse.json(stats);
 }
 
