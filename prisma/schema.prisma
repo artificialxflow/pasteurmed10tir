@@ -504,6 +504,73 @@ model Booking {
   @@index([dependentId])
 }
 
+enum FollowUpServiceCategory {
+  dental
+  medical
+  nursing
+  laser
+}
+
+enum FollowUpOutcome {
+  attended
+  no_show
+  dissatisfied
+}
+
+enum FollowUpAttendedAction {
+  appointment_needed
+  follow_up_needed
+}
+
+enum FollowUpDissatisfactionTarget {
+  doctor
+  staff
+  environment
+}
+
+model SpecialistReferral {
+  id              String   @id
+  referrerName    String
+  patientName     String
+  patientPhone    String
+  specialistName  String
+  note            String?
+  createdByAdminId String?
+  createdAt       DateTime @default(now())
+
+  @@index([patientPhone])
+  @@index([createdAt])
+}
+
+model FollowUpCase {
+  id                       String                         @id
+  workDate                 DateTime                       @db.Date
+  patientName              String
+  patientPhone             String
+  doctorName               String
+  serviceCategory          FollowUpServiceCategory
+  satisfactionDoctor       Int?
+  satisfactionAssistants   Int?
+  satisfactionReception    Int?
+  outcome                  FollowUpOutcome
+  attendedAction           FollowUpAttendedAction?
+  dissatisfactionTarget    FollowUpDissatisfactionTarget?
+  followUpDate             DateTime?                      @db.Date
+  appointmentGiven         Boolean                        @default(false)
+  followUpDone             Boolean                        @default(false)
+  notes                    String?
+  createdByAdminId         String?
+  createdAt                DateTime                       @default(now())
+  updatedAt                DateTime                       @updatedAt
+
+  @@index([patientPhone])
+  @@index([workDate])
+  @@index([followUpDate])
+  @@index([outcome])
+  @@index([appointmentGiven])
+  @@index([followUpDone])
+}
+
 model Consultation {
   id                     String             @id
   userId                 String?

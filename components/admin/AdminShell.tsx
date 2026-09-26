@@ -24,6 +24,8 @@ const navGroups: NavGroup[] = [
     items: [
       { href: ROUTES.admin.dashboard, label: "داشبورد", permission: "dashboard" },
       { href: ROUTES.admin.bookings, label: "رزروها", permission: "bookings" },
+      { href: ROUTES.admin.specialistReferrals, label: "ارجاع متخصص", permission: "specialistReferrals" },
+      { href: ROUTES.admin.followUp, label: "فالوآپ", permission: "followUp" },
       { href: ROUTES.admin.consultations, label: "مشاوره‌ها", permission: "consultations" },
       { href: ROUTES.admin.homeVisits, label: "اعزام خانگی", permission: "fieldStaff" },
       { href: ROUTES.admin.staffCommissions, label: "پورسانت نیرو", permission: "fieldStaff" },

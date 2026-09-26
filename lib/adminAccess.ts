@@ -30,6 +30,8 @@ export type AdminPermission =
   | 'help'
   | 'installments'
   | 'patients'
+  | 'specialistReferrals'
+  | 'followUp'
   | 'access';
 
 export type AdminRole = {
@@ -64,6 +66,8 @@ export const ADMIN_PERMISSION_META: {
 }[] = [
   { id: 'dashboard', label: 'داشبورد', href: ROUTES.admin.dashboard },
   { id: 'bookings', label: 'رزروها', href: ROUTES.admin.bookings },
+  { id: 'specialistReferrals', label: 'ارجاع متخصص', href: ROUTES.admin.specialistReferrals },
+  { id: 'followUp', label: 'فالوآپ', href: ROUTES.admin.followUp },
   { id: 'consultations', label: 'مشاوره‌ها', href: ROUTES.admin.consultations },
   { id: 'reminders', label: 'یادآورها', href: ROUTES.admin.reminders },
   { id: 'services', label: 'سرویس‌ها', href: ROUTES.admin.services },
@@ -111,7 +115,7 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
     id: 'ops',
     name: 'منشی / عملیات',
     description: 'رزرو، مشاوره و یادآور',
-    permissions: ['dashboard', 'bookings', 'consultations', 'reminders', 'fieldStaff'],
+    permissions: ['dashboard', 'bookings', 'consultations', 'reminders', 'fieldStaff', 'specialistReferrals', 'followUp'],
   },
   {
     id: 'content',

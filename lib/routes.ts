@@ -107,6 +107,8 @@ export const ROUTES = {
     login: '/admin/login',
     dashboard: '/admin',
     bookings: '/admin/bookings',
+    specialistReferrals: '/admin/specialist-referrals',
+    followUp: '/admin/follow-up',
     consultations: '/admin/consultations',
     reminders: '/admin/reminders',
     services: '/admin/services',
