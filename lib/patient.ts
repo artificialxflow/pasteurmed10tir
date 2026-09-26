@@ -2,6 +2,15 @@
  * پروفایل بیمار، بیمه، نظرات، شکایات، راهنما، اقساط — mock فرانت
  */
 
+import type { AcquisitionSource } from '@/lib/patient/acquisition-source';
+
+export type { AcquisitionSource } from '@/lib/patient/acquisition-source';
+export {
+  ACQUISITION_SOURCES,
+  ACQUISITION_SOURCE_LABELS,
+  acquisitionSourceLabel,
+} from '@/lib/patient/acquisition-source';
+
 export type InsuranceCompany = {
   id: string;
   name: string;
@@ -48,6 +57,8 @@ export type PatientProfile = {
   updatedAt: string;
   organizationName?: string;
   isOrganizationRep?: boolean;
+  /** نحوه آشنایی — فقط ثبت‌نام جدید اشخاص */
+  acquisitionSource?: AcquisitionSource;
 };
 
 export type InsuranceMode = 'none' | 'base' | 'complementary' | 'both';

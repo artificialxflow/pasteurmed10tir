@@ -22,6 +22,7 @@ function rowValues(row: PatientReportRow): Array<string | number> {
     row.baseInsurance,
     row.complementaryInsurance,
     row.zohalLabel,
+    row.acquisitionLabel,
     row.status,
     row.reviewNote,
     row.createdAt,
@@ -75,6 +76,7 @@ export function buildPatientPdfHtml(rows: PatientReportRow[], reportTitle: strin
         <td>${row.baseInsurance}</td>
         <td>${row.complementaryInsurance}</td>
         <td>${row.zohalLabel}</td>
+        <td>${row.acquisitionLabel}</td>
         <td>${row.status}</td>
         <td>${row.reviewNote}</td>
         <td>${row.createdAt}</td>

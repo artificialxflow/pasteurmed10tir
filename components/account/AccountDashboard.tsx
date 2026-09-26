@@ -160,9 +160,6 @@ export function AccountDashboard({
   const clubHref = variant === "app" ? ROUTES.app.club : ROUTES.web.club;
   const installmentsHref =
     variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
-  const helpHref = variant === "app" ? ROUTES.app.help : ROUTES.web.help;
-  const supportHref = variant === "app" ? ROUTES.app.support : ROUTES.web.support;
-  const complaintsHref = variant === "app" ? ROUTES.app.complaints : ROUTES.web.complaints;
   const healthHref = variant === "app" ? ROUTES.app.healthRecord : ROUTES.web.healthRecord;
 
   useEffect(() => {
@@ -298,21 +295,6 @@ export function AccountDashboard({
         />
       ))}
       <div className="my-2 border-t border-slate-100 pt-2">
-        {[
-          { href: dentalHref, label: "رزرو نوبت دندان" },
-          { href: supportHref, label: "پشتیبانی" },
-          { href: helpHref, label: "آموزش سامانه" },
-          { href: complaintsHref, label: "شکایات" },
-        ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
-          >
-            <span>{item.label}</span>
-            <span className="text-xs text-slate-400">‹</span>
-          </Link>
-        ))}
         <button
           type="button"
           onClick={onEditProfile}

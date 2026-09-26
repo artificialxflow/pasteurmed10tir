@@ -31,6 +31,7 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       depositNonRefundable: pending.depositNonRefundable !== false,
       referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
       dependentId: pending.dependentId ? String(pending.dependentId) : undefined,
+      staffNote: pending.staffNote ? String(pending.staffNote) : undefined,
     });
     return { booking };
   }
@@ -70,6 +71,16 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       orgMemberIds: Array.isArray(pending.orgMemberIds)
         ? (pending.orgMemberIds as unknown[]).map(String)
         : undefined,
+      membershipTotalAmount:
+        pending.membershipTotalAmount === undefined || pending.membershipTotalAmount === null
+          ? undefined
+          : Number(pending.membershipTotalAmount),
+      membershipInstallmentCount:
+        pending.membershipInstallmentCount === undefined ||
+        pending.membershipInstallmentCount === null
+          ? undefined
+          : Number(pending.membershipInstallmentCount),
+      zibalTrackId: pending.zibalTrackId ? String(pending.zibalTrackId) : undefined,
     });
     return result;
   }

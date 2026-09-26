@@ -13,6 +13,7 @@ import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
 import { isSmsConfigured, sendBookingSms } from '@/lib/sms/client';
+import { normalizeBookingStaffNote } from '@/lib/operations/booking-note';
 
 export type CreateBookingInput = {
   doctorId?: string;
@@ -32,6 +33,7 @@ export type CreateBookingInput = {
   referralCode?: string;
   dateLabel?: string;
   dependentId?: string | null;
+  staffNote?: string | null;
 };
 
 export async function createBookingRecord(body: CreateBookingInput) {
@@ -124,6 +126,7 @@ export async function createBookingRecord(body: CreateBookingInput) {
       referralCode,
       appointmentAt,
       dependentId: dependent?.id ?? null,
+      staffNote: normalizeBookingStaffNote(body.staffNote),
     },
   });
 

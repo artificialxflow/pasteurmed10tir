@@ -14,6 +14,9 @@ import {
   isPatientApproved,
   patientStatusLabel,
   payableFromFranchise,
+  ACQUISITION_SOURCES,
+  ACQUISITION_SOURCE_LABELS,
+  type AcquisitionSource,
   type InsuranceCompany,
   type PatientProfile,
 } from "@/lib/patient";
@@ -42,6 +45,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [hasOrganization, setHasOrganization] = useState(false);
   const [loginKind, setLoginKind] = useState<"person" | "organization">("person");
   const [organizationName, setOrganizationName] = useState("");
+  const [acquisitionSource, setAcquisitionSource] = useState<AcquisitionSource | "">("");
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [editing, setEditing] = useState(false);
@@ -164,6 +168,11 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
       setMessage("نام سازمان را وارد کنید.");
       return;
     }
+    if (!registered && loginKind === "person" && !acquisitionSource) {
+      setMessageKind("error");
+      setMessage("لطفاً نحوه آشنایی با ما را انتخاب کنید.");
+      return;
+    }
     setMessage("");
     try {
       const res = await fetch("/api/auth/otp/verify", {
@@ -177,6 +186,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
           ...(registered ? {} : { name: name.trim() }),
           ...(loginKind === "organization" && !hasOrganization
             ? { organizationName: organizationName.trim() }
+            : {}),
+          ...(!registered && loginKind === "person" && acquisitionSource
+            ? { acquisitionSource }
             : {}),
         }),
       });
@@ -368,6 +380,25 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
                       autoComplete="name"
                       required
                     />
+                  </div>
+                ) : null}
+                {otpSent && !registered && loginKind === "person" ? (
+                  <div>
+                    <FormLabel>نحوه آشنایی با ما</FormLabel>
+                    <FormSelect
+                      value={acquisitionSource}
+                      onChange={(e) =>
+                        setAcquisitionSource(e.target.value as AcquisitionSource | "")
+                      }
+                      required
+                    >
+                      <option value="">انتخاب کنید…</option>
+                      {ACQUISITION_SOURCES.map((key) => (
+                        <option key={key} value={key}>
+                          {ACQUISITION_SOURCE_LABELS[key]}
+                        </option>
+                      ))}
+                    </FormSelect>
                   </div>
                 ) : null}
                 {otpSent && loginKind === "organization" && !hasOrganization ? (

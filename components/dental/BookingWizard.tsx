@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Badge, Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { Badge, Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { resolveReferralDiscount } from "@/lib/commerce/client";
 import { REFERRAL_DISCOUNT_HINT } from "@/lib/commerce/referral-discount";
@@ -23,6 +23,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
+import { DentalReservationNotice } from "@/components/dental/DentalReservationNotice";
 
 type StepName = "type" | "doctor" | "day" | "time" | "info";
 type BookingType = "visit" | "treatment" | null;
@@ -39,6 +40,7 @@ type BookingState = {
   referralCode: string;
   onlineInsuranceCovered: boolean;
   dependentId: string;
+  staffNote: string;
 };
 
 const STEP_LABELS: Record<StepName, string> = {
@@ -61,6 +63,7 @@ const INITIAL_STATE: BookingState = {
   referralCode: "",
   onlineInsuranceCovered: false,
   dependentId: "",
+  staffNote: "",
 };
 
 function findDoctor(dentists: Dentist[], id: number | null): Dentist | undefined {
@@ -99,6 +102,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const [hydrated, setHydrated] = useState(false);
   const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [reservationFee, setReservationFee] = useState(200000);
+  const [reservationNote, setReservationNote] = useState("");
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [dentistsLoading, setDentistsLoading] = useState(true);
   const [doctorTrack, setDoctorTrack] = useState<"general" | "specialty">("general");
@@ -110,8 +114,13 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
 
   useEffect(() => {
-    void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
-      .then((data) => setReservationFee(data.dentalReservationFee))
+    void fetchPublic<{ dentalReservationFee: number; dentalReservationNote?: string }>(
+      "/api/content/settings",
+    )
+      .then((data) => {
+        setReservationFee(data.dentalReservationFee);
+        setReservationNote(data.dentalReservationNote ?? "");
+      })
       .catch(() => {});
   }, []);
 
@@ -342,6 +351,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             referralDiscountPercent: referral.referralDiscountPercent,
             referralDiscountAmount: referral.referralDiscountAmount,
             onlineInsuranceCovered: state.onlineInsuranceCovered,
+            staffNote: state.staffNote.trim() || undefined,
           });
           PasteurStorage.clearPendingBooking();
           router.push(`${basePath}/confirm`);
@@ -652,12 +662,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                   {formatPrice(reservationFee)}
                 </span>
               </div>
-              <p className="mt-2 rounded-lg border border-teal-100 bg-white p-3 text-xs leading-6 text-teal-900">
-                مبلغ بیعانه رزرو از مبلغ صورتحسابتان کسر خواهد شد.
-                <span className="mt-1 block text-slate-600">
-                  مبلغ رزرو وقت ثابت است و قابل ویرایش نیست.
-                </span>
-              </p>
+              <DentalReservationNotice adminNote={reservationNote} variant="teal" />
             </Card>
           ) : null}
           <form className="space-y-4" onSubmit={submitBooking}>
@@ -729,6 +734,23 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               />
               <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
             </div>
+
+            <div>
+              <FormLabel>توضیحات (اختیاری)</FormLabel>
+              <FormTextarea
+                id="booking-staff-note"
+                rows={4}
+                maxLength={2000}
+                placeholder="مثلاً: جلسه بعد چک می‌آورم، بیمه از تاریخ … فعال می‌شود، تسویه اقساط و …"
+                value={state.staffNote}
+                onChange={(e) => updateState({ staffNote: e.target.value })}
+                className="mt-1"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                این متن فقط برای پذیرش و یادآوری تلفنی نمایش داده می‌شود.
+              </p>
+            </div>
+
             {state.type === "visit" ? (
               <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">
                 <input

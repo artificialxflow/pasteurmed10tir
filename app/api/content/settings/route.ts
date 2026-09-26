@@ -12,6 +12,7 @@ export async function GET() {
     (await prisma.siteSettings.create({ data: { id: DEFAULT_ID } }));
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
+    dentalReservationNote: row.dentalReservationNote ?? '',
     laserReservationFee: row.laserReservationFee,
     wallet: {
       regularCap: row.walletRegularCap,

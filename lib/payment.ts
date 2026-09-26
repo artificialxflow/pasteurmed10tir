@@ -47,6 +47,8 @@ export type PendingBookingPayment = PendingPaymentBase & {
   timeValue?: string | number;
   timeLabel?: string;
   dependentId?: string;
+  /** توضیحات بیمار برای یادآوری نوبت */
+  staffNote?: string;
 };
 
 export type PendingMembershipPayment = PendingPaymentBase & {
@@ -59,6 +61,10 @@ export type PendingMembershipPayment = PendingPaymentBase & {
   groupDiscountPercent?: number;
   organizationId?: string;
   orgMemberIds?: string[];
+  /** مبلغ کل حق عضویت (سازمان — پرداخت اقساطی) */
+  membershipTotalAmount?: number;
+  /** ۱ = یک‌جا، ۲ یا ۳ = اقساط */
+  membershipInstallmentCount?: number;
 };
 
 export type PendingShopVipPayment = PendingPaymentBase & {

@@ -2,7 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
@@ -37,6 +37,7 @@ export default function AdminBookingsPage() {
   const [fileNumberByPhone, setFileNumberByPhone] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [reservationFee, setReservationFee] = useState(200000);
+  const [reservationNote, setReservationNote] = useState("");
   const [error, setError] = useState("");
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
   const [editForm, setEditForm] = useState({
@@ -78,8 +79,13 @@ export default function AdminBookingsPage() {
   }, []);
 
   useEffect(() => {
-    void fetchAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings")
-      .then((data) => setReservationFee(data.dentalReservationFee))
+    void fetchAdmin<{ dentalReservationFee: number; dentalReservationNote?: string }>(
+      "/api/admin/content/settings",
+    )
+      .then((data) => {
+        setReservationFee(data.dentalReservationFee);
+        setReservationNote(data.dentalReservationNote ?? "");
+      })
       .catch(() => {});
     void reload().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [reload]);
@@ -105,7 +111,8 @@ export default function AdminBookingsPage() {
         row.patientName.toLowerCase().includes(q) ||
         (row.dependentName || "").toLowerCase().includes(q) ||
         (row.dependentFileNumber || "").toLowerCase().includes(q) ||
-        fileNumberFor(row.patientPhone).toLowerCase().includes(q),
+        fileNumberFor(row.patientPhone).toLowerCase().includes(q) ||
+        (row.staffNote || "").toLowerCase().includes(q),
     );
   }, [items, category, timeOfDay, doctor, dateFrom, dateTo, search, fileNumberFor]);
 
@@ -153,20 +160,34 @@ export default function AdminBookingsPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "ویرایش ناموفق"));
   }
 
-  function saveReservationFee() {
-    void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
-      dentalReservationFee: Number(reservationFee || 0),
-    })
-      .then((data) => setReservationFee(data.dentalReservationFee))
+  function saveReservationSettings() {
+    void putAdmin<{ dentalReservationFee: number; dentalReservationNote?: string }>(
+      "/api/admin/content/settings",
+      {
+        dentalReservationFee: Number(reservationFee || 0),
+        dentalReservationNote: reservationNote.trim(),
+      },
+    )
+      .then((data) => {
+        setReservationFee(data.dentalReservationFee);
+        setReservationNote(data.dentalReservationNote ?? "");
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "ذخیره ناموفق"));
   }
 
-  function resetReservationFee() {
-    if (!confirmAction("بیعانه رزرو به مقدار پیش‌فرض برگردد؟")) return;
-    void putAdmin<{ dentalReservationFee: number }>("/api/admin/content/settings", {
-      dentalReservationFee: 200000,
-    })
-      .then((data) => setReservationFee(data.dentalReservationFee))
+  function resetReservationSettings() {
+    if (!confirmAction("بیعانه و توضیحات رزرو به پیش‌فرض برگردد؟")) return;
+    void putAdmin<{ dentalReservationFee: number; dentalReservationNote?: string }>(
+      "/api/admin/content/settings",
+      {
+        dentalReservationFee: 200000,
+        dentalReservationNote: "",
+      },
+    )
+      .then((data) => {
+        setReservationFee(data.dentalReservationFee);
+        setReservationNote(data.dentalReservationNote ?? "");
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "بازنشانی ناموفق"));
   }
 
@@ -189,7 +210,7 @@ export default function AdminBookingsPage() {
         .
       </Card>
       <Card hover={false} className="p-5">
-        <h2 className="mb-3 text-lg font-bold">تنظیمات بیعانه رزرو دندان</h2>
+        <h2 className="mb-3 text-lg font-bold">تنظیمات بیعانه و توضیحات رزرو دندان</h2>
         <p className="mb-4 text-sm text-slate-600">
           مبلغ ثابت بیعانه رزرو نوبت (غیرقابل استرداد هنگام لغو).
         </p>
@@ -206,14 +227,27 @@ export default function AdminBookingsPage() {
               className="max-w-[200px]"
             />
           </div>
-          <Button onClick={saveReservationFee}>ذخیره</Button>
-          <Button variant="outline" onClick={resetReservationFee}>
+          <Button onClick={saveReservationSettings}>ذخیره</Button>
+          <Button variant="outline" onClick={resetReservationSettings}>
             پیش‌فرض (۲۰۰,۰۰۰)
           </Button>
         </div>
         <p className="mt-3 text-xs text-amber-700">
           مقدار فعلی در جریان رزرو: {formatPrice(reservationFee)}
         </p>
+        <div className="mt-4">
+          <FormLabel>توضیحات برای بیمار (در فرم رزرو دندان)</FormLabel>
+          <FormTextarea
+            rows={4}
+            value={reservationNote}
+            onChange={(e) => setReservationNote(e.target.value)}
+            placeholder="مثلاً قوانین لغو، ساعت مراجعه، یا یادآوری خاص کلینیک…"
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            این متن زیر توضیح ثابت بیعانه در مرحله «اطلاعات رزرو» و صفحه تأیید پرداخت نمایش داده
+            می‌شود.
+          </p>
+        </div>
       </Card>
 
       <div>
@@ -303,6 +337,20 @@ export default function AdminBookingsPage() {
         </span>
       </div>
 
+      <Card hover={false} className="border-teal-100 bg-teal-50/40 p-4">
+        <p className="text-sm font-extrabold text-teal-900">توضیحات فعال برای بیمار (رزرو دندان)</p>
+        <p className="mt-1 text-xs text-slate-600">
+          همین متن در فرم رزرو و تأیید پرداخت نمایش داده می‌شود. ویرایش در کارت بالا.
+        </p>
+        {reservationNote.trim() ? (
+          <p className="mt-3 whitespace-pre-wrap rounded-xl border border-teal-200 bg-white p-3 text-sm leading-7 text-slate-800">
+            {reservationNote.trim()}
+          </p>
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">توضیح اضافه‌ای ثبت نشده — فقط متن ثابت بیعانه برای بیمار نمایش داده می‌شود.</p>
+        )}
+      </Card>
+
       <AdminTable
         headers={[
           "کد",
@@ -314,6 +362,7 @@ export default function AdminBookingsPage() {
           "نوع",
           "تاریخ / نوبت",
           "مبلغ",
+          "توضیحات",
           "وضعیت",
           "عملیات",
         ]}
@@ -365,6 +414,15 @@ export default function AdminBookingsPage() {
                     <span className="text-xs text-amber-700">بیعانه</span>
                   </>
                 ) : null}
+              </td>
+              <td className="max-w-[10rem] px-4 py-3 text-xs leading-5 text-slate-600">
+                {row.source === "booking" && row.staffNote ? (
+                  <span className="line-clamp-3 whitespace-pre-wrap" title={row.staffNote}>
+                    {row.staffNote}
+                  </span>
+                ) : (
+                  "—"
+                )}
               </td>
               <td className="px-4 py-3">
                 <AdminBadge

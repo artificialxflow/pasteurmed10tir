@@ -12,6 +12,7 @@ import {
   formatJalaliDate,
   patientStatusLabel,
   resolveFranchisePercent,
+  acquisitionSourceLabel,
   type InsuranceCompany,
   type PatientProfile,
   type PatientStatus,
@@ -438,6 +439,7 @@ export default function AdminPatientsPage() {
           "بیمه پایه",
           "بیمه تکمیلی",
           "زحل",
+          "نحوه آشنایی",
           "وضعیت",
           "یادداشت / عملیات",
         ]}
@@ -488,6 +490,9 @@ export default function AdminPatientsPage() {
               </td>
               <td className="px-4 py-3 text-xs font-medium">
                 {zohalStatusLabel(p.zohalStatus, p.shahkarMatched)}
+              </td>
+              <td className="px-4 py-3 text-xs">
+                {acquisitionSourceLabel(p.acquisitionSource)}
               </td>
               <td className="px-4 py-3">
                 <AdminBadge

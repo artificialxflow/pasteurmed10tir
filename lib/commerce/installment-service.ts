@@ -29,15 +29,9 @@ export function buildDueDates(
   return dates;
 }
 
-/** Split total across N installments; remainder on the last. */
-export function splitInstallmentAmounts(total: number, count: number): number[] {
-  const n = Math.max(1, count);
-  const base = Math.floor(total / n);
-  const amounts = Array.from({ length: n }, () => base);
-  const remainder = total - base * n;
-  amounts[n - 1] += remainder;
-  return amounts;
-}
+import { splitInstallmentAmounts } from '@/lib/membership/installment-split';
+
+export { splitInstallmentAmounts };
 
 function startOfToday(): Date {
   const d = new Date();
@@ -176,6 +170,83 @@ export async function createCreditInstallmentPlan(input: {
   });
 }
 
+/** حق عضویت سازمانی — ۲ یا ۳ قسط؛ قسط اول همین پرداخت آنلاین است */
+export async function createOrgMembershipInstallmentPlan(input: {
+  phone: string;
+  patientName?: string;
+  organizationId: string;
+  organizationName?: string;
+  totalAmount: number;
+  installmentCount: 2 | 3;
+  firstPaymentAmount: number;
+  trackId?: string | null;
+}) {
+  const phone = normalizePhoneDigits(input.phone);
+  if (!phone) throw new Error('شماره موبایل الزامی است.');
+  const total = Math.max(0, Math.round(input.totalAmount));
+  const count = input.installmentCount;
+  if (total <= 0) throw new Error('مبلغ عضویت نامعتبر است.');
+
+  const amounts = splitInstallmentAmounts(total, count);
+  const firstDue = Math.round(input.firstPaymentAmount);
+  if (firstDue !== amounts[0]) {
+    throw new Error('مبلغ قسط اول با تقسیم مبلغ همخوان نیست.');
+  }
+
+  const dueDates = buildDueDates(count, new Date(), { firstDueOffsetMonths: 1 });
+  const schedule = buildScheduleCreateData({ totalAmount: total, installmentCount: count, dueDates });
+  schedule[0] = {
+    ...schedule[0],
+    paidAmount: amounts[0],
+    status: 'paid' as InstallmentItemStatus,
+  };
+
+  const planId = generateCommerceId();
+  const paymentId = generateCommerceId();
+  const paidAt = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.installmentPlan.create({
+      data: {
+        id: planId,
+        phone,
+        patientName: input.patientName || null,
+        source: 'membership',
+        title: input.organizationName
+          ? `حق عضویت ${input.organizationName} (${count} قسط)`
+          : `حق عضویت سازمانی (${count} قسط)`,
+        totalAmount: total,
+        paidAmount: amounts[0],
+        installmentCount: count,
+        dueDates,
+        status: amounts[0] >= total ? 'completed' : 'active',
+        linkedRequestId: `org:${input.organizationId}`,
+        scheduleItems: { create: schedule },
+      },
+    });
+
+    const firstItemId = schedule[0].id;
+    await tx.installmentPayment.create({
+      data: {
+        id: paymentId,
+        planId,
+        scheduleItemId: firstItemId,
+        amount: amounts[0],
+        method: 'zibal',
+        status: 'completed',
+        trackId: input.trackId || null,
+        note: 'قسط اول حق عضویت سازمانی',
+        paidAt,
+      },
+    });
+  });
+
+  return prisma.installmentPlan.findUnique({
+    where: { id: planId },
+    include: { scheduleItems: { orderBy: { index: 'asc' } }, payments: true },
+  });
+}
+
 export async function createFacilityInstallmentPlan(input: {
   phone?: string | null;
   patientName?: string;
@@ -256,6 +327,7 @@ export async function hideMembershipInstallmentPlans(phone?: string | null) {
     where: {
       deletedAt: null,
       source: 'membership',
+      NOT: { linkedRequestId: { startsWith: 'org:' } },
       ...(key ? { phone: key } : {}),
     },
     data: { status: 'hidden' },
@@ -268,7 +340,7 @@ export async function listVisibleInstallments(phone?: string | null) {
     where: {
       deletedAt: null,
       status: { not: 'hidden' },
-      source: { not: 'membership' },
+      OR: [{ source: { not: 'membership' } }, { linkedRequestId: { startsWith: 'org:' } }],
       ...(key ? { phone: key } : {}),
     },
     include: {

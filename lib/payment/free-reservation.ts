@@ -52,6 +52,8 @@ function buildBookingBody(pending: PendingPayment): Record<string, unknown> {
     isDeposit: pending.isDeposit !== false,
     depositNonRefundable: pending.depositNonRefundable !== false,
     referralCode: pending.referralCode ? String(pending.referralCode) : undefined,
+    dependentId: pending.dependentId ? String(pending.dependentId) : undefined,
+    staffNote: pending.staffNote ? String(pending.staffNote) : undefined,
   };
 }
 

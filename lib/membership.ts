@@ -51,7 +51,7 @@ export function getUnitPrice(tier: MembershipTier, planId: string): number {
 
 export function getValidityLabel(tier: MembershipTier, planId: string): string {
   const plan = getDurationOptions().find((p) => p.id === planId);
-  if (!plan) return tier === 'vip' ? '۲۴ ماهه' : '۱۵ ماهه';
+  if (!plan) return tier === 'vip' ? '۳۶ ماهه' : '۱۸ ماهه';
   return tier === 'vip' ? plan.vipValidity : plan.regularValidity;
 }
 
@@ -130,7 +130,7 @@ export function loanTermInterestLabel(months: number, interestRate?: number): st
 export function getLoanMonthOptions(tier: MembershipTier, plans?: Membership[]): number[] {
   const plan = getLoanPlan(tier, plans);
   const maxMonths = Number(
-    plan?.loanTermLabel?.replace(/[^\d]/g, '') || (tier === 'vip' ? 24 : 15),
+    plan?.loanTermLabel?.replace(/[^\d]/g, '') || (tier === 'vip' ? 36 : 18),
   );
   return Array.from({ length: maxMonths }, (_, i) => i + 1)
     .filter(

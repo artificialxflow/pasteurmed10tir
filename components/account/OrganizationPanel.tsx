@@ -6,6 +6,7 @@ import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import {
   applyMembershipDiscounts,
 } from "@/lib/membership/group-discount";
+import { splitInstallmentAmounts } from "@/lib/membership/installment-split";
 import { getDurationOptions, getUnitPrice, getValidityLabel, type MembershipTier } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
@@ -59,6 +60,7 @@ export function OrganizationPanel({
   const [selected, setSelected] = useState<string[]>([]);
   const [tier, setTier] = useState<MembershipTier>("regular");
   const [planId, setPlanId] = useState("one-year");
+  const [paymentInstallments, setPaymentInstallments] = useState<"1" | "2" | "3">("1");
 
   const reload = useCallback(async () => {
     const next = await fetchPatientOps<OrgPayload>("/api/operations/organization");
@@ -121,13 +123,21 @@ export function OrganizationPanel({
       setError("حداقل یک عضو را برای پرداخت انتخاب کنید.");
       return;
     }
+    const installmentCount = Number(paymentInstallments) as 1 | 2 | 3;
+    const total = payable;
+    const firstAmount =
+      installmentCount === 1
+        ? total
+        : splitInstallmentAmounts(total, installmentCount)[0];
     PasteurStorage.setPendingPayment({
       kind: "membership",
       planId: tier,
       planName: `عضویت سازمانی ${org.name} — ${selectedMembers.length} نفر`,
       patientName: profileName,
       patientPhone: profilePhone,
-      amount: payable,
+      amount: firstAmount,
+      membershipTotalAmount: total,
+      membershipInstallmentCount: installmentCount,
       validityLabel: getValidityLabel(tier, planId),
       membershipDurationLabel: getValidityLabel(tier, planId),
       discountPercent: durationDisc,
@@ -258,6 +268,26 @@ export function OrganizationPanel({
               } → ${formatPrice(payable)}`
             : "اعضا را از لیست بالا انتخاب کنید."}
         </p>
+        <div>
+          <FormLabel>نحوه پرداخت</FormLabel>
+          <FormSelect
+            value={paymentInstallments}
+            onChange={(e) => setPaymentInstallments(e.target.value as "1" | "2" | "3")}
+          >
+            <option value="1">یک‌جا</option>
+            <option value="2">۲ قسط (قسط اول الان)</option>
+            <option value="3">۳ قسط (قسط اول الان)</option>
+          </FormSelect>
+          {selectedMembers.length && paymentInstallments !== "1" ? (
+            <p className="mt-1 text-xs text-slate-500">
+              مبلغ این مرحله:{" "}
+              {formatPrice(
+                splitInstallmentAmounts(payable, Number(paymentInstallments))[0],
+              )}{" "}
+              — بقیه در بخش «اقساط» پنل کاربری
+            </p>
+          ) : null}
+        </div>
         <Button type="button" onClick={paySelected} disabled={!selectedMembers.length}>
           پرداخت حق عضویت انتخاب‌شده‌ها
         </Button>

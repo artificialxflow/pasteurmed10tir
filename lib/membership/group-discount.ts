@@ -6,16 +6,17 @@ export type GroupDiscountTier = {
 };
 
 /** سقف تخفیف مجموعه روی فرم عضویت — بدون پنل سازمانی */
-export const MAX_GROUP_DISCOUNT_PERCENT = 5;
+export const MAX_GROUP_DISCOUNT_PERCENT = 50;
 
-/** گزینه‌های قابل انتخاب روی فرم */
-export const GROUP_DISCOUNT_CHOICES = [0, 2, 3, 5] as const;
+/** گزینه‌های قابل انتخاب روی فرم (۵ مورد) */
+export const GROUP_DISCOUNT_CHOICES = [0, 10, 20, 30, 50] as const;
 
 /** پلکان پیشنهادی — قابل override از membershipPricing */
 export const DEFAULT_GROUP_DISCOUNT_TIERS: GroupDiscountTier[] = [
-  { minMembers: 10, percent: 2 },
-  { minMembers: 20, percent: 3 },
-  { minMembers: 40, percent: 5 },
+  { minMembers: 10, percent: 10 },
+  { minMembers: 20, percent: 20 },
+  { minMembers: 30, percent: 30 },
+  { minMembers: 40, percent: 50 },
 ];
 
 export function getGroupDiscountTiers(): GroupDiscountTier[] {
@@ -25,7 +26,7 @@ export function getGroupDiscountTiers(): GroupDiscountTier[] {
   return fromData?.length ? [...fromData] : DEFAULT_GROUP_DISCOUNT_TIERS;
 }
 
-/** پیشنهاد درصد بر اساس تعداد اعضا (سقف ۵٪) */
+/** پیشنهاد درصد بر اساس تعداد اعضا (سقف ۵۰٪) */
 export function resolveGroupDiscountPercent(memberCount: number): number {
   const count = Math.max(1, Math.floor(memberCount));
   const tiers = [...getGroupDiscountTiers()].sort((a, b) => b.minMembers - a.minMembers);
@@ -36,6 +37,13 @@ export function resolveGroupDiscountPercent(memberCount: number): number {
 export function clampGroupDiscountPercent(value: unknown): number {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n) || n <= 0) return 0;
+  if (!(GROUP_DISCOUNT_CHOICES as readonly number[]).includes(n)) {
+    const allowed = [...GROUP_DISCOUNT_CHOICES].filter((p) => p > 0);
+    const nearest = allowed.reduce((best, p) =>
+      Math.abs(p - n) < Math.abs(best - n) ? p : best,
+    );
+    return Math.min(MAX_GROUP_DISCOUNT_PERCENT, nearest);
+  }
   return Math.min(MAX_GROUP_DISCOUNT_PERCENT, n);
 }
 
@@ -52,7 +60,7 @@ export function applyMembershipDiscounts(input: {
   subtotal: number;
   durationDiscountPercent?: number;
   groupDiscountPercent?: number;
-  /** اگر باشد، به‌جای سقف ۵٪ فرم عمومی از تخفیف قرارداد استفاده می‌شود */
+  /** اگر باشد، به‌جای سقف فرم عمومی از تخفیف قرارداد استفاده می‌شود */
   contractDiscountPercent?: number;
 }): number {
   let amount = Math.max(0, input.subtotal);

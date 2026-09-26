@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
+import { DentalReservationNotice } from "@/components/dental/DentalReservationNotice";
 
 function SummaryRow({
   label,
@@ -62,9 +63,11 @@ function SummaryRow({
 function PaymentSummary({
   pending,
   amountLabel,
+  reservationNote,
 }: {
   pending: PendingPayment;
   amountLabel?: string;
+  reservationNote?: string;
 }) {
   if (pending.kind === "booking") {
     return (
@@ -90,14 +93,7 @@ function PaymentSummary({
           value={formatPrice(Number(pending.amount) || 0)}
           last
         />
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800">
-          مبلغ بیعانه رزرو از مبلغ صورتحسابتان کسر خواهد شد. مبلغ رزرو وقت ثابت است و قابل ویرایش
-          نیست.
-          <span className="mt-2 block">
-            بیعانه رزرو در صورت لغو قابل استرداد نیست. اگر استعلام بیمه تأیید شود و کاربری بیمار تأیید
-            شده باشد، مبلغ قابل پرداخت برابر درصد فرانشیز از هزینه ویزیت خواهد بود.
-          </span>
-        </p>
+        <DentalReservationNotice adminNote={reservationNote} variant="amber" />
       </Card>
     );
   }
@@ -149,6 +145,18 @@ function PaymentSummary({
             value={`${Number(pending.groupDiscountPercent).toLocaleString("fa-IR")}٪`}
           />
         ) : null}
+        {Number(pending.membershipInstallmentCount || 0) > 1 ? (
+          <>
+            <SummaryRow
+              label="کل حق عضویت:"
+              value={formatPrice(Number(pending.membershipTotalAmount || 0))}
+            />
+            <SummaryRow
+              label="تعداد اقساط:"
+              value={`${Number(pending.membershipInstallmentCount).toLocaleString("fa-IR")} قسط`}
+            />
+          </>
+        ) : null}
         {pending.referralDiscountPercent ? (
           <SummaryRow
             label="تخفیف کد معرف:"
@@ -156,7 +164,11 @@ function PaymentSummary({
           />
         ) : null}
         <SummaryRow
-          label="مبلغ واریزی:"
+          label={
+            Number(pending.membershipInstallmentCount || 0) > 1
+              ? "مبلغ قسط اول:"
+              : "مبلغ واریزی:"
+          }
           value={formatPrice(Number(pending.amount) || 0)}
           last
         />
@@ -191,6 +203,7 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
   const [refreshingProfile, setRefreshingProfile] = useState(false);
   const [baseList, setBaseList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
   const [compList, setCompList] = useState<{ id: string; name: string; active?: boolean }[]>([]);
+  const [reservationNote, setReservationNote] = useState("");
 
   const refreshProfile = useCallback(async (patientPhone?: string) => {
     setRefreshingProfile(true);
@@ -251,12 +264,15 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
         setInquiryStatus("pending");
       }
     }
-    void fetchPublic<{ dentalReservationFee: number }>("/api/content/settings")
+    void fetchPublic<{ dentalReservationFee: number; dentalReservationNote?: string }>(
+      "/api/content/settings",
+    )
       .then((s) => {
         const fromPending = Number(data.amount);
         setDepositAmount(
           Number.isFinite(fromPending) ? fromPending : Number(s.dentalReservationFee) || 200000,
         );
+        setReservationNote(s.dentalReservationNote ?? "");
       })
       .catch(() => {});
     void refreshProfile(String(data.patientPhone || ""));
@@ -458,7 +474,7 @@ export function ConfirmPayment({ basePath }: { basePath: DentalBasePath }) {
         </>
       ) : null}
 
-      <PaymentSummary pending={pending} amountLabel={amountLabel} />
+      <PaymentSummary pending={pending} amountLabel={amountLabel} reservationNote={reservationNote} />
 
       {pending.kind === "booking" ? (
         <Card hover={false} className="mb-6 space-y-3 border-cyan-100 p-5">

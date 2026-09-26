@@ -11,6 +11,7 @@ const DEFAULT_ID = 'default';
 
 type SettingsBody = {
   dentalReservationFee?: number;
+  dentalReservationNote?: string;
   laserReservationFee?: number;
   consultantCommissionPercent?: number;
   wallet?: {
@@ -48,6 +49,7 @@ export async function GET() {
 
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
+    dentalReservationNote: row.dentalReservationNote ?? '',
     laserReservationFee: row.laserReservationFee,
     consultantCommissionPercent: row.consultantCommissionPercent,
     wallet: {
@@ -68,11 +70,17 @@ export async function PUT(request: Request) {
   const body = await parseJson<SettingsBody>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  if (body.dentalReservationFee != null || body.laserReservationFee != null) {
+  if (
+    body.dentalReservationFee != null ||
+    body.laserReservationFee != null ||
+    body.dentalReservationNote != null
+  ) {
     const auth = await requireAdmin('bookings');
     if (auth.error) {
       const laserAuth = await requireAdmin('laserServices');
-      if (laserAuth.error || body.dentalReservationFee != null) return auth.error;
+      if (laserAuth.error || body.dentalReservationFee != null || body.dentalReservationNote != null) {
+        return auth.error;
+      }
     }
   }
   if (body.shopHomeBanners != null || body.shopFeaturedProductIds != null) {
@@ -104,6 +112,10 @@ export async function PUT(request: Request) {
         body.dentalReservationFee != null
           ? Number(body.dentalReservationFee)
           : current.dentalReservationFee,
+      dentalReservationNote:
+        body.dentalReservationNote != null
+          ? String(body.dentalReservationNote).trim()
+          : current.dentalReservationNote,
       laserReservationFee:
         body.laserReservationFee != null
           ? Number(body.laserReservationFee)
@@ -138,6 +150,7 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({
     dentalReservationFee: row.dentalReservationFee,
+    dentalReservationNote: row.dentalReservationNote ?? '',
     laserReservationFee: row.laserReservationFee,
     consultantCommissionPercent: row.consultantCommissionPercent,
     wallet: {

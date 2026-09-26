@@ -3,6 +3,7 @@ import { verifyOtpCode } from '@/lib/auth/otp-service';
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { setPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { parseAcquisitionSource } from '@/lib/patient/acquisition-source';
 import { normalizePhone } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
@@ -12,6 +13,7 @@ type Body = {
   name?: string;
   loginKind?: 'person' | 'organization';
   organizationName?: string;
+  acquisitionSource?: string;
 };
 
 export async function POST(request: Request) {
@@ -45,6 +47,12 @@ export async function POST(request: Request) {
     return jsonError('نام سازمان را وارد کنید.');
   }
 
+  const isNewPerson = !existing && loginKind === 'person';
+  const acquisitionSource = parseAcquisitionSource(body.acquisitionSource);
+  if (isNewPerson && !acquisitionSource) {
+    return jsonError('لطفاً نحوه آشنایی با ما را انتخاب کنید.');
+  }
+
   const user = await prisma.user.upsert({
     where: { phone },
     create: { phone, name },
@@ -54,7 +62,12 @@ export async function POST(request: Request) {
 
   if (!user.profile) {
     await prisma.patientProfile.create({
-      data: { userId: user.id, franchisePercent: 30, status: 'pending' },
+      data: {
+        userId: user.id,
+        franchisePercent: 30,
+        status: 'pending',
+        ...(isNewPerson && acquisitionSource ? { acquisitionSource } : {}),
+      },
     });
   }
 

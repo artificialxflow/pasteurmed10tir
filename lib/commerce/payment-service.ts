@@ -1,5 +1,8 @@
 import { createCommission } from '@/lib/commerce/commission-service';
-import { hideMembershipInstallmentPlans } from '@/lib/commerce/installment-service';
+import {
+  createOrgMembershipInstallmentPlan,
+  hideMembershipInstallmentPlans,
+} from '@/lib/commerce/installment-service';
 import { generateCommerceId, mapMember, mapMembershipApplication } from '@/lib/commerce/mappers';
 import {
   activateShopVip,
@@ -72,9 +75,23 @@ export async function completeMembershipPayment(input: {
   referralCode?: string;
   organizationId?: string;
   orgMemberIds?: string[];
+  membershipTotalAmount?: number;
+  membershipInstallmentCount?: number;
+  zibalTrackId?: string | null;
 }) {
   const phone = normalizePhoneDigits(input.patientPhone || '');
   if (!phone) throw new Error('شماره موبایل الزامی است.');
+
+  const installmentCount = Math.min(
+    3,
+    Math.max(1, Math.round(Number(input.membershipInstallmentCount || 1))),
+  );
+  const isOrgInstallment =
+    Boolean(input.organizationId) && installmentCount > 1 && (input.orgMemberIds?.length ?? 0) > 0;
+  const totalMembershipAmount = isOrgInstallment
+    ? Math.round(Number(input.membershipTotalAmount || 0))
+    : Math.round(Number(input.amount || 0));
+  const recordedAmount = isOrgInstallment ? totalMembershipAmount : Number(input.amount || 0);
 
   const user = await prisma.user.findUnique({ where: { phone } });
   const member = await prisma.member.create({
@@ -85,7 +102,7 @@ export async function completeMembershipPayment(input: {
       planName: input.planName || null,
       patientName: input.patientName || null,
       patientPhone: phone,
-      amount: Number(input.amount || 0),
+      amount: recordedAmount,
       validityLabel: input.validityLabel || null,
       membershipDurationLabel: input.membershipDurationLabel || null,
       discountPercent:
@@ -104,7 +121,7 @@ export async function completeMembershipPayment(input: {
       planTitle: input.planName || null,
       tier: input.planId || null,
       tierLabel: input.planId === 'vip' ? 'VIP' : input.planId || null,
-      amountToman: Number(input.amount || 0) || null,
+      amountToman: recordedAmount || null,
       referralCode: input.referralCode || null,
       validityLabel: input.validityLabel || null,
       membershipDurationLabel: input.membershipDurationLabel || null,
@@ -119,6 +136,8 @@ export async function completeMembershipPayment(input: {
             : clampGroupDiscountPercent(input.groupDiscountPercent),
         organizationId: input.organizationId || undefined,
         orgMemberIds: Array.isArray(input.orgMemberIds) ? input.orgMemberIds : undefined,
+        membershipInstallmentCount: isOrgInstallment ? installmentCount : undefined,
+        membershipTotalAmount: isOrgInstallment ? totalMembershipAmount : undefined,
       },
       status: 'paid',
       source: 'payment-complete',
@@ -165,10 +184,10 @@ export async function completeMembershipPayment(input: {
   if (memberIds.length && user) {
     const org = await prisma.organization.findUnique({
       where: { representativeUserId: user.id },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (org) {
-      const perHead = Math.round(Number(input.amount || 0) / memberIds.length);
+      const perHead = Math.round(recordedAmount / memberIds.length);
       await prisma.organizationMember.updateMany({
         where: { id: { in: memberIds }, organizationId: org.id },
         data: {
@@ -177,6 +196,19 @@ export async function completeMembershipPayment(input: {
           lastPaidAt: new Date(),
         },
       });
+
+      if (isOrgInstallment && installmentCount >= 2 && installmentCount <= 3) {
+        await createOrgMembershipInstallmentPlan({
+          phone,
+          patientName: input.patientName,
+          organizationId: org.id,
+          organizationName: org.name,
+          totalAmount: totalMembershipAmount,
+          installmentCount: installmentCount as 2 | 3,
+          firstPaymentAmount: Math.round(Number(input.amount || 0)),
+          trackId: input.zibalTrackId || null,
+        });
+      }
     }
   }
 

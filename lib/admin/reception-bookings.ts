@@ -48,6 +48,8 @@ export type ReceptionItem = {
   dependentId?: string;
   dependentName?: string;
   dependentFileNumber?: string;
+  /** یادداشت ثبت‌شده هنگام رزرو (برای پذیرش) */
+  staffNote?: string;
 };
 
 function toFilterIsoDate(raw: unknown): string | null {
@@ -166,6 +168,7 @@ export function mapBookingToReception(row: Record<string, unknown>): ReceptionIt
     dependentFileNumber: row.dependentFileNumber
       ? String(row.dependentFileNumber)
       : undefined,
+    staffNote: row.staffNote ? String(row.staffNote).trim() : undefined,
   };
 }
 

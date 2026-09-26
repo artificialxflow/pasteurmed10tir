@@ -2,6 +2,7 @@ import {
   formatJalaliDate,
   patientStatusLabel,
   resolveFranchisePercent,
+  acquisitionSourceLabel,
   type PatientProfile,
   type PatientStatus,
 } from '@/lib/patient';
@@ -27,6 +28,7 @@ export type PatientReportRow = {
   baseInsurance: string;
   complementaryInsurance: string;
   zohalLabel: string;
+  acquisitionLabel: string;
   status: string;
   reviewNote: string;
   createdAt: string;
@@ -42,6 +44,7 @@ export const PATIENT_REPORT_HEADERS = [
   'بیمه پایه',
   'بیمه تکمیلی',
   'زحل',
+  'نحوه آشنایی',
   'وضعیت',
   'یادداشت',
   'تاریخ ثبت',
@@ -109,6 +112,7 @@ export function buildPatientReportRows(
     baseInsurance: insuranceName(p.baseInsuranceId),
     complementaryInsurance: insuranceName(p.complementaryInsuranceId),
     zohalLabel: zohalStatusLabel(p.zohalStatus, p.shahkarMatched),
+    acquisitionLabel: acquisitionSourceLabel(p.acquisitionSource),
     status: patientStatusLabel(p.status),
     reviewNote: p.reviewNote || '—',
     createdAt: formatJalaliDate(p.createdAt),

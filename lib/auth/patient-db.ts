@@ -1,3 +1,4 @@
+import type { AcquisitionSource } from '@/lib/patient/acquisition-source';
 import type { PatientProfile, PatientStatus } from '@/lib/patient';
 import { DEFAULT_FRANCHISE_PERCENT } from '@/lib/patient';
 import { mapDependent } from '@/lib/dependents';
@@ -32,5 +33,6 @@ export function mapDbToPatientProfile(
     updatedAt: profile?.updatedAt.toISOString() ?? user.updatedAt.toISOString(),
     organizationName: extras?.organizationName,
     isOrganizationRep: extras?.isOrganizationRep,
+    acquisitionSource: (profile?.acquisitionSource as AcquisitionSource | null) ?? undefined,
   };
 }

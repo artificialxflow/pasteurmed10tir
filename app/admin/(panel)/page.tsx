@@ -4,6 +4,10 @@ import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { AppOverviewStats } from "@/lib/admin/app-report";
+import type {
+  AcquisitionReportPeriod,
+  AcquisitionReportStats,
+} from "@/lib/admin/acquisition-report";
 import { downloadAdminOpsExport, fetchAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Booking, type BookingStats } from "@/lib/storage";
@@ -53,6 +57,11 @@ export default function AdminDashboardPage() {
   const [exportBusy, setExportBusy] = useState<string | null>(null);
   const [exportError, setExportError] = useState("");
   const [exportOk, setExportOk] = useState("");
+  const [acqPeriod, setAcqPeriod] = useState<AcquisitionReportPeriod>("month");
+  const [acqFrom, setAcqFrom] = useState("");
+  const [acqTo, setAcqTo] = useState("");
+  const [acqStats, setAcqStats] = useState<AcquisitionReportStats | null>(null);
+  const [acqExportBusy, setAcqExportBusy] = useState<string | null>(null);
   const [queue, setQueue] = useState<QueueCounts>({
     pendingPatients: 0,
     pendingInsuranceInquiries: 0,
@@ -127,6 +136,60 @@ export default function AdminDashboardPage() {
       }
     })();
   }, [period]);
+
+  useEffect(() => {
+    void (async () => {
+      const q = new URLSearchParams();
+      if (acqFrom.trim() && acqTo.trim()) {
+        q.set("from", acqFrom.trim());
+        q.set("to", acqTo.trim());
+      } else {
+        q.set("period", acqPeriod);
+      }
+      try {
+        const res = await fetchAdminOps<AcquisitionReportStats>(
+          `/api/admin/operations/acquisition-report?${q.toString()}`,
+        );
+        setAcqStats(res);
+      } catch {
+        setAcqStats(null);
+      }
+    })();
+  }, [acqPeriod, acqFrom, acqTo]);
+
+  function acquisitionQueryString(format?: string): string {
+    const q = new URLSearchParams();
+    if (acqFrom.trim() && acqTo.trim()) {
+      q.set("from", acqFrom.trim());
+      q.set("to", acqTo.trim());
+    } else {
+      q.set("period", acqPeriod);
+    }
+    if (format) q.set("format", format);
+    return q.toString();
+  }
+
+  async function exportAcquisitionReport(format: "xlsx" | "pdf" | "csv") {
+    setExportError("");
+    setExportOk("");
+    setAcqExportBusy(format);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const path = `/api/admin/operations/acquisition-report?${acquisitionQueryString(format)}`;
+    try {
+      if (format === "pdf") {
+        window.open(path, "_blank", "noopener,noreferrer");
+        setExportOk("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
+      } else {
+        const ext = format === "xlsx" ? "xlsx" : "csv";
+        await downloadAdminOpsExport(path, `acquisition-report-${stamp}.${ext}`);
+        setExportOk(format === "xlsx" ? "گزارش Excel دانلود شد." : "گزارش CSV دانلود شد.");
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");
+    } finally {
+      setAcqExportBusy(null);
+    }
+  }
 
   async function exportAppReport(format: "xlsx" | "pdf" | "csv") {
     setExportError("");
@@ -338,6 +401,99 @@ export default function AdminDashboardPage() {
             </Card>
           </div>
         ) : null}
+      </div>
+
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">نحوه آشنایی با ما</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              بر اساس تاریخ ثبت پروفایل — بازه را انتخاب کنید یا تاریخ دلخواه وارد کنید
+            </p>
+            {acqStats ? (
+              <p className="mt-1 text-xs font-bold text-teal-800">{acqStats.periodLabel}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              disabled={acqExportBusy !== null}
+              onClick={() => void exportAcquisitionReport("xlsx")}
+            >
+              {acqExportBusy === "xlsx" ? "در حال آماده‌سازی..." : "Excel آشنایی"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-3 flex flex-wrap gap-2">
+          {(
+            [
+              { id: "day", label: "امروز" },
+              { id: "week", label: "۷ روز" },
+              { id: "month", label: "۳۰ روز" },
+              { id: "all", label: "همه" },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setAcqPeriod(item.id);
+                setAcqFrom("");
+                setAcqTo("");
+              }}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-bold",
+                acqPeriod === item.id && !acqFrom && !acqTo
+                  ? "border-teal-300 bg-teal-100 text-teal-900"
+                  : "border-slate-300 bg-slate-100 text-slate-700",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-4 flex flex-wrap items-end gap-2">
+          <label className="text-xs text-slate-600">
+            از
+            <input
+              type="date"
+              className="mt-1 block rounded-lg border border-slate-200 px-2 py-1 text-sm"
+              value={acqFrom}
+              onChange={(e) => setAcqFrom(e.target.value)}
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            تا
+            <input
+              type="date"
+              className="mt-1 block rounded-lg border border-slate-200 px-2 py-1 text-sm"
+              value={acqTo}
+              onChange={(e) => setAcqTo(e.target.value)}
+            />
+          </label>
+          <p className="text-xs text-slate-500">هر دو تاریخ را پر کنید تا فیلتر سفارشی اعمال شود.</p>
+        </div>
+
+        {acqStats ? (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {acqStats.rows
+              .filter((r) => r.sourceKey !== "unset" || r.count > 0)
+              .map((row) => (
+                <Card key={row.sourceKey} hover={false} className="p-4">
+                  <p className="text-xl font-bold text-slate-800">
+                    {row.count.toLocaleString("fa-IR")}
+                  </p>
+                  <p className="text-xs text-slate-600">{row.label}</p>
+                </Card>
+              ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">در حال بارگذاری آمار…</p>
+        )}
       </div>
 
       <div>

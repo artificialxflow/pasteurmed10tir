@@ -49,6 +49,7 @@ export function mapBooking(
     dependentId: row.dependentId ?? undefined,
     dependentName: row.dependent?.name,
     dependentFileNumber: row.dependent?.fileNumber ?? undefined,
+    staffNote: row.staffNote ?? undefined,
   };
 }
 

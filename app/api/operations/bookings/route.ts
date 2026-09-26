@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       depositNonRefundable: body.depositNonRefundable !== false,
       referralCode: body.referralCode ? String(body.referralCode) : undefined,
       dateLabel: body.dateLabel ? String(body.dateLabel) : undefined,
+      dependentId: body.dependentId ? String(body.dependentId) : undefined,
+      staffNote: body.staffNote ? String(body.staffNote) : undefined,
     });
     return NextResponse.json({ booking }, { status: 201 });
   } catch (e) {

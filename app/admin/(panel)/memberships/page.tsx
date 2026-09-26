@@ -2,7 +2,7 @@
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   deleteAdminCommerce,
@@ -141,12 +141,18 @@ export default function AdminMembershipsPage() {
   }
 
   function savePlans() {
-    const cleaned = plans.map((plan) => ({
-      ...plan,
-      loanLimit: Number(plan.loanLimit || 0),
-      downPaymentPercent: Number(plan.downPaymentPercent || 0),
-      loanTermLabel: String(plan.loanTermLabel || "").trim(),
-    }));
+    const cleaned = plans.map((plan) => {
+      const priceNum = Math.max(0, Math.round(Number(plan.priceNum || 0)));
+      return {
+        ...plan,
+        priceNum,
+        price: priceNum.toLocaleString("fa-IR"),
+        loanLimit: Number(plan.loanLimit || 0),
+        downPaymentPercent: Number(plan.downPaymentPercent || 0),
+        loanTermLabel: String(plan.loanTermLabel || "").trim(),
+        terms: String(plan.terms || "").trim(),
+      };
+    });
     void putAdminCommerce<{ items: Membership[] }>("/api/admin/commerce/membership-plans", {
       items: cleaned,
     })
@@ -592,6 +598,21 @@ export default function AdminMembershipsPage() {
               </h3>
               <div className="space-y-3">
                 <div>
+                  <p className="mb-1 text-xs font-bold text-slate-500">حق عضویت (تومان)</p>
+                  <FormInput
+                    type="number"
+                    min={0}
+                    value={plan.priceNum ?? 0}
+                    onChange={(e) => {
+                      const priceNum = Number(e.target.value);
+                      updatePlan(index, {
+                        priceNum,
+                        price: priceNum.toLocaleString("fa-IR"),
+                      });
+                    }}
+                  />
+                </div>
+                <div>
                   <p className="mb-1 text-xs font-bold text-slate-500">مدت بازپرداخت وام</p>
                   <FormInput
                     value={plan.loanTermLabel || ""}
@@ -622,11 +643,18 @@ export default function AdminMembershipsPage() {
                     }
                   />
                 </div>
+                <div>
+                  <p className="mb-1 text-xs font-bold text-slate-500">توضیح طرح</p>
+                  <FormTextarea
+                    rows={3}
+                    value={plan.terms || ""}
+                    onChange={(e) => updatePlan(index, { terms: e.target.value })}
+                  />
+                </div>
                 <p className="text-xs text-slate-500">
-                  حق عضویت: {plan.price} تومان — مثال پیش‌پرداخت برای ۵۰ میلیون:{" "}
+                  حق عضویت نمایش: {plan.price} تومان — مثال پیش‌پرداخت برای ۵۰ میلیون:{" "}
                   {formatToman(Math.round(50000000 * (plan.downPaymentPercent || 0) / 100))}
                 </p>
-                <p className="text-xs text-slate-500">{plan.terms}</p>
               </div>
             </Card>
           ))}

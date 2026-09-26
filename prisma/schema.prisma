@@ -13,6 +13,14 @@ enum PatientStatus {
   rejected
 }
 
+enum AcquisitionSource {
+  social_media
+  google
+  outdoor_ads
+  previous_visitors
+  acquaintances
+}
+
 model User {
   id                 String              @id @default(cuid())
   phone              String              @unique
@@ -83,8 +91,12 @@ model PatientProfile {
   zohalPayload             Json?
   shahkarMatched           Boolean?
   zohalCheckedAt           DateTime?
+  acquisitionSource        AcquisitionSource?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
+
+  @@index([acquisitionSource])
+  @@index([createdAt])
 }
 
 model Dependent {
@@ -330,6 +342,8 @@ model ConsultationType {
 model SiteSettings {
   id                     String @id @default("default")
   dentalReservationFee   Int    @default(200000)
+  /** توضیحات نمایش‌داده‌شده در فرم رزرو دندان — از ادمین «رزروها» */
+  dentalReservationNote  String @default("")
   laserReservationFee    Int    @default(100000)
   walletRegularCap       Int    @default(15000000)
   walletMembershipVipCap Int    @default(30000000)
@@ -479,6 +493,8 @@ model Booking {
   reminders            Reminder[]
   dependentId          String?
   dependent            Dependent?    @relation(fields: [dependentId], references: [id], onDelete: SetNull)
+  /** یادداشت بیمار هنگام رزرو — برای یادآوری تلفنی پذیرش */
+  staffNote            String?
 
   @@index([userId])
   @@index([patientPhone])
