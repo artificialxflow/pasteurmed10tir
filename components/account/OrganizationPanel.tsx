@@ -7,7 +7,7 @@ import {
   applyMembershipDiscounts,
 } from "@/lib/membership/group-discount";
 import { splitInstallmentAmounts } from "@/lib/membership/installment-split";
-import { getDurationOptions, getUnitPrice, getValidityLabel, type MembershipTier } from "@/lib/membership";
+import { getDurationOptions, getUnitPrice, getValidityLabel, membershipDurationDiscountForPayment, type MembershipTier } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice, normalizePhone } from "@/lib/utils";
@@ -76,7 +76,8 @@ export function OrganizationPanel({
   const selectedMembers = members.filter((m) => selected.includes(m.id));
   const count = Math.max(1, selectedMembers.length);
   const unit = getUnitPrice(tier, planId);
-  const durationDisc = durationOptions.find((p) => p.id === planId)?.discountPercent || 0;
+  const durationPlan = durationOptions.find((p) => p.id === planId);
+  const durationDisc = membershipDurationDiscountForPayment(durationPlan);
   const contractDisc = org?.contractDiscountPercent ?? 0;
   const payable = selectedMembers.length
     ? applyMembershipDiscounts({

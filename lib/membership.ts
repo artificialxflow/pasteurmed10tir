@@ -10,6 +10,26 @@ export function getDurationOptions(): MembershipCoveragePlan[] {
   return PASTEUR_DATA.membershipCoveragePlans.map((plan) => ({ ...plan }));
 }
 
+/** نمایش تخفیف مدت در جدول — قیمت دوساله/سه‌ساله از قبل شامل ۲۰٪ است. */
+export function membershipDurationDiscountLabel(
+  plan: Pick<MembershipCoveragePlan, 'id' | 'discountPercent'>,
+): string {
+  if (plan.id === 'two-year' || plan.id === 'three-year') {
+    return `${PASTEUR_DATA.membershipPricing.twoYearDiscountPercent.toLocaleString('fa-IR')}٪`;
+  }
+  if (plan.discountPercent) {
+    return `${plan.discountPercent.toLocaleString('fa-IR')}٪`;
+  }
+  return '—';
+}
+
+export function membershipDurationDiscountForPayment(
+  plan: Pick<MembershipCoveragePlan, 'id' | 'discountPercent'> | undefined,
+): number {
+  if (!plan || plan.id === 'two-year' || plan.id === 'three-year') return 0;
+  return plan.discountPercent || 0;
+}
+
 function defaultMembershipPlans(): Membership[] {
   return PASTEUR_DATA.memberships
     .filter((m) => m.id === 'regular' || m.id === 'vip')
@@ -95,7 +115,39 @@ export const LOAN_REQUEST_TERM_OPTIONS: Array<{ months: number; interestRate: nu
   { months: 12, interestRate: STANDARD_LOAN_INTEREST_RATE },
   { months: 18, interestRate: STANDARD_LOAN_INTEREST_RATE },
   { months: 24, interestRate: STANDARD_LOAN_INTEREST_RATE },
+  { months: 36, interestRate: STANDARD_LOAN_INTEREST_RATE },
 ];
+
+export function parseMembershipTier(value: unknown): MembershipTier {
+  return value === 'vip' ? 'vip' : 'regular';
+}
+
+export function getMaxLoanMonths(tier: MembershipTier, plans?: Membership[]): number {
+  const plan = getLoanPlan(tier, plans);
+  const parsed = Number(plan?.loanTermLabel?.replace(/[^\d]/g, '') || 0);
+  if (parsed > 0) return Math.min(36, parsed);
+  return tier === 'vip' ? 36 : 18;
+}
+
+export function getLoanRequestTermOptionsForTier(
+  tier: MembershipTier,
+  plans?: Membership[],
+): Array<{ months: number; interestRate: number }> {
+  const max = getMaxLoanMonths(tier, plans);
+  return LOAN_REQUEST_TERM_OPTIONS.filter((option) => option.months <= max);
+}
+
+export function isAllowedLoanRequestTerm(
+  months: number,
+  tier: MembershipTier,
+  plans?: Membership[],
+): boolean {
+  const raw = Number(months);
+  if (!Number.isFinite(raw) || raw < 1) return false;
+  const term = clampLoanMonths(raw, 12);
+  if (term > getMaxLoanMonths(tier, plans)) return false;
+  return LOAN_REQUEST_TERM_OPTIONS.some((option) => option.months === term);
+}
 
 export function isZeroInterestLoanTerm(months: number): boolean {
   return (ZERO_INTEREST_LOAN_MONTHS as readonly number[]).includes(Number(months));
@@ -154,7 +206,8 @@ export function calculateLoan({
   const plan = getLoanPlan(tier, plans);
   const limit = Number(plan?.loanLimit || 0);
   const validAmount = Math.min(Math.max(0, Number(amount || 0)), limit);
-  const term = Math.max(1, Number(months || 1));
+  let term = clampLoanMonths(months, 12);
+  term = Math.min(term, getMaxLoanMonths(tier, plans));
   const downPaymentPercent = getDownPaymentPercent(tier, plans);
   const downPaymentAmount = computeDownPayment(validAmount, downPaymentPercent);
   const remaining = computeFinancedAmount(validAmount, downPaymentAmount);
@@ -170,5 +223,35 @@ export function calculateLoan({
     totalRepayment,
     installment,
     months: term,
+  };
+}
+
+/** Gross loan → financed principal + total repayment (matches membership calculator). */
+export function resolveMedicalLoanForInstallment(input: {
+  loanAmount: number;
+  months?: number | string | null;
+  tier?: unknown;
+  plans?: Membership[];
+}) {
+  const tier = parseMembershipTier(input.tier);
+  const gross = Math.max(0, Math.round(Number(input.loanAmount || 0)));
+  const maxMonths = getMaxLoanMonths(tier, input.plans);
+  let months = clampLoanMonths(input.months ?? undefined, 12);
+  months = Math.min(months, maxMonths);
+  const calc = calculateLoan({
+    tier,
+    amount: gross,
+    months,
+    plans: input.plans,
+  });
+  return {
+    tier,
+    months: calc.months,
+    grossAmount: calc.validAmount,
+    downPaymentPercent: calc.downPaymentPercent,
+    downPaymentAmount: calc.downPaymentAmount,
+    financedPrincipal: calc.remaining,
+    totalRepayment: calc.totalRepayment,
+    installment: calc.installment,
   };
 }

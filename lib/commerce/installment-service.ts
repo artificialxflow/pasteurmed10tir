@@ -3,10 +3,10 @@ import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { generateCommerceId } from '@/lib/commerce/mappers';
 import { loadWalletSettings } from '@/lib/commerce/wallet-service';
 import {
-  clampLoanMonths,
-  computeLoanRepaymentTotal,
   isZeroInterestLoanTerm,
+  resolveMedicalLoanForInstallment,
 } from '@/lib/membership';
+import type { Membership } from '@/lib/data';
 import type {
   InstallmentItemStatus,
   InstallmentPaymentMethod,
@@ -280,21 +280,30 @@ export async function createFacilityInstallmentPlan(input: {
   });
 }
 
-/** Medical/membership loan after admin approve — 0% for 1–3 months, else +12%. */
+/** Medical/membership loan after admin approve — 0% for 1–3 months, else +12% per year × term. */
 export async function createLoanInstallmentPlan(input: {
   phone?: string | null;
   patientName?: string;
+  /** Gross loan amount (before down payment). */
   amount: number;
   months?: number;
+  tier?: string | null;
+  plans?: Membership[];
   linkedRequestId?: string;
   title?: string;
 }) {
   const phone = normalizePhoneDigits(input.phone || '');
   if (!phone) return null;
-  const principal = Math.max(0, Number(input.amount || 0));
-  if (!principal) return null;
-  const months = clampLoanMonths(input.months, 12);
-  const total = computeLoanRepaymentTotal(principal, months);
+  const gross = Math.max(0, Number(input.amount || 0));
+  if (!gross) return null;
+
+  const resolved = resolveMedicalLoanForInstallment({
+    loanAmount: gross,
+    months: input.months,
+    tier: input.tier,
+    plans: input.plans,
+  });
+  const { months, totalRepayment: total, financedPrincipal, downPaymentPercent } = resolved;
   const dueDates = buildDueDates(months);
   const rateNote = isZeroInterestLoanTerm(months)
     ? 'سود ۰٪'
@@ -308,7 +317,7 @@ export async function createLoanInstallmentPlan(input: {
       source: 'loan',
       title:
         input.title ||
-        `اقساط وام درمانی ${total.toLocaleString('fa-IR')} تومان (${months} ماه، ${rateNote})`,
+        `اقساط وام درمانی ${total.toLocaleString('fa-IR')} تومان (${months} ماه، ${rateNote} · مانده ${financedPrincipal.toLocaleString('fa-IR')} پس از پیش‌پرداخت ${downPaymentPercent.toLocaleString('fa-IR')}٪)`,
       totalAmount: total,
       paidAmount: 0,
       installmentCount: months,

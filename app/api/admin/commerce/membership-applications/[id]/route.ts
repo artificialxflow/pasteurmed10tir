@@ -3,6 +3,8 @@ import { createLoanInstallmentPlan } from '@/lib/commerce/installment-service';
 import { mapMembershipApplication } from '@/lib/commerce/mappers';
 import { SoftDeleteError, softDeleteMembershipApplication } from '@/lib/commerce/soft-delete';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { parseMembershipTier } from '@/lib/membership';
+import { loadMembershipPlansFromDb } from '@/lib/membership/server-plans';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -58,12 +60,17 @@ export async function PATCH(request: Request, context: RouteContext) {
         updated.extra && typeof updated.extra === 'object' && !Array.isArray(updated.extra)
           ? (updated.extra as Record<string, unknown>)
           : {};
-      const months = Number(extra.loanMonths || extra.months || 12);
+      const plans = await loadMembershipPlansFromDb();
+      const tier = parseMembershipTier(extra.tier ?? extra.loanTier ?? updated.tier);
+      const rawMonths = Number(extra.loanMonths ?? extra.months);
+      const months = Number.isFinite(rawMonths) && rawMonths > 0 ? rawMonths : undefined;
       await createLoanInstallmentPlan({
         phone: updated.phone,
         patientName: updated.patientName || undefined,
         amount: updated.loanAmount,
-        months: Number.isFinite(months) ? months : 12,
+        months,
+        tier,
+        plans,
         linkedRequestId: updated.id,
       });
     }

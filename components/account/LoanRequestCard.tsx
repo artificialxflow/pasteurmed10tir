@@ -15,14 +15,19 @@ import {
   type LoanDocKind,
 } from "@/lib/loan-documents/constants";
 import {
-  LOAN_REQUEST_TERM_OPTIONS,
+  calculateLoan,
+  formatToman,
+  getLoanRequestTermOptionsForTier,
+  getMembershipPlans,
+  isAllowedLoanRequestTerm,
   loanTermInterestLabel,
+  type MembershipTier,
 } from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { formatPrice } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 type LoanApp = {
   id?: string;
@@ -52,7 +57,8 @@ export function LoanRequestCard({
   variant: "web" | "app";
 }) {
   const [amount, setAmount] = useState("50000000");
-  const [months, setMonths] = useState("12");
+  const [tier, setTier] = useState<MembershipTier>("regular");
+  const [months, setMonths] = useState("18");
   const [nationalId, setNationalId] = useState(profileNationalId || "");
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -74,6 +80,28 @@ export function LoanRequestCard({
       .catch(() => setDocs([]));
   }, []);
 
+  const membershipPlans = useMemo(() => getMembershipPlans(), []);
+  const termOptions = useMemo(
+    () => getLoanRequestTermOptionsForTier(tier, membershipPlans),
+    [tier, membershipPlans],
+  );
+  const loanPreview = useMemo(
+    () =>
+      calculateLoan({
+        tier,
+        amount,
+        months: Number(months),
+        plans: membershipPlans,
+      }),
+    [tier, amount, months, membershipPlans],
+  );
+
+  useEffect(() => {
+    if (!termOptions.some((term) => String(term.months) === months)) {
+      setMonths(String(termOptions[termOptions.length - 1]?.months ?? 12));
+    }
+  }, [termOptions, months]);
+
   useEffect(() => {
     reload();
   }, [reload]);
@@ -93,7 +121,7 @@ export function LoanRequestCard({
       setError("مبلغ وام معتبر نیست.");
       return;
     }
-    if (!LOAN_REQUEST_TERM_OPTIONS.some((term) => term.months === loanMonths)) {
+    if (!isAllowedLoanRequestTerm(loanMonths, tier, membershipPlans)) {
       setError("مدت بازپرداخت معتبر نیست.");
       return;
     }
@@ -116,6 +144,8 @@ export function LoanRequestCard({
         loanAmount,
         loanMonths,
         months: loanMonths,
+        tier,
+        loanTier: tier,
         source: "loan-request",
         planTitle: "درخواست وام درمانی",
         status: "pending",
@@ -158,6 +188,16 @@ export function LoanRequestCard({
 
       <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2">
         <div>
+          <FormLabel>نوع طرح وام</FormLabel>
+          <FormSelect
+            value={tier}
+            onChange={(e) => setTier(e.target.value as MembershipTier)}
+          >
+            <option value="regular">عادی (حداکثر ۱۸ ماه)</option>
+            <option value="vip">VIP (حداکثر ۳۶ ماه)</option>
+          </FormSelect>
+        </div>
+        <div>
           <FormLabel>مبلغ وام (تومان)</FormLabel>
           <FormInput
             type="number"
@@ -171,15 +211,21 @@ export function LoanRequestCard({
         <div>
           <FormLabel>مدت بازپرداخت</FormLabel>
           <FormSelect value={months} onChange={(e) => setMonths(e.target.value)}>
-            {LOAN_REQUEST_TERM_OPTIONS.map((term) => (
+            {termOptions.map((term) => (
               <option key={term.months} value={term.months}>
                 {loanTermInterestLabel(term.months, term.interestRate)}
               </option>
             ))}
           </FormSelect>
           <p className="mt-1 text-[11px] leading-5 text-slate-500">
-            گزینه‌های ۱ تا ۳ ماهه بدون سود برای بدهی‌های کوچک تا سر برج است.
+            سود ۱۲٪ سالانه × تعداد سال (مثلاً ۲۴ ماه ≈ ۲۴٪ ساده روی مانده پس از پیش‌پرداخت).
           </p>
+        </div>
+        <div className="sm:col-span-2 rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2 text-xs leading-6 text-amber-950">
+          پیش‌نمایش: پیش‌پرداخت {loanPreview.downPaymentPercent.toLocaleString("fa-IR")}٪ ={" "}
+          {formatToman(loanPreview.downPaymentAmount)} · مانده {formatToman(loanPreview.remaining)} ·
+          جمع بازپرداخت {formatToman(loanPreview.totalRepayment)} (
+          {loanPreview.months.toLocaleString("fa-IR")} قسط)
         </div>
         <div className="sm:col-span-2">
           <FormLabel>کد ملی (الزامی)</FormLabel>

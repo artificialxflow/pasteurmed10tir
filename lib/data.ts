@@ -183,9 +183,12 @@ export interface Membership {
 export interface MembershipPricing {
   regularPerPerson: number;
   regularTwoYearPerPerson: number;
+  regularThreeYearPerPerson: number;
   vipPerPerson: number;
   vipTwoYearPerPerson: number;
+  vipThreeYearPerPerson: number;
   twoYearDiscountPercent: number;
+  threeYearDiscountPercent: number;
 }
 
 export interface MembershipDurationOption {
@@ -829,9 +832,12 @@ export const PASTEUR_DATA = {
   membershipPricing: {
     regularPerPerson: 1000000,
     regularTwoYearPerPerson: 1600000,
+    regularThreeYearPerPerson: 2400000,
     vipPerPerson: 1600000,
     vipTwoYearPerPerson: 2560000,
+    vipThreeYearPerPerson: 3840000,
     twoYearDiscountPercent: 20,
+    threeYearDiscountPercent: 20,
     groupDiscountTiers: [
       { minMembers: 10, percent: 10 },
       { minMembers: 20, percent: 20 },
@@ -842,7 +848,8 @@ export const PASTEUR_DATA = {
 
   membershipDurationOptions: [
     { id: 'one-year', title: 'یک‌ساله', years: 1, discountPercent: 0 },
-    { id: 'two-year', title: 'دوساله با ۲۰٪ تخفیف', years: 2, discountPercent: 20 },
+    { id: 'two-year', title: 'دوساله با ۲۰٪ تخفیف', years: 2, discountPercent: 0 },
+    { id: 'three-year', title: 'سه‌ساله با ۲۰٪ تخفیف', years: 3, discountPercent: 0 },
   ],
 
   membershipCommonServices: [
@@ -852,7 +859,7 @@ export const PASTEUR_DATA = {
     'بدون دوره انتظار و امکان استفاده از خدمات پس از ثبت‌نام',
     'لیست قیمت خدمات دندانپزشکی در صفحه تعرفه‌ها — طبق ثبت مرکز',
     'ارائه خدمات به بیماران فاقد بیمه پایه و تکمیلی',
-    'امکان انتخاب عضویت یک‌ساله یا دوساله هنگام پرداخت',
+    'امکان انتخاب عضویت یک‌ساله، دوساله یا سه‌ساله هنگام پرداخت',
     'حضور متخصصان متعهد و مجرب در خدمات دندانپزشکی',
     'قرعه‌کشی هفتگی و ارائه جوایز به مشترکین تحت درمان',
     'تخفیف فلورایدتراپی تا سقف ۱۰٪',
@@ -877,7 +884,17 @@ export const PASTEUR_DATA = {
       vipPerPerson: 2560000,
       regularValidity: '۲ ساله',
       vipValidity: '۲ ساله',
-      discountPercent: 20,
+      discountPercent: 0,
+    },
+    {
+      id: 'three-year',
+      title: 'عضویت سه‌ساله',
+      duration: '۳ ساله',
+      regularPerPerson: 2400000,
+      vipPerPerson: 3840000,
+      regularValidity: '۳ ساله',
+      vipValidity: '۳ ساله',
+      discountPercent: 0,
     },
   ],
 

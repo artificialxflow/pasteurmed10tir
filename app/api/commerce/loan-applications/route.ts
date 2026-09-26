@@ -2,6 +2,12 @@ import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { generateCommerceId, mapMembershipApplication } from '@/lib/commerce/mappers';
 import { LOAN_DOC_REQUIRED_KINDS } from '@/lib/loan-documents/constants';
 import { mapLoanDocumentPublic } from '@/lib/loan-documents/storage';
+import {
+  getMaxLoanMonths,
+  isAllowedLoanRequestTerm,
+  parseMembershipTier,
+} from '@/lib/membership';
+import { loadMembershipPlansFromDb } from '@/lib/membership/server-plans';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { requirePatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
@@ -22,6 +28,14 @@ export async function POST(request: Request) {
   const loanAmount = Number(body.loanAmount || 0);
   if (!loanAmount || loanAmount < 1) {
     return jsonError('مبلغ وام معتبر نیست.');
+  }
+
+  const plans = await loadMembershipPlansFromDb();
+  const tier = parseMembershipTier(body.tier ?? body.loanTier);
+  const loanMonths = Number(body.loanMonths ?? body.months);
+  if (!isAllowedLoanRequestTerm(loanMonths, tier, plans)) {
+    const max = getMaxLoanMonths(tier, plans);
+    return jsonError(`مدت بازپرداخت معتبر نیست (حداکثر ${max.toLocaleString('fa-IR')} ماه برای طرح ${tier === 'vip' ? 'VIP' : 'عادی'}).`);
   }
 
   const nationalId = normalizeNationalId(String(body.nationalId || ''));
@@ -56,6 +70,8 @@ export async function POST(request: Request) {
       phone,
       nationalId,
       loanAmount,
+      tier,
+      tierLabel: tier === 'vip' ? 'VIP' : 'عادی',
       source: 'loan-request',
       planTitle: body.planTitle ? String(body.planTitle) : 'درخواست وام درمانی',
       status: 'pending',

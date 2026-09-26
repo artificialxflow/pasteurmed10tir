@@ -20,6 +20,8 @@ import {
   getUnitPrice,
   getValidityLabel,
   isZeroInterestLoanTerm,
+  membershipDurationDiscountForPayment,
+  membershipDurationDiscountLabel,
   normalizeMemberCount,
   type MembershipTier,
 } from "@/lib/membership";
@@ -180,7 +182,10 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   const subtotalToman = unitPrice * memberCount;
   const durationPlan = durationOptions.find((p) => p.id === form.planId);
   const validityLabel = getValidityLabel(form.tier, form.planId);
-  const discountPercent = durationPlan?.discountPercent || 0;
+  const discountPercent = membershipDurationDiscountForPayment(durationPlan);
+  const discountDisplay = durationPlan
+    ? membershipDurationDiscountLabel(durationPlan)
+    : '—';
   const suggestedGroupDiscount = resolveGroupDiscountPercent(memberCount);
   const groupDiscountPercent = clampGroupDiscountPercent(form.groupDiscountPercent);
   const finalAmountToman = applyMembershipDiscounts({
@@ -191,7 +196,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   const amountPreview = [
     `${formatToman(unitPrice)} × ${memberCount.toLocaleString("fa-IR")} نفر = ${formatToman(subtotalToman)}`,
     `مدت: ${validityLabel}`,
-    discountPercent ? `تخفیف مدت ${discountPercent.toLocaleString("fa-IR")}٪` : null,
+    discountDisplay !== '—' ? `تخفیف مدت ${discountDisplay}` : null,
     groupDiscountPercent
       ? `تخفیف مجموعه ${groupDiscountPercent.toLocaleString("fa-IR")}٪`
       : null,
@@ -241,7 +246,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const count = normalizeMemberCount(form.memberCount);
     const unit = getUnitPrice(form.tier, form.planId);
     const subtotal = unit * count;
-    const durationDisc = plan?.discountPercent || 0;
+    const durationDisc = membershipDurationDiscountForPayment(plan);
     const groupDisc = clampGroupDiscountPercent(form.groupDiscountPercent);
     const afterPlan = applyMembershipDiscounts({
       subtotal,
@@ -293,7 +298,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const count = normalizeMemberCount(form.memberCount);
     const unit = getUnitPrice(form.tier, form.planId);
     const subtotal = unit * count;
-    const durationDisc = plan?.discountPercent || 0;
+    const durationDisc = membershipDurationDiscountForPayment(plan);
     const groupDisc = clampGroupDiscountPercent(form.groupDiscountPercent);
     const total = applyMembershipDiscounts({
       subtotal,
@@ -390,7 +395,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     const membershipDurationLabel = getValidityLabel(quick.tier, quick.planId);
     const plan = durationOptions.find((p) => p.id === quick.planId);
     const membership = membershipPlans.find((m) => m.id === quick.tier);
-    const durationDisc = plan?.discountPercent || 0;
+    const durationDisc = membershipDurationDiscountForPayment(plan);
     const groupDisc = clampGroupDiscountPercent(quick.groupDiscountPercent);
     const afterPlan = applyMembershipDiscounts({
       subtotal,
@@ -707,9 +712,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                     <strong>{plan.title}</strong>
                     <br />
                     <span className="text-slate-500">{plan.duration}</span>
-                    {plan.discountPercent ? (
+                    {membershipDurationDiscountLabel(plan) !== '—' ? (
                       <span className="mt-1 block text-amber-700">
-                        تخفیف {plan.discountPercent.toLocaleString("fa-IR")}٪
+                        تخفیف {membershipDurationDiscountLabel(plan)}
                       </span>
                     ) : null}
                   </span>
@@ -742,11 +747,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                     <td className="p-3 font-bold">
                       {plan.title} — {plan.duration}
                     </td>
-                    <td className="p-3">
-                      {plan.discountPercent
-                        ? `${plan.discountPercent.toLocaleString("fa-IR")}٪`
-                        : "—"}
-                    </td>
+                    <td className="p-3">{membershipDurationDiscountLabel(plan)}</td>
                     <td className="p-3">{formatToman(plan.regularPerPerson)}</td>
                     <td className="p-3 font-bold text-amber-700">
                       {formatToman(plan.vipPerPerson)}
@@ -1145,7 +1146,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   const unit = getUnitPrice(quick.tier!, quick.planId);
                   const plan = durationOptions.find((p) => p.id === quick.planId);
                   const subtotal = unit * count;
-                  const durationDisc = plan?.discountPercent || 0;
+                  const durationDisc = membershipDurationDiscountForPayment(plan);
                   const groupDisc = clampGroupDiscountPercent(quick.groupDiscountPercent);
                   const payable = applyMembershipDiscounts({
                     subtotal,
@@ -1155,7 +1156,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   return [
                     `${formatToman(unit)} × ${count.toLocaleString("fa-IR")} نفر = ${formatToman(subtotal)}`,
                     `مدت: ${getValidityLabel(quick.tier!, quick.planId)}`,
-                    durationDisc ? `تخفیف مدت ${durationDisc.toLocaleString("fa-IR")}٪` : null,
+                    plan && membershipDurationDiscountLabel(plan) !== '—'
+                      ? `تخفیف مدت ${membershipDurationDiscountLabel(plan)}`
+                      : null,
                     groupDisc ? `تخفیف مجموعه ${groupDisc.toLocaleString("fa-IR")}٪` : null,
                     `قابل پرداخت: ${formatToman(payable)}`,
                   ]
