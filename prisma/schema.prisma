@@ -386,6 +386,13 @@ enum ConsultationStatus {
   answered
 }
 
+enum ConsultationVideoStatus {
+  none
+  scheduled
+  in_call
+  completed
+}
+
 enum FieldStaffKind {
   nurse
   physician
@@ -552,6 +559,7 @@ model FollowUpCase {
   satisfactionDoctor       Int?
   satisfactionAssistants   Int?
   satisfactionReception    Int?
+  satisfactionEnvironment  Int?
   outcome                  FollowUpOutcome
   attendedAction           FollowUpAttendedAction?
   dissatisfactionTarget    FollowUpDissatisfactionTarget?
@@ -596,6 +604,9 @@ model Consultation {
   preferredTime          String?
   preferredTimeLabel     String?
   status                 ConsultationStatus @default(pending)
+  /** Opaque Jitsi room id — set when video session is opened */
+  videoRoomName          String?
+  videoStatus            ConsultationVideoStatus @default(none)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   dependentId            String?
@@ -605,6 +616,7 @@ model Consultation {
   @@index([patientPhone])
   @@index([status])
   @@index([dependentId])
+  @@index([videoStatus])
 }
 
 model InsuranceInquiry {

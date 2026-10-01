@@ -35,6 +35,7 @@ type CaseItem = {
   satisfactionDoctor: number | null;
   satisfactionAssistants: number | null;
   satisfactionReception: number | null;
+  satisfactionEnvironment: number | null;
   outcome: string;
   outcomeLabel: string;
   attendedAction?: string;
@@ -112,6 +113,10 @@ export default function AdminFollowUpPage() {
   const [stats, setStats] = useState<SatisfactionStats | null>(null);
   const [formDoctorNames, setFormDoctorNames] = useState<string[]>([]);
   const [satisfactionDoctorNames, setSatisfactionDoctorNames] = useState<string[]>([]);
+  const [patientSuggestions, setPatientSuggestions] = useState<
+    Array<{ name: string; phone: string }>
+  >([]);
+  const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
 
   const [form, setForm] = useState({
     patientName: "",
@@ -121,6 +126,7 @@ export default function AdminFollowUpPage() {
     satisfactionDoctor: "",
     satisfactionAssistants: "",
     satisfactionReception: "",
+    satisfactionEnvironment: "",
     outcome: "attended",
     attendedAction: "appointment_needed",
     dissatisfactionTarget: "doctor",
@@ -206,6 +212,28 @@ export default function AdminFollowUpPage() {
     }
   }, [tab, loadCases, loadSatisfaction]);
 
+  useEffect(() => {
+    const q = form.patientName.trim();
+    if (q.length < 2) {
+      setPatientSuggestions([]);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void fetchAdminOps<{ items: Array<{ name: string; phone: string }> }>(
+        `/api/admin/operations/follow-up/patients?q=${encodeURIComponent(q)}`,
+      )
+        .then((data) => setPatientSuggestions(data.items || []))
+        .catch(() => setPatientSuggestions([]));
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [form.patientName]);
+
+  function pickApprovedPatient(item: { name: string; phone: string }) {
+    setForm((f) => ({ ...f, patientName: item.name, patientPhone: item.phone }));
+    setShowPatientSuggestions(false);
+    setPatientSuggestions([]);
+  }
+
   async function submitNew(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -282,13 +310,44 @@ export default function AdminFollowUpPage() {
           {showForm ? (
             <Card hover={false} className="p-5">
               <form onSubmit={submitNew} className="grid gap-4 md:grid-cols-2">
-                <div>
+                <div className="relative">
                   <FormLabel>نام بیمار</FormLabel>
                   <FormInput
                     required
+                    autoComplete="off"
                     value={form.patientName}
-                    onChange={(e) => setForm((f) => ({ ...f, patientName: e.target.value }))}
+                    onChange={(e) => {
+                      setForm((f) => ({ ...f, patientName: e.target.value }));
+                      setShowPatientSuggestions(true);
+                    }}
+                    onFocus={() => setShowPatientSuggestions(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setShowPatientSuggestions(false), 150);
+                    }}
+                    placeholder="جستجو در بیماران تأییدشده…"
                   />
+                  {showPatientSuggestions && patientSuggestions.length > 0 ? (
+                    <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                      {patientSuggestions.map((item) => (
+                        <li key={`${item.phone}-${item.name}`}>
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-right text-sm hover:bg-teal-50"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => pickApprovedPatient(item)}
+                          >
+                            <span className="font-bold text-slate-900">{item.name}</span>
+                            <span className="font-mono text-xs text-slate-500" dir="ltr">
+                              {item.phone}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <p className="mt-1 text-xs text-slate-500">
+                    با تایپ نام، بیماران تأییدشده پیشنهاد می‌شوند.
+                  </p>
                 </div>
                 <div>
                   <FormLabel>شماره تماس</FormLabel>
@@ -370,6 +429,11 @@ export default function AdminFollowUpPage() {
                   label="رضایت از پذیرش"
                   value={form.satisfactionReception}
                   onChange={(v) => setForm((f) => ({ ...f, satisfactionReception: v }))}
+                />
+                <RatingSelect
+                  label="رضایت از محیط"
+                  value={form.satisfactionEnvironment}
+                  onChange={(v) => setForm((f) => ({ ...f, satisfactionEnvironment: v }))}
                 />
                 <div className="md:col-span-2">
                   <FormLabel>نتیجه</FormLabel>
@@ -619,6 +683,7 @@ export default function AdminFollowUpPage() {
                 <option value="doctor">دکتر</option>
                 <option value="assistants">دستیار</option>
                 <option value="reception">پذیرش</option>
+                <option value="environment">محیط</option>
               </FormSelect>
             </div>
           </div>

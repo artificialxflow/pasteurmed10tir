@@ -26,14 +26,14 @@ import { isAppDental } from "./types";
 import { DentalReservationNotice } from "@/components/dental/DentalReservationNotice";
 
 type StepName = "type" | "doctor" | "day" | "time" | "info";
-type BookingType = "visit" | "treatment" | null;
+type BookingType = "visit" | "treatment" | "waitlist" | null;
 
 type BookingState = {
   type: BookingType;
   doctorId: number | null;
   day: string | null;
   appointmentDate: string | null;
-  timeValue: number | null;
+  timeValue: number | string | null;
   timeLabel: string | null;
   patientName: string;
   patientPhone: string;
@@ -50,6 +50,17 @@ const STEP_LABELS: Record<StepName, string> = {
   time: "انتخاب زمان",
   info: "اطلاعات مراجع",
 };
+
+const WAITLIST_TIME_VALUE = "waitlist";
+const WAITLIST_TIME_LABEL = "لیست انتظار";
+const ALL_WEEKDAYS = [...PERSIAN_WEEKDAY_ORDER];
+
+function bookingTypeLabel(type: BookingType): string {
+  if (type === "visit") return "ویزیت";
+  if (type === "treatment") return "شروع یا ادامه درمان";
+  if (type === "waitlist") return "لیست انتظار";
+  return "—";
+}
 
 const INITIAL_STATE: BookingState = {
   type: null,
@@ -83,12 +94,6 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const doctorFromQuery = searchParams.get("doctor");
   const dayFromQuery = searchParams.get("day");
 
-  const steps = useMemo<StepName[]>(() => {
-    if (doctorFromQuery && dayFromQuery) return ["type", "time", "info"];
-    if (doctorFromQuery) return ["type", "day", "time", "info"];
-    return ["doctor", "type", "day", "time", "info"];
-  }, [doctorFromQuery, dayFromQuery]);
-
   const [state, setState] = useState<BookingState>(() => {
     const doctorId = doctorFromQuery ? parseInt(doctorFromQuery, 10) : null;
     return {
@@ -113,6 +118,19 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
 
+  const steps = useMemo<StepName[]>(() => {
+    const withTime = state.type !== "waitlist";
+    if (doctorFromQuery && dayFromQuery) {
+      return withTime ? ["type", "time", "info"] : ["type", "info"];
+    }
+    if (doctorFromQuery) {
+      return withTime ? ["type", "day", "time", "info"] : ["type", "day", "info"];
+    }
+    return withTime
+      ? ["doctor", "type", "day", "time", "info"]
+      : ["doctor", "type", "day", "info"];
+  }, [doctorFromQuery, dayFromQuery, state.type]);
+
   useEffect(() => {
     void fetchPublic<{ dentalReservationFee: number; dentalReservationNote?: string }>(
       "/api/content/settings",
@@ -133,7 +151,12 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   }, []);
 
   useEffect(() => {
-    if (!state.doctorId || !state.appointmentDate || !state.type) {
+    if (
+      !state.doctorId ||
+      !state.appointmentDate ||
+      !state.type ||
+      state.type === "waitlist"
+    ) {
       setOccupiedSlots([]);
       return;
     }
@@ -196,10 +219,14 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
+  const isWaitlist = state.type === "waitlist";
   const monthCalendars = useMemo(() => {
     if (!doctor) return [];
-    return buildPersianMonthCalendars(Object.keys(doctor.schedule || {}), 2);
-  }, [doctor]);
+    const workingDays = isWaitlist
+      ? ALL_WEEKDAYS
+      : Object.keys(doctor.schedule || {});
+    return buildPersianMonthCalendars(workingDays, 2);
+  }, [doctor, isWaitlist]);
   const listedDentists = useMemo(() => {
     return dentists.filter((d) => {
       const id = String(d.specialtyId || "").toLowerCase();
@@ -220,6 +247,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
     if (currentStep !== "time") return;
     if (!state.type) {
       setCurrentStep("type");
+      setError("");
+      return;
+    }
+    if (state.type === "waitlist") {
+      setCurrentStep("info");
       setError("");
     }
   }, [hydrated, currentStep, state.type]);
@@ -259,7 +291,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("لطفاً تاریخ نوبت را انتخاب کنید.");
       return;
     }
-    if (currentStep === "time") {
+    if (currentStep === "time" && state.type !== "waitlist") {
       if (!state.type) {
         showError("ابتدا نوع خدمت را انتخاب کنید.");
         showStep("type");
@@ -305,8 +337,61 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("شماره موبایل معتبر وارد کنید.");
       return;
     }
-    if (!doctor || !state.type || !state.appointmentDate || !state.day || state.timeValue == null) {
+    const waitlist = state.type === "waitlist";
+    if (
+      !doctor ||
+      !state.type ||
+      !state.appointmentDate ||
+      !state.day ||
+      (!waitlist && state.timeValue == null)
+    ) {
       showError("اطلاعات رزرو ناقص است.");
+      return;
+    }
+
+    const timeValue = waitlist ? WAITLIST_TIME_VALUE : state.timeValue;
+    const timeLabel = waitlist ? WAITLIST_TIME_LABEL : state.timeLabel;
+    const baseAmount = waitlist ? 0 : reservationFee;
+
+    const proceed = () =>
+      resolveReferralDiscount(baseAmount, waitlist ? "" : state.referralCode).then((referral) => {
+        if (referral.error) {
+          showError(referral.error);
+          return;
+        }
+        PasteurStorage.setPendingPayment({
+          kind: "booking",
+          doctorId: doctor.id,
+          doctorName: doctor.name,
+          specialty: doctor.specialty,
+          type: state.type,
+          typeLabel: bookingTypeLabel(state.type),
+          day: state.day,
+          appointmentDate: state.appointmentDate,
+          appointmentDateLabel: state.appointmentDate
+            ? formatBookingDateLabel(state.appointmentDate)
+            : undefined,
+          timeValue,
+          timeLabel,
+          patientName,
+          patientPhone: state.patientPhone.trim(),
+          dependentId: state.dependentId || undefined,
+          amount: waitlist ? 0 : referral.payable,
+          visitFee: 350000,
+          isDeposit: !waitlist,
+          paymentLabel: waitlist ? "ثبت لیست انتظار" : "بیعانه رزرو نوبت",
+          referralCode: waitlist ? undefined : referral.referralCode || state.referralCode,
+          referralDiscountPercent: waitlist ? 0 : referral.referralDiscountPercent,
+          referralDiscountAmount: waitlist ? 0 : referral.referralDiscountAmount,
+          onlineInsuranceCovered: state.onlineInsuranceCovered,
+          staffNote: state.staffNote.trim() || undefined,
+        });
+        PasteurStorage.clearPendingBooking();
+        router.push(`${basePath}/confirm`);
+      });
+
+    if (waitlist) {
+      void proceed().catch(() => showError("ثبت لیست انتظار ناموفق بود. دوباره تلاش کنید."));
       return;
     }
 
@@ -314,48 +399,14 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       doctorId: doctor.id,
       appointmentDate: state.appointmentDate,
       type: state.type,
-      timeValue: state.timeValue,
+      timeValue: state.timeValue as number | string,
     })
       .then((taken) => {
         if (taken) {
           showError("این زمان دیگر در دسترس نیست. لطفاً زمان دیگری انتخاب کنید.");
           return;
         }
-        return resolveReferralDiscount(reservationFee, state.referralCode).then((referral) => {
-          if (referral.error) {
-            showError(referral.error);
-            return;
-          }
-          PasteurStorage.setPendingPayment({
-            kind: "booking",
-            doctorId: doctor.id,
-            doctorName: doctor.name,
-            specialty: doctor.specialty,
-            type: state.type,
-            typeLabel: state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان",
-            day: state.day,
-            appointmentDate: state.appointmentDate,
-            appointmentDateLabel: state.appointmentDate
-              ? formatBookingDateLabel(state.appointmentDate)
-              : undefined,
-            timeValue: state.timeValue,
-            timeLabel: state.timeLabel,
-            patientName,
-            patientPhone: state.patientPhone.trim(),
-            dependentId: state.dependentId || undefined,
-            amount: referral.payable,
-            visitFee: 350000,
-            isDeposit: true,
-            paymentLabel: "بیعانه رزرو نوبت",
-            referralCode: referral.referralCode || state.referralCode,
-            referralDiscountPercent: referral.referralDiscountPercent,
-            referralDiscountAmount: referral.referralDiscountAmount,
-            onlineInsuranceCovered: state.onlineInsuranceCovered,
-            staffNote: state.staffNote.trim() || undefined,
-          });
-          PasteurStorage.clearPendingBooking();
-          router.push(`${basePath}/confirm`);
-        });
+        return proceed();
       })
       .catch(() => showError("بررسی زمان رزرو ناموفق بود. دوباره تلاش کنید."));
   };
@@ -459,6 +510,24 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             accent="blue"
             app={app}
           />
+          <TypeOption
+            selected={state.type === "waitlist"}
+            onClick={() => {
+              const next = {
+                ...state,
+                type: "waitlist" as const,
+                timeValue: WAITLIST_TIME_VALUE,
+                timeLabel: WAITLIST_TIME_LABEL,
+              };
+              setState(next);
+              showStep("day", next);
+            }}
+            emoji="📋"
+            title="لیست انتظار"
+            desc="هر روز قابل ثبت — بدون محدودیت ظرفیت و بدون انتخاب ساعت"
+            accent="amber"
+            app={app}
+          />
         </div>
       ) : null}
 
@@ -543,7 +612,9 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       {currentStep === "day" ? (
         <div className="space-y-6">
           <p className="text-sm text-slate-600">
-            تقویم این ماه و ماه بعد — روزهای حضور پزشک روشن‌تر است.
+            {isWaitlist
+              ? "لیست انتظار: هر روز (به‌جز گذشته) قابل ثبت است — بدون محدودیت ظرفیت."
+              : "تقویم این ماه و ماه بعد — روزهای حضور پزشک روشن‌تر است."}
           </p>
           {!doctor || !monthCalendars.length ? (
             <p className="py-6 text-center text-slate-500">
@@ -585,11 +656,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                                 ...state,
                                 appointmentDate: cell.isoDate,
                                 day: cell.scheduleDay,
-                                timeValue: null,
-                                timeLabel: null,
+                                timeValue: isWaitlist ? WAITLIST_TIME_VALUE : null,
+                                timeLabel: isWaitlist ? WAITLIST_TIME_LABEL : null,
                               };
                               setState(next);
-                              showStep("time", next);
+                              showStep(isWaitlist ? "info" : "time", next);
                             }}
                             className={cn(
                               "flex min-h-[3rem] flex-col items-center justify-center rounded-xl border px-1 py-1 text-xs font-bold transition",
@@ -640,9 +711,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">نوع:</span>
-                <span className="font-semibold">
-                  {state.type === "visit" ? "ویزیت" : "شروع یا ادامه درمان"}
-                </span>
+                <span className="font-semibold">{bookingTypeLabel(state.type)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">تاریخ:</span>
@@ -654,15 +723,25 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">زمان:</span>
-                <span className="font-semibold">{state.timeLabel || "—"}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200 pt-2">
-                <span className="text-slate-500">بیعانه رزرو:</span>
-                <span className="font-extrabold text-teal-800">
-                  {formatPrice(reservationFee)}
+                <span className="font-semibold">
+                  {isWaitlist ? WAITLIST_TIME_LABEL : state.timeLabel || "—"}
                 </span>
               </div>
-              <DentalReservationNotice adminNote={reservationNote} variant="teal" />
+              <div className="flex justify-between border-t border-slate-200 pt-2">
+                <span className="text-slate-500">
+                  {isWaitlist ? "هزینه ثبت:" : "بیعانه رزرو:"}
+                </span>
+                <span className="font-extrabold text-teal-800">
+                  {isWaitlist ? "رایگان" : formatPrice(reservationFee)}
+                </span>
+              </div>
+              {isWaitlist ? (
+                <p className="text-xs leading-6 text-slate-600">
+                  ثبت در لیست انتظار بدون بیعانه است؛ پذیرش برای تعیین نوبت قطعی تماس می‌گیرد.
+                </p>
+              ) : (
+                <DentalReservationNotice adminNote={reservationNote} variant="teal" />
+              )}
             </Card>
           ) : null}
           <form className="space-y-4" onSubmit={submitBooking}>
@@ -723,17 +802,19 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                 className={identityLocked ? "bg-slate-100" : undefined}
               />
             </div>
-            <div>
-              <FormLabel>کد معرف ویزیتور (اختیاری)</FormLabel>
-              <FormInput
-                value={state.referralCode}
-                onChange={(e) =>
-                  updateState({ referralCode: e.target.value.trim().toUpperCase() })
-                }
-                placeholder="مثلاً PLUS100"
-              />
-              <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
-            </div>
+            {!isWaitlist ? (
+              <div>
+                <FormLabel>کد معرف ویزیتور (اختیاری)</FormLabel>
+                <FormInput
+                  value={state.referralCode}
+                  onChange={(e) =>
+                    updateState({ referralCode: e.target.value.trim().toUpperCase() })
+                  }
+                  placeholder="مثلاً PLUS100"
+                />
+                <p className="mt-1 text-xs text-slate-500">{REFERRAL_DISCOUNT_HINT}</p>
+              </div>
+            ) : null}
 
             <div>
               <FormLabel>توضیحات (اختیاری)</FormLabel>
@@ -779,7 +860,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             قبلی
           </Button>
           <Button onClick={() => submitBooking()} className="flex-1">
-            ادامه و تأیید نهایی
+            {isWaitlist ? "ثبت در لیست انتظار" : "ادامه و تأیید نهایی"}
           </Button>
         </div>
       ) : null}
@@ -887,20 +968,22 @@ function TypeOption({
   emoji: string;
   title: string;
   desc: string;
-  accent: "teal" | "blue";
+  accent: "teal" | "blue" | "amber";
   app: boolean;
 }) {
+  const selectedClass =
+    accent === "teal"
+      ? "border-teal-500 bg-teal-50 ring-2 ring-teal-200"
+      : accent === "blue"
+        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+        : "border-amber-500 bg-amber-50 ring-2 ring-amber-200";
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         "w-full rounded-2xl border p-6 text-center transition-all",
-        selected
-          ? accent === "teal"
-            ? "border-teal-500 bg-teal-50 ring-2 ring-teal-200"
-            : "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-          : "border-sky-200 bg-white hover:border-teal-500",
+        selected ? selectedClass : "border-sky-200 bg-white hover:border-teal-500",
         app && "p-4",
       )}
     >

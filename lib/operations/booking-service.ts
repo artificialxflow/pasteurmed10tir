@@ -53,7 +53,10 @@ export async function createBookingRecord(body: CreateBookingInput) {
   const type = body.type ? String(body.type) : null;
   const timeValue = body.timeValue != null ? String(body.timeValue) : null;
 
-  if (doctorId && type && timeValue) {
+  const isWaitlist = type === 'waitlist';
+
+  // Waitlist entries are unlimited per day — no slot conflict check.
+  if (!isWaitlist && doctorId && type && timeValue) {
     if (appointmentDate) {
       const { start, end } = iranDayBounds(appointmentDate);
       const taken = await prisma.booking.findFirst({
@@ -98,7 +101,7 @@ export async function createBookingRecord(body: CreateBookingInput) {
     (dependent?.name || String(body.patientName || '').trim()) || null;
   const amount = Number(body.amount || 0);
   const appointmentAt = appointmentDate
-    ? appointmentAtFromIsoAndHour(appointmentDate, timeValue)
+    ? appointmentAtFromIsoAndHour(appointmentDate, isWaitlist ? 12 : timeValue)
     : nextAppointmentAt(day, timeValue);
   const dateLabel = appointmentDate
     ? formatBookingDateLabel(appointmentDate)

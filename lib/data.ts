@@ -449,7 +449,12 @@ export const PASTEUR_DATA = {
   dentalSpecialties: [
     { id: 'orthodontics', name: 'ارتودنسی', emoji: '😁', description: 'اصلاح ناهنجاری‌های دندانی و فکی' },
     { id: 'implant', name: 'ایمپلنت', emoji: '🦷', description: 'جایگزینی دندان‌های از دست رفته' },
-    { id: 'cosmetic', name: 'زیبایی دندان', emoji: '✨', description: 'لمینت، بلیچینگ و طراحی لبخند' },
+    {
+      id: 'cosmetic',
+      name: 'متخصص پروتز (روکش ایمپلنت و..)',
+      emoji: '✨',
+      description: 'روکش، ایمپلنت، پروتز و ترمیم زیبایی دندان',
+    },
     { id: 'oral-surgery', name: 'جراحی فک', emoji: '🔬', description: 'درمان‌های جراحی فک و صورت' },
     { id: 'pediatric', name: 'دندانپزشکی کودکان', emoji: '👶', description: 'مراقبت تخصصی از دندان کودکان' },
     { id: 'endodontics', name: 'درمان ریشه', emoji: '💉', description: 'عصب‌کشی و حفظ دندان طبیعی' },
@@ -566,7 +571,7 @@ export const PASTEUR_DATA = {
     {
       id: 6,
       name: 'دکتر سارا موسوی',
-      specialty: 'زیبایی دندان',
+      specialty: 'متخصص پروتز (روکش ایمپلنت و..)',
       specialtyId: 'cosmetic',
       image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop',
       days: ['یکشنبه', 'پنجشنبه'],

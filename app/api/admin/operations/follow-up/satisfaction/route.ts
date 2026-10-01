@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 function parseRole(raw: string | null): SatisfactionRole {
-  if (raw === 'assistants' || raw === 'reception') return raw;
+  if (raw === 'assistants' || raw === 'reception' || raw === 'environment') return raw;
   return 'doctor';
 }
 

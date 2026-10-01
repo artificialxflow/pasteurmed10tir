@@ -70,30 +70,39 @@ function PaymentSummary({
   reservationNote?: string;
 }) {
   if (pending.kind === "booking") {
+    const isWaitlist = String(pending.type || "") === "waitlist";
     return (
       <Card className="mb-6 space-y-3 p-6 text-sm" hover={false}>
-        <h2 className="mb-1 text-lg font-bold">خلاصه رزرو</h2>
+        <h2 className="mb-1 text-lg font-bold">
+          {isWaitlist ? "خلاصه لیست انتظار" : "خلاصه رزرو"}
+        </h2>
         <SummaryRow label="مراجع:" value={String(pending.patientName || "—")} />
         <SummaryRow label="موبایل:" value={String(pending.patientPhone || "—")} />
         <SummaryRow label="پزشک:" value={String(pending.doctorName || "—")} />
         <SummaryRow label="نوع خدمت:" value={String(pending.typeLabel || "—")} />
         <SummaryRow label="تاریخ نوبت:" value={String(pending.appointmentDateLabel || pending.day || "—")} />
         <SummaryRow label="زمان:" value={String(pending.timeLabel || "—")} />
-        {pending.referralCode ? (
+        {!isWaitlist && pending.referralCode ? (
           <SummaryRow label="کد معرف:" value={String(pending.referralCode)} />
         ) : null}
-        {pending.referralDiscountPercent ? (
+        {!isWaitlist && pending.referralDiscountPercent ? (
           <SummaryRow
             label="تخفیف کد معرف:"
             value={`${Number(pending.referralDiscountPercent || REFERRAL_DISCOUNT_PERCENT).toLocaleString("fa-IR")}٪`}
           />
         ) : null}
         <SummaryRow
-          label={amountLabel || "بیعانه رزرو نوبت:"}
-          value={formatPrice(Number(pending.amount) || 0)}
+          label={amountLabel || (isWaitlist ? "هزینه ثبت:" : "بیعانه رزرو نوبت:")}
+          value={isWaitlist ? "رایگان" : formatPrice(Number(pending.amount) || 0)}
           last
         />
-        <DentalReservationNotice adminNote={reservationNote} variant="amber" />
+        {isWaitlist ? (
+          <p className="text-xs leading-6 text-slate-600">
+            ثبت در لیست انتظار بدون بیعانه است؛ پذیرش برای تعیین نوبت قطعی تماس می‌گیرد.
+          </p>
+        ) : (
+          <DentalReservationNotice adminNote={reservationNote} variant="amber" />
+        )}
       </Card>
     );
   }

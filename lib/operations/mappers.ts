@@ -79,6 +79,8 @@ export function mapConsultation(
     preferredTime: row.preferredTime ?? undefined,
     preferredTimeLabel: row.preferredTimeLabel ?? undefined,
     status: row.status,
+    videoRoomName: row.videoRoomName ?? undefined,
+    videoStatus: row.videoStatus,
     createdAt: row.createdAt.toISOString(),
     dependentId: row.dependentId ?? undefined,
     dependentName: row.dependent?.name,

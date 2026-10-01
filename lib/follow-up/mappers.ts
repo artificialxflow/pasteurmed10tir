@@ -25,6 +25,7 @@ export function mapFollowUpCase(row: FollowUpCase) {
     satisfactionDoctor: row.satisfactionDoctor,
     satisfactionAssistants: row.satisfactionAssistants,
     satisfactionReception: row.satisfactionReception,
+    satisfactionEnvironment: row.satisfactionEnvironment,
     outcome: row.outcome,
     outcomeLabel: followUpOutcomeLabel(row.outcome),
     attendedAction: row.attendedAction ?? undefined,

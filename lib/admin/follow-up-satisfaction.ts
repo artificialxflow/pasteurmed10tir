@@ -1,7 +1,7 @@
 import type { FollowUpCase, FollowUpServiceCategory } from '@prisma/client';
 import { FOLLOW_UP_DISSATISFACTION_OPTIONS } from '@/lib/follow-up/types';
 
-export type SatisfactionRole = 'doctor' | 'assistants' | 'reception';
+export type SatisfactionRole = 'doctor' | 'assistants' | 'reception' | 'environment';
 
 export type SatisfactionStats = {
   serviceCategory: FollowUpServiceCategory | 'all';
@@ -28,7 +28,8 @@ function avg(values: number[]): number | null {
 function ratingForRole(row: FollowUpCase, role: SatisfactionRole): number | null {
   if (role === 'doctor') return row.satisfactionDoctor;
   if (role === 'assistants') return row.satisfactionAssistants;
-  return row.satisfactionReception;
+  if (role === 'reception') return row.satisfactionReception;
+  return row.satisfactionEnvironment;
 }
 
 export function computeSatisfactionStats(

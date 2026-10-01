@@ -169,3 +169,25 @@ export async function getConsultationApi(id: string) {
     `/api/operations/consultations/${encodeURIComponent(id)}`,
   );
 }
+
+export type ConsultationVideoToken = {
+  room: string;
+  jwt: string;
+  url: string;
+  expiresAt: string;
+  videoStatus?: string;
+};
+
+export async function mintPatientConsultationVideoToken(id: string) {
+  return postPatientOps<ConsultationVideoToken>(
+    `/api/operations/consultations/${encodeURIComponent(id)}/video-token`,
+    {},
+  );
+}
+
+export async function mintAdminConsultationVideoToken(id: string) {
+  return postAdminOps<ConsultationVideoToken>(
+    '/api/admin/operations/consultations/video-token',
+    { id },
+  );
+}

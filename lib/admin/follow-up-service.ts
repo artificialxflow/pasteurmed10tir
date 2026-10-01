@@ -94,6 +94,7 @@ export type CreateFollowUpInput = {
   satisfactionDoctor?: unknown;
   satisfactionAssistants?: unknown;
   satisfactionReception?: unknown;
+  satisfactionEnvironment?: unknown;
   outcome?: unknown;
   attendedAction?: unknown;
   dissatisfactionTarget?: unknown;
@@ -122,6 +123,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
   const satisfactionDoctor = parseRating(body.satisfactionDoctor);
   const satisfactionAssistants = parseRating(body.satisfactionAssistants);
   const satisfactionReception = parseRating(body.satisfactionReception);
+  const satisfactionEnvironment = parseRating(body.satisfactionEnvironment);
 
   let attendedAction: 'appointment_needed' | 'follow_up_needed' | null = null;
   let dissatisfactionTarget: 'doctor' | 'staff' | 'environment' | null = null;
@@ -157,6 +159,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
     satisfactionDoctor,
     satisfactionAssistants,
     satisfactionReception,
+    satisfactionEnvironment,
     outcome: outcome as 'attended' | 'no_show' | 'dissatisfied',
     attendedAction,
     dissatisfactionTarget,

@@ -1,4 +1,8 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import {
+  completeConsultationVideoSession,
+  openConsultationVideoSession,
+} from '@/lib/jitsi/consultation-video';
 import { mapConsultation } from '@/lib/operations/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { upsertConsultationStaffCommission } from '@/lib/home-visit/service';
@@ -20,14 +24,34 @@ export async function PATCH(request: Request) {
   const auth = await requireAdmin('consultations');
   if (auth.error) return auth.error;
 
-  const body = await parseJson<{ id?: string; status?: string }>(request);
+  const body = await parseJson<{ id?: string; status?: string; videoStatus?: string }>(
+    request,
+  );
   if (!body?.id) return jsonError('شناسه الزامی است.');
-
-  const status = body.status === 'answered' ? 'answered' : undefined;
-  if (!status) return jsonError('وضعیت نامعتبر است.');
 
   const existing = await prisma.consultation.findUnique({ where: { id: body.id } });
   if (!existing) return jsonError('درخواست یافت نشد.', 404);
+
+  if (body.videoStatus === 'scheduled' || body.videoStatus === 'open') {
+    try {
+      const row = await openConsultationVideoSession(body.id);
+      return NextResponse.json({ item: mapConsultation(row) });
+    } catch (e) {
+      return jsonError(e instanceof Error ? e.message : 'باز کردن جلسه ویدیو ناموفق بود.');
+    }
+  }
+
+  if (body.videoStatus === 'completed') {
+    try {
+      const row = await completeConsultationVideoSession(body.id);
+      return NextResponse.json({ item: mapConsultation(row) });
+    } catch (e) {
+      return jsonError(e instanceof Error ? e.message : 'پایان جلسه ویدیو ناموفق بود.');
+    }
+  }
+
+  const status = body.status === 'answered' ? 'answered' : undefined;
+  if (!status) return jsonError('وضعیت نامعتبر است.');
 
   const row = await prisma.consultation.update({
     where: { id: body.id },

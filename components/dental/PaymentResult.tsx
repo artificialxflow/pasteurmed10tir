@@ -62,8 +62,20 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
   if (kind === "booking") {
     const amt = Number(payment?.amount) || 0;
     const isFree = !requiresOnlinePayment(amt);
-    title = app ? "رزرو ثبت شد" : "رزرو با موفقیت ثبت شد!";
-    if (isFree) {
+    const isWaitlist = String(payment?.type || "") === "waitlist";
+    title = isWaitlist
+      ? app
+        ? "لیست انتظار ثبت شد"
+        : "ثبت در لیست انتظار انجام شد!"
+      : app
+        ? "رزرو ثبت شد"
+        : "رزرو با موفقیت ثبت شد!";
+    if (isWaitlist) {
+      desc = app
+        ? "در لیست انتظار قرار گرفتید؛ پذیرش برای تعیین نوبت قطعی تماس می‌گیرد."
+        : "نام شما در لیست انتظار ثبت شد. پذیرش برای تعیین نوبت قطعی با شما تماس می‌گیرد.";
+      badge = app ? "لیست انتظار ثبت شد. +۵۰ امتیاز باشگاه" : "لیست انتظار ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁";
+    } else if (isFree) {
       desc = app
         ? "نوبت شما بدون پرداخت بیعانه ثبت شد. هزینه ویزیت یا درمان در مطب هماهنگ می‌شود."
         : "رزرو شما بدون پرداخت بیعانه ثبت شد. هزینه باقی‌مانده ویزیت یا درمان در مطب هماهنگ می‌شود.";
@@ -76,9 +88,9 @@ export function PaymentSuccess({ basePath }: { basePath: DentalBasePath }) {
         ? `بیعانه ${formatPrice(amt)} ثبت شد. +۵۰ امتیاز باشگاه`
         : `بیعانه ${formatPrice(amt)} ثبت شد. +۵۰ امتیاز به باشگاه مشتریان شما اضافه شد 🎁`;
     }
-    primaryLabel = "رزرو جدید";
+    primaryLabel = isWaitlist ? "ثبت جدید" : "رزرو جدید";
     primaryHref = `${basePath}/general`;
-    showReminder = true;
+    showReminder = !isWaitlist;
   } else if (planId === "shop-vip") {
     title = "VIP تجهیزات فعال شد!";
     desc =

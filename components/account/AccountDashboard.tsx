@@ -10,7 +10,13 @@ import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { fetchPublic } from "@/lib/content/client";
-import { fetchMyActivityApi, fetchPatientOps, patchPatientOps } from "@/lib/operations/client";
+import { canJoinConsultationVideoStatus, videoStatusLabel } from "@/lib/jitsi/labels";
+import {
+  fetchMyActivityApi,
+  fetchPatientOps,
+  mintPatientConsultationVideoToken,
+  patchPatientOps,
+} from "@/lib/operations/client";
 import {
   bookingStatusLabel,
   DEFAULT_VISIT_FEE_TOMAN,
@@ -27,7 +33,7 @@ import { ROUTES } from "@/lib/routes";
 import { cn, formatPrice } from "@/lib/utils";
 import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 function insuranceName(list: InsuranceCompany[], id?: string): string {
   if (!id) return "—";
@@ -62,11 +68,13 @@ function ActivityRow({
   meta,
   status,
   tone,
+  action,
 }: {
   title: string;
   meta: string;
   status: string;
   tone: "success" | "warn" | "danger" | "info";
+  action?: ReactNode;
 }) {
   const badgeTone = {
     success: "text-teal-700",
@@ -79,6 +87,7 @@ function ActivityRow({
       <div>
         <p className="text-sm font-bold text-slate-900">{title}</p>
         <p className="mt-0.5 text-xs text-slate-500">{meta}</p>
+        {action ? <div className="mt-2">{action}</div> : null}
       </div>
       <span className={`text-xs font-bold ${badgeTone[tone]}`}>{status}</span>
     </div>
@@ -610,17 +619,42 @@ export function AccountDashboard({
         ) : (
           activity.consultations.map((c) => {
             const st = String(c.status || "");
+            const videoStatus = String(c.videoStatus || "none");
+            const joinable = canJoinConsultationVideoStatus(videoStatus);
             const preferred =
               c.preferredDateLabel || c.preferredTimeLabel
                 ? ` · ${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
                 : "";
+            const videoMeta =
+              videoStatus !== "none" ? ` · ${videoStatusLabel(videoStatus)}` : "";
             return (
               <ActivityRow
                 key={String(c.id)}
                 title={String(c.typeLabel || c.categoryLabel || "مشاوره")}
-                meta={`${String(c.doctorName || c.specialtyLabel || "—")}${preferred} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
+                meta={`${String(c.doctorName || c.specialtyLabel || "—")}${preferred}${videoMeta} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
                 status={st === "answered" ? "پاسخ داده شد" : "در انتظار"}
                 tone={st === "answered" ? "success" : "warn"}
+                action={
+                  joinable ? (
+                    <button
+                      type="button"
+                      className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800"
+                      onClick={() => {
+                        void mintPatientConsultationVideoToken(String(c.id))
+                          .then((token) => {
+                            window.location.href = token.url;
+                          })
+                          .catch((e) => {
+                            window.alert(
+                              e instanceof Error ? e.message : "ورود به ویزیت تصویری ناموفق بود.",
+                            );
+                          });
+                      }}
+                    >
+                      ورود به ویزیت تصویری
+                    </button>
+                  ) : undefined
+                }
               />
             );
           })
