@@ -9,6 +9,7 @@ import { FieldStaffCommissionsCard } from "@/components/account/FieldStaffCommis
 import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
+import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
 import {
   canJoinConsultationVideoStatus,
@@ -105,6 +106,9 @@ type PanelSection =
   | "staff-availability"
   | "commissions"
   | "jobs"
+  | "physician-visits"
+  | "physician-stats"
+  | "physician-commissions"
   | "loan"
   | "installments"
   | "insurance"
@@ -162,6 +166,7 @@ export function AccountDashboard({
   const [cancelBusy, setCancelBusy] = useState<string | null>(null);
   const [cancelMessage, setCancelMessage] = useState("");
   const [isStaff, setIsStaff] = useState(false);
+  const [isPhysician, setIsPhysician] = useState(false);
   const [panel, setPanel] = useState<PanelSection>(
     profile.isOrganizationRep ? "organization" : "overview",
   );
@@ -192,6 +197,10 @@ export function AccountDashboard({
     void fetchPatientOps<{ item: unknown }>("/api/operations/field-staff/me")
       .then((data) => setIsStaff(Boolean(data.item)))
       .catch(() => setIsStaff(false));
+
+    void fetchPatientOps<{ item: unknown }>("/api/operations/physician/me")
+      .then((data) => setIsPhysician(Boolean(data.item)))
+      .catch(() => setIsPhysician(false));
   }, []);
 
   const franchisePercent = resolveFranchisePercent(profile);
@@ -294,6 +303,13 @@ export function AccountDashboard({
           { id: "staff-availability", label: "دسترس‌پذیری کادر" },
           { id: "commissions", label: "پورسانت‌های من" },
           { id: "jobs", label: "کارکرد اعزام من" },
+        ] satisfies { id: PanelSection; label: string }[])
+      : []),
+    ...(isPhysician
+      ? ([
+          { id: "physician-visits", label: "ویزیت‌های من" },
+          { id: "physician-stats", label: "کارکرد من" },
+          { id: "physician-commissions", label: "پورسانت پزشک" },
         ] satisfies { id: PanelSection; label: string }[])
       : []),
     { id: "loan", label: "درخواست وام / اعتبار" },
@@ -469,6 +485,12 @@ export function AccountDashboard({
     panelBody = <FieldStaffCommissionsCard />;
   } else if (panel === "jobs") {
     panelBody = <FieldStaffJobsCard />;
+  } else if (panel === "physician-visits") {
+    panelBody = <PhysicianPanel section="visits" />;
+  } else if (panel === "physician-stats") {
+    panelBody = <PhysicianPanel section="stats" />;
+  } else if (panel === "physician-commissions") {
+    panelBody = <PhysicianPanel section="commissions" />;
   } else if (panel === "loan") {
     panelBody = (
       <LoanRequestCard
