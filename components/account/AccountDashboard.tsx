@@ -10,7 +10,11 @@ import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { fetchPublic } from "@/lib/content/client";
-import { canJoinConsultationVideoStatus, videoStatusLabel } from "@/lib/jitsi/labels";
+import {
+  canJoinConsultationVideoStatus,
+  consultationVideoJoinKind,
+  videoStatusLabel,
+} from "@/lib/jitsi/labels";
 import {
   fetchMyActivityApi,
   fetchPatientOps,
@@ -256,6 +260,22 @@ export function AccountDashboard({
     })
       .then((res) => {
         setCancelMessage(res.message || "رزرو لغو شد.");
+        reloadActivity();
+      })
+      .catch((e) => setCancelMessage(e instanceof Error ? e.message : "لغو ناموفق"))
+      .finally(() => setCancelBusy(null));
+  }
+
+  function cancelConsultation(id: string) {
+    if (!window.confirm("آیا از لغو این مشاوره مطمئن هستید؟")) return;
+    setCancelBusy(id);
+    setCancelMessage("");
+    void patchPatientOps<{ message?: string }>(
+      `/api/operations/consultations/${encodeURIComponent(id)}`,
+      { status: "cancelled" },
+    )
+      .then((res) => {
+        setCancelMessage(res.message || "مشاوره لغو شد.");
         reloadActivity();
       })
       .catch((e) => setCancelMessage(e instanceof Error ? e.message : "لغو ناموفق"))
@@ -619,41 +639,80 @@ export function AccountDashboard({
         ) : (
           activity.consultations.map((c) => {
             const st = String(c.status || "");
+            const cancelled = st === "cancelled";
             const videoStatus = String(c.videoStatus || "none");
-            const joinable = canJoinConsultationVideoStatus(videoStatus);
+            const joinable = !cancelled && canJoinConsultationVideoStatus(videoStatus);
+            const trackHref =
+              variant === "app"
+                ? `${ROUTES.app.consultationTrack}/${String(c.id)}`
+                : `${ROUTES.web.consultationTrack}/${String(c.id)}`;
             const preferred =
               c.preferredDateLabel || c.preferredTimeLabel
                 ? ` · ${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
                 : "";
             const videoMeta =
               videoStatus !== "none" ? ` · ${videoStatusLabel(videoStatus)}` : "";
+            const statusLabel =
+              st === "answered" ? "پاسخ داده شد" : cancelled ? "لغو شده" : "در انتظار";
+            const tone = st === "answered" ? "success" : cancelled ? "danger" : "warn";
             return (
               <ActivityRow
                 key={String(c.id)}
                 title={String(c.typeLabel || c.categoryLabel || "مشاوره")}
                 meta={`${String(c.doctorName || c.specialtyLabel || "—")}${preferred}${videoMeta} · ${new Date(String(c.createdAt)).toLocaleDateString("fa-IR")}`}
-                status={st === "answered" ? "پاسخ داده شد" : "در انتظار"}
-                tone={st === "answered" ? "success" : "warn"}
+                status={statusLabel}
+                tone={tone}
                 action={
-                  joinable ? (
-                    <button
-                      type="button"
-                      className="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-800"
-                      onClick={() => {
-                        void mintPatientConsultationVideoToken(String(c.id))
-                          .then((token) => {
-                            window.location.href = token.url;
-                          })
-                          .catch((e) => {
-                            window.alert(
-                              e instanceof Error ? e.message : "ورود به ویزیت تصویری ناموفق بود.",
-                            );
-                          });
-                      }}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={trackHref}
+                      className="inline-flex items-center rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-teal-800"
                     >
-                      ورود به ویزیت تصویری
-                    </button>
-                  ) : undefined
+                      پیگیری و لینک اتاق
+                    </Link>
+                    {joinable ? (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-cyan-300 bg-white px-3 py-2 text-xs font-bold text-cyan-900 hover:bg-cyan-50"
+                        onClick={() => {
+                          const kind = consultationVideoJoinKind({
+                            videoStatus,
+                            videoMeetingUrl: c.videoMeetingUrl
+                              ? String(c.videoMeetingUrl)
+                              : undefined,
+                            videoRoomName: c.videoRoomName ? String(c.videoRoomName) : undefined,
+                          });
+                          if (kind === "external" && c.videoMeetingUrl) {
+                            window.location.href = String(c.videoMeetingUrl);
+                            return;
+                          }
+                          void mintPatientConsultationVideoToken(String(c.id))
+                            .then((token) => {
+                              window.location.href = token.url;
+                            })
+                            .catch((e) => {
+                              window.alert(
+                                e instanceof Error
+                                  ? e.message
+                                  : "ورود به ویزیت تصویری ناموفق بود.",
+                              );
+                            });
+                        }}
+                      >
+                        ورود سریع
+                      </button>
+                    ) : null}
+                    {!cancelled && st !== "answered" ? (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50"
+                        disabled={cancelBusy === String(c.id)}
+                        onClick={() => cancelConsultation(String(c.id))}
+                      >
+                        {cancelBusy === String(c.id) ? "در حال لغو…" : "لغو مشاوره"}
+                      </button>
+                    ) : null}
+                  </div>
                 }
               />
             );

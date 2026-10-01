@@ -10,6 +10,7 @@ import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
+  isKnownSection,
   sectionIsAttachmentOnly,
   type HealthSectionField,
   type HealthSectionId,
@@ -18,6 +19,7 @@ import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Entry = {
@@ -36,13 +38,23 @@ function emptyValues(fields: HealthSectionField[]): Record<string, string> {
 
 export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const accountHref = variant === "app" ? ROUTES.app.account : ROUTES.web.account;
-  const [section, setSection] = useState<HealthSectionId>("general");
+  const searchParams = useSearchParams();
+  const initialSection = searchParams.get("section");
+  const [section, setSection] = useState<HealthSectionId>(() =>
+    initialSection && isKnownSection(initialSection) ? initialSection : "general",
+  );
   const [items, setItems] = useState<Entry[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const fields = useMemo(() => fieldsForSection(section), [section]);
-  const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("general")));
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    emptyValues(
+      fieldsForSection(
+        initialSection && isKnownSection(initialSection) ? initialSection : "general",
+      ),
+    ),
+  );
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +64,13 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
   }
+
+  useEffect(() => {
+    const fromQuery = searchParams.get("section");
+    if (fromQuery && isKnownSection(fromQuery)) {
+      setSection(fromQuery);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setValues(emptyValues(fields));

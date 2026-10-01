@@ -1,10 +1,11 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdminAny } from '@/lib/content/require-admin';
 import { createHealthEntryForPhone } from '@/lib/health-record/service';
+import { notifyHealthRecordEntrySms } from '@/lib/health-record/sms';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const auth = await requireAdminAny(['patients', 'fieldStaff']);
+  const auth = await requireAdminAny(['patients', 'fieldStaff', 'consultations']);
   if (auth.error) return auth.error;
 
   const body = await parseJson<Record<string, unknown>>(request);
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
       payload: rest,
       createdByAdminId: auth.session.userId,
     });
+    void notifyHealthRecordEntrySms({ patientPhone, section });
     return NextResponse.json({ item }, { status: 201 });
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : 'ثبت ناموفق', 400);

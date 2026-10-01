@@ -80,6 +80,7 @@ export function mapConsultation(
     preferredTimeLabel: row.preferredTimeLabel ?? undefined,
     status: row.status,
     videoRoomName: row.videoRoomName ?? undefined,
+    videoMeetingUrl: row.videoMeetingUrl ?? undefined,
     videoStatus: row.videoStatus,
     createdAt: row.createdAt.toISOString(),
     dependentId: row.dependentId ?? undefined,

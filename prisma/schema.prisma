@@ -384,6 +384,7 @@ enum BookingStatus {
 enum ConsultationStatus {
   pending
   answered
+  cancelled
 }
 
 enum ConsultationVideoStatus {
@@ -606,6 +607,8 @@ model Consultation {
   status                 ConsultationStatus @default(pending)
   /** Opaque Jitsi room id — set when video session is opened */
   videoRoomName          String?
+  /** Optional meeting URL set by operator (external or shareable room link) */
+  videoMeetingUrl        String?
   videoStatus            ConsultationVideoStatus @default(none)
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
@@ -1320,7 +1323,7 @@ model HealthRecordEntry {
   id              String                    @id
   recordId        String
   record          HealthRecord              @relation(fields: [recordId], references: [id], onDelete: Cascade)
-  /** vitals | general | dental | … (۱۸ بخش) */
+  /** vitals | general | prescription | dental | … */
   section         String
   /** تاریخ رویداد بالینی (ISO date در UI شمسی نمایش داده می‌شود) */
   entryDate       DateTime                  @db.Date

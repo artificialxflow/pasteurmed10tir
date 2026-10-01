@@ -22,7 +22,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { cn } from "@/lib/utils";
 
-type FollowUpTab = "new" | "appointment" | "followup" | "completed" | "satisfaction";
+type FollowUpTab =
+  | "new"
+  | "appointment"
+  | "followup"
+  | "completed"
+  | "cancelled"
+  | "satisfaction";
 
 type CaseItem = {
   id: string;
@@ -46,6 +52,19 @@ type CaseItem = {
   notes?: string;
 };
 
+type CancelledListItem = {
+  id: string;
+  source: "booking" | "consultation";
+  sourceLabel: string;
+  name: string;
+  patientPhone: string;
+  doctorName?: string;
+  appointmentLabel: string;
+  typeLabel: string;
+  cancelledAt: string;
+  note?: string;
+};
+
 type SatisfactionStats = {
   average: number | null;
   count: number;
@@ -63,6 +82,7 @@ const TABS: Array<{ id: FollowUpTab; label: string }> = [
   { id: "appointment", label: "نیاز به ارائه نوبت" },
   { id: "followup", label: "نیاز به پیگیری" },
   { id: "completed", label: "فالوآپ‌شده‌ها" },
+  { id: "cancelled", label: "بیماران لغو شده" },
   { id: "satisfaction", label: "میزان رضایتمندی" },
 ];
 
@@ -104,6 +124,8 @@ function categoryUsesDoctorPicklist(category: string): boolean {
 export default function AdminFollowUpPage() {
   const [tab, setTab] = useState<FollowUpTab>("new");
   const [items, setItems] = useState<CaseItem[]>([]);
+  const [cancelledItems, setCancelledItems] = useState<CancelledListItem[]>([]);
+  const [cancelledQuery, setCancelledQuery] = useState("");
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(true);
   const [followUpFilterDate, setFollowUpFilterDate] = useState("");
@@ -146,6 +168,17 @@ export default function AdminFollowUpPage() {
     );
     setItems(data.items);
   }, [tab, followUpFilterDate]);
+
+  const loadCancelled = useCallback(async (query?: string) => {
+    const q = (query ?? cancelledQuery).trim();
+    const params = new URLSearchParams();
+    if (q.length >= 2) params.set("q", q);
+    const qs = params.toString();
+    const data = await fetchAdminOps<{ items: CancelledListItem[] }>(
+      `/api/admin/operations/follow-up/cancelled${qs ? `?${qs}` : ""}`,
+    );
+    setCancelledItems(data.items || []);
+  }, [cancelledQuery]);
 
   const loadSatisfaction = useCallback(async () => {
     const params = new URLSearchParams({
@@ -205,12 +238,20 @@ export default function AdminFollowUpPage() {
   }, [satisfactionDoctorNames, satisfactionDoctorName]);
 
   useEffect(() => {
+    setError("");
     if (tab === "satisfaction") {
       void loadSatisfaction().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
-    } else {
-      void loadCases().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+      return;
     }
+    if (tab === "cancelled") return;
+    void loadCases().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [tab, loadCases, loadSatisfaction]);
+
+  useEffect(() => {
+    if (tab !== "cancelled") return;
+    setError("");
+    void loadCancelled("").catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [tab]);
 
   useEffect(() => {
     const q = form.patientName.trim();
@@ -634,6 +675,63 @@ export default function AdminFollowUpPage() {
                 <td className="px-4 py-3 text-xs">{row.serviceCategoryLabel}</td>
                 <td className="px-4 py-3 text-xs">{row.outcomeLabel}</td>
                 <td className="max-w-xs px-4 py-3 text-xs text-slate-600">{row.notes || "—"}</td>
+              </tr>
+            ))}
+          </AdminTable>
+        </>
+      ) : null}
+
+      {tab === "cancelled" ? (
+        <>
+          <Card hover={false} className="p-4">
+            <p className="text-sm font-bold text-slate-800">
+              رزروها و مشاوره‌هایی که بیمار یا پذیرش لغو کرده‌اند اینجا لیست می‌شوند تا مسئول
+              فالوآپ پیگیری کند.
+            </p>
+            <form
+              className="mt-3 flex flex-wrap items-end gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void loadCancelled().catch((err) =>
+                  setError(err instanceof Error ? err.message : "خطا"),
+                );
+              }}
+            >
+              <div className="min-w-[16rem] flex-1">
+                <FormLabel>جستجو (نام / موبایل / پزشک)</FormLabel>
+                <FormInput
+                  value={cancelledQuery}
+                  onChange={(e) => setCancelledQuery(e.target.value)}
+                  placeholder="مثلاً وحید یا ۰۹۱۲…"
+                />
+              </div>
+              <Button type="submit" variant="outline">
+                جستجو
+              </Button>
+            </form>
+          </Card>
+          <AdminTable
+            headers={["منبع", "بیمار", "تماس", "پزشک", "زمان", "نوع", "زمان لغو", "یادداشت"]}
+            empty="بیمار لغو‌شده‌ای ثبت نشده."
+          >
+            {cancelledItems.map((row) => (
+              <tr key={`${row.source}-${row.id}`} className="border-t border-slate-100">
+                <td className="px-4 py-3 text-xs font-bold text-slate-700">
+                  {row.sourceLabel}
+                </td>
+                <td className="px-4 py-3 font-bold text-slate-900">{row.name || "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
+                <td className="px-4 py-3">{row.doctorName || "—"}</td>
+                <td className="px-4 py-3 text-xs">{row.appointmentLabel || "—"}</td>
+                <td className="px-4 py-3 text-xs">{row.typeLabel || "—"}</td>
+                <td className="px-4 py-3 text-xs">
+                  {row.cancelledAt
+                    ? new Date(row.cancelledAt).toLocaleString("fa-IR")
+                    : "—"}
+                </td>
+                <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-600">
+                  {row.note || "—"}
+                </td>
               </tr>
             ))}
           </AdminTable>

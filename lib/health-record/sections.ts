@@ -1,6 +1,7 @@
 export const HEALTH_SECTIONS = [
   { id: 'vitals', label: 'حیاتی / قند / نوار', emoji: '❤️' },
   { id: 'general', label: 'عمومی', emoji: '🩺' },
+  { id: 'prescription', label: 'نسخه', emoji: '💊' },
   { id: 'dental', label: 'دندان', emoji: '🦷' },
   { id: 'internal', label: 'داخلی', emoji: '🫁' },
   { id: 'labs', label: 'آزمایش', emoji: '🧪' },
@@ -88,6 +89,25 @@ const SPECIALIST_FIELDS: HealthSectionField[] = [
 /** فقط تاریخ + پیوست (گزارش آزمایش / سونو / آندوسکوپی) */
 const ATTACHMENT_ONLY_FIELDS: HealthSectionField[] = [];
 
+const PRESCRIPTION_FIELDS: HealthSectionField[] = [
+  { key: 'doctorName', label: 'نام پزشک', kind: 'text' },
+  {
+    key: 'medications',
+    label: 'داروها / نسخه',
+    kind: 'textarea',
+    hint: 'نام دارو، دوز و نحوه مصرف',
+  },
+  { key: 'dosageSchedule', label: 'زمان‌بندی مصرف', kind: 'textarea' },
+  { key: 'diagnosis', label: 'تشخیص', kind: 'textarea' },
+  { key: 'recommendations', label: 'توصیه‌ها', kind: 'textarea' },
+  { key: 'nextVisitDate', label: 'زمان ویزیت بعدی', kind: 'date' },
+  {
+    key: 'consultationNote',
+    label: 'یادداشت مرتبط با مشاوره',
+    kind: 'textarea',
+  },
+];
+
 const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   vitals: [
     { key: 'doctorName', label: 'نام ثبت‌کننده', kind: 'text' },
@@ -98,6 +118,7 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
     { key: 'notes', label: 'یادداشت / نوار', kind: 'textarea' },
   ],
   general: GENERAL_FIELDS,
+  prescription: PRESCRIPTION_FIELDS,
   dental: DENTAL_FIELDS,
   internal: SPECIALIST_FIELDS,
   labs: ATTACHMENT_ONLY_FIELDS,
@@ -139,6 +160,8 @@ export function fieldLabel(id: HealthSectionId, key: string): string {
   return fieldsForSection(id).find((f) => f.key === key)?.label || key;
 }
 
+const HIDDEN_PAYLOAD_KEYS = new Set(['consultationId']);
+
 export function payloadDisplayRows(
   section: string,
   payload: Record<string, unknown> | null | undefined,
@@ -146,6 +169,7 @@ export function payloadDisplayRows(
   if (!payload) return [];
   const id = isKnownSection(section) ? section : null;
   return Object.entries(payload)
+    .filter(([key, v]) => !HIDDEN_PAYLOAD_KEYS.has(key))
     .filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== '')
     .map(([key, v]) => ({
       label: id ? fieldLabel(id, key) : key,
@@ -170,5 +194,8 @@ export function sectionCreateHint(id: HealthSectionId): string {
   if (id === 'endo_proc') return 'تاریخ آندوسکوپی یا کولونوسکوپی — فقط تاریخ و فایل گزارش.';
   if (id === 'vitals') return 'علائم حیاتی را ثبت کنید؛ در صورت داشتن نوار قلب یا مدرک، فایل را هم بارگذاری کنید.';
   if (id === 'dental') return 'یادداشت دندانپزشکی و در صورت نیاز عکس دندان یا مدارک مرتبط را بارگذاری کنید.';
+  if (id === 'prescription') {
+    return 'نسخه ویزیت را با دارو، دوز و توصیه‌ها ثبت کنید؛ بیمار در پرونده سلامت می‌بیند.';
+  }
   return 'در صورت نیاز مدرک، عکس یا PDF را بارگذاری کنید (jpg، png، pdf).';
 }

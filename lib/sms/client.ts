@@ -24,6 +24,9 @@ export function smsBodyIds() {
     booking: Number(env('SMS_BOOKING_BODY_ID') || 0),
     consultation: Number(env('SMS_CONSULTATION_BODY_ID') || 0),
     homeVisitStaff: Number(env('SMS_HOME_VISIT_STAFF_BODY_ID') || 0),
+    healthRecord: Number(env('SMS_HEALTH_RECORD_BODY_ID') || 0),
+    videoDoctor: Number(env('SMS_VIDEO_DOCTOR_BODY_ID') || 0),
+    videoPatient: Number(env('SMS_VIDEO_PATIENT_BODY_ID') || 0),
     installmentDue: Number(env('SMS_INSTALLMENT_DUE_BODY_ID') || 0),
     installmentOverdue: Number(env('SMS_INSTALLMENT_OVERDUE_BODY_ID') || 0),
   };
@@ -125,6 +128,63 @@ export async function sendHomeVisitStaffAssignedSms(
   const id = smsBodyIds().homeVisitStaff;
   if (!id) return { ok: false, error: 'پترن تخصیص اعزام به نیرو تنظیم نشده.' };
   return sendByPattern(id, phone, vars.length ? vars : ['—']);
+}
+
+/**
+ * ثبت مورد جدید در پرونده سلامت — پترن payamak (۲ متغیر):
+ * {0} عنوان بخش (مثلاً نسخه)
+ * {1} لینک پرونده سلامت
+ */
+export async function sendHealthRecordUpdateSms(
+  phone: string,
+  sectionLabel: string,
+  healthRecordUrl: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().healthRecord;
+  if (!id) return { ok: false, error: 'پترن پرونده سلامت تنظیم نشده.' };
+  return sendByPattern(id, phone, [
+    sectionLabel || 'پرونده سلامت',
+    healthRecordUrl || '—',
+  ]);
+}
+
+/**
+ * اطلاع ویزیت تصویری به پزشک — پترن payamak (۳ متغیر):
+ * {0} نام بیمار
+ * {1} ساعت ویزیت
+ * {2} لینک ورود
+ */
+export async function sendVideoVisitDoctorSms(
+  phone: string,
+  patientName: string,
+  visitTimeLabel: string,
+  joinUrl: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().videoDoctor;
+  if (!id) return { ok: false, error: 'پترن ویزیت تصویری پزشک تنظیم نشده.' };
+  return sendByPattern(id, phone, [
+    patientName || 'بیمار',
+    visitTimeLabel || 'به‌زودی',
+    joinUrl || '—',
+  ]);
+}
+
+/**
+ * اطلاع ویزیت تصویری به بیمار — پترن payamak (۲ متغیر):
+ * {0} ساعت ویزیت
+ * {1} لینک صفحه پیگیری (با اکانت خود وارد شود)
+ */
+export async function sendVideoVisitPatientSms(
+  phone: string,
+  visitTimeLabel: string,
+  trackUrl: string,
+): Promise<SmsSendResult> {
+  const id = smsBodyIds().videoPatient;
+  if (!id) return { ok: false, error: 'پترن ویزیت تصویری بیمار تنظیم نشده.' };
+  return sendByPattern(id, phone, [
+    visitTimeLabel || 'به‌زودی',
+    trackUrl || '—',
+  ]);
 }
 
 export async function sendBookingSms(

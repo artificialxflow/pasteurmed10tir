@@ -55,6 +55,7 @@ export const HEALTH_BODY_HOTSPOTS: BodyHotspot[] = [
 export const HEALTH_BODY_PANEL_LEFT: HealthSectionId[] = [
   'vitals',
   'general',
+  'prescription',
   'labs',
   'imaging',
   'endo_proc',

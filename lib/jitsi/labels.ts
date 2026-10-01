@@ -8,3 +8,16 @@ export function videoStatusLabel(status: string | null | undefined): string {
 export function canJoinConsultationVideoStatus(status: string | null | undefined): boolean {
   return status === 'scheduled' || status === 'in_call';
 }
+
+/** Prefer operator-set meeting URL; otherwise join via minted Jitsi token. */
+export function consultationVideoJoinKind(input: {
+  videoStatus?: string | null;
+  videoMeetingUrl?: string | null;
+  videoRoomName?: string | null;
+}): 'external' | 'jitsi' | 'none' {
+  if (!canJoinConsultationVideoStatus(input.videoStatus)) return 'none';
+  const url = String(input.videoMeetingUrl || '').trim();
+  if (url) return 'external';
+  if (input.videoRoomName) return 'jitsi';
+  return 'jitsi';
+}
