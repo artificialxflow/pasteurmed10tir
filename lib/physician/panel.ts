@@ -1,3 +1,4 @@
+import { supportsConsultationVideo } from '@/lib/consultation/categories';
 import { canJoinConsultationVideoStatus } from '@/lib/jitsi/labels';
 import { findPhysicianByPhone, listMyStaffCommissionsByPhone } from '@/lib/home-visit/service';
 import { mapBooking, mapConsultation } from '@/lib/operations/mappers';
@@ -45,18 +46,23 @@ export async function listPhysicianVisits(physicianId: number) {
 
   const consultationItems = consultations.map((row) => {
     const mapped = mapConsultation(row);
+    const videoCategory = supportsConsultationVideo(mapped.category);
     return {
       kind: 'consultation' as const,
       id: mapped.id,
       patientName: mapped.name || mapped.dependentName || '—',
       patientPhone: mapped.phone,
       title: mapped.typeLabel || mapped.categoryLabel || 'مشاوره',
+      category: mapped.category,
       when:
         `${String(mapped.preferredDateLabel || '')} ${String(mapped.preferredTimeLabel || '')}`.trim() ||
         '—',
       status: mapped.status,
       videoStatus: mapped.videoStatus,
-      canJoinVideo: canJoinConsultationVideoStatus(mapped.videoStatus),
+      supportsVideo: videoCategory,
+      canJoinVideo:
+        videoCategory && canJoinConsultationVideoStatus(mapped.videoStatus),
+      canWritePrescription: videoCategory && mapped.status !== 'cancelled',
       createdAt: mapped.createdAt,
     };
   });
@@ -69,12 +75,15 @@ export async function listPhysicianVisits(physicianId: number) {
       patientName: mapped.patientName || mapped.dependentName || '—',
       patientPhone: mapped.patientPhone,
       title: mapped.typeLabel || mapped.specialty || 'نوبت',
+      category: undefined as string | undefined,
       when:
         `${String(mapped.dateLabel || mapped.day || '')} ${String(mapped.timeLabel || '')}`.trim() ||
         '—',
       status: mapped.status,
       videoStatus: null as string | null,
+      supportsVideo: false,
       canJoinVideo: false,
+      canWritePrescription: mapped.status !== 'cancelled',
       createdAt: mapped.createdAt,
     };
   });

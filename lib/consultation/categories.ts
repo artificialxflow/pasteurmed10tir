@@ -14,6 +14,26 @@ export const MEDICAL_HOME_CATEGORY = "medical-home";
 /** ویزیت پزشک عمومی / تخصصی در کلینیک (با انتخاب پزشک و نوبت). */
 export const MEDICAL_CLINIC_CATEGORIES = ["medical", "medical-specialty"] as const;
 
+/**
+ * دسته‌هایی که ویزیت تصویری / لینک اتاق دارند.
+ * تزریق در منزل، پرستاری، ویزیت در منزل و مشابه شامل نمی‌شود.
+ */
+export const CONSULTATION_VIDEO_CATEGORIES = [
+  "medical",
+  "medical-specialty",
+  "nutrition",
+  "psychology",
+  "midwifery",
+] as const;
+
+export type ConsultationVideoCategory = (typeof CONSULTATION_VIDEO_CATEGORIES)[number];
+
+export function supportsConsultationVideo(categoryId?: string | null): boolean {
+  return CONSULTATION_VIDEO_CATEGORIES.includes(
+    String(categoryId || "") as ConsultationVideoCategory,
+  );
+}
+
 /** مسیرهای اختصاصی — Quick Links عمومی نمایش داده نمی‌شود. */
 export const FOCUSED_CONSULTATION_CATEGORIES = [
   MEDICAL_HOME_CATEGORY,

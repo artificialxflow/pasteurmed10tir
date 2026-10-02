@@ -20,7 +20,9 @@ type VisitRow = {
   when: string;
   status: string;
   videoStatus?: string | null;
+  supportsVideo?: boolean;
   canJoinVideo: boolean;
+  canWritePrescription?: boolean;
   createdAt: string;
 };
 
@@ -69,8 +71,14 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
     pendingTotal: number;
   } | null>(null);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState("");
   const [physicianName, setPhysicianName] = useState("");
+  const [rxId, setRxId] = useState("");
+  const [rxMedications, setRxMedications] = useState("");
+  const [rxDosage, setRxDosage] = useState("");
+  const [rxDiagnosis, setRxDiagnosis] = useState("");
+  const [rxRecommendations, setRxRecommendations] = useState("");
 
   const loadVisits = useCallback(async () => {
     const data = await fetchPatientOps<{
@@ -102,6 +110,7 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
 
   useEffect(() => {
     setError("");
+    setMessage("");
     if (section === "visits") {
       void loadVisits().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
     } else if (section === "stats") {
@@ -111,8 +120,27 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
     }
   }, [section, loadVisits, loadStats, loadCommissions]);
 
+  function startRx(v: VisitRow) {
+    setError("");
+    setMessage("");
+    setRxId(v.id);
+    setRxMedications("");
+    setRxDosage("");
+    setRxDiagnosis("");
+    setRxRecommendations("");
+  }
+
+  function cancelRx() {
+    setRxId("");
+    setRxMedications("");
+    setRxDosage("");
+    setRxDiagnosis("");
+    setRxRecommendations("");
+  }
+
   async function joinVideo(id: string) {
     setError("");
+    setMessage("");
     setBusyId(id);
     try {
       const token = await postPatientOps<{ url: string }>(
@@ -126,7 +154,37 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
     }
   }
 
-  if (error) {
+  async function savePrescription(v: VisitRow) {
+    setError("");
+    setMessage("");
+    if (!rxMedications.trim()) {
+      setError("متن دارو / نسخه الزامی است.");
+      return;
+    }
+    setBusyId(v.id);
+    try {
+      await postPatientOps("/api/operations/physician/me/prescriptions", {
+        consultationId: v.kind === "consultation" ? v.id : undefined,
+        patientPhone: v.patientPhone,
+        medications: rxMedications.trim(),
+        dosageSchedule: rxDosage.trim() || undefined,
+        diagnosis: rxDiagnosis.trim() || undefined,
+        recommendations: rxRecommendations.trim() || undefined,
+      });
+      setMessage("نسخه در پرونده سلامت بیمار ثبت شد.");
+      cancelRx();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "ثبت نسخه ناموفق بود. بیمار باید با همین موبایل حساب داشته باشد.",
+      );
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  if (error && section !== "visits") {
     return (
       <Card hover={false} className="p-4">
         <p className="text-sm font-bold text-rose-600">{error}</p>
@@ -240,55 +298,131 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
           مشاوره‌ها و نوبت‌های ثبت‌شده برای شما. برای ویزیت تصویری آماده، دکمه ورود را بزنید.
         </p>
       </div>
+      {error ? <p className="text-sm font-bold text-rose-600">{error}</p> : null}
+      {message ? <p className="text-sm font-bold text-teal-700">{message}</p> : null}
       {visits.length === 0 ? (
         <p className="text-xs text-slate-500">ویزیت یا نوبتی ثبت نشده است.</p>
       ) : (
         <ul className="space-y-2">
-          {visits.map((v) => (
-            <li
-              key={`${v.kind}-${v.id}`}
-              className="rounded-xl border border-slate-100 px-3 py-3"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-extrabold text-slate-900">{v.title}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {v.patientName} · {v.patientPhone}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {v.when} · {formatJalaliDate(v.createdAt)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={cn(
-                      "text-xs font-bold",
-                      v.status === "answered" || v.status === "confirmed"
-                        ? "text-teal-700"
-                        : v.status === "cancelled"
-                          ? "text-rose-700"
-                          : "text-amber-700",
-                    )}
-                  >
-                    {visitStatusLabel(v.kind, v.status)}
-                    {v.videoStatus && v.videoStatus !== "none"
-                      ? ` · ${videoStatusLabel(v.videoStatus)}`
-                      : ""}
-                  </span>
-                  {v.canJoinVideo ? (
-                    <Button
-                      type="button"
-                      className="!rounded-xl px-3 py-2 text-xs font-extrabold"
-                      disabled={busyId === v.id}
-                      onClick={() => void joinVideo(v.id)}
+          {visits.map((v) => {
+            const writingRx = rxId === v.id;
+            const showVideoMeta = Boolean(v.supportsVideo) && v.videoStatus && v.videoStatus !== "none";
+            return (
+              <li
+                key={`${v.kind}-${v.id}`}
+                className="rounded-xl border border-slate-100 px-3 py-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900">{v.title}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {v.patientName} · {v.patientPhone}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {v.when} · {formatJalaliDate(v.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={cn(
+                        "text-xs font-bold",
+                        v.status === "answered" || v.status === "confirmed"
+                          ? "text-teal-700"
+                          : v.status === "cancelled"
+                            ? "text-rose-700"
+                            : "text-amber-700",
+                      )}
                     >
-                      {busyId === v.id ? "در حال اتصال…" : "ورود به ویزیت تصویری"}
-                    </Button>
-                  ) : null}
+                      {visitStatusLabel(v.kind, v.status)}
+                      {showVideoMeta ? ` · ${videoStatusLabel(v.videoStatus)}` : ""}
+                    </span>
+                    {v.canJoinVideo ? (
+                      <Button
+                        type="button"
+                        className="!rounded-xl px-3 py-2 text-xs font-extrabold"
+                        disabled={busyId === v.id}
+                        onClick={() => void joinVideo(v.id)}
+                      >
+                        {busyId === v.id ? "در حال اتصال…" : "ورود به ویزیت تصویری"}
+                      </Button>
+                    ) : null}
+                    {v.canWritePrescription && !writingRx ? (
+                      <button
+                        type="button"
+                        disabled={busyId === v.id}
+                        className="text-xs font-bold text-violet-800 disabled:opacity-50"
+                        onClick={() => startRx(v)}
+                      >
+                        ثبت نسخه در پرونده سلامت
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+                {writingRx ? (
+                  <div className="mt-3 space-y-2 rounded-xl border border-violet-200 bg-violet-50/60 p-3">
+                    <p className="text-xs font-bold text-violet-900">
+                      نسخه در پرونده سلامت بیمار ذخیره می‌شود
+                    </p>
+                    <label className="block text-xs font-bold text-slate-600">
+                      داروها / نسخه
+                      <textarea
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                        rows={3}
+                        value={rxMedications}
+                        onChange={(e) => setRxMedications(e.target.value)}
+                        placeholder="نام دارو، دوز، نحوه مصرف"
+                      />
+                    </label>
+                    <label className="block text-xs font-bold text-slate-600">
+                      زمان‌بندی مصرف
+                      <textarea
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                        rows={2}
+                        value={rxDosage}
+                        onChange={(e) => setRxDosage(e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-xs font-bold text-slate-600">
+                      تشخیص
+                      <textarea
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                        rows={2}
+                        value={rxDiagnosis}
+                        onChange={(e) => setRxDiagnosis(e.target.value)}
+                      />
+                    </label>
+                    <label className="block text-xs font-bold text-slate-600">
+                      توصیه‌ها
+                      <textarea
+                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                        rows={2}
+                        value={rxRecommendations}
+                        onChange={(e) => setRxRecommendations(e.target.value)}
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busyId === v.id}
+                        className="text-xs font-bold text-violet-800 disabled:opacity-50"
+                        onClick={() => void savePrescription(v)}
+                      >
+                        {busyId === v.id ? "در حال ذخیره…" : "ذخیره در پرونده"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyId === v.id}
+                        className="text-xs font-bold text-slate-500 disabled:opacity-50"
+                        onClick={cancelRx}
+                      >
+                        انصراف
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>

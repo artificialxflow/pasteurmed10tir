@@ -11,6 +11,7 @@ import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
+import { supportsConsultationVideo } from "@/lib/consultation/categories";
 import {
   canJoinConsultationVideoStatus,
   consultationVideoJoinKind,
@@ -662,8 +663,12 @@ export function AccountDashboard({
           activity.consultations.map((c) => {
             const st = String(c.status || "");
             const cancelled = st === "cancelled";
+            const videoOk = supportsConsultationVideo(
+              c.category ? String(c.category) : undefined,
+            );
             const videoStatus = String(c.videoStatus || "none");
-            const joinable = !cancelled && canJoinConsultationVideoStatus(videoStatus);
+            const joinable =
+              videoOk && !cancelled && canJoinConsultationVideoStatus(videoStatus);
             const trackHref =
               variant === "app"
                 ? `${ROUTES.app.consultationTrack}/${String(c.id)}`
@@ -673,7 +678,9 @@ export function AccountDashboard({
                 ? ` · ${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
                 : "";
             const videoMeta =
-              videoStatus !== "none" ? ` · ${videoStatusLabel(videoStatus)}` : "";
+              videoOk && videoStatus !== "none"
+                ? ` · ${videoStatusLabel(videoStatus)}`
+                : "";
             const statusLabel =
               st === "answered" ? "پاسخ داده شد" : cancelled ? "لغو شده" : "در انتظار";
             const tone = st === "answered" ? "success" : cancelled ? "danger" : "warn";
@@ -686,12 +693,14 @@ export function AccountDashboard({
                 tone={tone}
                 action={
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={trackHref}
-                      className="inline-flex items-center rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-teal-800"
-                    >
-                      پیگیری و لینک اتاق
-                    </Link>
+                    {videoOk ? (
+                      <Link
+                        href={trackHref}
+                        className="inline-flex items-center rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-teal-800"
+                      >
+                        پیگیری و لینک اتاق
+                      </Link>
+                    ) : null}
                     {joinable ? (
                       <button
                         type="button"
@@ -731,7 +740,7 @@ export function AccountDashboard({
                         disabled={cancelBusy === String(c.id)}
                         onClick={() => cancelConsultation(String(c.id))}
                       >
-                        {cancelBusy === String(c.id) ? "در حال لغو…" : "لغو مشاوره"}
+                        {cancelBusy === String(c.id) ? "در حال لغو…" : "لغو درخواست"}
                       </button>
                     ) : null}
                   </div>

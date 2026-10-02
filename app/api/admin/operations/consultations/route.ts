@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { supportsConsultationVideo } from '@/lib/consultation/categories';
 import {
   completeConsultationVideoSession,
   openConsultationVideoSession,
@@ -63,6 +64,9 @@ export async function PATCH(request: Request) {
     body.preferredDateLabel !== undefined;
 
   if (hasMeetingSchedulePatch) {
+    if (!supportsConsultationVideo(existing.category)) {
+      return jsonError('ویزیت تصویری / لینک اتاق برای این نوع خدمت فعال نیست.');
+    }
     let videoMeetingUrl: string | null | undefined;
     try {
       videoMeetingUrl = normalizeMeetingUrl(body.videoMeetingUrl);

@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { supportsConsultationVideo } from "@/lib/consultation/categories";
 import {
   canJoinConsultationVideoStatus,
   videoStatusLabel,
@@ -20,6 +21,7 @@ type Consultation = Record<string, unknown> & {
   name?: string;
   phone?: string;
   typeLabel?: string;
+  category?: string;
   categoryLabel?: string;
   specialtyLabel?: string;
   doctorName?: string;
@@ -299,8 +301,11 @@ export default function AdminConsultationsPage() {
         empty="درخواست مشاوره‌ای ثبت نشده."
       >
         {items.map((c) => {
+          const videoOk = supportsConsultationVideo(
+            c.category ? String(c.category) : undefined,
+          );
           const videoStatus = String(c.videoStatus || "none");
-          const joinable = canJoinConsultationVideoStatus(videoStatus);
+          const joinable = videoOk && canJoinConsultationVideoStatus(videoStatus);
           const busy = busyId === c.id;
           const editing = editingId === c.id;
           const writingRx = rxId === c.id;
@@ -352,7 +357,7 @@ export default function AdminConsultationsPage() {
                 </AdminBadge>
               </td>
               <td className="px-4 py-3 text-xs font-bold text-slate-700">
-                {videoStatusLabel(videoStatus)}
+                {videoOk ? videoStatusLabel(videoStatus) : "—"}
               </td>
               <td className="space-y-1 px-4 py-3">
                 {c.status !== "answered" && c.status !== "cancelled" ? (
@@ -373,7 +378,7 @@ export default function AdminConsultationsPage() {
                     لغو مشاوره
                   </button>
                 ) : null}
-                {c.status !== "cancelled" && videoStatus === "none" ? (
+                {videoOk && c.status !== "cancelled" && videoStatus === "none" ? (
                   <button
                     type="button"
                     disabled={busy}
@@ -383,7 +388,7 @@ export default function AdminConsultationsPage() {
                     باز کردن ویزیت تصویری
                   </button>
                 ) : null}
-                {c.status !== "cancelled" && joinable ? (
+                {videoOk && c.status !== "cancelled" && joinable ? (
                   <>
                     <button
                       type="button"
@@ -419,7 +424,7 @@ export default function AdminConsultationsPage() {
                     </button>
                   </>
                 ) : null}
-                {c.status !== "cancelled" && !editing ? (
+                {videoOk && c.status !== "cancelled" && !editing ? (
                   <button
                     type="button"
                     disabled={busy || videoStatus === "completed"}
@@ -429,7 +434,7 @@ export default function AdminConsultationsPage() {
                     ثبت لینک اتاق / ساعت
                   </button>
                 ) : null}
-                {c.status !== "cancelled" && editing ? (
+                {videoOk && c.status !== "cancelled" && editing ? (
                   <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                     <label className="block text-[11px] font-bold text-slate-600">
                       لینک اتاق

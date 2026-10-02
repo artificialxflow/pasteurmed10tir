@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'crypto';
 import type { Consultation, ConsultationVideoStatus } from '@prisma/client';
+import { supportsConsultationVideo } from '@/lib/consultation/categories';
 import { mintJitsiJwt } from '@/lib/jitsi/jwt';
 import { prisma } from '@/lib/prisma';
 
@@ -33,6 +34,9 @@ export async function ensureConsultationVideoRoom(
 export async function openConsultationVideoSession(consultationId: string): Promise<Consultation> {
   const existing = await prisma.consultation.findUnique({ where: { id: consultationId } });
   if (!existing) throw new Error('مشاوره یافت نشد.');
+  if (!supportsConsultationVideo(existing.category)) {
+    throw new Error('ویزیت تصویری برای این نوع خدمت فعال نیست.');
+  }
   if (existing.videoStatus === 'completed') {
     throw new Error('جلسه ویدیو این مشاوره پایان یافته است.');
   }
@@ -83,6 +87,9 @@ export async function mintConsultationVideoAccess(input: {
     where: { id: input.consultationId },
   });
   if (!existing) throw new Error('مشاوره یافت نشد.');
+  if (!supportsConsultationVideo(existing.category)) {
+    throw new Error('ویزیت تصویری برای این نوع خدمت فعال نیست.');
+  }
   if (!canJoinConsultationVideo(existing.videoStatus)) {
     throw new Error(
       existing.videoStatus === 'completed'

@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { supportsConsultationVideo } from "@/lib/consultation/categories";
 import {
   canJoinConsultationVideoStatus,
   consultationVideoJoinKind,
@@ -18,6 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 type TrackItem = {
   id: string;
   typeLabel?: string;
+  category?: string;
   categoryLabel?: string;
   specialtyLabel?: string;
   doctorName?: string;
@@ -80,7 +82,12 @@ export function ConsultationTrack({
     const data = await getConsultationApi(id);
     const next = data.item as TrackItem;
     setItem(next);
-    if (next.videoMeetingUrl && canJoinConsultationVideoStatus(next.videoStatus)) {
+    const videoOk = supportsConsultationVideo(next.category);
+    if (
+      videoOk &&
+      next.videoMeetingUrl &&
+      canJoinConsultationVideoStatus(next.videoStatus)
+    ) {
       setResolvedJoinUrl(String(next.videoMeetingUrl));
     } else {
       setResolvedJoinUrl("");
@@ -144,6 +151,7 @@ export function ConsultationTrack({
   }
 
   const cancelled = item.status === "cancelled";
+  const videoOk = supportsConsultationVideo(item.category);
   const statusLabel =
     item.status === "answered" ? "پاسخ داده شد" : cancelled ? "لغو شده" : "در انتظار";
   const visitTime =
@@ -151,11 +159,38 @@ export function ConsultationTrack({
       ? String(item.preferredTimeLabel || item.preferredTime)
       : "";
   const visitDate = item.preferredDateLabel ? String(item.preferredDateLabel) : "";
-  const joinable = !cancelled && canJoinConsultationVideoStatus(item.videoStatus);
+  const joinable =
+    videoOk && !cancelled && canJoinConsultationVideoStatus(item.videoStatus);
   const videoLabel = videoStatusLabel(item.videoStatus);
   const displayLink =
     resolvedJoinUrl ||
     (item.videoMeetingUrl && joinable ? String(item.videoMeetingUrl) : "");
+
+  if (!videoOk) {
+    return (
+      <div className="space-y-4">
+        <Card hover={false} className="p-5">
+          <p className="text-sm font-extrabold text-slate-900">
+            {item.typeLabel || item.categoryLabel || "درخواست"}
+          </p>
+          <p className="mt-2 text-xs leading-6 text-slate-600">
+            برای این نوع خدمت لینک اتاق ویزیت تصویری فعال نیست. پیگیری از طریق تماس مرکز انجام
+            می‌شود.
+          </p>
+          <p className="mt-3 text-xs text-slate-500">
+            وضعیت: {statusLabel}
+            {item.doctorName || item.specialtyLabel
+              ? ` · ${item.doctorName || item.specialtyLabel}`
+              : ""}
+          </p>
+          {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
+          <Button href={accountHref} variant="outline" className="mt-4 w-full !rounded-xl">
+            بازگشت به پنل کاربری
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
