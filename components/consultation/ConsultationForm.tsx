@@ -559,7 +559,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setSelectedType(t.id)}
+                onClick={() => setSelectedType(normalizeConsultationFormTypeId(t.id))}
                 className={cn(
                   "rounded-[1.25rem] border p-4 text-center transition",
                   selectedType === t.id
