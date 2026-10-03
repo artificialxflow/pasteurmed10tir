@@ -162,8 +162,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   }, [requestedCategory]);
 
   useEffect(() => {
-    if (requestedType && TYPE_IDS.includes(requestedType as (typeof TYPE_IDS)[number])) {
-      setSelectedType(requestedType);
+    if (requestedType) {
+      setSelectedType(normalizeConsultationFormTypeId(requestedType));
     }
   }, [requestedType]);
 
