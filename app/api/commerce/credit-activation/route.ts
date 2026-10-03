@@ -4,6 +4,7 @@ import {
   parseRequestedAmount,
   validateInstallmentCount,
   validateRequestedAmount,
+  walletAvailableCredit,
 } from '@/lib/commerce/credit-activation';
 import { generateCommerceId, mapCreditActivationRequest } from '@/lib/commerce/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
@@ -41,8 +42,9 @@ export async function POST(request: Request) {
 
   const wallet = await prisma.wallet.findUnique({ where: { phone } });
   const ceiling = wallet?.ceiling ?? 0;
+  const available = walletAvailableCredit(ceiling, wallet?.balance ?? 0);
   const requestedAmount = parseRequestedAmount(body.requestedAmount);
-  const amountError = validateRequestedAmount(requestedAmount, ceiling);
+  const amountError = validateRequestedAmount(requestedAmount, ceiling, available);
   if (amountError) return jsonError(amountError);
 
   const settings = await loadWalletSettings();

@@ -28,16 +28,19 @@ function statusLabel(status?: string) {
 
 export function CreditActivationCard({
   ceiling,
+  availableCredit,
   variant,
   installmentMin = 1,
   installmentMax = 6,
 }: {
   ceiling: number;
+  availableCredit: number;
   variant: "web" | "app";
   installmentMin?: number;
   installmentMax?: number;
 }) {
-  const [amount, setAmount] = useState(ceiling > 0 ? String(ceiling) : "");
+  const available = Math.max(0, Math.min(ceiling, availableCredit));
+  const [amount, setAmount] = useState(available > 0 ? String(available) : "");
   const [installmentCount, setInstallmentCount] = useState(String(installmentMax));
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -55,8 +58,9 @@ export function CreditActivationCard({
   }, [reload]);
 
   useEffect(() => {
-    if (ceiling > 0) setAmount(String(ceiling));
-  }, [ceiling]);
+    if (available > 0) setAmount(String(available));
+    else setAmount("");
+  }, [available]);
 
   useEffect(() => {
     setInstallmentCount(String(installmentMax));
@@ -66,13 +70,17 @@ export function CreditActivationCard({
     e.preventDefault();
     setError("");
     setOk("");
+    if (available <= 0) {
+      setError("اعتبار باقی‌مانده شما تمام شده و امکان ثبت درخواست جدید نیست.");
+      return;
+    }
     const requestedAmount = Number(amount);
     if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
       setError("مبلغ درخواستی باید بیشتر از صفر باشد.");
       return;
     }
-    if (requestedAmount > ceiling) {
-      setError("مبلغ درخواستی نمی‌تواند از سقف اعتبار بیشتر باشد.");
+    if (requestedAmount > available) {
+      setError("مبلغ درخواستی نمی‌تواند از اعتبار باقی‌مانده بیشتر باشد.");
       return;
     }
     const count = Number(installmentCount);
@@ -106,11 +114,13 @@ export function CreditActivationCard({
         <p className="font-extrabold text-slate-900">فعال‌سازی کارت اعتباری</p>
         <p className="mt-2 text-sm leading-7 text-slate-700">
           سقف اعتبار با خرید عضویت داده می‌شود، ولی اقساط اعتباری خودکار ساخته نمی‌شود.
-          مبلغی تا سقف اعتبار درخواست کنید تا پس از تأیید ادمین قسط‌بندی شود. این کیف{" "}
+          مبلغی تا اعتبار باقی‌مانده درخواست کنید تا پس از تأیید ادمین قسط‌بندی شود. این کیف{" "}
           <strong>وام درمانی نیست</strong>.
         </p>
         <p className="mt-2 text-sm font-bold text-teal-800">
-          سقف اعتبار فعلی: {formatPrice(ceiling)}
+          سقف اعتبار: {formatPrice(ceiling)}
+          {" · "}
+          اعتبار باقی‌مانده: {formatPrice(available)}
         </p>
       </div>
 
@@ -122,6 +132,11 @@ export function CreditActivationCard({
           </Link>{" "}
           بخرید.
         </p>
+      ) : available <= 0 ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm leading-7 text-amber-900">
+          اعتبار باقی‌مانده شما تمام شده است. تا وقتی از موجودی مصرف‌شده آزاد نشود یا سقف افزایش
+          نیابد، امکان ثبت درخواست فعال‌سازی جدید وجود ندارد.
+        </p>
       ) : (
         <form onSubmit={onSubmit} className="grid gap-3">
           <div>
@@ -129,14 +144,15 @@ export function CreditActivationCard({
             <FormInput
               type="number"
               min={1}
-              max={ceiling}
+              max={available}
               step={1}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
             />
             <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              باید بیشتر از صفر و حداکثر برابر سقف اعتبار باشد. سقف کیف با تأیید عوض نمی‌شود؛ فقط طرح اقساط ساخته می‌شود.
+              باید بیشتر از صفر و حداکثر برابر اعتبار باقی‌مانده باشد. سقف کیف با تأیید عوض
+              نمی‌شود؛ فقط طرح اقساط ساخته می‌شود.
             </p>
           </div>
           <div>
@@ -151,13 +167,18 @@ export function CreditActivationCard({
               required
             />
             <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              بین {installmentMin.toLocaleString("fa-IR")} تا {installmentMax.toLocaleString("fa-IR")} ماه. قسط اول یک ماه بعد از تأیید است.
+              بین {installmentMin.toLocaleString("fa-IR")} تا{" "}
+              {installmentMax.toLocaleString("fa-IR")} ماه. قسط اول یک ماه بعد از تأیید است.
             </p>
           </div>
           {error ? <p className="text-sm font-bold text-rose-600">{error}</p> : null}
           {ok ? <p className="text-sm font-bold text-teal-700">{ok}</p> : null}
-          <Button type="submit" disabled={busy || hasPending}>
-            {busy ? "در حال ثبت…" : hasPending ? "درخواست در انتظار بررسی است" : "ثبت درخواست فعال‌سازی"}
+          <Button type="submit" disabled={busy || hasPending || available <= 0}>
+            {busy
+              ? "در حال ثبت…"
+              : hasPending
+                ? "درخواست در انتظار بررسی است"
+                : "ثبت درخواست فعال‌سازی"}
           </Button>
         </form>
       )}

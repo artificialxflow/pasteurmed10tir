@@ -53,7 +53,6 @@ const STEP_LABELS: Record<StepName, string> = {
 
 const WAITLIST_TIME_VALUE = "waitlist";
 const WAITLIST_TIME_LABEL = "لیست انتظار";
-const ALL_WEEKDAYS = [...PERSIAN_WEEKDAY_ORDER];
 
 function bookingTypeLabel(type: BookingType): string {
   if (type === "visit") return "ویزیت";
@@ -119,17 +118,10 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   const identityLocked = Boolean(sessionProfile?.phone && sessionProfile?.name);
 
   const steps = useMemo<StepName[]>(() => {
-    const withTime = state.type !== "waitlist";
-    if (doctorFromQuery && dayFromQuery) {
-      return withTime ? ["type", "time", "info"] : ["type", "info"];
-    }
-    if (doctorFromQuery) {
-      return withTime ? ["type", "day", "time", "info"] : ["type", "day", "info"];
-    }
-    return withTime
-      ? ["doctor", "type", "day", "time", "info"]
-      : ["doctor", "type", "day", "info"];
-  }, [doctorFromQuery, dayFromQuery, state.type]);
+    if (doctorFromQuery && dayFromQuery) return ["type", "time", "info"];
+    if (doctorFromQuery) return ["type", "day", "time", "info"];
+    return ["doctor", "type", "day", "time", "info"];
+  }, [doctorFromQuery, dayFromQuery]);
 
   useEffect(() => {
     void fetchPublic<{ dentalReservationFee: number; dentalReservationNote?: string }>(
@@ -151,19 +143,15 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   }, []);
 
   useEffect(() => {
-    if (
-      !state.doctorId ||
-      !state.appointmentDate ||
-      !state.type ||
-      state.type === "waitlist"
-    ) {
+    const slotType = state.type === "treatment" ? "treatment" : state.type === "visit" ? "visit" : null;
+    if (!state.doctorId || !state.appointmentDate || !slotType) {
       setOccupiedSlots([]);
       return;
     }
     const q = new URLSearchParams({
       doctorId: String(state.doctorId),
       date: state.appointmentDate,
-      type: state.type,
+      type: slotType,
     });
     void fetchPublic<{ timeValues: string[] }>(`/api/operations/bookings/occupied?${q}`)
       .then((data) => setOccupiedSlots(data.timeValues))
@@ -176,9 +164,23 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       | null;
     if (saved?.data) {
       const draft = saved.data;
+      /** لیست انتظار دیگر نوع خدمت نیست — در مرحله ساعت انتخاب می‌شود. */
+      const migratedType =
+        draft.type === "waitlist" ? ("visit" as const) : draft.type;
+      const migratedTimeValue =
+        draft.type === "waitlist"
+          ? WAITLIST_TIME_VALUE
+          : (draft.timeValue ?? null);
+      const migratedTimeLabel =
+        draft.type === "waitlist"
+          ? WAITLIST_TIME_LABEL
+          : (draft.timeLabel ?? null);
       setState((prev) => ({
         ...prev,
         ...draft,
+        type: migratedType ?? prev.type,
+        timeValue: migratedTimeValue,
+        timeLabel: migratedTimeLabel,
         doctorId:
           doctorFromQuery && Number.isFinite(parseInt(doctorFromQuery, 10))
             ? parseInt(doctorFromQuery, 10)
@@ -186,7 +188,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         day: dayFromQuery || draft.day || prev.day,
       }));
       if (saved.step && steps.includes(saved.step)) {
-        setCurrentStep(saved.step);
+        setCurrentStep(saved.step === "info" && draft.type === "waitlist" ? "time" : saved.step);
       }
     } else if (dayFromQuery) {
       setState((prev) => ({ ...prev, day: dayFromQuery }));
@@ -219,14 +221,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
 
   const doctor = findDoctor(dentists, state.doctorId);
   const stepIndex = steps.indexOf(currentStep);
-  const isWaitlist = state.type === "waitlist";
+  const isWaitlist = state.timeValue === WAITLIST_TIME_VALUE;
   const monthCalendars = useMemo(() => {
     if (!doctor) return [];
-    const workingDays = isWaitlist
-      ? ALL_WEEKDAYS
-      : Object.keys(doctor.schedule || {});
-    return buildPersianMonthCalendars(workingDays, 2);
-  }, [doctor, isWaitlist]);
+    return buildPersianMonthCalendars(Object.keys(doctor.schedule || {}), 2);
+  }, [doctor]);
   const listedDentists = useMemo(() => {
     return dentists.filter((d) => {
       const id = String(d.specialtyId || "").toLowerCase();
@@ -245,13 +244,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
   useEffect(() => {
     if (!hydrated) return;
     if (currentStep !== "time") return;
-    if (!state.type) {
+    if (!state.type || state.type === "waitlist") {
       setCurrentStep("type");
-      setError("");
-      return;
-    }
-    if (state.type === "waitlist") {
-      setCurrentStep("info");
       setError("");
     }
   }, [hydrated, currentStep, state.type]);
@@ -291,8 +285,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("لطفاً تاریخ نوبت را انتخاب کنید.");
       return;
     }
-    if (currentStep === "time" && state.type !== "waitlist") {
-      if (!state.type) {
+    if (currentStep === "time") {
+      if (!state.type || state.type === "waitlist") {
         showError("ابتدا نوع خدمت را انتخاب کنید.");
         showStep("type");
         return;
@@ -301,18 +295,20 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         showError("پزشک یا تاریخ نوبت مشخص نیست. دوباره از لیست انتخاب کنید.");
         return;
       }
-      const daySchedule = doctor.schedule?.[state.day];
-      const slots =
-        state.type === "visit"
-          ? daySchedule?.visitHours || []
-          : (daySchedule?.treatmentSlots || []).map((s) => s.start);
-      if (!daySchedule || slots.length === 0) {
-        showError("ساعتی برای این روز ثبت نشده است. روز دیگری انتخاب کنید یا با مرکز تماس بگیرید.");
+      if (state.timeValue == null) {
+        showError("لطفاً ساعت یا لیست انتظار را انتخاب کنید.");
         return;
       }
-      if (state.timeValue == null) {
-        showError("لطفاً زمان را انتخاب کنید.");
-        return;
+      if (state.timeValue !== WAITLIST_TIME_VALUE) {
+        const daySchedule = doctor.schedule?.[state.day];
+        const slots =
+          state.type === "visit"
+            ? daySchedule?.visitHours || []
+            : (daySchedule?.treatmentSlots || []).map((s) => s.start);
+        if (!daySchedule || slots.length === 0) {
+          showError("ساعتی برای این روز ثبت نشده است. روز دیگری انتخاب کنید یا لیست انتظار را بزنید.");
+          return;
+        }
       }
     }
     if (stepIndex < steps.length - 1) {
@@ -337,13 +333,15 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       showError("شماره موبایل معتبر وارد کنید.");
       return;
     }
-    const waitlist = state.type === "waitlist";
+    const waitlist = state.timeValue === WAITLIST_TIME_VALUE;
+    const serviceType = state.type === "treatment" ? "treatment" : "visit";
     if (
       !doctor ||
       !state.type ||
+      state.type === "waitlist" ||
       !state.appointmentDate ||
       !state.day ||
-      (!waitlist && state.timeValue == null)
+      state.timeValue == null
     ) {
       showError("اطلاعات رزرو ناقص است.");
       return;
@@ -364,8 +362,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           doctorId: doctor.id,
           doctorName: doctor.name,
           specialty: doctor.specialty,
-          type: state.type,
-          typeLabel: bookingTypeLabel(state.type),
+          type: waitlist ? "waitlist" : serviceType,
+          typeLabel: waitlist ? WAITLIST_TIME_LABEL : bookingTypeLabel(serviceType),
           day: state.day,
           appointmentDate: state.appointmentDate,
           appointmentDateLabel: state.appointmentDate
@@ -383,7 +381,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
           referralCode: waitlist ? undefined : referral.referralCode || state.referralCode,
           referralDiscountPercent: waitlist ? 0 : referral.referralDiscountPercent,
           referralDiscountAmount: waitlist ? 0 : referral.referralDiscountAmount,
-          onlineInsuranceCovered: state.onlineInsuranceCovered,
+          onlineInsuranceCovered: false,
           staffNote: state.staffNote.trim() || undefined,
         });
         PasteurStorage.clearPendingBooking();
@@ -398,7 +396,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
     void checkBookingSlot({
       doctorId: doctor.id,
       appointmentDate: state.appointmentDate,
-      type: state.type,
+      type: serviceType,
       timeValue: state.timeValue as number | string,
     })
       .then((taken) => {
@@ -510,24 +508,6 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             accent="blue"
             app={app}
           />
-          <TypeOption
-            selected={state.type === "waitlist"}
-            onClick={() => {
-              const next = {
-                ...state,
-                type: "waitlist" as const,
-                timeValue: WAITLIST_TIME_VALUE,
-                timeLabel: WAITLIST_TIME_LABEL,
-              };
-              setState(next);
-              showStep("day", next);
-            }}
-            emoji="📋"
-            title="لیست انتظار"
-            desc="هر روز قابل ثبت — بدون محدودیت ظرفیت و بدون انتخاب ساعت"
-            accent="amber"
-            app={app}
-          />
         </div>
       ) : null}
 
@@ -612,9 +592,8 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       {currentStep === "day" ? (
         <div className="space-y-6">
           <p className="text-sm text-slate-600">
-            {isWaitlist
-              ? "لیست انتظار: هر روز (به‌جز گذشته) قابل ثبت است — بدون محدودیت ظرفیت."
-              : "تقویم این ماه و ماه بعد — روزهای حضور پزشک روشن‌تر است."}
+            تقویم این ماه و ماه بعد — روزهای حضور پزشک روشن‌تر است. در مرحله بعد می‌توانید ساعت
+            یا لیست انتظار را انتخاب کنید.
           </p>
           {!doctor || !monthCalendars.length ? (
             <p className="py-6 text-center text-slate-500">
@@ -656,11 +635,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                                 ...state,
                                 appointmentDate: cell.isoDate,
                                 day: cell.scheduleDay,
-                                timeValue: isWaitlist ? WAITLIST_TIME_VALUE : null,
-                                timeLabel: isWaitlist ? WAITLIST_TIME_LABEL : null,
+                                timeValue: null,
+                                timeLabel: null,
                               };
                               setState(next);
-                              showStep(isWaitlist ? "info" : "time", next);
+                              showStep("time", next);
                             }}
                             className={cn(
                               "flex min-h-[3rem] flex-col items-center justify-center rounded-xl border px-1 py-1 text-xs font-bold transition",
@@ -711,7 +690,11 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">نوع:</span>
-                <span className="font-semibold">{bookingTypeLabel(state.type)}</span>
+                <span className="font-semibold">
+                  {isWaitlist
+                    ? `${WAITLIST_TIME_LABEL} (${bookingTypeLabel(state.type === "treatment" ? "treatment" : "visit")})`
+                    : bookingTypeLabel(state.type)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">تاریخ:</span>
@@ -832,24 +815,6 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               </p>
             </div>
 
-            {state.type === "visit" ? (
-              <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 accent-cyan-800"
-                  checked={state.onlineInsuranceCovered}
-                  onChange={(e) =>
-                    updateState({ onlineInsuranceCovered: e.target.checked })
-                  }
-                />
-                <span>
-                  ویزیت آنلاین با پوشش بیمه تکمیلی
-                  <span className="mt-1 block text-xs font-normal text-slate-500">
-                    بیمه تکمیلی را در پنل کاربری ثبت کنید؛ استعلام در مرحله پرداخت انجام می‌شود.
-                  </span>
-                </span>
-              </label>
-            ) : null}
           </form>
         </div>
       ) : null}
@@ -1007,14 +972,14 @@ function TimeStep({
   dentistsLoading?: boolean;
   state: BookingState;
   occupiedSlots: string[];
-  onSelect: (timeValue: number, timeLabel: string) => void;
+  onSelect: (timeValue: number | string, timeLabel: string) => void;
   onBackToType: () => void;
   onBackToList: () => void;
 }) {
   if (dentistsLoading) {
     return <p className="py-6 text-center text-sm text-slate-500">در حال بارگذاری برنامه پزشک…</p>;
   }
-  if (!state.type) {
+  if (!state.type || state.type === "waitlist") {
     return (
       <div className="space-y-3 py-4 text-center">
         <p className="text-sm text-slate-600">ابتدا نوع خدمت را انتخاب کنید.</p>
@@ -1039,27 +1004,11 @@ function TimeStep({
   }
 
   const daySchedule = doctor.schedule?.[state.day];
-  if (!daySchedule) {
-    return (
-      <p className="py-6 text-center text-slate-500">
-        برنامه‌ای برای «{formatBookingDateLabel(state.appointmentDate)}» وجود ندارد. تاریخ دیگری
-        انتخاب کنید.
-      </p>
-    );
-  }
-
   const isVisit = state.type === "visit";
-  const visitHours = daySchedule.visitHours || [];
-  const treatmentSlots = daySchedule.treatmentSlots || [];
-  const hasSlots = isVisit ? visitHours.length > 0 : treatmentSlots.length > 0;
-
-  if (!hasSlots) {
-    return (
-      <p className="py-6 text-center text-slate-500">
-        ساعتی برای این تاریخ ثبت نشده است. با مرکز تماس بگیرید یا تاریخ دیگری را انتخاب کنید.
-      </p>
-    );
-  }
+  const visitHours = daySchedule?.visitHours || [];
+  const treatmentSlots = daySchedule?.treatmentSlots || [];
+  const hasSlots = Boolean(daySchedule) && (isVisit ? visitHours.length > 0 : treatmentSlots.length > 0);
+  const waitlistSelected = state.timeValue === WAITLIST_TIME_VALUE;
 
   return (
     <div>
@@ -1069,11 +1018,16 @@ function TimeStep({
       </p>
       <p className="mb-4 rounded-lg border border-teal-200 bg-teal-50 p-3 text-sm text-teal-700">
         {isVisit
-          ? "ویزیت: یک ساعت کلی انتخاب کنید (مثلاً ساعت ۱۴)"
-          : "درمان: یک بازه یک‌ساعته انتخاب کنید (مثلاً ۱۴ تا ۱۵)"}
+          ? "ویزیت: یک ساعت کلی انتخاب کنید (مثلاً ساعت ۱۴) — یا لیست انتظار"
+          : "درمان: یک بازه یک‌ساعته انتخاب کنید (مثلاً ۱۴ تا ۱۵) — یا لیست انتظار"}
       </p>
+      {!hasSlots ? (
+        <p className="mb-3 text-sm text-amber-800">
+          ساعت آزادی برای این روز نیست؛ می‌توانید در لیست انتظار ثبت‌نام کنید.
+        </p>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {isVisit
+        {hasSlots && isVisit
           ? visitHours.map((h) => {
               const booked = isSlotTaken(h, occupiedSlots);
               const selected = state.timeValue === h;
@@ -1096,7 +1050,9 @@ function TimeStep({
                 </button>
               );
             })
-          : treatmentSlots.map((slot) => {
+          : null}
+        {hasSlots && !isVisit
+          ? treatmentSlots.map((slot) => {
               const booked = slot.booked || isSlotTaken(slot.start, occupiedSlots);
               const selected = state.timeValue === slot.start;
               return (
@@ -1119,7 +1075,21 @@ function TimeStep({
                   ) : null}
                 </button>
               );
-            })}
+            })
+          : null}
+        <button
+          type="button"
+          onClick={() => onSelect(WAITLIST_TIME_VALUE, WAITLIST_TIME_LABEL)}
+          className={cn(
+            "rounded-2xl border px-4 py-3 text-center font-semibold transition sm:col-span-1",
+            waitlistSelected
+              ? "border-amber-500 bg-amber-50 ring-2 ring-amber-200"
+              : "border-amber-300 bg-amber-50/70 hover:border-amber-400",
+          )}
+        >
+          {WAITLIST_TIME_LABEL}
+          <span className="mt-1 block text-xs font-bold text-amber-800">بدون انتخاب ساعت</span>
+        </button>
       </div>
     </div>
   );

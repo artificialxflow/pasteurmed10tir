@@ -1,7 +1,11 @@
 "use client";
 
 import { fetchPublic } from "@/lib/content/client";
-import { DEFAULT_HERO_SLIDES, type HeroSlide } from "@/lib/content/hero-slides";
+import {
+  DEFAULT_HERO_SLIDES,
+  normalizeHeroSlide,
+  type HeroSlide,
+} from "@/lib/content/hero-slides";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -9,7 +13,9 @@ import { useCallback, useEffect, useState } from "react";
 const INTERVAL_MS = 3000;
 
 export function HeroSlider() {
-  const [slides, setSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES);
+  const [slides, setSlides] = useState<HeroSlide[]>(() =>
+    DEFAULT_HERO_SLIDES.map((s) => normalizeHeroSlide({ ...s })),
+  );
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -17,7 +23,7 @@ export function HeroSlider() {
     void fetchPublic<{ heroSlides?: HeroSlide[] }>("/api/content/settings")
       .then((data) => {
         if (Array.isArray(data.heroSlides) && data.heroSlides.length) {
-          setSlides(data.heroSlides);
+          setSlides(data.heroSlides.map((s) => normalizeHeroSlide({ ...s })));
           setActive(0);
         }
       })

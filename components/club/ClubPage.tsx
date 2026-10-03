@@ -20,6 +20,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Variant = "web" | "app";
+type ClubSection =
+  | "overview"
+  | "earn"
+  | "rewards"
+  | "missions"
+  | "invite"
+  | "history"
+  | "rules";
 
 const INSTAGRAM_URL = "https://instagram.com/pastor.beauty.tbz";
 const INSTAGRAM_USERNAME = "pastor.beauty.tbz";
@@ -34,6 +42,7 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
   const [profile, setProfile] = useState<ClubProfile | null>(null);
   const [brushStatus, setBrushStatus] = useState<BrushStatus | null>(null);
   const [message, setMessage] = useState("");
+  const [section, setSection] = useState<ClubSection>("overview");
 
   useEffect(() => {
     void fetch("/api/auth/me", { credentials: "include" })
@@ -57,6 +66,7 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
       return;
     }
     setCurrentPhone(digits);
+    setSection("overview");
     void getClubProfileApi(digits)
       .then((data) => {
         setProfile({ ...data.profile });
@@ -91,55 +101,28 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
 
   const tier = profile ? PasteurStorage.getClubTier(profile.points) : null;
   const isApp = variant === "app";
+  const walletHref = isApp ? ROUTES.app.wallet : ROUTES.web.wallet;
+  const membershipHref = isApp ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership;
+
+  const tabs: Array<{ id: ClubSection; label: string }> = [
+    { id: "overview", label: "خلاصه امتیاز" },
+    { id: "earn", label: "کسب امتیاز" },
+    { id: "rewards", label: "پاداش‌ها" },
+    { id: "missions", label: "ماموریت‌ها" },
+    { id: "invite", label: "دعوت دوستان" },
+    { id: "history", label: "تاریخچه" },
+    ...(!isApp ? ([{ id: "rules", label: "قوانین" }] as const) : []),
+  ];
 
   return (
-    <div className={cn(isApp ? "space-y-4" : "mx-auto max-w-4xl space-y-8")}>
+    <div className={cn(isApp ? "space-y-4" : "mx-auto max-w-4xl space-y-6")}>
       {!isApp ? (
-        <>
-          <div>
-            <h1 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">🎁 باشگاه مشتریان</h1>
-            <p className="text-slate-600">
-              امتیاز جمع کنید، سطح خود را ارتقا دهید و از پاداش‌ها بهره‌مند شوید
-            </p>
-          </div>
-
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card hover={false}>
-              <p className="mb-2 text-2xl">🦷</p>
-              <h2 className="font-bold text-slate-900">مراجعه به مرکز</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                هر رزرو و پرداخت موفق، ۵۰ امتیاز و یک مراجعه ثبت می‌کند.
-              </p>
-            </Card>
-            <Card hover={false}>
-              <p className="mb-2 text-2xl">👥</p>
-              <h2 className="font-bold text-slate-900">معرفی بیمار جدید</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                استفاده بیمار جدید از کد معرف، ۱۰۰ امتیاز برای معرف ثبت می‌کند.
-              </p>
-            </Card>
-            <Card hover={false}>
-              <p className="mb-2 text-2xl">💬</p>
-              <h2 className="font-bold text-slate-900">مشاوره و ویزیت</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                ثبت هر مشاوره یا ویزیت، ۲۰ امتیاز به حساب همان موبایل اضافه می‌کند.
-              </p>
-            </Card>
-            <Card hover={false}>
-              <p className="mb-2 text-2xl">🪪</p>
-              <h2 className="font-bold text-slate-900">عضویت طرح</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                پرداخت عضویت عادی یا VIP دندان، ۱۰۰ امتیاز باشگاه ثبت می‌کند.
-              </p>
-              <Link
-                href={ROUTES.web.dentalMembership}
-                className="mt-3 inline-block text-sm font-bold text-teal-700 underline-offset-2 hover:underline"
-              >
-                رفتن به فرم عضویت ←
-              </Link>
-            </Card>
-          </section>
-        </>
+        <div>
+          <h1 className="mb-2 text-2xl font-bold text-slate-900 sm:text-3xl">🎁 باشگاه مشتریان</h1>
+          <p className="text-slate-600">
+            امتیاز جمع کنید، سطح خود را ارتقا دهید و از پاداش‌ها بهره‌مند شوید
+          </p>
+        </div>
       ) : null}
 
       <Card
@@ -164,92 +147,157 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
       </Card>
 
       {profile && tier ? (
-        <div className="space-y-6">
-          <div
-            className={cn(
-              "grid gap-4",
-              isApp ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
-            )}
-          >
-            <Card hover={false} className="p-5 text-center">
-              <p className="text-3xl font-bold text-teal-700">
-                {profile.points.toLocaleString("fa-IR")}
-              </p>
-              <p className="text-sm text-slate-500">{isApp ? "امتیاز" : "امتیاز کل"}</p>
-            </Card>
-            <Card hover={false} className="p-5 text-center">
-              <p className="text-3xl font-bold text-blue-700">
-                {Number(profile.visits || 0).toLocaleString("fa-IR")}
-              </p>
-              <p className="text-sm text-slate-500">{isApp ? "مراجعه" : "تعداد مراجعه"}</p>
-            </Card>
-            <Card hover={false} className="p-5 text-center">
-              <p className="text-3xl font-bold text-amber-700">
-                {Number(profile.referrals || 0).toLocaleString("fa-IR")}
-              </p>
-              <p className="text-sm text-slate-500">{isApp ? "معرفی" : "تعداد معرفی بیمار"}</p>
-            </Card>
-            <Card hover={false} className="p-5 text-center">
-              <p className={cn("font-bold", isApp ? "text-sm" : "text-2xl")}>
-                {tier.emoji} {tier.name}
-                {!isApp ? ` (${tier.discount}٪ تخفیف)` : ""}
-              </p>
-              <p className="text-sm text-slate-500">{isApp ? "سطح" : "سطح وفاداری"}</p>
-            </Card>
-          </div>
-
-          <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
-            <Card hover={false} className="p-5">
-              <h2 className="mb-2 text-lg font-bold">
-                {isApp ? "مسواک زدم" : "🪥 مسواک زدم"}
-              </h2>
-              <p className="mb-4 text-sm leading-7 text-slate-600">
-                با ثبت مسواک روزانه، هر بار {Number(5).toLocaleString("fa-IR")} امتیاز بگیرید.
-                حداکثر {Number(3).toLocaleString("fa-IR")} بار در روز و با فاصله حداقل ۸ ساعت.
-              </p>
-              {brushStatus ? (
-                <p className="mb-4 text-sm font-bold text-teal-700">
-                  امروز: {brushStatus.brushesToday.toLocaleString("fa-IR")} از{" "}
-                  {brushStatus.maxPerDay.toLocaleString("fa-IR")} بار
-                </p>
-              ) : null}
-              <Button
+        <>
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
                 type="button"
-                className="w-full sm:w-auto"
-                disabled={!brushStatus?.canBrush}
-                onClick={recordBrush}
+                onClick={() => setSection(tab.id)}
+                className={cn(
+                  "rounded-xl px-3 py-2 text-xs font-bold transition sm:text-sm",
+                  section === tab.id
+                    ? "bg-teal-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                )}
               >
-                مسواک زدم (+۵ امتیاز)
-              </Button>
-              {brushStatus && !brushStatus.canBrush && brushStatus.errorMessage ? (
-                <p className="mt-3 text-sm font-bold text-amber-800">{brushStatus.errorMessage}</p>
-              ) : null}
-            </Card>
-
-            <Card hover={false} className="p-5">
-              <h2 className="mb-2 text-lg font-bold">
-                {isApp ? "اینستاگرام پاستور" : "📸 اینستاگرام پاستور"}
-              </h2>
-              <p className="mb-4 text-sm leading-7 text-slate-600">
-                برای دیدن نمونه کارها، اخبار و پیشنهادهای ویژه، پیج ما را در اینستاگرام دنبال
-                کنید.
-              </p>
-              <p className="mb-4 rounded-xl border border-pink-100 bg-pink-50 p-3 text-sm font-bold text-pink-800">
-                @{INSTAGRAM_USERNAME}
-              </p>
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-slate-900 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-50 sm:w-auto"
-              >
-                مشاهده پیج اینستاگرام
-              </a>
-            </Card>
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          <div>
-            <h2 className="mb-4 text-lg font-bold">{isApp ? "پاداش‌ها" : "🎁 پاداش‌های قابل دریافت"}</h2>
+          {section === "overview" ? (
+            <div
+              className={cn(
+                "grid gap-4",
+                isApp ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+              )}
+            >
+              <Card hover={false} className="p-5 text-center">
+                <p className="text-3xl font-bold text-teal-700">
+                  {profile.points.toLocaleString("fa-IR")}
+                </p>
+                <p className="text-sm text-slate-500">{isApp ? "امتیاز" : "امتیاز کل"}</p>
+              </Card>
+              <Card hover={false} className="p-5 text-center">
+                <p className="text-3xl font-bold text-blue-700">
+                  {Number(profile.visits || 0).toLocaleString("fa-IR")}
+                </p>
+                <p className="text-sm text-slate-500">{isApp ? "مراجعه" : "تعداد مراجعه"}</p>
+              </Card>
+              <Card hover={false} className="p-5 text-center">
+                <p className="text-3xl font-bold text-amber-700">
+                  {Number(profile.referrals || 0).toLocaleString("fa-IR")}
+                </p>
+                <p className="text-sm text-slate-500">{isApp ? "معرفی" : "تعداد معرفی بیمار"}</p>
+              </Card>
+              <Card hover={false} className="p-5 text-center">
+                <p className={cn("font-bold", isApp ? "text-sm" : "text-2xl")}>
+                  {tier.emoji} {tier.name}
+                  {!isApp ? ` (${tier.discount}٪ تخفیف)` : ""}
+                </p>
+                <p className="text-sm text-slate-500">{isApp ? "سطح" : "سطح وفاداری"}</p>
+              </Card>
+              <Card hover={false} className="col-span-full border-emerald-200 bg-emerald-50 p-4 text-center">
+                <p className="mb-3 text-sm text-slate-700">کیف اعتبار (جدا از امتیاز باشگاه)</p>
+                <Button href={walletHref} className="w-full sm:w-auto">
+                  مشاهده کیف اعتبار
+                </Button>
+              </Card>
+            </div>
+          ) : null}
+
+          {section === "earn" ? (
+            <div className="space-y-4">
+              {!isApp ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Card hover={false}>
+                    <p className="mb-2 text-2xl">🦷</p>
+                    <h2 className="font-bold text-slate-900">مراجعه به مرکز</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      هر رزرو و پرداخت موفق، ۵۰ امتیاز و یک مراجعه ثبت می‌کند.
+                    </p>
+                  </Card>
+                  <Card hover={false}>
+                    <p className="mb-2 text-2xl">👥</p>
+                    <h2 className="font-bold text-slate-900">معرفی بیمار جدید</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      استفاده بیمار جدید از کد معرف، ۱۰۰ امتیاز برای معرف ثبت می‌کند.
+                    </p>
+                  </Card>
+                  <Card hover={false}>
+                    <p className="mb-2 text-2xl">💬</p>
+                    <h2 className="font-bold text-slate-900">مشاوره و ویزیت</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      ثبت هر مشاوره یا ویزیت، ۲۰ امتیاز به حساب همان موبایل اضافه می‌کند.
+                    </p>
+                  </Card>
+                  <Card hover={false}>
+                    <p className="mb-2 text-2xl">🪪</p>
+                    <h2 className="font-bold text-slate-900">عضویت طرح</h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      پرداخت عضویت عادی یا VIP دندان، ۱۰۰ امتیاز باشگاه ثبت می‌کند.
+                    </p>
+                    <Link
+                      href={membershipHref}
+                      className="mt-3 inline-block text-sm font-bold text-teal-700 underline-offset-2 hover:underline"
+                    >
+                      رفتن به فرم عضویت ←
+                    </Link>
+                  </Card>
+                </div>
+              ) : null}
+              <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
+                <Card hover={false} className="p-5">
+                  <h2 className="mb-2 text-lg font-bold">
+                    {isApp ? "مسواک زدم" : "🪥 مسواک زدم"}
+                  </h2>
+                  <p className="mb-4 text-sm leading-7 text-slate-600">
+                    با ثبت مسواک روزانه، هر بار ۵ امتیاز بگیرید. حداکثر ۳ بار در روز و با فاصله
+                    حداقل ۸ ساعت.
+                  </p>
+                  {brushStatus ? (
+                    <p className="mb-4 text-sm font-bold text-teal-700">
+                      امروز: {brushStatus.brushesToday.toLocaleString("fa-IR")} از{" "}
+                      {brushStatus.maxPerDay.toLocaleString("fa-IR")} بار
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    className="w-full sm:w-auto"
+                    disabled={!brushStatus?.canBrush}
+                    onClick={recordBrush}
+                  >
+                    مسواک زدم (+۵ امتیاز)
+                  </Button>
+                  {brushStatus && !brushStatus.canBrush && brushStatus.errorMessage ? (
+                    <p className="mt-3 text-sm font-bold text-amber-800">{brushStatus.errorMessage}</p>
+                  ) : null}
+                </Card>
+                <Card hover={false} className="p-5">
+                  <h2 className="mb-2 text-lg font-bold">
+                    {isApp ? "اینستاگرام پاستور" : "📸 اینستاگرام پاستور"}
+                  </h2>
+                  <p className="mb-4 text-sm leading-7 text-slate-600">
+                    برای دیدن نمونه کارها، اخبار و پیشنهادهای ویژه، پیج ما را دنبال کنید.
+                  </p>
+                  <p className="mb-4 rounded-xl border border-pink-100 bg-pink-50 p-3 text-sm font-bold text-pink-800">
+                    @{INSTAGRAM_USERNAME}
+                  </p>
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-slate-900 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-50 sm:w-auto"
+                  >
+                    مشاهده پیج اینستاگرام
+                  </a>
+                </Card>
+              </div>
+            </div>
+          ) : null}
+
+          {section === "rewards" ? (
             <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
               {PASTEUR_DATA.clubRewards.map((reward) => {
                 const canRedeem = profile.points >= reward.points;
@@ -276,13 +324,10 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                 );
               })}
             </div>
-          </div>
+          ) : null}
 
-          <div className={cn("grid gap-4", isApp ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3")}>
+          {section === "missions" ? (
             <Card hover={false} className="p-5">
-              <h2 className="mb-4 text-lg font-bold">
-                {isApp ? "ماموریت‌ها" : "🎯 ماموریت‌ها / چالش‌ها"}
-              </h2>
               <div className="space-y-3">
                 {PASTEUR_DATA.clubMissions.map((mission) => (
                   <div
@@ -295,21 +340,23 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                 ))}
               </div>
             </Card>
+          ) : null}
 
-            {!isApp ? (
-              <>
+          {section === "invite" ? (
+            <div className="space-y-4">
+              <Card hover={false} className="p-5">
+                <h2 className="mb-4 text-lg font-bold">دعوت از دوستان</h2>
+                <p className="text-sm leading-7 text-slate-600">
+                  با ثبت کد معرف در رزرو، عضویت یا VIP تجهیزات، برای معرف امتیاز و پورسانت ثبت
+                  می‌شود.
+                </p>
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
+                  کد دعوت پیشنهادی شما: PLUS-{currentPhone.slice(-4)}
+                </p>
+              </Card>
+              {!isApp ? (
                 <Card hover={false} className="p-5">
-                  <h2 className="mb-4 text-lg font-bold">👥 دعوت از دوستان</h2>
-                  <p className="text-sm leading-7 text-slate-600">
-                    با ثبت کد معرف در رزرو، عضویت یا VIP تجهیزات، برای معرف امتیاز و پورسانت ثبت
-                    می‌شود.
-                  </p>
-                  <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
-                    کد دعوت پیشنهادی شما: PLUS-{currentPhone.slice(-4)}
-                  </p>
-                </Card>
-                <Card hover={false} className="p-5">
-                  <h2 className="mb-4 text-lg font-bold">⭐ پیشنهادهای ویژه اعضا</h2>
+                  <h2 className="mb-4 text-lg font-bold">پیشنهادهای ویژه اعضا</h2>
                   <div className="space-y-2 text-sm text-slate-600">
                     {PASTEUR_DATA.memberOnlyOffers.map((offer) => (
                       <div
@@ -321,26 +368,15 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                     ))}
                   </div>
                 </Card>
-              </>
-            ) : (
-              <>
-                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
-                  کد دعوت: PLUS-{currentPhone.slice(-4)}
-                </p>
-                <Card hover={false} className="border-emerald-200 bg-emerald-50 p-4 text-center">
-                  <p className="mb-3 text-sm text-slate-700">کیف اعتبار (جدا از امتیاز)</p>
-                  <Button href={ROUTES.app.wallet} className="w-full">
-                    مشاهده کیف اعتبار
-                  </Button>
-                </Card>
-              </>
-            )}
-          </div>
+              ) : null}
+              <Card hover={false} className="border-teal-200 bg-teal-50 p-5 text-center">
+                <p className="mb-3 text-slate-700">برای تخفیف‌های بیشتر، طرح عضویت ارتقا دهید</p>
+                <Button href={membershipHref}>مشاهده طرح‌های عضویت</Button>
+              </Card>
+            </div>
+          ) : null}
 
-          <div>
-            <h2 className="mb-4 text-lg font-bold">
-              {isApp ? "تاریخچه امتیاز" : "📜 تاریخچه امتیازات"}
-            </h2>
+          {section === "history" ? (
             <div className="space-y-2">
               {profile.history.length ? (
                 (isApp ? profile.history.slice(0, 8) : profile.history).map((h, idx) => (
@@ -371,33 +407,20 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                 />
               )}
             </div>
-          </div>
-
-          {!isApp ? (
-            <>
-              <Card hover={false} className="border-emerald-200 bg-emerald-50 p-5 text-center">
-                <p className="mb-3 text-slate-700">اعتبار مصرفی (تومان) — جدا از امتیاز باشگاه</p>
-                <Button href={ROUTES.web.wallet}>مشاهده کیف اعتبار</Button>
-              </Card>
-
-              <Card hover={false} className="border-slate-200 bg-slate-50 p-5">
-                <h2 className="mb-4 text-lg font-bold">📌 قوانین باشگاه</h2>
-                <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-3">
-                  {PASTEUR_DATA.clubRules.map((rule) => (
-                    <div key={rule} className="rounded-xl border border-slate-200 bg-white p-3">
-                      ✓ {rule}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card hover={false} className="border-teal-200 bg-teal-50 p-5 text-center">
-                <p className="mb-3 text-slate-700">برای تخفیف‌های بیشتر، طرح عضویت ارتقا دهید</p>
-                <Button href={ROUTES.web.dentalMembership}>مشاهده طرح‌های عضویت</Button>
-              </Card>
-            </>
           ) : null}
-        </div>
+
+          {section === "rules" && !isApp ? (
+            <Card hover={false} className="border-slate-200 bg-slate-50 p-5">
+              <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-3">
+                {PASTEUR_DATA.clubRules.map((rule) => (
+                  <div key={rule} className="rounded-xl border border-slate-200 bg-white p-3">
+                    ✓ {rule}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+        </>
       ) : null}
 
       {message ? (

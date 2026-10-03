@@ -2,12 +2,19 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { supportsConsultationVideo } from "@/lib/consultation/categories";
 import {
-  canJoinConsultationVideoStatus,
+  consultationModality,
+  consultationSupportsVideoSession,
+  modalityCapabilityHint,
+} from "@/lib/consultation/modality";
+import {
   consultationVideoJoinKind,
   videoStatusLabel,
 } from "@/lib/jitsi/labels";
+import {
+  canJoinConsultationVideoNow,
+  isConsultationVideoWindowExpired,
+} from "@/lib/jitsi/video-window";
 import {
   getConsultationApi,
   mintPatientConsultationVideoToken,
@@ -18,12 +25,14 @@ import { useCallback, useEffect, useState } from "react";
 
 type TrackItem = {
   id: string;
+  type?: string;
   typeLabel?: string;
   category?: string;
   categoryLabel?: string;
   specialtyLabel?: string;
   doctorName?: string;
   status?: string;
+  preferredDate?: string;
   preferredDateLabel?: string;
   preferredTime?: string;
   preferredTimeLabel?: string;
@@ -82,11 +91,18 @@ export function ConsultationTrack({
     const data = await getConsultationApi(id);
     const next = data.item as TrackItem;
     setItem(next);
-    const videoOk = supportsConsultationVideo(next.category);
+    const videoOk = consultationSupportsVideoSession({
+      category: next.category,
+      type: next.type,
+    });
     if (
       videoOk &&
       next.videoMeetingUrl &&
-      canJoinConsultationVideoStatus(next.videoStatus)
+      canJoinConsultationVideoNow({
+        videoStatus: next.videoStatus,
+        preferredDate: next.preferredDate,
+        preferredTime: next.preferredTime,
+      })
     ) {
       setResolvedJoinUrl(String(next.videoMeetingUrl));
     } else {
@@ -151,7 +167,11 @@ export function ConsultationTrack({
   }
 
   const cancelled = item.status === "cancelled";
-  const videoOk = supportsConsultationVideo(item.category);
+  const videoOk = consultationSupportsVideoSession({
+    category: item.category,
+    type: item.type,
+  });
+  const modality = consultationModality(item.type);
   const statusLabel =
     item.status === "answered" ? "پاسخ داده شد" : cancelled ? "لغو شده" : "در انتظار";
   const visitTime =
@@ -159,24 +179,42 @@ export function ConsultationTrack({
       ? String(item.preferredTimeLabel || item.preferredTime)
       : "";
   const visitDate = item.preferredDateLabel ? String(item.preferredDateLabel) : "";
+  const windowExpired = isConsultationVideoWindowExpired({
+    preferredDate: item.preferredDate,
+    preferredTime: item.preferredTime,
+  });
   const joinable =
-    videoOk && !cancelled && canJoinConsultationVideoStatus(item.videoStatus);
-  const videoLabel = videoStatusLabel(item.videoStatus);
+    videoOk &&
+    !cancelled &&
+    canJoinConsultationVideoNow({
+      videoStatus: item.videoStatus,
+      preferredDate: item.preferredDate,
+      preferredTime: item.preferredTime,
+    });
+  const videoLabel = windowExpired
+    ? "مهلت اتاق پایان یافت"
+    : videoStatusLabel(item.videoStatus);
   const displayLink =
     resolvedJoinUrl ||
     (item.videoMeetingUrl && joinable ? String(item.videoMeetingUrl) : "");
 
   if (!videoOk) {
+    const modalityNote =
+      modality === "audio"
+        ? "این درخواست مشاوره صوتی است (صوت + متن). اتاق ویدیو و آپلود تصویر فعال نیست؛ هماهنگی تماس از طریق مرکز انجام می‌شود."
+        : modality === "text"
+          ? "این درخواست مشاوره متنی است (فقط متن). اتاق ویدیو، صوت و آپلود تصویر فعال نیست."
+          : "برای این نوع خدمت لینک اتاق ویزیت تصویری فعال نیست. پیگیری از طریق تماس مرکز انجام می‌شود.";
     return (
       <div className="space-y-4">
         <Card hover={false} className="p-5">
           <p className="text-sm font-extrabold text-slate-900">
             {item.typeLabel || item.categoryLabel || "درخواست"}
           </p>
-          <p className="mt-2 text-xs leading-6 text-slate-600">
-            برای این نوع خدمت لینک اتاق ویزیت تصویری فعال نیست. پیگیری از طریق تماس مرکز انجام
-            می‌شود.
+          <p className="mt-1 text-xs font-bold text-slate-500">
+            امکانات: {modalityCapabilityHint(item.type)}
           </p>
+          <p className="mt-2 text-xs leading-6 text-slate-600">{modalityNote}</p>
           <p className="mt-3 text-xs text-slate-500">
             وضعیت: {statusLabel}
             {item.doctorName || item.specialtyLabel
@@ -319,9 +357,13 @@ export function ConsultationTrack({
             </Button>
           </div>
         </Card>
-      ) : !cancelled && item.videoStatus === "completed" ? (
+      ) : !cancelled && (item.videoStatus === "completed" || windowExpired) ? (
         <Card hover={false} className="border-slate-200 bg-slate-50 p-5">
-          <p className="text-sm font-extrabold text-slate-800">جلسه ویدیو پایان یافته است.</p>
+          <p className="text-sm font-extrabold text-slate-800">
+            {windowExpired && item.videoStatus !== "completed"
+              ? "مهلت ورود به اتاق ویدیو پایان یافته است (۳۰ دقیقه پس از وقت ویزیت)."
+              : "جلسه ویدیو پایان یافته است."}
+          </p>
         </Card>
       ) : !cancelled ? (
         <Card hover={false} className="border-amber-200 bg-amber-50/70 p-5">

@@ -11,12 +11,12 @@ import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
-import { supportsConsultationVideo } from "@/lib/consultation/categories";
+import { consultationSupportsVideoSession } from "@/lib/consultation/modality";
 import {
-  canJoinConsultationVideoStatus,
   consultationVideoJoinKind,
   videoStatusLabel,
 } from "@/lib/jitsi/labels";
+import { canJoinConsultationVideoNow } from "@/lib/jitsi/video-window";
 import {
   fetchMyActivityApi,
   fetchPatientOps,
@@ -110,6 +110,7 @@ type PanelSection =
   | "physician-visits"
   | "physician-stats"
   | "physician-commissions"
+  | "physician-referrals"
   | "loan"
   | "installments"
   | "insurance"
@@ -311,6 +312,7 @@ export function AccountDashboard({
           { id: "physician-visits", label: "ویزیت‌های من" },
           { id: "physician-stats", label: "کارکرد من" },
           { id: "physician-commissions", label: "پورسانت پزشک" },
+          { id: "physician-referrals", label: "ارجاع به متخصص" },
         ] satisfies { id: PanelSection; label: string }[])
       : []),
     { id: "loan", label: "درخواست وام / اعتبار" },
@@ -492,6 +494,8 @@ export function AccountDashboard({
     panelBody = <PhysicianPanel section="stats" />;
   } else if (panel === "physician-commissions") {
     panelBody = <PhysicianPanel section="commissions" />;
+  } else if (panel === "physician-referrals") {
+    panelBody = <PhysicianPanel section="referrals" />;
   } else if (panel === "loan") {
     panelBody = (
       <LoanRequestCard
@@ -663,12 +667,21 @@ export function AccountDashboard({
           activity.consultations.map((c) => {
             const st = String(c.status || "");
             const cancelled = st === "cancelled";
-            const videoOk = supportsConsultationVideo(
-              c.category ? String(c.category) : undefined,
-            );
+            const videoOk = consultationSupportsVideoSession({
+              category: c.category ? String(c.category) : undefined,
+              type: c.type ? String(c.type) : undefined,
+            });
             const videoStatus = String(c.videoStatus || "none");
+            const preferredDate = c.preferredDate ? String(c.preferredDate) : undefined;
+            const preferredTime = c.preferredTime ? String(c.preferredTime) : undefined;
             const joinable =
-              videoOk && !cancelled && canJoinConsultationVideoStatus(videoStatus);
+              videoOk &&
+              !cancelled &&
+              canJoinConsultationVideoNow({
+                videoStatus,
+                preferredDate,
+                preferredTime,
+              });
             const trackHref =
               variant === "app"
                 ? `${ROUTES.app.consultationTrack}/${String(c.id)}`
@@ -712,6 +725,8 @@ export function AccountDashboard({
                               ? String(c.videoMeetingUrl)
                               : undefined,
                             videoRoomName: c.videoRoomName ? String(c.videoRoomName) : undefined,
+                            preferredDate,
+                            preferredTime,
                           });
                           if (kind === "external" && c.videoMeetingUrl) {
                             window.location.href = String(c.videoMeetingUrl);

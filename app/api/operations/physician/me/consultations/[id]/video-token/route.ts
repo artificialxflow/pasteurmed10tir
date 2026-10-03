@@ -1,5 +1,5 @@
 import { jsonError } from '@/lib/auth/api-utils';
-import { supportsConsultationVideo } from '@/lib/consultation/categories';
+import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
 import { mintConsultationVideoAccess } from '@/lib/jitsi/consultation-video';
 import { findPhysicianByPhone } from '@/lib/home-visit/service';
 import { requirePatient } from '@/lib/operations/require-patient';
@@ -23,8 +23,8 @@ export async function POST(_request: Request, context: RouteContext) {
     return jsonError('این ویزیت متعلق به شما نیست.', 403);
   }
   if (row.status === 'cancelled') return jsonError('این مشاوره لغو شده است.');
-  if (!supportsConsultationVideo(row.category)) {
-    return jsonError('ویزیت تصویری برای این نوع خدمت فعال نیست.');
+  if (!consultationSupportsVideoSession({ category: row.category, type: row.type })) {
+    return jsonError('ویزیت تصویری فقط برای مشاوره تصویری فعال است.');
   }
 
   try {

@@ -86,6 +86,32 @@ export function appointmentAtFromIsoAndHour(
   return new Date(resultIr.getTime() - IRAN_OFFSET_MS);
 }
 
+/** Visit instant from ISO date + "HH:mm" (or bare hour), Iran local time. */
+export function appointmentAtFromIsoAndTime(
+  isoDate: string,
+  timeRaw: string | number | null | undefined,
+): Date | null {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return null;
+
+  let hour: number;
+  let minute = 0;
+  const text = String(timeRaw ?? '').trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    hour = Number(match[1]);
+    minute = Number(match[2]);
+  } else {
+    hour = Number(timeRaw);
+    if (!Number.isFinite(hour)) return null;
+  }
+  if (!Number.isFinite(hour) || hour < 0 || hour > 23) return null;
+  if (!Number.isFinite(minute) || minute < 0 || minute > 59) return null;
+
+  const resultIr = new Date(Date.UTC(y, m - 1, d, hour, minute, 0, 0));
+  return new Date(resultIr.getTime() - IRAN_OFFSET_MS);
+}
+
 export function formatBookingDateLabel(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map(Number);
   if (!y || !m || !d) return isoDate;
@@ -167,6 +193,14 @@ export function buildAvailableBookingDates(
 export function todayIranIsoDate(): string {
   const nowIr = new Date(Date.now() + IRAN_OFFSET_MS);
   nowIr.setUTCHours(0, 0, 0, 0);
+  return isoFromIrDate(nowIr);
+}
+
+/** تقویم ایران — روز قبل (برای لیست بیماران دیروز). */
+export function yesterdayIranIsoDate(): string {
+  const nowIr = new Date(Date.now() + IRAN_OFFSET_MS);
+  nowIr.setUTCHours(0, 0, 0, 0);
+  nowIr.setUTCDate(nowIr.getUTCDate() - 1);
   return isoFromIrDate(nowIr);
 }
 

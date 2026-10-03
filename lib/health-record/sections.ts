@@ -160,7 +160,11 @@ export function fieldLabel(id: HealthSectionId, key: string): string {
   return fieldsForSection(id).find((f) => f.key === key)?.label || key;
 }
 
-const HIDDEN_PAYLOAD_KEYS = new Set(['consultationId']);
+const HIDDEN_PAYLOAD_KEYS = new Set([
+  'consultationId',
+  'bookingId',
+  'physicianId',
+]);
 
 export function payloadDisplayRows(
   section: string,

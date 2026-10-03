@@ -1,11 +1,9 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
-import { supportsConsultationVideo } from "@/lib/consultation/categories";
-import {
-  canJoinConsultationVideoStatus,
-  videoStatusLabel,
-} from "@/lib/jitsi/labels";
+import { consultationSupportsVideoSession } from "@/lib/consultation/modality";
+import { videoStatusLabel } from "@/lib/jitsi/labels";
+import { canJoinConsultationVideoNow } from "@/lib/jitsi/video-window";
 import {
   fetchAdminOps,
   mintAdminConsultationVideoToken,
@@ -20,6 +18,7 @@ type Consultation = Record<string, unknown> & {
   id: string;
   name?: string;
   phone?: string;
+  type?: string;
   typeLabel?: string;
   category?: string;
   categoryLabel?: string;
@@ -31,7 +30,9 @@ type Consultation = Record<string, unknown> & {
   status?: string;
   videoStatus?: string;
   videoMeetingUrl?: string;
+  preferredDate?: string;
   preferredDateLabel?: string;
+  preferredTime?: string;
   preferredTimeLabel?: string;
 };
 
@@ -301,11 +302,18 @@ export default function AdminConsultationsPage() {
         empty="درخواست مشاوره‌ای ثبت نشده."
       >
         {items.map((c) => {
-          const videoOk = supportsConsultationVideo(
-            c.category ? String(c.category) : undefined,
-          );
+          const videoOk = consultationSupportsVideoSession({
+            category: c.category ? String(c.category) : undefined,
+            type: c.type ? String(c.type) : undefined,
+          });
           const videoStatus = String(c.videoStatus || "none");
-          const joinable = videoOk && canJoinConsultationVideoStatus(videoStatus);
+          const joinable =
+            videoOk &&
+            canJoinConsultationVideoNow({
+              videoStatus,
+              preferredDate: c.preferredDate,
+              preferredTime: c.preferredTime,
+            });
           const busy = busyId === c.id;
           const editing = editingId === c.id;
           const writingRx = rxId === c.id;

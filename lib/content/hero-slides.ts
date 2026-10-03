@@ -24,8 +24,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
   },
   {
     src: '/hero/slide-4-medical-loan.jpg',
-    alt: 'وام درمانی ۳۰۰ میلیونی',
-    href: ROUTES.web.account,
+    alt: 'وام درمانی — تسهیلات پاستور پلاس',
+    href: ROUTES.web.dentalMembership,
   },
   {
     src: '/hero/slide-5-online-visit.jpg',
@@ -33,6 +33,44 @@ export const DEFAULT_HERO_SLIDES: HeroSlide[] = [
     href: ROUTES.web.consultation,
   },
 ];
+
+/**
+ * اسلایدهای پرونده سلامت → /account/health-record
+ * اسلایدهای تسهیلات / وام درمانی → /dental/membership
+ * تسهیلات تجهیزات → /shop/facility
+ */
+export function normalizeHeroSlideHref(slide: Pick<HeroSlide, 'src' | 'alt' | 'href'>): string {
+  const text = `${slide.alt || ''} ${slide.src || ''}`;
+  const href = String(slide.href || '').trim();
+
+  if (/پرونده\s*سلامت|health[-_]?record|سوابق\s*پزشکی/i.test(text)) {
+    return ROUTES.web.healthRecord;
+  }
+
+  if (
+    /تسهیلات\s*VIP|تجهیزات|equipment[-_]?loan/i.test(text) ||
+    /equipment-loan|shop\/facility/i.test(slide.src) ||
+    href.includes('/shop/facility')
+  ) {
+    return ROUTES.web.shopFacility;
+  }
+
+  if (
+    /وام|تسهیلات|medical[-_]?loan|میلیون|بازپرداخت/i.test(text) ||
+    /medical-loan|membership/i.test(slide.src)
+  ) {
+    return ROUTES.web.dentalMembership;
+  }
+
+  return href || ROUTES.web.home;
+}
+
+export function normalizeHeroSlide(slide: HeroSlide): HeroSlide {
+  return {
+    ...slide,
+    href: normalizeHeroSlideHref(slide),
+  };
+}
 
 export function parseHeroSlides(raw: unknown): HeroSlide[] {
   if (!Array.isArray(raw)) return [];
@@ -42,16 +80,19 @@ export function parseHeroSlides(raw: unknown): HeroSlide[] {
     const row = item as Record<string, unknown>;
     const src = String(row.src || row.image || '').trim();
     if (!src) continue;
-    out.push({
-      src,
-      alt: String(row.alt || row.title || '').trim() || 'اسلاید پاستور پلاس',
-      href: String(row.href || '').trim() || ROUTES.web.home,
-    });
+    out.push(
+      normalizeHeroSlide({
+        src,
+        alt: String(row.alt || row.title || '').trim() || 'اسلاید پاستور پلاس',
+        href: String(row.href || '').trim() || ROUTES.web.home,
+      }),
+    );
   }
   return out;
 }
 
 export function resolveHeroSlides(raw: unknown): HeroSlide[] {
   const parsed = parseHeroSlides(raw);
-  return parsed.length ? parsed : DEFAULT_HERO_SLIDES;
+  if (parsed.length) return parsed;
+  return DEFAULT_HERO_SLIDES.map((slide) => normalizeHeroSlide({ ...slide }));
 }

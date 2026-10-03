@@ -1,7 +1,11 @@
-import { supportsConsultationVideo } from '@/lib/consultation/categories';
-import { canJoinConsultationVideoStatus } from '@/lib/jitsi/labels';
+import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
+import { canJoinConsultationVideoNow } from '@/lib/jitsi/video-window';
 import { findPhysicianByPhone, listMyStaffCommissionsByPhone } from '@/lib/home-visit/service';
 import { mapBooking, mapConsultation } from '@/lib/operations/mappers';
+import {
+  listPrescriptionsByVisitForPhysician,
+  type PhysicianVisitPrescription,
+} from '@/lib/physician/prescriptions';
 import { prisma } from '@/lib/prisma';
 
 export async function requirePhysicianForPhone(phone: string) {
@@ -29,7 +33,8 @@ export function mapPhysicianPanel(row: {
 export async function listPhysicianVisits(physicianId: number) {
   const doctorKey = String(physicianId);
 
-  const [consultations, bookings] = await Promise.all([
+  const [physician, consultations, bookings] = await Promise.all([
+    prisma.physician.findUnique({ where: { id: physicianId }, select: { name: true } }),
     prisma.consultation.findMany({
       where: { doctorId: doctorKey },
       include: { dependent: { select: { name: true, fileNumber: true } } },
@@ -46,7 +51,10 @@ export async function listPhysicianVisits(physicianId: number) {
 
   const consultationItems = consultations.map((row) => {
     const mapped = mapConsultation(row);
-    const videoCategory = supportsConsultationVideo(mapped.category);
+    const videoOk = consultationSupportsVideoSession({
+      category: mapped.category,
+      type: mapped.type,
+    });
     return {
       kind: 'consultation' as const,
       id: mapped.id,
@@ -58,12 +66,20 @@ export async function listPhysicianVisits(physicianId: number) {
         `${String(mapped.preferredDateLabel || '')} ${String(mapped.preferredTimeLabel || '')}`.trim() ||
         '—',
       status: mapped.status,
+      preferredDate: mapped.preferredDate,
+      preferredTime: mapped.preferredTime,
       videoStatus: mapped.videoStatus,
-      supportsVideo: videoCategory,
+      supportsVideo: videoOk,
       canJoinVideo:
-        videoCategory && canJoinConsultationVideoStatus(mapped.videoStatus),
-      canWritePrescription: videoCategory && mapped.status !== 'cancelled',
+        videoOk &&
+        canJoinConsultationVideoNow({
+          videoStatus: mapped.videoStatus,
+          preferredDate: mapped.preferredDate,
+          preferredTime: mapped.preferredTime,
+        }),
+      canWritePrescription: mapped.status !== 'cancelled',
       createdAt: mapped.createdAt,
+      prescriptions: [] as PhysicianVisitPrescription[],
     };
   });
 
@@ -85,17 +101,34 @@ export async function listPhysicianVisits(physicianId: number) {
       canJoinVideo: false,
       canWritePrescription: mapped.status !== 'cancelled',
       createdAt: mapped.createdAt,
+      prescriptions: [] as PhysicianVisitPrescription[],
     };
   });
 
-  return [...consultationItems, ...bookingItems].sort(
+  const items = [...consultationItems, ...bookingItems].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+
+  const byVisit = await listPrescriptionsByVisitForPhysician({
+    physicianId,
+    physicianName: physician?.name || '',
+    visits: items.map((v) => ({ id: v.id, patientPhone: v.patientPhone })),
+  });
+
+  return items.map((item) => ({
+    ...item,
+    prescriptions: byVisit.get(item.id) || [],
+  }));
 }
 
 export async function physicianWorkStats(physicianId: number) {
   const doctorKey = String(physicianId);
-  const [consultations, bookings] = await Promise.all([
+  const staffKey = `physician:${physicianId}`;
+  const [physician, consultations, bookings, commissions] = await Promise.all([
+    prisma.physician.findUnique({
+      where: { id: physicianId },
+      select: { commissionPercent: true },
+    }),
     prisma.consultation.findMany({
       where: { doctorId: doctorKey },
       select: { status: true, videoStatus: true, amount: true },
@@ -103,6 +136,10 @@ export async function physicianWorkStats(physicianId: number) {
     prisma.booking.findMany({
       where: { doctorId: doctorKey },
       select: { status: true },
+    }),
+    prisma.staffCommission.findMany({
+      where: { staffId: staffKey },
+      select: { commissionAmount: true, status: true },
     }),
   ]);
 
@@ -120,6 +157,16 @@ export async function physicianWorkStats(physicianId: number) {
   const consultationAmountSum = consultations
     .filter((c) => c.status === 'answered')
     .reduce((sum, c) => sum + Math.max(0, Number(c.amount || 0)), 0);
+  const commissionTotal = commissions.reduce(
+    (sum, row) => sum + Math.max(0, Number(row.commissionAmount || 0)),
+    0,
+  );
+  const commissionPaidTotal = commissions
+    .filter((row) => row.status === 'paid')
+    .reduce((sum, row) => sum + Math.max(0, Number(row.commissionAmount || 0)), 0);
+  const commissionPendingTotal = commissions
+    .filter((row) => row.status !== 'paid')
+    .reduce((sum, row) => sum + Math.max(0, Number(row.commissionAmount || 0)), 0);
 
   return {
     consultationTotal,
@@ -132,6 +179,10 @@ export async function physicianWorkStats(physicianId: number) {
     bookingConfirmed,
     bookingCancelled,
     consultationAmountSum,
+    commissionTotal,
+    commissionPaidTotal,
+    commissionPendingTotal,
+    commissionPercent: Math.min(100, Math.max(0, Number(physician?.commissionPercent || 0))),
   };
 }
 

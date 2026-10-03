@@ -1,4 +1,4 @@
-import { supportsConsultationVideo } from '@/lib/consultation/categories';
+import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
 import { mintConsultationVideoAccess } from '@/lib/jitsi/consultation-video';
 import { consultationPatientTrackUrl } from '@/lib/jitsi/patient-track';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
@@ -61,7 +61,7 @@ export async function notifyDoctorVideoVisitSms(consultationId: string) {
   try {
     const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
     if (!row || row.status === 'cancelled') return;
-    if (!supportsConsultationVideo(row.category)) return;
+    if (!consultationSupportsVideoSession({ category: row.category, type: row.type })) return;
     if (row.videoStatus !== 'scheduled' && row.videoStatus !== 'in_call') return;
 
     const doctorPhone = await resolveDoctorPhone(row.doctorId);
@@ -93,7 +93,7 @@ export async function notifyPatientVideoVisitSms(consultationId: string) {
   try {
     const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
     if (!row || row.status === 'cancelled') return;
-    if (!supportsConsultationVideo(row.category)) return;
+    if (!consultationSupportsVideoSession({ category: row.category, type: row.type })) return;
     if (row.videoStatus !== 'scheduled' && row.videoStatus !== 'in_call') return;
 
     const phone = normalizePhoneDigits(row.patientPhone || '');

@@ -29,16 +29,17 @@ import { PASTEUR_DATA, type Physician } from "@/lib/data";
 import { type PendingConsultationPayment } from "@/lib/payment";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
-import {
-  isPatientApproved,
-  payableFromFranchise,
-  resolveFranchisePercent,
-  type PatientProfile,
-} from "@/lib/patient";
+import { type PatientProfile } from "@/lib/patient";
 import {
   isConsultationCallbackCategory,
   isMedicalHomeCategory,
 } from "@/lib/consultation/categories";
+import {
+  CONSULTATION_FORM_TYPE_IDS,
+  consultationAllowsImage,
+  modalityCapabilityHint,
+  normalizeConsultationFormTypeId,
+} from "@/lib/consultation/modality";
 import { cn, formatPrice } from "@/lib/utils";
 import { ConsultationCallbackForm } from "./ConsultationCallbackForm";
 import { MedicalHomeVisitForm } from "./MedicalHomeVisitForm";
@@ -49,8 +50,6 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-const TYPE_IDS = ["text", "image", "video", "phone"] as const;
-
 export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,9 +58,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const requestedSpecialty = searchParams.get("specialty");
   const requestedDoctor = searchParams.get("doctor");
 
-  const initialType = TYPE_IDS.includes(requestedType as (typeof TYPE_IDS)[number])
-    ? (requestedType as string)
-    : "text";
+  const initialType = normalizeConsultationFormTypeId(requestedType);
 
   const [physicians, setPhysicians] = useState<Physician[]>([]);
 
@@ -92,10 +89,6 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState("");
-  const [onlineInsurance, setOnlineInsurance] = useState(false);
-  const [hasComplementary, setHasComplementary] = useState(false);
-  const [patientApproved, setPatientApproved] = useState(false);
-  const [franchisePercent, setFranchisePercent] = useState(10);
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -192,9 +185,6 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       .then((res) => {
         const session = res.profile;
         if (!session) return;
-        setHasComplementary(Boolean(session.complementaryInsuranceId));
-        setPatientApproved(isPatientApproved(session));
-        setFranchisePercent(resolveFranchisePercent(session));
         setGuardianName(session.name);
         setName((prev) => prev || session.name);
         setPhone((prev) => prev || session.phone);
@@ -208,7 +198,16 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   }, []);
 
   const cat = PASTEUR_DATA.consultationCategories.find((c) => c.id === category);
-  const selectedTypeMeta = consultationTypes.find((type) => type.id === selectedType);
+  const formTypes = useMemo(() => {
+    const byId = new Map(consultationTypes.map((t) => [t.id, t]));
+    return CONSULTATION_FORM_TYPE_IDS.map((id) => {
+      const fromApi = byId.get(id);
+      const fallback = PASTEUR_DATA.consultationTypes.find((t) => t.id === id);
+      return fromApi || fallback || { id, label: id, emoji: "", desc: "" };
+    });
+  }, [consultationTypes]);
+  const selectedTypeMeta = formTypes.find((type) => type.id === selectedType);
+  const allowsImage = consultationAllowsImage(selectedType);
   const pricePreview = useMemo(
     () =>
       getConsultationPrice({
@@ -219,6 +218,10 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       }),
     [selectedSpecialty?.id, selectedSpecialty?.name, selectedType, category],
   );
+
+  useEffect(() => {
+    if (!allowsImage && imagePreview) setImagePreview(null);
+  }, [allowsImage, imagePreview]);
 
   function onImageChange(file: File | null) {
     if (!file) {
@@ -248,12 +251,9 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       categoryId: category,
     });
 
-    let payableAmount = pricing.amount;
-    let paymentLabel = "مبلغ مشاوره یا ویزیت";
-    if (onlineInsurance && patientApproved) {
-      payableAmount = payableFromFranchise(pricing.amount, franchisePercent);
-      paymentLabel = `فرانشیز ${franchisePercent.toLocaleString("fa-IR")}٪ از هزینه ویزیت`;
-    }
+    /** بیمه تکمیلی / فرانشیز موقتاً غیرفعال — پورسانت باید از کل مبلغ محاسبه شود. */
+    const payableAmount = pricing.amount;
+    const paymentLabel = "مبلغ مشاوره یا ویزیت";
 
     if (payableAmount < 100) {
       setSubmitError("مبلغ پرداخت نامعتبر است.");
@@ -287,8 +287,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         estimate: pricing.label,
         amount: referral.payable,
         priceSource: pricing.source,
-        hasImage: Boolean(imagePreview),
-        onlineInsuranceCovered: onlineInsurance,
+        hasImage: allowsImage && Boolean(imagePreview),
+        onlineInsuranceCovered: false,
         paymentLabel,
         preferredDate: preferredDate || undefined,
         preferredDateLabel,
@@ -539,13 +539,16 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
 
       <div>
         <FormLabel>نوع مشاوره یا ویزیت</FormLabel>
+        <p className="mb-2 text-xs text-slate-500">
+          متنی: فقط متن · صوتی: صوت + متن · تصویری: تصویر + متن + صوت
+        </p>
         <div
           className={cn(
             "grid gap-3",
-            variant === "app" ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2",
+            variant === "app" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-3",
           )}
         >
-          {consultationTypes.map((t) => {
+          {formTypes.map((t) => {
             const cardPrice = getConsultationPrice({
               specialtyId: selectedSpecialty?.id || null,
               specialtyName: selectedSpecialty?.name || null,
@@ -566,6 +569,9 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
               >
                 <span className="text-2xl">{t.emoji}</span>
                 <p className="mt-2 text-sm font-bold">{t.label}</p>
+                <p className="mt-1 text-[11px] font-bold text-slate-500">
+                  {modalityCapabilityHint(t.id)}
+                </p>
                 <p className="mt-1 text-xs font-bold text-teal-700">
                   {formatPrice(cardPrice.amount)}
                 </p>
@@ -665,45 +671,27 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         />
       </div>
 
-      <div>
-        <FormLabel>آپلود تصویر (اختیاری)</FormLabel>
-        <FormInput
-          type="file"
-          accept="image/*"
-          onChange={(e) => onImageChange(e.target.files?.[0] || null)}
-        />
-        {imagePreview ? (
-          <div className="mt-3">
-            <p className="mb-2 text-xs text-slate-500">پیش‌نمایش تصویر:</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imagePreview}
-              alt="پیش‌نمایش"
-              className="max-h-48 rounded-lg border-2 border-slate-200"
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <label className="flex items-start gap-3 rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 text-sm font-bold text-slate-700">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 accent-cyan-800"
-          checked={onlineInsurance}
-          disabled={!hasComplementary || !patientApproved}
-          onChange={(e) => setOnlineInsurance(e.target.checked)}
-        />
-        <span>
-          ویزیت آنلاین با پوشش بیمه تکمیلی
-          <span className="mt-1 block text-xs font-normal text-slate-500">
-            {!hasComplementary
-              ? "ابتدا در پنل کاربری بیمه تکمیلی را ثبت کنید تا این گزینه فعال شود."
-              : !patientApproved
-                ? "کاربری شما در حال بررسی است؛ پس از تأیید کارشناس، فرانشیز٪ اعمال می‌شود."
-                : `پس از تأیید، مبلغ واریزی = ${franchisePercent.toLocaleString("fa-IR")}٪ از هزینه ویزیت.`}
-          </span>
-        </span>
-      </label>
+      {allowsImage ? (
+        <div>
+          <FormLabel>آپلود تصویر (اختیاری)</FormLabel>
+          <FormInput
+            type="file"
+            accept="image/*"
+            onChange={(e) => onImageChange(e.target.files?.[0] || null)}
+          />
+          {imagePreview ? (
+            <div className="mt-3">
+              <p className="mb-2 text-xs text-slate-500">پیش‌نمایش تصویر:</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="پیش‌نمایش"
+                className="max-h-48 rounded-lg border-2 border-slate-200"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <Card hover={false} className="border-teal-200 bg-teal-50 p-5">
         <h3 className="mb-2 font-bold text-teal-800">🔮 پیش‌نمایش هوشمند</h3>
@@ -715,12 +703,6 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         <p className="mt-2 text-lg font-bold text-teal-700">
           {formatPrice(pricePreview.amount)}
         </p>
-        {onlineInsurance && patientApproved ? (
-          <p className="mt-2 text-sm font-bold text-cyan-900">
-            مبلغ واریزی با فرانشیز {franchisePercent.toLocaleString("fa-IR")}٪:{" "}
-            {formatPrice(payableFromFranchise(pricePreview.amount, franchisePercent))}
-          </p>
-        ) : null}
         <p className="mt-2 text-xs text-slate-500">
           مبلغ نهایی بر اساس نوع ویزیت
           {selectedSpecialty ? " و تخصص انتخاب‌شده" : ""} محاسبه شده است.

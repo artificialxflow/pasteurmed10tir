@@ -49,8 +49,10 @@ export default function AdminHeroSliderPage() {
       <Card hover={false} className="bg-white p-6">
         <h2 className="mb-2 font-bold">اسلایدر صفحه اصلی</h2>
         <p className="mb-4 text-xs text-slate-500">
-          تصاویر هیرو صفحه وب. ترتیب لیست = ترتیب نمایش. لینک می‌تواند مسیر داخلی باشد مثل
-          /dental/booking
+          تصاویر هیرو صفحه وب. ترتیب لیست = ترتیب نمایش. لینک‌های پیشنهادی: پرونده سلامت ←{" "}
+          <code className="text-[11px]">/account/health-record</code> · تسهیلات / وام درمانی ←{" "}
+          <code className="text-[11px]">/dental/membership</code> · تسهیلات تجهیزات ←{" "}
+          <code className="text-[11px]">/shop/facility</code>
         </p>
         <div className="space-y-4">
           {slides.map((slide, index) => (

@@ -136,7 +136,7 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
       amount: Number(pending.amount || 0),
       priceSource: pending.priceSource ? String(pending.priceSource) : undefined,
       hasImage: Boolean(pending.hasImage),
-      onlineInsuranceCovered: Boolean(pending.onlineInsuranceCovered),
+      onlineInsuranceCovered: false,
       preferredDate: pending.preferredDate ? String(pending.preferredDate) : undefined,
       preferredDateLabel: pending.preferredDateLabel
         ? String(pending.preferredDateLabel)

@@ -1,4 +1,5 @@
 import { addClubPoints } from '@/lib/club/service';
+import { consultationAllowsImage } from '@/lib/consultation/modality';
 import { resolveOwnedDependent } from '@/lib/dependents';
 import { generateOperationId, mapConsultation } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
@@ -72,8 +73,9 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
       estimate: body.estimate ? String(body.estimate) : null,
       amount: Number(body.amount || 0),
       priceSource: body.priceSource ? String(body.priceSource) : null,
-      hasImage: Boolean(body.hasImage),
-      onlineInsuranceCovered: Boolean(body.onlineInsuranceCovered),
+      hasImage: Boolean(body.hasImage) && consultationAllowsImage(body.type),
+      /** بیمه تکمیلی موقتاً غیرفعال — همیشه false تا پورسانت از کل مبلغ باشد. */
+      onlineInsuranceCovered: false,
       preferredDate: body.preferredDate ? String(body.preferredDate) : null,
       preferredDateLabel: body.preferredDateLabel ? String(body.preferredDateLabel) : null,
       preferredTime: body.preferredTime ? String(body.preferredTime) : null,

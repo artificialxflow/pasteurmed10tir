@@ -27,6 +27,7 @@ type FollowUpTab =
   | "appointment"
   | "followup"
   | "completed"
+  | "yesterday"
   | "cancelled"
   | "satisfaction";
 
@@ -65,6 +66,20 @@ type CancelledListItem = {
   note?: string;
 };
 
+type YesterdayListItem = {
+  id: string;
+  source: "booking" | "consultation";
+  sourceLabel: string;
+  name: string;
+  patientPhone: string;
+  doctorName?: string;
+  appointmentLabel: string;
+  typeLabel: string;
+  status: string;
+  statusLabel: string;
+  note?: string;
+};
+
 type SatisfactionStats = {
   average: number | null;
   count: number;
@@ -82,6 +97,7 @@ const TABS: Array<{ id: FollowUpTab; label: string }> = [
   { id: "appointment", label: "نیاز به ارائه نوبت" },
   { id: "followup", label: "نیاز به پیگیری" },
   { id: "completed", label: "فالوآپ‌شده‌ها" },
+  { id: "yesterday", label: "بیماران دیروز" },
   { id: "cancelled", label: "بیماران لغو شده" },
   { id: "satisfaction", label: "میزان رضایتمندی" },
 ];
@@ -126,6 +142,8 @@ export default function AdminFollowUpPage() {
   const [items, setItems] = useState<CaseItem[]>([]);
   const [cancelledItems, setCancelledItems] = useState<CancelledListItem[]>([]);
   const [cancelledQuery, setCancelledQuery] = useState("");
+  const [yesterdayItems, setYesterdayItems] = useState<YesterdayListItem[]>([]);
+  const [yesterdayDateLabel, setYesterdayDateLabel] = useState("");
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(true);
   const [followUpFilterDate, setFollowUpFilterDate] = useState("");
@@ -179,6 +197,16 @@ export default function AdminFollowUpPage() {
     );
     setCancelledItems(data.items || []);
   }, [cancelledQuery]);
+
+  const loadYesterday = useCallback(async () => {
+    const data = await fetchAdminOps<{
+      items: YesterdayListItem[];
+      dateLabel?: string;
+      count?: number;
+    }>("/api/admin/operations/follow-up/yesterday");
+    setYesterdayItems(data.items || []);
+    setYesterdayDateLabel(data.dateLabel || "");
+  }, []);
 
   const loadSatisfaction = useCallback(async () => {
     const params = new URLSearchParams({
@@ -243,7 +271,7 @@ export default function AdminFollowUpPage() {
       void loadSatisfaction().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
       return;
     }
-    if (tab === "cancelled") return;
+    if (tab === "cancelled" || tab === "yesterday") return;
     void loadCases().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [tab, loadCases, loadSatisfaction]);
 
@@ -252,6 +280,12 @@ export default function AdminFollowUpPage() {
     setError("");
     void loadCancelled("").catch((e) => setError(e instanceof Error ? e.message : "خطا"));
   }, [tab]);
+
+  useEffect(() => {
+    if (tab !== "yesterday") return;
+    setError("");
+    void loadYesterday().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
+  }, [tab, loadYesterday]);
 
   useEffect(() => {
     const q = form.patientName.trim();
@@ -675,6 +709,58 @@ export default function AdminFollowUpPage() {
                 <td className="px-4 py-3 text-xs">{row.serviceCategoryLabel}</td>
                 <td className="px-4 py-3 text-xs">{row.outcomeLabel}</td>
                 <td className="max-w-xs px-4 py-3 text-xs text-slate-600">{row.notes || "—"}</td>
+              </tr>
+            ))}
+          </AdminTable>
+        </>
+      ) : null}
+
+      {tab === "yesterday" ? (
+        <>
+          <Card hover={false} className="p-4">
+            <p className="text-sm font-bold text-slate-800">
+              همه بیمارانی که برای تاریخ دیروز نوبت رزرو کرده بودند.
+              {yesterdayDateLabel ? (
+                <span className="mt-1 block text-xs font-bold text-teal-800">
+                  تاریخ نوبت: {yesterdayDateLabel} ·{" "}
+                  {yesterdayItems.length.toLocaleString("fa-IR")} نفر
+                </span>
+              ) : null}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              این لیست هر روز بر اساس روز قبل (تقویم ایران) به‌روز می‌شود.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3"
+              onClick={() =>
+                void loadYesterday().catch((err) =>
+                  setError(err instanceof Error ? err.message : "خطا"),
+                )
+              }
+            >
+              بروزرسانی لیست
+            </Button>
+          </Card>
+          <AdminTable
+            headers={["منبع", "بیمار", "تماس", "پزشک", "زمان نوبت", "نوع", "وضعیت", "یادداشت"]}
+            empty="برای دیروز نوبتی ثبت نشده."
+          >
+            {yesterdayItems.map((row) => (
+              <tr key={`${row.source}-${row.id}`} className="border-t border-slate-100">
+                <td className="px-4 py-3 text-xs font-bold text-slate-700">
+                  {row.sourceLabel}
+                </td>
+                <td className="px-4 py-3 font-bold text-slate-900">{row.name || "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
+                <td className="px-4 py-3">{row.doctorName || "—"}</td>
+                <td className="px-4 py-3 text-xs">{row.appointmentLabel || "—"}</td>
+                <td className="px-4 py-3 text-xs">{row.typeLabel || "—"}</td>
+                <td className="px-4 py-3 text-xs">{row.statusLabel || row.status || "—"}</td>
+                <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-600">
+                  {row.note || "—"}
+                </td>
               </tr>
             ))}
           </AdminTable>

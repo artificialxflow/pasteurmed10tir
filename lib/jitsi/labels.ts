@@ -1,3 +1,5 @@
+import { isConsultationVideoWindowExpired } from '@/lib/jitsi/video-window';
+
 export function videoStatusLabel(status: string | null | undefined): string {
   if (status === 'scheduled') return 'آماده ویزیت تصویری';
   if (status === 'in_call') return 'در حال تماس';
@@ -14,8 +16,11 @@ export function consultationVideoJoinKind(input: {
   videoStatus?: string | null;
   videoMeetingUrl?: string | null;
   videoRoomName?: string | null;
+  preferredDate?: string | null;
+  preferredTime?: string | null;
 }): 'external' | 'jitsi' | 'none' {
   if (!canJoinConsultationVideoStatus(input.videoStatus)) return 'none';
+  if (isConsultationVideoWindowExpired(input)) return 'none';
   const url = String(input.videoMeetingUrl || '').trim();
   if (url) return 'external';
   if (input.videoRoomName) return 'jitsi';

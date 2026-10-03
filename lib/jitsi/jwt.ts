@@ -49,7 +49,11 @@ export function mintJitsiJwt(input: MintJitsiJwtInput): MintedJitsiJwt {
   const room = String(input.room || '').trim();
   if (!room) throw new Error('نام اتاق ویدیو نامعتبر است.');
 
-  const ttl = Math.max(300, Math.min(input.ttlSeconds ?? 2 * 60 * 60, 4 * 60 * 60));
+  const defaultTtl = 2 * 60 * 60;
+  const requested = input.ttlSeconds ?? defaultTtl;
+  /** Allow short TTL when minting against a hard visit-window deadline. */
+  const minTtl = input.ttlSeconds != null ? 30 : 300;
+  const ttl = Math.max(minTtl, Math.min(requested, 4 * 60 * 60));
   const now = Math.floor(Date.now() / 1000);
   const exp = now + ttl;
   const isModerator = Boolean(input.moderator);

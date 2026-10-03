@@ -161,6 +161,7 @@ export function WalletPage({ variant = "web" }: { variant?: Variant }) {
 
           <CreditActivationCard
             ceiling={wallet.ceiling}
+            availableCredit={availableCredit}
             variant={variant}
             installmentMin={settings?.installmentMin}
             installmentMax={settings?.installmentMax}

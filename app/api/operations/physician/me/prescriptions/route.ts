@@ -16,6 +16,7 @@ export async function POST(request: Request) {
 
   const body = await parseJson<{
     consultationId?: string;
+    bookingId?: string;
     patientPhone?: string;
     medications?: string;
     dosageSchedule?: string;
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
 
   let patientPhone = String(body.patientPhone || '').trim();
   let consultationNote = '';
+  let consultationId: string | undefined;
+  let bookingId: string | undefined;
 
   if (body.consultationId) {
     const consultation = await prisma.consultation.findUnique({
@@ -39,9 +42,29 @@ export async function POST(request: Request) {
       return jsonError('مشاوره لغو شده است.');
     }
     patientPhone = consultation.patientPhone;
+    consultationId = consultation.id;
     consultationNote = [
       consultation.typeLabel ? `نوع: ${consultation.typeLabel}` : '',
       consultation.specialtyLabel ? `تخصص: ${consultation.specialtyLabel}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  } else if (body.bookingId) {
+    const booking = await prisma.booking.findUnique({
+      where: { id: String(body.bookingId) },
+    });
+    if (!booking) return jsonError('نوبت یافت نشد.', 404);
+    if (String(booking.doctorId || '') !== String(physician.id)) {
+      return jsonError('این نوبت متعلق به شما نیست.', 403);
+    }
+    if (booking.status === 'cancelled') {
+      return jsonError('نوبت لغو شده است.');
+    }
+    patientPhone = booking.patientPhone;
+    bookingId = booking.id;
+    consultationNote = [
+      booking.typeLabel ? `نوع: ${booking.typeLabel}` : '',
+      booking.specialty ? `تخصص: ${booking.specialty}` : '',
     ]
       .filter(Boolean)
       .join(' · ');
@@ -58,11 +81,13 @@ export async function POST(request: Request) {
       date: new Date().toISOString().slice(0, 10),
       payload: {
         doctorName: physician.name,
+        physicianId: physician.id,
         medications,
         dosageSchedule: String(body.dosageSchedule || '').trim() || undefined,
         diagnosis: String(body.diagnosis || '').trim() || undefined,
         recommendations: String(body.recommendations || '').trim() || undefined,
-        consultationId: body.consultationId ? String(body.consultationId) : undefined,
+        consultationId,
+        bookingId,
         consultationNote: consultationNote || undefined,
       },
       createdByAdminId: auth.session.userId,
