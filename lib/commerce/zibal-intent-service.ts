@@ -9,7 +9,7 @@ import {
 import { generateCommerceId } from '@/lib/commerce/mappers';
 import type { PendingPayment } from '@/lib/payment';
 import { prisma } from '@/lib/prisma';
-import { getZibalStartUrl, isZibalConfigured } from '@/lib/zibal/config';
+import { assertZibalCallbackUrl, getZibalStartUrl, isZibalConfigured } from '@/lib/zibal/config';
 import { ZibalError, zibalRequest, zibalVerify } from '@/lib/zibal/client';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 
@@ -24,6 +24,9 @@ export async function createZibalPaymentIntent(input: {
   if (!isZibalConfigured()) {
     throw new Error('درگاه پرداخت پیکربندی نشده است (ZIBAL_MERCHANT_ID).');
   }
+
+  // Fail fast with a clear message if SITE_URL is localhost/http in production.
+  assertZibalCallbackUrl();
 
   const pending = input.pending;
   const amountToman = pendingAmountToman(pending);
@@ -49,13 +52,14 @@ export async function createZibalPaymentIntent(input: {
   });
 
   try {
+    const mobile = pending.patientPhone
+      ? normalizePhoneDigits(String(pending.patientPhone))
+      : undefined;
     const request = await zibalRequest({
       amountRial,
       description: buildPaymentDescription(pending),
       orderId: intentId,
-      mobile: pending.patientPhone
-        ? normalizePhoneDigits(String(pending.patientPhone))
-        : undefined,
+      mobile: mobile && mobile.length >= 11 ? mobile : undefined,
     });
 
     await prisma.paymentIntent.update({
@@ -69,11 +73,13 @@ export async function createZibalPaymentIntent(input: {
       redirectUrl: getZibalStartUrl(request.trackId!),
     };
   } catch (e) {
+    const failureReason = e instanceof Error ? e.message : 'request failed';
+    console.error('[zibal] create intent failed', intentId, failureReason);
     await prisma.paymentIntent.update({
       where: { id: intentId },
       data: {
         status: 'failed',
-        failureReason: e instanceof Error ? e.message : 'request failed',
+        failureReason,
       },
     });
     throw e;

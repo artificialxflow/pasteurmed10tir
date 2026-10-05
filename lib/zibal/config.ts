@@ -17,6 +17,25 @@ export function getSiteUrl(): string {
   return url.replace(/\/$/, '');
 }
 
+/** Callback must be absolute https in production; Zibal rejects mismatched domains. */
+export function assertZibalCallbackUrl(): string {
+  const callbackUrl = getZibalCallbackUrl();
+  const site = getSiteUrl();
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (isProd && (!/^https:\/\//i.test(site) || /localhost|127\.0\.0\.1/i.test(site))) {
+    throw new Error(
+      'آدرس سایت برای پرداخت تنظیم نشده است. SITE_URL یا NEXT_PUBLIC_SITE_URL را روی دامنه https عمومی بگذارید.',
+    );
+  }
+
+  if (!URL.canParse(callbackUrl)) {
+    throw new Error('آدرس بازگشت درگاه پرداخت نامعتبر است.');
+  }
+
+  return callbackUrl;
+}
+
 export function getZibalCallbackUrl(): string {
   return `${getSiteUrl()}/api/payments/zibal/callback`;
 }

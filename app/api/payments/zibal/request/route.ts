@@ -1,5 +1,6 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { createZibalPaymentIntent } from '@/lib/commerce/zibal-intent-service';
+import { pendingAmountToman } from '@/lib/commerce/server-payment-complete';
 import type { PendingPayment } from '@/lib/payment';
 import { isZibalConfigured } from '@/lib/zibal/config';
 import { NextResponse } from 'next/server';
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   if (!body?.pending) return jsonError('درخواست نامعتبر است.');
 
   const basePath = String(body.basePath || '/dental').replace(/\\/g, '/');
-  const amount = Number(body.pending.amount || body.pending.amountToman || 0);
+  const amount = pendingAmountToman(body.pending);
   if (amount < 100) return jsonError('مبلغ پرداخت نامعتبر است.');
 
   try {
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (e) {
-    return jsonError(e instanceof Error ? e.message : 'خطا در ایجاد تراکنش.', 502);
+    const message = e instanceof Error ? e.message : 'خطا در ایجاد تراکنش.';
+    console.error('[zibal] /request', message);
+    // Keep JSON body so the client can show the real message instead of "خطا (502)".
+    return jsonError(message, 502);
   }
 }

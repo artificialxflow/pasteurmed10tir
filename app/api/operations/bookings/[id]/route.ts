@@ -36,7 +36,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     return jsonError('دسترسی ندارید.', 403);
   }
   if (row.status === 'cancelled') {
-    return jsonError('این رزرو قبلاً لغو شده است.');
+    return NextResponse.json({
+      booking: mapBooking(row),
+      message: 'این رزرو قبلاً لغو شده است.',
+    });
   }
 
   const updated = await prisma.booking.update({

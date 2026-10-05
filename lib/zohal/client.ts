@@ -117,10 +117,39 @@ async function callZohal(
     });
 
     const text = await res.text();
-    const data = (text ? (JSON.parse(text) as Record<string, unknown>) : {}) as Record<
-      string,
-      unknown
-    >;
+    const trimmed = text.trim();
+
+    // verify_otp may return empty 200
+    if (!trimmed) {
+      if (!res.ok) {
+        console.error('[zohal] http error', path, res.status, '(empty body)');
+        return { ok: false, error: `خطای زحل (${res.status})` };
+      }
+      return { ok: true, data: { ok: true } };
+    }
+
+    // Gateways / WAF / wrong base URL often return HTML login or error pages.
+    if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+      console.error('[zohal] non-json html', path, res.status, trimmed.slice(0, 120));
+      return {
+        ok: false,
+        error:
+          res.status === 401 || res.status === 403
+            ? 'توکن زحل معتبر نیست یا به این سرویس دسترسی ندارد.'
+            : `پاسخ نامعتبر از زحل (HTML، وضعیت ${res.status}). ZOHAL_BASE_URL و ZOHAL_TOKEN را بررسی کنید.`,
+      };
+    }
+
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(trimmed) as Record<string, unknown>;
+    } catch (parseErr) {
+      console.error('[zohal] non-json body', path, res.status, parseErr, trimmed.slice(0, 120));
+      return {
+        ok: false,
+        error: `پاسخ نامعتبر از زحل (وضعیت ${res.status}).`,
+      };
+    }
 
     if (!res.ok) {
       console.error('[zohal] http error', path, res.status, data);
@@ -135,9 +164,6 @@ async function callZohal(
         data,
       };
     }
-
-    // verify_otp may return empty 200
-    if (!text) return { ok: true, data: { ok: true } };
 
     const businessError = extractZohalBusinessError(data);
     if (businessError) {
@@ -173,7 +199,7 @@ async function callZohalFirstOk(
     const result = await callZohal(path, init);
     if (result.ok) return result;
     last = result;
-    if (!isRetryablePathError(result.error)) return result;
+    if (!isRetryablePathError(last.error)) return last;
   }
   return last;
 }

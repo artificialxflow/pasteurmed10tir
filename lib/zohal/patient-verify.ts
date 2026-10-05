@@ -44,7 +44,7 @@ export async function runPatientShahkarVerification(
   } as Prisma.InputJsonValue;
 
   if (!shahkar.ok) {
-    console.error('[zohal] patient shahkar error');
+    console.error('[zohal] patient shahkar error', shahkar.error);
     return {
       zohalStatus: 'error',
       zohalPayload: payload,

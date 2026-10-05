@@ -6,14 +6,27 @@ import type { PendingPayment } from '@/lib/payment';
 async function parseJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   if (!text) {
-    if (!res.ok) throw new Error(`خطا (${res.status})`);
+    if (!res.ok) {
+      throw new Error(
+        res.status === 502 || res.status === 503 || res.status === 504
+          ? 'اتصال به درگاه پرداخت برقرار نشد. چند لحظه دیگر دوباره تلاش کنید.'
+          : `خطا (${res.status})`,
+      );
+    }
     throw new Error('پاسخ خالی از سرور.');
   }
   let data: T & { error?: string };
   try {
     data = JSON.parse(text) as T & { error?: string };
   } catch {
-    throw new Error(!res.ok ? `خطا (${res.status})` : 'پاسخ نامعتبر از سرور.');
+    if (!res.ok) {
+      throw new Error(
+        res.status === 502 || res.status === 503 || res.status === 504
+          ? 'اتصال به درگاه پرداخت برقرار نشد. اگر مشکل ادامه داشت با پشتیبانی تماس بگیرید.'
+          : `خطا (${res.status})`,
+      );
+    }
+    throw new Error('پاسخ نامعتبر از سرور.');
   }
   if (!res.ok) throw new Error(data.error || 'خطا در درگاه پرداخت.');
   return data as T;

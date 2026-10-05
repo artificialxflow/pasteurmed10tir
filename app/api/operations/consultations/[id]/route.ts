@@ -36,7 +36,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     return jsonError('دسترسی ندارید.', 403);
   }
   if (row.status === 'cancelled') {
-    return jsonError('این مشاوره قبلاً لغو شده است.');
+    // Idempotent: repeated cancel clicks should not spam 400 in the console.
+    return NextResponse.json({
+      item: mapConsultation(row),
+      message: 'این مشاوره قبلاً لغو شده است.',
+    });
   }
   if (row.status === 'answered') {
     return jsonError('مشاوره پاسخ‌داده‌شده قابل لغو نیست.');
