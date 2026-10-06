@@ -31,6 +31,16 @@ export function mapFollowUpCase(row: FollowUpCase) {
     attendedAction: row.attendedAction ?? undefined,
     dissatisfactionTarget: row.dissatisfactionTarget ?? undefined,
     followUpDate: row.followUpDate?.toISOString().slice(0, 10),
+    followUpTime: row.followUpTime ?? undefined,
+    assistantNames: (() => {
+      if (!row.assistantNamesJson) return undefined;
+      try {
+        const parsed = JSON.parse(row.assistantNamesJson) as unknown;
+        return Array.isArray(parsed) ? parsed.map(String) : undefined;
+      } catch {
+        return undefined;
+      }
+    })(),
     appointmentGiven: row.appointmentGiven,
     followUpDone: row.followUpDone,
     notes: row.notes ?? undefined,

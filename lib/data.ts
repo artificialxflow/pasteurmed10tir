@@ -965,6 +965,14 @@ export const PASTEUR_DATA = {
       priceNum: 350000,
       price: '۳۵۰,۰۰۰ تومان',
     },
+    {
+      id: 'emergency',
+      label: 'مشاوره اورژانسی',
+      emoji: '🚨',
+      desc: 'متن + صوت + تصویر — اولویت اورژانسی',
+      priceNum: 450000,
+      price: '۴۵۰,۰۰۰ تومان',
+    },
     /** تعرفه قدیمی؛ در فرم نمایش داده نمی‌شود و به کانال تصویری نگاشت می‌شود */
     {
       id: 'image',
@@ -990,17 +998,17 @@ export const PASTEUR_DATA = {
 
   specialtyTariffs: {
     /** تعرفه پزشکی عمومی — پایین‌تر از تخصص‌ها */
-    general: { text: 100000, image: 130000, video: 300000, phone: 230000 },
-    urology: { text: 140000, image: 170000, video: 380000, phone: 290000 },
-    infectious: { text: 130000, image: 160000, video: 340000, phone: 270000 },
-    cardiology: { text: 160000, image: 190000, video: 420000, phone: 320000 },
-    pediatrics: { text: 125000, image: 155000, video: 330000, phone: 260000 },
-    internal: { text: 120000, image: 150000, video: 350000, phone: 250000 },
-    surgery: { text: 180000, image: 210000, video: 450000, phone: 350000 },
-    orthopedics: { text: 150000, image: 180000, video: 400000, phone: 310000 },
-    dermatology: { text: 140000, image: 170000, video: 370000, phone: 285000 },
-    neurology: { text: 170000, image: 200000, video: 430000, phone: 330000 },
-    psychiatry: { text: 155000, image: 185000, video: 390000, phone: 300000 },
+    general: { text: 100000, image: 130000, video: 300000, phone: 230000, emergency: 350000 },
+    urology: { text: 140000, image: 170000, video: 380000, phone: 290000, emergency: 430000 },
+    infectious: { text: 130000, image: 160000, video: 340000, phone: 270000, emergency: 390000 },
+    cardiology: { text: 160000, image: 190000, video: 420000, phone: 320000, emergency: 470000 },
+    pediatrics: { text: 125000, image: 155000, video: 330000, phone: 260000, emergency: 380000 },
+    internal: { text: 120000, image: 150000, video: 350000, phone: 250000, emergency: 400000 },
+    surgery: { text: 180000, image: 210000, video: 450000, phone: 350000, emergency: 500000 },
+    orthopedics: { text: 150000, image: 180000, video: 400000, phone: 310000, emergency: 450000 },
+    dermatology: { text: 140000, image: 170000, video: 370000, phone: 285000, emergency: 420000 },
+    neurology: { text: 170000, image: 200000, video: 430000, phone: 330000, emergency: 480000 },
+    psychiatry: { text: 155000, image: 185000, video: 390000, phone: 300000, emergency: 440000 },
   },
 
   settings: {

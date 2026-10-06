@@ -119,6 +119,8 @@ export const ROUTES = {
     gallery: '/admin/gallery',
     heroSlider: '/admin/hero-slider',
     visitors: '/admin/visitors',
+    marketingReports: '/admin/marketing-reports',
+    dentalAssistants: '/admin/dental-assistants',
     commissions: '/admin/commissions',
     facilities: '/admin/facilities',
     partners: '/admin/partners',

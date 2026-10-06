@@ -565,6 +565,8 @@ model FollowUpCase {
   attendedAction           FollowUpAttendedAction?
   dissatisfactionTarget    FollowUpDissatisfactionTarget?
   followUpDate             DateTime?                      @db.Date
+  followUpTime             String?
+  assistantNamesJson       String?
   appointmentGiven         Boolean                        @default(false)
   followUpDone             Boolean                        @default(false)
   notes                    String?
@@ -988,6 +990,94 @@ model Visitor {
   phone                  String
   status                 VisitorStatus  @default(active)
   commissions            Commission[]
+  marketingReports       MarketingReport[]
+}
+
+enum MarketingReportKind {
+  new_case
+  success
+  follow_up
+  unsuccessful
+  blocked
+}
+
+enum MarketingNewCaseOutcome {
+  success
+  follow_up
+  unsuccessful
+  blocked
+}
+
+enum MarketingUnsuccessfulReason {
+  not_approved
+  tariff
+  contract
+  loan_percent
+  discount
+  competitors
+}
+
+enum MarketingFollowUpKind {
+  catalog
+  call
+  appointment
+  commission
+  no_response
+  in_person
+}
+
+model MarketingReport {
+  id                  String                       @id
+  visitorId           Int
+  visitor             Visitor                      @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  visitorPhone        String
+  kind                MarketingReportKind
+  companyName         String?
+  contactsJson        String?
+  newCaseOutcome      MarketingNewCaseOutcome?
+  successRequest      Boolean                      @default(false)
+  successContract     Boolean                      @default(false)
+  successBanner       Boolean                      @default(false)
+  successSkin         Boolean                      @default(false)
+  contractDate        DateTime?                    @db.Date
+  unsuccessfulReason  MarketingUnsuccessfulReason?
+  unsuccessfulNotes   String?
+  followUpKind        MarketingFollowUpKind?
+  followUpDueDate     DateTime?                    @db.Date
+  blockedNote         String?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  followUpSlots       MarketingFollowUpSlot[]
+
+  @@index([visitorId])
+  @@index([visitorPhone])
+  @@index([kind])
+  @@index([createdAt])
+  @@index([followUpDueDate])
+}
+
+model MarketingFollowUpSlot {
+  id        String          @id
+  reportId  String
+  report    MarketingReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  slotIndex Int
+  doneAt    DateTime?       @db.Date
+  note      String?
+
+  @@unique([reportId, slotIndex])
+  @@index([reportId])
+}
+
+model DentalAssistant {
+  id        String   @id
+  name      String
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@index([sortOrder])
 }
 
 model Commission {

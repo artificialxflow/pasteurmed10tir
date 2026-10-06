@@ -4,7 +4,7 @@ import { supportsConsultationVideo } from '@/lib/consultation/categories';
 export type ConsultationModality = 'text' | 'audio' | 'video';
 
 /** انواع قابل انتخاب در فرم (سه کانال مجزا). */
-export const CONSULTATION_FORM_TYPE_IDS = ['text', 'phone', 'video'] as const;
+export const CONSULTATION_FORM_TYPE_IDS = ['text', 'phone', 'video', 'emergency'] as const;
 
 export type ConsultationFormTypeId = (typeof CONSULTATION_FORM_TYPE_IDS)[number];
 
@@ -13,22 +13,26 @@ export function consultationModality(typeId?: string | null): ConsultationModali
     .trim()
     .toLowerCase();
   if (t === 'phone' || t === 'audio') return 'audio';
+  if (t === 'emergency') return 'video';
   /** `image` = مشاوره تصویری قدیمی (ارسال عکس) → کانال تصویری کامل */
   if (t === 'video' || t === 'image') return 'video';
   return 'text';
 }
 
 export function consultationAllowsImage(typeId?: string | null): boolean {
-  return consultationModality(typeId) === 'video';
+  const t = String(typeId || '').trim().toLowerCase();
+  return consultationModality(typeId) === 'video' || t === 'emergency';
 }
 
 export function consultationAllowsAudio(typeId?: string | null): boolean {
+  const t = String(typeId || '').trim().toLowerCase();
   const m = consultationModality(typeId);
-  return m === 'audio' || m === 'video';
+  return m === 'audio' || m === 'video' || t === 'emergency';
 }
 
 export function consultationTypeSupportsVideoRoom(typeId?: string | null): boolean {
-  return consultationModality(typeId) === 'video';
+  const t = String(typeId || '').trim().toLowerCase();
+  return consultationModality(typeId) === 'video' || t === 'emergency';
 }
 
 /**
@@ -50,6 +54,8 @@ export function consultationSupportsVideoSession(input: {
 export function normalizeConsultationFormTypeId(
   typeId?: string | null,
 ): ConsultationFormTypeId {
+  const t = String(typeId || '').trim().toLowerCase();
+  if (t === 'emergency') return 'emergency';
   const m = consultationModality(typeId);
   if (m === 'audio') return 'phone';
   if (m === 'video') return 'video';
@@ -57,6 +63,8 @@ export function normalizeConsultationFormTypeId(
 }
 
 export function modalityCapabilityHint(typeId?: string | null): string {
+  const t = String(typeId || '').trim().toLowerCase();
+  if (t === 'emergency') return 'متن + صوت + تصویر (اورژانسی)';
   const m = consultationModality(typeId);
   if (m === 'video') return 'تصویر + متن + صوت';
   if (m === 'audio') return 'صوت + متن';

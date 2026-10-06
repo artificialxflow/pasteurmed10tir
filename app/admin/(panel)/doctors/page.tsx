@@ -17,7 +17,7 @@ import { fetchAdmin, putAdmin } from "@/lib/content/client";
 import { PASTEUR_DATA, type Dentist, type Physician } from "@/lib/data";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import { cn } from "@/lib/utils";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 type Tab = "dentists" | "physicians";
 
@@ -28,6 +28,19 @@ const DENTAL_SPECIALTY_OPTIONS = [
 
 function specialtyLabel(id: string): string {
   return DENTAL_SPECIALTY_OPTIONS.find((o) => o.id === id)?.name || "دندانپزشکی عمومی";
+}
+
+function matchesListQuery(
+  query: string,
+  fields: Array<string | number | undefined | null>,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const hay = fields
+    .map((f) => String(f ?? ""))
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(q);
 }
 
 const STATUS_OPTIONS = [
@@ -176,6 +189,7 @@ export default function AdminDoctorsPage() {
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [physicians, setPhysicians] = useState<Physician[]>([]);
   const [error, setError] = useState("");
+  const [listQuery, setListQuery] = useState("");
 
   const [dentistName, setDentistName] = useState("");
   const [dentistSpecialtyId, setDentistSpecialtyId] = useState("general");
@@ -434,6 +448,38 @@ export default function AdminDoctorsPage() {
     );
   }
 
+  const filteredDentists = useMemo(
+    () =>
+      dentists
+        .map((d, index) => ({ d, index }))
+        .filter(({ d }) =>
+          matchesListQuery(listQuery, [
+            d.name,
+            d.specialty,
+            d.medicalCouncilNumber,
+            d.phone,
+            d.id,
+          ]),
+        ),
+    [dentists, listQuery],
+  );
+
+  const filteredPhysicians = useMemo(
+    () =>
+      physicians
+        .map((p, index) => ({ p, index }))
+        .filter(({ p }) =>
+          matchesListQuery(listQuery, [
+            p.name,
+            p.specialty,
+            p.medicalCouncilNumber,
+            p.phone,
+            p.id,
+          ]),
+        ),
+    [physicians, listQuery],
+  );
+
   return (
     <div className="space-y-8">
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -460,6 +506,21 @@ export default function AdminDoctorsPage() {
           </button>
         ))}
       </div>
+
+      <Card hover={false} className="p-4">
+        <FormInput
+          value={listQuery}
+          onChange={(e) => setListQuery(e.target.value)}
+          placeholder="جستجو: نام، تخصص، شماره نظام، موبایل…"
+        />
+        {listQuery.trim() ? (
+          <p className="mt-2 text-xs text-slate-500">
+            {tab === "dentists"
+              ? `${filteredDentists.length.toLocaleString("fa-IR")} نتیجه از ${dentists.length.toLocaleString("fa-IR")}`
+              : `${filteredPhysicians.length.toLocaleString("fa-IR")} نتیجه از ${physicians.length.toLocaleString("fa-IR")}`}
+          </p>
+        ) : null}
+      </Card>
 
       {tab === "dentists" ? (
         <>
@@ -530,7 +591,7 @@ export default function AdminDoctorsPage() {
             headers={["نام", "تخصص", "نظام پزشکی", "موبایل", "معرفی", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="دندانپزشکی ثبت نشده."
           >
-            {dentists.map((d, index) => (
+            {filteredDentists.map(({ d, index }) => (
               <tr key={d.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
                   <FormInput
@@ -700,7 +761,7 @@ export default function AdminDoctorsPage() {
             headers={["نام", "تخصص", "شناسه", "نظام پزشکی", "موبایل", "سهم٪", "روز / ساعت", "وضعیت", "تصویر", "عملیات"]}
             empty="متخصصی ثبت نشده."
           >
-            {physicians.map((p, index) => (
+            {filteredPhysicians.map(({ p, index }) => (
               <tr key={p.id} className="border-t border-slate-100 align-top">
                 <td className="px-4 py-3">
                   <FormInput

@@ -59,6 +59,7 @@ const FOLLOW_UP_HEADERS = [
   'تماس',
   'دکتر',
   'بخش',
+  'دستیاران',
   'رضایت دکتر',
   'رضایت دستیار',
   'رضایت پذیرش',
@@ -66,8 +67,19 @@ const FOLLOW_UP_HEADERS = [
   'نتیجه',
   'وضعیت',
   'تاریخ پیگیری',
+  'ساعت پیگیری',
   'توضیح',
 ];
+
+function parseAssistantNames(json: string | null | undefined): string {
+  if (!json) return '';
+  try {
+    const parsed = JSON.parse(json) as unknown;
+    return Array.isArray(parsed) ? parsed.map(String).join('، ') : '';
+  } catch {
+    return '';
+  }
+}
 
 export function followUpRowsForExport(rows: FollowUpCase[]) {
   return rows.map((r) => [
@@ -76,6 +88,7 @@ export function followUpRowsForExport(rows: FollowUpCase[]) {
     r.patientPhone,
     r.doctorName,
     followUpServiceLabel(r.serviceCategory),
+    parseAssistantNames(r.assistantNamesJson),
     r.satisfactionDoctor ?? '',
     r.satisfactionAssistants ?? '',
     r.satisfactionReception ?? '',
@@ -83,6 +96,7 @@ export function followUpRowsForExport(rows: FollowUpCase[]) {
     followUpOutcomeLabel(r.outcome),
     statusSummary(r),
     r.followUpDate?.toISOString().slice(0, 10) ?? '',
+    r.followUpTime ?? '',
     r.notes || '',
   ]);
 }

@@ -48,9 +48,11 @@ type CaseItem = {
   attendedAction?: string;
   dissatisfactionTarget?: string;
   followUpDate?: string;
+  followUpTime?: string;
   appointmentGiven: boolean;
   followUpDone: boolean;
   notes?: string;
+  assistantNames?: string[];
 };
 
 type CancelledListItem = {
@@ -157,6 +159,8 @@ export default function AdminFollowUpPage() {
     Array<{ name: string; phone: string }>
   >([]);
   const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
+  const [dentalAssistants, setDentalAssistants] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     patientName: "",
@@ -171,6 +175,7 @@ export default function AdminFollowUpPage() {
     attendedAction: "appointment_needed",
     dissatisfactionTarget: "doctor",
     followUpDate: "",
+    followUpTime: "",
     notes: "",
   });
 
@@ -238,6 +243,16 @@ export default function AdminFollowUpPage() {
       `/api/admin/operations/follow-up/doctors?serviceCategory=${encodeURIComponent(serviceCategory)}`,
     );
     setSatisfactionDoctorNames(data.names || []);
+  }, []);
+
+  useEffect(() => {
+    void fetchAdminOps<{ items: Array<{ id: string; name: string; active: boolean }> }>(
+      "/api/admin/operations/dental-assistants",
+    )
+      .then((data) =>
+        setDentalAssistants((data.items || []).filter((a) => a.active).map((a) => ({ id: a.id, name: a.name }))),
+      )
+      .catch(() => setDentalAssistants([]));
   }, []);
 
   useEffect(() => {
@@ -315,6 +330,7 @@ export default function AdminFollowUpPage() {
     try {
       await postAdminOps("/api/admin/operations/follow-up/cases", {
         ...form,
+        assistantNames: form.serviceCategory === "dental" ? selectedAssistants : undefined,
         workDate: new Date().toISOString().slice(0, 10),
       });
       setForm((f) => ({
@@ -324,7 +340,9 @@ export default function AdminFollowUpPage() {
         doctorName: "",
         notes: "",
         followUpDate: "",
+        followUpTime: "",
       }));
+      setSelectedAssistants([]);
       await loadCases();
     } catch (err) {
       setError(err instanceof Error ? err.message : "ثبت ناموفق");
@@ -510,6 +528,29 @@ export default function AdminFollowUpPage() {
                   value={form.satisfactionEnvironment}
                   onChange={(v) => setForm((f) => ({ ...f, satisfactionEnvironment: v }))}
                 />
+                {form.serviceCategory === "dental" && dentalAssistants.length > 0 ? (
+                  <div className="md:col-span-2">
+                    <FormLabel>دستیار(های) حاضر</FormLabel>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {dentalAssistants.map((a) => (
+                        <label key={a.id} className="flex items-center gap-2 rounded-lg border border-slate-200 px-2 py-1 text-xs font-bold">
+                          <input
+                            type="checkbox"
+                            checked={selectedAssistants.includes(a.name)}
+                            onChange={(e) => {
+                              setSelectedAssistants((prev) =>
+                                e.target.checked
+                                  ? [...prev, a.name]
+                                  : prev.filter((n) => n !== a.name),
+                              );
+                            }}
+                          />
+                          {a.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="md:col-span-2">
                   <FormLabel>نتیجه</FormLabel>
                   <div className="mt-2 flex flex-wrap gap-3">
@@ -545,12 +586,23 @@ export default function AdminFollowUpPage() {
                       </div>
                     </div>
                     {form.attendedAction === "follow_up_needed" ? (
-                      <div className="md:col-span-2">
-                        <FormLabel>تاریخ پیگیری بعدی</FormLabel>
-                        <JalaliBirthDateField
-                          value={form.followUpDate}
-                          onChange={(iso) => setForm((f) => ({ ...f, followUpDate: iso || "" }))}
-                        />
+                      <div className="md:col-span-2 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <FormLabel>تاریخ پیگیری بعدی</FormLabel>
+                          <JalaliBirthDateField
+                            value={form.followUpDate}
+                            onChange={(iso) => setForm((f) => ({ ...f, followUpDate: iso || "" }))}
+                          />
+                        </div>
+                        <div>
+                          <FormLabel>ساعت پیشنهادی</FormLabel>
+                          <FormInput
+                            type="time"
+                            value={form.followUpTime}
+                            onChange={(e) => setForm((f) => ({ ...f, followUpTime: e.target.value }))}
+                            required
+                          />
+                        </div>
                       </div>
                     ) : null}
                   </>
@@ -658,7 +710,7 @@ export default function AdminFollowUpPage() {
             />
           </div>
           <AdminTable
-            headers={["بیمار", "تماس", "تاریخ پیگیری", "دکتر", "انجام شد"]}
+            headers={["بیمار", "تماس", "تاریخ پیگیری", "ساعت", "توضیحات", "دکتر", "انجام شد"]}
             empty="برای این تاریخ موردی نیست."
           >
             {items.map((row) => (
@@ -668,6 +720,8 @@ export default function AdminFollowUpPage() {
                 <td className="px-4 py-3 text-xs">
                   {row.followUpDate ? formatJalaliDate(row.followUpDate) : "—"}
                 </td>
+                <td className="px-4 py-3 text-xs">{row.followUpTime || "—"}</td>
+                <td className="max-w-xs px-4 py-3 text-xs text-slate-600">{row.notes || "—"}</td>
                 <td className="px-4 py-3">{row.doctorName}</td>
                 <td className="px-4 py-3">
                   <label className="flex items-center gap-2 text-sm font-bold">

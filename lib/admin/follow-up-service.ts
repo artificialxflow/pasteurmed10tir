@@ -99,9 +99,20 @@ export type CreateFollowUpInput = {
   attendedAction?: unknown;
   dissatisfactionTarget?: unknown;
   followUpDate?: unknown;
+  followUpTime?: unknown;
+  assistantNames?: unknown;
   workDate?: unknown;
   notes?: unknown;
 };
+
+function parseFollowUpTime(raw: unknown): string | null {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  if (!/^\d{1,2}:\d{2}$/.test(s)) return null;
+  const [h, m] = s.split(':').map(Number);
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 
 export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
   const patientName = String(body.patientName || '').trim();
@@ -128,6 +139,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
   let attendedAction: 'appointment_needed' | 'follow_up_needed' | null = null;
   let dissatisfactionTarget: 'doctor' | 'staff' | 'environment' | null = null;
   let followUpDate: Date | null = null;
+  let followUpTime: string | null = null;
 
   if (outcome === 'attended') {
     const action = String(body.attendedAction || '');
@@ -138,6 +150,8 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
     if (attendedAction === 'follow_up_needed') {
       followUpDate = parseIsoDateOnly(body.followUpDate);
       if (!followUpDate) throw new Error('تاریخ پیگیری بعدی را انتخاب کنید.');
+      followUpTime = parseFollowUpTime(body.followUpTime);
+      if (!followUpTime) throw new Error('ساعت پیشنهادی پیگیری را وارد کنید (مثلاً ۱۴:۳۰).');
     }
   } else {
     const target = String(body.dissatisfactionTarget || '');
@@ -149,6 +163,14 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
 
   const workDate = parseIsoDateOnly(body.workDate) || todayDateOnlyUtc();
   const notes = String(body.notes || '').trim() || null;
+
+  let assistantNamesJson: string | null = null;
+  if (Array.isArray(body.assistantNames)) {
+    const names = body.assistantNames
+      .map((n) => String(n || '').trim())
+      .filter((n) => n.length >= 2);
+    if (names.length) assistantNamesJson = JSON.stringify(names);
+  }
 
   return {
     workDate,
@@ -164,6 +186,8 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
     attendedAction,
     dissatisfactionTarget,
     followUpDate,
+    followUpTime,
+    assistantNamesJson,
     notes,
   };
 }

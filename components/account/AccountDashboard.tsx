@@ -7,6 +7,7 @@ import { DependentsCard } from "@/components/account/DependentsCard";
 import { FieldStaffAvailabilityCard } from "@/components/account/FieldStaffAvailabilityCard";
 import { FieldStaffCommissionsCard } from "@/components/account/FieldStaffCommissionsCard";
 import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
+import { MarketingPanel } from "@/components/account/MarketingPanel";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
@@ -118,7 +119,8 @@ type PanelSection =
   | "home-visits"
   | "consultations"
   | "orders"
-  | "organization";
+  | "organization"
+  | "marketing";
 
 function MenuRow({
   label,
@@ -169,6 +171,7 @@ export function AccountDashboard({
   const [cancelMessage, setCancelMessage] = useState("");
   const [isStaff, setIsStaff] = useState(false);
   const [isPhysician, setIsPhysician] = useState(false);
+  const [isVisitor, setIsVisitor] = useState(false);
   const [panel, setPanel] = useState<PanelSection>(
     profile.isOrganizationRep ? "organization" : "overview",
   );
@@ -203,6 +206,10 @@ export function AccountDashboard({
     void fetchPatientOps<{ item: unknown }>("/api/operations/physician/me")
       .then((data) => setIsPhysician(Boolean(data.item)))
       .catch(() => setIsPhysician(false));
+
+    void fetchPatientOps<{ item: unknown }>("/api/operations/marketing/me")
+      .then((data) => setIsVisitor(Boolean(data.item)))
+      .catch(() => setIsVisitor(false));
   }, []);
 
   const franchisePercent = resolveFranchisePercent(profile);
@@ -314,6 +321,9 @@ export function AccountDashboard({
           { id: "physician-commissions", label: "پورسانت پزشک" },
           { id: "physician-referrals", label: "ارجاع به متخصص" },
         ] satisfies { id: PanelSection; label: string }[])
+      : []),
+    ...(isVisitor
+      ? ([{ id: "marketing", label: "بازاریابی" }] satisfies { id: PanelSection; label: string }[])
       : []),
     { id: "loan", label: "درخواست وام / اعتبار" },
     { id: "installments", label: "اقساط" },
@@ -496,6 +506,8 @@ export function AccountDashboard({
     panelBody = <PhysicianPanel section="commissions" />;
   } else if (panel === "physician-referrals") {
     panelBody = <PhysicianPanel section="referrals" />;
+  } else if (panel === "marketing") {
+    panelBody = <MarketingPanel />;
   } else if (panel === "loan") {
     panelBody = (
       <LoanRequestCard
