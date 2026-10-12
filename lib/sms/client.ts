@@ -256,5 +256,6 @@ export async function sendFollowUpThankYouSms(phone: string): Promise<SmsSendRes
   if (!id) {
     return { ok: false, error: 'پترن تشکر فالوآپ تنظیم نشده.' };
   }
+  // پترن payamak — {0}=نام برند (الزام حداقل یک متغیر در پنل)
   return sendByPattern(id, phone, ['پاستور پلاس']);
 }
