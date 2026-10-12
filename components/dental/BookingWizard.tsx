@@ -24,6 +24,9 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 import { DentalReservationNotice } from "@/components/dental/DentalReservationNotice";
+import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
+import { ROUTES } from "@/lib/routes";
+import { isPatientApproved } from "@/lib/patient";
 
 type StepName = "type" | "doctor" | "day" | "time" | "info";
 type BookingType = "visit" | "treatment" | "waitlist" | null;
@@ -465,6 +468,34 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
         </div>
       ) : null}
 
+      {doctor ? (
+        <div className="mb-4 space-y-3">
+          <DoctorReviewForm
+            doctorId={doctor.id}
+            doctorName={doctor.name}
+            doctorKind="dental"
+            requirePatientApproved
+          />
+          {sessionProfile && isPatientApproved(sessionProfile) ? (
+            <Card hover={false} className="border-cyan-100 p-4">
+              <p className="text-sm font-bold text-slate-900">مشاوره با پزشک</p>
+              <p className="mt-1 text-xs text-slate-600">
+                درخواست مشاوره رایگان — کارشناسان پاستور پلاس با شما تماس خواهند گرفت.
+              </p>
+              <Button
+                type="button"
+                className="mt-3 text-sm"
+                onClick={() =>
+                  router.push(app ? ROUTES.app.consultation : ROUTES.web.consultation)
+                }
+              >
+                درخواست مشاوره
+              </Button>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
+
       <BookingProgress
         steps={steps}
         activeIndex={stepIndex}
@@ -502,7 +533,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
               setState(next);
               showStep("day", next);
             }}
-            emoji="🪥"
+            emoji="📋"
             title="شروع یا ادامه درمان"
             desc="بازه‌های یک‌ساعته — هر خدمت دقیقاً یک ساعت"
             accent="blue"

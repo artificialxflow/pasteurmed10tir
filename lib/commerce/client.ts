@@ -77,6 +77,11 @@ export async function postAdminCommerce<T>(path: string, body?: unknown): Promis
   });
 }
 
+export async function postAdminCommerceForm<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(path, { method: 'POST', credentials: 'include', body: form });
+  return parseJson<T>(res);
+}
+
 export async function downloadAdminCommerceExport(path: string, filename: string): Promise<void> {
   const res = await fetch(path, { credentials: 'include' });
   if (!res.ok) {

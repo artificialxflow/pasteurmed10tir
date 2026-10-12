@@ -28,6 +28,7 @@ export function MarketingPanel() {
   const [visitor, setVisitor] = useState<VisitorMe | null | undefined>(undefined);
   const [items, setItems] = useState<MarketingReportPublic[]>([]);
   const [view, setView] = useState<"list" | "form" | "detail" | "followups">("list");
+  const [listKind, setListKind] = useState<string>("all");
   const [detail, setDetail] = useState<MarketingReportPublic | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,6 +43,8 @@ export function MarketingPanel() {
     contract: false,
     banner: false,
     skin: false,
+    proforma: false,
+    salesInvoice: false,
   });
   const [contractDate, setContractDate] = useState("");
   const [unsuccessfulReason, setUnsuccessfulReason] = useState("");
@@ -80,7 +83,14 @@ export function MarketingPanel() {
     setCompanyName("");
     setContacts(emptyContacts());
     setNewCaseOutcome("");
-    setSuccessFlags({ request: false, contract: false, banner: false, skin: false });
+    setSuccessFlags({
+      request: false,
+      contract: false,
+      banner: false,
+      skin: false,
+      proforma: false,
+      salesInvoice: false,
+    });
     setContractDate("");
     setUnsuccessfulReason("");
     setUnsuccessfulNotes("");
@@ -111,6 +121,8 @@ export function MarketingPanel() {
         successContract: successFlags.contract,
         successBanner: successFlags.banner,
         successSkin: successFlags.skin,
+        successProforma: successFlags.proforma,
+        successSalesInvoice: successFlags.salesInvoice,
         contractDate: contractDate || undefined,
         unsuccessfulReason: unsuccessfulReason || undefined,
         unsuccessfulNotes: unsuccessfulNotes || undefined,
@@ -208,6 +220,28 @@ export function MarketingPanel() {
       </div>
 
       {view === "list" ? (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              className="text-xs"
+              variant={listKind === "all" ? "primary" : "outline"}
+              onClick={() => setListKind("all")}
+            >
+              همه
+            </Button>
+            {MARKETING_KIND_OPTIONS.filter((o) => o.id !== "new_case").map((o) => (
+              <Button
+                key={o.id}
+                type="button"
+                className="text-xs"
+                variant={listKind === o.id ? "primary" : "outline"}
+                onClick={() => setListKind(o.id)}
+              >
+                {o.label}
+              </Button>
+            ))}
+          </div>
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-xs font-bold text-slate-600">
@@ -219,14 +253,16 @@ export function MarketingPanel() {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
+              {items.filter((row) => listKind === "all" || row.kind === listKind).length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-3 py-6 text-center text-slate-500">
                     هنوز گزارشی ثبت نکرده‌اید.
                   </td>
                 </tr>
               ) : (
-                items.map((row) => (
+                items
+                  .filter((row) => listKind === "all" || row.kind === listKind)
+                  .map((row) => (
                   <tr key={row.id} className="border-t border-slate-100">
                     <td className="px-3 py-2 text-xs">{formatJalaliDate(row.createdAt.slice(0, 10))}</td>
                     <td className="px-3 py-2">{row.companyName || "—"}</td>
@@ -246,6 +282,7 @@ export function MarketingPanel() {
             </tbody>
           </table>
         </div>
+        </div>
       ) : null}
 
       {view === "followups" ? (
@@ -256,20 +293,26 @@ export function MarketingPanel() {
                 <th className="px-3 py-2 text-right">شرکت</th>
                 <th className="px-3 py-2 text-right">نوع پیگیری</th>
                 <th className="px-3 py-2 text-right">سررسید</th>
-                <th className="px-3 py-2 text-right">پیگیری‌های ثبت‌شده</th>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <th key={n} className="px-2 py-2 text-right whitespace-nowrap">
+                    پیگیری {n.toLocaleString("fa-IR")}
+                  </th>
+                ))}
                 <th className="px-3 py-2 text-right">عملیات</th>
               </tr>
             </thead>
             <tbody>
               {followUpItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
                     مورد پیگیری باز ندارید.
                   </td>
                 </tr>
               ) : (
                 followUpItems.map((row) => {
-                  const doneCount = row.followUpSlots.filter((s) => s.doneAt).length;
+                  const slotsByIndex = new Map(
+                    row.followUpSlots.map((s) => [s.slotIndex, s]),
+                  );
                   return (
                     <tr key={row.id} className="border-t border-slate-100">
                       <td className="px-3 py-2">{row.companyName || "—"}</td>
@@ -277,10 +320,14 @@ export function MarketingPanel() {
                       <td className="px-3 py-2 text-xs">
                         {row.followUpDueDate ? formatJalaliDate(row.followUpDueDate) : "—"}
                       </td>
-                      <td className="px-3 py-2 text-xs">
-                        {doneCount.toLocaleString("fa-IR")} /{" "}
-                        {MARKETING_FOLLOW_UP_SLOT_COUNT.toLocaleString("fa-IR")}
-                      </td>
+                      {[1, 2, 3, 4, 5].map((n) => {
+                        const s = slotsByIndex.get(n);
+                        return (
+                          <td key={n} className="px-2 py-2 text-xs whitespace-nowrap">
+                            {s?.doneAt ? formatJalaliDate(s.doneAt) : "—"}
+                          </td>
+                        );
+                      })}
                       <td className="px-3 py-2">
                         <button
                           type="button"
@@ -389,7 +436,9 @@ export function MarketingPanel() {
                     ["request", "ارائه درخواست"],
                     ["contract", "ارائه قرارداد"],
                     ["banner", "ارائه بنر"],
-                    ["skin", "ارائه پوسته"],
+                    ["skin", "ارائه پوستر"],
+                    ["proforma", "ارائه پیش‌فاکتور"],
+                    ["salesInvoice", "ارائه فاکتور فروش"],
                   ] as const
                 ).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-sm font-bold">

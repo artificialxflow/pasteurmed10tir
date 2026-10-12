@@ -27,6 +27,22 @@ export const FOLLOW_UP_ATTENDED_ACTION_OPTIONS: Array<{
 }> = [
   { id: 'appointment_needed', label: 'نوبت داده شود' },
   { id: 'follow_up_needed', label: 'نیاز به پیگیری بعدی' },
+  { id: 'in_progress', label: 'در حال کار' },
+];
+
+export const FOLLOW_UP_UNKNOWN_DENTIST = 'نام دندانپزشک را نمی‌داند';
+
+export const FOLLOW_UP_NO_SHOW_REASON_OPTIONS: Array<{
+  id: import('@prisma/client').FollowUpNoShowReason;
+  label: string;
+}> = [
+  { id: 'no_need', label: 'نیاز نداشت' },
+  { id: 'no_answer', label: 'پاسخگو نبود' },
+  { id: 'relocated', label: 'تغییر مکان' },
+  { id: 'financial', label: 'مالی' },
+  { id: 'scheduling', label: 'مشکل تایم' },
+  { id: 'other_clinic', label: 'بیمار مراکز دیگر' },
+  { id: 'work_completed', label: 'اتمام کار' },
 ];
 
 export const FOLLOW_UP_DISSATISFACTION_OPTIONS: Array<{

@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { bridgeFollowUpDoctorRatingToReview } from '@/lib/admin/follow-up-doctor-review-bridge';
 import {
   buildFollowUpWhere,
   parseCreateFollowUpBody,
@@ -9,6 +10,7 @@ import { mapFollowUpCase } from '@/lib/follow-up/mappers';
 import { parseIsoDateOnly } from '@/lib/follow-up/types';
 import { generateOperationId } from '@/lib/operations/mappers';
 import { prisma } from '@/lib/prisma';
+import { isSmsConfigured, sendFollowUpThankYouSms } from '@/lib/sms/client';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -48,6 +50,14 @@ export async function POST(request: Request) {
         createdByAdminId: auth.session.userId,
       },
     });
+    if (isSmsConfigured()) {
+      void sendFollowUpThankYouSms(row.patientPhone).catch((e) =>
+        console.error('[follow-up] sms failed', e),
+      );
+    }
+    void bridgeFollowUpDoctorRatingToReview(row).catch((e) =>
+      console.error('[follow-up] doctor review bridge failed', e),
+    );
     return NextResponse.json({ item: mapFollowUpCase(row) }, { status: 201 });
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : 'خطا در ثبت.');

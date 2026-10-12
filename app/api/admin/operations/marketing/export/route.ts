@@ -23,7 +23,10 @@ export async function GET(request: Request) {
     where,
     orderBy: [{ createdAt: 'desc' }],
     take: 5000,
-    include: { visitor: { select: { name: true } } },
+    include: {
+      visitor: { select: { name: true } },
+      followUpSlots: { orderBy: { slotIndex: 'asc' } },
+    },
   });
 
   if (format === 'csv') {

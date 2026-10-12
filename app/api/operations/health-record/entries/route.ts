@@ -9,8 +9,15 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const section = searchParams.get('section') || undefined;
+  const dependentId = searchParams.has('dependentId')
+    ? searchParams.get('dependentId')
+    : undefined;
   try {
-    const result = await listHealthEntries(auth.session.userId, section || undefined);
+    const result = await listHealthEntries(
+      auth.session.userId,
+      section || undefined,
+      dependentId,
+    );
     return NextResponse.json(result);
   } catch (e) {
     return jsonError(e instanceof Error ? e.message : 'خطا', 400);
@@ -28,13 +35,15 @@ export async function POST(request: Request) {
   const date = String(body.date || '').slice(0, 10);
   if (!section || !date) return jsonError('بخش و تاریخ الزامی است.');
 
-  const { section: _s, date: _d, ...rest } = body;
+  const dependentId = body.dependentId ? String(body.dependentId) : null;
+  const { section: _s, date: _d, dependentId: _dep, ...rest } = body;
   try {
     const item = await createHealthEntry({
       userId: auth.session.userId,
       section,
       date,
       payload: rest,
+      dependentId,
     });
     return NextResponse.json({ item }, { status: 201 });
   } catch (e) {

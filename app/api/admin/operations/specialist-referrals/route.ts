@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/content/require-admin';
 import { mapSpecialistReferral } from '@/lib/follow-up/mappers';
 import { normalizePhoneDigits } from '@/lib/follow-up/types';
 import { generateOperationId } from '@/lib/operations/mappers';
+import { listSpecialistPickOptions } from '@/lib/admin/specialist-referral-options';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -11,6 +12,16 @@ export async function GET(request: Request) {
   if (auth.error) return auth.error;
 
   const { searchParams } = new URL(request.url);
+  if (searchParams.get('mode') === 'options') {
+    const [emergencyPhysicians, specialists] = await Promise.all([
+      prisma.emergencyPhysician.findMany({
+        where: { active: true },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      }),
+      listSpecialistPickOptions(),
+    ]);
+    return NextResponse.json({ emergencyPhysicians, specialists });
+  }
   const q = searchParams.get('q')?.trim();
   const fromRaw = searchParams.get('from');
   const toRaw = searchParams.get('to');
@@ -50,9 +61,11 @@ export async function GET(request: Request) {
 
 type PostBody = {
   referrerName?: string;
+  emergencyPhysicianId?: string;
   patientName?: string;
   patientPhone?: string;
   specialistName?: string;
+  specialistSpecialty?: string;
   note?: string;
 };
 
@@ -63,10 +76,17 @@ export async function POST(request: Request) {
   const body = await parseJson<PostBody>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
 
-  const referrerName = String(body.referrerName || '').trim();
+  let referrerName = String(body.referrerName || '').trim();
+  const emergencyPhysicianId = String(body.emergencyPhysicianId || '').trim() || null;
+  if (emergencyPhysicianId) {
+    const ep = await prisma.emergencyPhysician.findUnique({ where: { id: emergencyPhysicianId } });
+    if (!ep) return jsonError('پزشک اورژانس انتخاب‌شده معتبر نیست.');
+    referrerName = ep.name;
+  }
   const patientName = String(body.patientName || '').trim();
   const patientPhone = normalizePhoneDigits(body.patientPhone);
   const specialistName = String(body.specialistName || '').trim();
+  const specialistSpecialty = String(body.specialistSpecialty || '').trim() || null;
   const note = String(body.note || '').trim() || null;
 
   if (referrerName.length < 2) return jsonError('نام ارجاع‌دهنده الزامی است.');
@@ -81,6 +101,8 @@ export async function POST(request: Request) {
       patientName,
       patientPhone,
       specialistName,
+      specialistSpecialty,
+      emergencyPhysicianId,
       note,
       createdByAdminId: auth.session.userId,
     },

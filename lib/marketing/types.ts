@@ -51,6 +51,7 @@ export const MARKETING_FOLLOW_UP_KIND_OPTIONS: Array<{
   { id: 'commission', label: 'کمیسیون' },
   { id: 'no_response', label: 'عدم پاسخگویی' },
   { id: 'in_person', label: 'حضوری' },
+  { id: 'sample', label: 'ارائه سمپل' },
 ];
 
 export function marketingKindLabel(kind: MarketingReportKind): string {

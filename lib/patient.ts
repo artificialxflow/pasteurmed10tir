@@ -157,8 +157,18 @@ export type InstallmentPlan = {
   createdAt: string;
   items?: InstallmentScheduleItem[];
   payments?: InstallmentPaymentRecord[];
+  documents?: InstallmentPlanDocument[];
   overdueAmount?: number;
   overduePenalty?: number;
+};
+
+export type InstallmentPlanDocument = {
+  id: string;
+  kind: 'contract' | 'cheque';
+  path: string;
+  mimeType: string;
+  originalName: string;
+  createdAt: string;
 };
 
 export const DEFAULT_FRANCHISE_PERCENT = 10;

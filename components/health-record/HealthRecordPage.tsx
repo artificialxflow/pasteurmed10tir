@@ -5,7 +5,7 @@ import { HealthRecordBodyMap } from "@/components/health-record/HealthRecordBody
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, FormLabel } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
@@ -56,7 +56,18 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     ),
   );
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
+  const [dependentId, setDependentId] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void fetch("/api/auth/dependents", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: { items?: Array<{ id: string; name: string }> }) =>
+        setDependents(data.items || []),
+      )
+      .catch(() => setDependents([]));
+  }, []);
 
   function commitSection(id: HealthSectionId) {
     setSection(id);
@@ -78,12 +89,14 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   }, [fields]);
 
   const reload = useCallback(() => {
+    const q = new URLSearchParams({ section });
+    if (dependentId) q.set("dependentId", dependentId);
     void fetchPatientOps<{ items: Entry[] }>(
-      `/api/operations/health-record/entries?section=${encodeURIComponent(section)}`,
+      `/api/operations/health-record/entries?${q.toString()}`,
     )
       .then((data) => setItems(data.items || []))
       .catch((e: Error) => setError(e.message));
-  }, [section]);
+  }, [section, dependentId]);
 
   useEffect(() => {
     reload();
@@ -102,6 +115,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     void postPatientOps<{ item: Entry }>("/api/operations/health-record/entries", {
       section,
       date,
+      ...(dependentId ? { dependentId } : {}),
       ...payload,
     })
       .then(async (data) => {
@@ -143,6 +157,24 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
 
   return (
     <div className={`${WEB_PAGE_CONTAINER} space-y-6`} data-page="health-record">
+      {dependents.length > 0 ? (
+        <Card hover={false} className="p-4">
+          <FormLabel>مشاهده پرونده</FormLabel>
+          <select
+            className="mt-1 w-full max-w-md rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold"
+            value={dependentId}
+            onChange={(e) => setDependentId(e.target.value)}
+          >
+            <option value="">خودم (سرپرست)</option>
+            {dependents.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} (تحت تکفل)
+              </option>
+            ))}
+          </select>
+        </Card>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900">پرونده سلامت</h1>

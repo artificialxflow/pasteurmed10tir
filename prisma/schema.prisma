@@ -119,6 +119,7 @@ model Dependent {
   updatedAt                DateTime      @updatedAt
   bookings                 Booking[]
   consultations            Consultation[]
+  healthRecordEntries      HealthRecordEntry[]
 
   @@index([guardianUserId])
   @@index([nationalId])
@@ -528,6 +529,17 @@ enum FollowUpOutcome {
 enum FollowUpAttendedAction {
   appointment_needed
   follow_up_needed
+  in_progress
+}
+
+enum FollowUpNoShowReason {
+  no_need
+  no_answer
+  relocated
+  financial
+  scheduling
+  other_clinic
+  work_completed
 }
 
 enum FollowUpDissatisfactionTarget {
@@ -536,18 +548,33 @@ enum FollowUpDissatisfactionTarget {
   environment
 }
 
+model EmergencyPhysician {
+  id        String   @id
+  name      String
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  referrals SpecialistReferral[]
+}
+
 model SpecialistReferral {
-  id              String   @id
-  referrerName    String
-  patientName     String
-  patientPhone    String
-  specialistName  String
-  note            String?
-  createdByAdminId String?
-  createdAt       DateTime @default(now())
+  id                   String              @id
+  referrerName         String
+  patientName          String
+  patientPhone         String
+  specialistName       String
+  specialistSpecialty  String?
+  emergencyPhysicianId String?
+  emergencyPhysician   EmergencyPhysician? @relation(fields: [emergencyPhysicianId], references: [id], onDelete: SetNull)
+  note                 String?
+  createdByAdminId     String?
+  createdAt            DateTime            @default(now())
 
   @@index([patientPhone])
   @@index([createdAt])
+  @@index([emergencyPhysicianId])
 }
 
 model FollowUpCase {
@@ -569,6 +596,7 @@ model FollowUpCase {
   assistantNamesJson       String?
   appointmentGiven         Boolean                        @default(false)
   followUpDone             Boolean                        @default(false)
+  noShowReason             FollowUpNoShowReason?
   notes                    String?
   createdByAdminId         String?
   createdAt                DateTime                       @default(now())
@@ -792,6 +820,11 @@ enum InstallmentPaymentMethod {
   zibal
   wallet
   manual
+}
+
+enum InstallmentDocumentKind {
+  contract
+  cheque
 }
 
 enum InstallmentPaymentStatus {
@@ -1024,6 +1057,7 @@ enum MarketingFollowUpKind {
   commission
   no_response
   in_person
+  sample
 }
 
 model MarketingReport {
@@ -1039,6 +1073,8 @@ model MarketingReport {
   successContract     Boolean                      @default(false)
   successBanner       Boolean                      @default(false)
   successSkin         Boolean                      @default(false)
+  successProforma     Boolean                      @default(false)
+  successSalesInvoice Boolean                      @default(false)
   contractDate        DateTime?                    @db.Date
   unsuccessfulReason  MarketingUnsuccessfulReason?
   unsuccessfulNotes   String?
@@ -1163,12 +1199,28 @@ model InstallmentPlan {
   deleteNote       String?
   scheduleItems    InstallmentScheduleItem[]
   payments         InstallmentPayment[]
+  documents        InstallmentPlanDocument[]
 
   @@index([phone])
   @@index([source])
   @@index([status])
   @@index([linkedRequestId])
   @@index([deletedAt])
+}
+
+model InstallmentPlanDocument {
+  id               String                  @id
+  planId           String
+  plan             InstallmentPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  kind             InstallmentDocumentKind
+  path             String
+  mimeType         String
+  originalName     String
+  createdByAdminId String?
+  createdAt        DateTime                @default(now())
+
+  @@index([planId])
+  @@index([kind])
 }
 
 model InstallmentScheduleItem {
@@ -1413,6 +1465,8 @@ model HealthRecordEntry {
   id              String                    @id
   recordId        String
   record          HealthRecord              @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  dependentId     String?
+  dependent       Dependent?                @relation(fields: [dependentId], references: [id], onDelete: SetNull)
   /** vitals | general | prescription | dental | … */
   section         String
   /** تاریخ رویداد بالینی (ISO date در UI شمسی نمایش داده می‌شود) */
@@ -1438,4 +1492,21 @@ model HealthRecordAttachment {
   createdAt    DateTime          @default(now())
 
   @@index([entryId])
+}
+
+/// گزارش کار پاستور پلاس (بسته ۲۷/۰۹) — جدا از فالوآپ ادمین
+model PasteurWorkReport {
+  id               String    @id
+  title            String?
+  patientName      String?
+  patientPhone     String?
+  followUpDate     DateTime? @db.Date
+  followUpNotes    String?
+  details          String?
+  createdByAdminId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([followUpDate])
+  @@index([createdAt])
 }

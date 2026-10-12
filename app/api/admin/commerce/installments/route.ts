@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     include: {
       scheduleItems: { orderBy: { index: 'asc' } },
       payments: { orderBy: { createdAt: 'desc' }, take: 20 },
+      documents: { orderBy: { createdAt: 'desc' } },
     },
     orderBy: { createdAt: 'desc' },
   });

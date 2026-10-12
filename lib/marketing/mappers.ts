@@ -48,6 +48,8 @@ export function mapMarketingReport(
     successContract: row.successContract,
     successBanner: row.successBanner,
     successSkin: row.successSkin,
+    successProforma: row.successProforma,
+    successSalesInvoice: row.successSalesInvoice,
     contractDate: row.contractDate?.toISOString().slice(0, 10),
     unsuccessfulReason: row.unsuccessfulReason ?? undefined,
     unsuccessfulReasonLabel: marketingUnsuccessfulReasonLabel(row.unsuccessfulReason),

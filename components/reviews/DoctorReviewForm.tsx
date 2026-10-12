@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormSelect, FormTextarea } from "@/components/ui/Card";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { fetchPublicOps, postPublicOps } from "@/lib/operations/client";
+import { isPatientApproved } from "@/lib/patient";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type PublicReview = {
@@ -18,11 +20,15 @@ export function DoctorReviewForm({
   doctorId,
   doctorName,
   doctorKind,
+  requirePatientApproved = false,
 }: {
   doctorId: string | number;
   doctorName: string;
   doctorKind: "dental" | "medical";
+  /** فقط کاربران با تأیید کاربری می‌توانند نظر ثبت کنند */
+  requirePatientApproved?: boolean;
 }) {
+  const { profile, loading: profileLoading } = usePatientProfile();
   const [phone, setPhone] = useState("");
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
@@ -53,9 +59,20 @@ export function DoctorReviewForm({
     void loadReviews();
   }, [loadReviews]);
 
+  useEffect(() => {
+    if (profile?.phone) setPhone(profile.phone);
+  }, [profile?.phone]);
+
+  const canSubmitReview =
+    !requirePatientApproved || (!profileLoading && profile && isPatientApproved(profile));
+
   function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    if (requirePatientApproved && !canSubmitReview) {
+      setError("ثبت نظر فقط برای کاربران با تأیید کاربری امکان‌پذیر است.");
+      return;
+    }
     void postPublicOps("/api/operations/reviews", {
       doctorId,
       doctorName,
@@ -82,7 +99,7 @@ export function DoctorReviewForm({
           <p className="text-xs text-slate-500">در حال بارگذاری...</p>
         ) : stats ? (
           <p className="text-xs font-bold text-amber-700">
-            ★ {stats.avg.toFixed(1)} از {stats.count.toLocaleString("fa-IR")} نظر
+            {stats.avg.toFixed(1)} از {stats.count.toLocaleString("fa-IR")} نظر
           </p>
         ) : (
           <p className="text-xs text-slate-500">هنوز نظری ثبت نشده</p>
@@ -111,6 +128,12 @@ export function DoctorReviewForm({
         </p>
       ) : null}
       {error ? <p className="text-xs font-bold text-red-600">{error}</p> : null}
+      {requirePatientApproved && !profileLoading && !canSubmitReview ? (
+        <p className="text-xs text-amber-800">
+          برای ثبت نظر، ابتدا در پنل کاربری تأیید هویت خود را تکمیل کنید.
+        </p>
+      ) : null}
+      {canSubmitReview ? (
       <form onSubmit={submit} className="space-y-2">
         <FormInput
           placeholder="موبایل"
@@ -136,6 +159,7 @@ export function DoctorReviewForm({
           ثبت امتیاز
         </Button>
       </form>
+      ) : null}
     </Card>
   );
 }

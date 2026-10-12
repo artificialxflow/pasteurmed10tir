@@ -2,6 +2,7 @@ import { generateOperationId } from '@/lib/operations/mappers';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { isKnownSection } from '@/lib/health-record/sections';
+import { resolveOwnedDependent } from '@/lib/dependents';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 
 export async function ensureHealthRecord(userId: string) {
@@ -64,12 +65,20 @@ export async function createHealthEntry(input: {
   date: string;
   payload: Record<string, unknown>;
   createdByUserId?: string | null;
+  dependentId?: string | null;
 }) {
   if (!isKnownSection(input.section)) {
     throw new Error('بخش نامعتبر است.');
   }
   const date = new Date(`${input.date}T12:00:00.000Z`);
   if (Number.isNaN(date.getTime())) throw new Error('تاریخ نامعتبر است.');
+
+  let dependentId: string | null = null;
+  if (input.dependentId) {
+    const dep = await resolveOwnedDependent(input.userId, input.dependentId);
+    if (!dep) throw new Error('فرد تحت تکفل یافت نشد.');
+    dependentId = dep.id;
+  }
 
   const record = await ensureHealthRecord(input.userId);
   const row = await prisma.healthRecordEntry.create({
@@ -78,6 +87,7 @@ export async function createHealthEntry(input: {
       recordId: record.id,
       section: input.section,
       entryDate: date,
+      dependentId,
       payload: input.payload as Prisma.InputJsonValue,
       createdByUserId: input.createdByUserId ?? input.userId,
     },
@@ -155,11 +165,24 @@ export async function createHealthEntryForPhone(input: {
   });
 }
 
-export async function listHealthEntries(userId: string, section?: string) {
+export async function listHealthEntries(
+  userId: string,
+  section?: string,
+  dependentId?: string | null,
+) {
   const record = await ensureHealthRecord(userId);
+  let dependentWhere: { dependentId: string | null };
+  if (dependentId === undefined || dependentId === null || dependentId === '') {
+    dependentWhere = { dependentId: null };
+  } else {
+    const dep = await resolveOwnedDependent(userId, dependentId);
+    if (!dep) throw new Error('فرد تحت تکفل یافت نشد.');
+    dependentWhere = { dependentId: dep.id };
+  }
   const rows = await prisma.healthRecordEntry.findMany({
     where: {
       recordId: record.id,
+      ...dependentWhere,
       ...(section ? { section } : {}),
     },
     include: { attachments: true },

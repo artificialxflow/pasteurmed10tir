@@ -32,11 +32,24 @@ function ratingForRole(row: FollowUpCase, role: SatisfactionRole): number | null
   return row.satisfactionEnvironment;
 }
 
+function rowIncludesAssistant(row: FollowUpCase, assistantName: string): boolean {
+  if (!row.assistantNamesJson) return false;
+  try {
+    const names = JSON.parse(row.assistantNamesJson) as unknown;
+    if (!Array.isArray(names)) return false;
+    const q = assistantName.trim();
+    return names.some((n) => String(n).trim() === q);
+  } catch {
+    return false;
+  }
+}
+
 export function computeSatisfactionStats(
   rows: FollowUpCase[],
   serviceCategory: FollowUpServiceCategory | 'all',
   role: SatisfactionRole,
   doctorName?: string | null,
+  assistantName?: string | null,
 ): SatisfactionStats {
   let filtered =
     serviceCategory === 'all'
@@ -46,6 +59,11 @@ export function computeSatisfactionStats(
   const doctorFilter = doctorName?.trim();
   if (doctorFilter) {
     filtered = filtered.filter((r) => r.doctorName.trim() === doctorFilter);
+  }
+
+  const assistantFilter = assistantName?.trim();
+  if (assistantFilter && role === 'assistants') {
+    filtered = filtered.filter((r) => rowIncludesAssistant(r, assistantFilter));
   }
 
   const ratings = filtered

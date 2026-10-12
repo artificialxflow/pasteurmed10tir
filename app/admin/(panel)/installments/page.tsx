@@ -15,6 +15,7 @@ import {
   fetchAdminCommerce,
   patchAdminCommerce,
   postAdminCommerce,
+  postAdminCommerceForm,
 } from "@/lib/commerce/client";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import {
@@ -158,6 +159,48 @@ export default function AdminInstallmentsPage() {
     setEditNote("");
     setNewItemAmount("");
     setNewItemDueDate("");
+  }
+
+  async function uploadPlanDocument(
+    planId: string,
+    kind: "contract" | "cheque",
+    file: File,
+  ) {
+    setError("");
+    setSuccess("");
+    setBusyId(`${planId}-doc-${kind}`);
+    try {
+      const form = new FormData();
+      form.set("kind", kind);
+      form.set("file", file);
+      await postAdminCommerceForm(
+        `/api/admin/commerce/installments/${encodeURIComponent(planId)}/documents`,
+        form,
+      );
+      setSuccess(kind === "contract" ? "قرارداد بارگذاری شد." : "فایل چک بارگذاری شد.");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "آپلود ناموفق");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function removePlanDocument(planId: string, docId: string) {
+    if (!confirmAction("این فایل حذف شود؟")) return;
+    setError("");
+    setBusyId(docId);
+    try {
+      await deleteAdminCommerce(
+        `/api/admin/commerce/installments/${encodeURIComponent(planId)}/documents?docId=${encodeURIComponent(docId)}`,
+      );
+      setSuccess("فایل حذف شد.");
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "حذف ناموفق");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -345,6 +388,79 @@ export default function AdminInstallmentsPage() {
                       placeholder="توضیح واریز دستی (اختیاری)"
                       className="text-xs"
                     />
+                  </div>
+                  <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+                    <p className="mb-2 text-xs font-bold text-slate-800">قرارداد و چک</p>
+                    <p className="mb-3 text-[0.65rem] text-slate-500">
+                      فرمت مجاز: jpg، png، webp، pdf — حداکثر ۱۲ مگابایت
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-3">
+                      <label className="flex cursor-pointer flex-col gap-1 text-xs font-bold text-teal-800">
+                        بارگذاری قرارداد
+                        <input
+                          type="file"
+                          accept=".pdf,image/jpeg,image/png,image/webp"
+                          className="text-[0.65rem] font-normal text-slate-600"
+                          disabled={busyId === `${p.id}-doc-contract`}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void uploadPlanDocument(p.id, "contract", f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <label className="flex cursor-pointer flex-col gap-1 text-xs font-bold text-teal-800">
+                        بارگذاری چک
+                        <input
+                          type="file"
+                          accept=".pdf,image/jpeg,image/png,image/webp"
+                          className="text-[0.65rem] font-normal text-slate-600"
+                          disabled={busyId === `${p.id}-doc-cheque`}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void uploadPlanDocument(p.id, "cheque", f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {(p.documents || []).length === 0 ? (
+                      <p className="text-xs text-slate-500">هنوز فایلی ثبت نشده.</p>
+                    ) : (
+                      <ul className="space-y-2 text-xs">
+                        {(p.documents || []).map((doc) => (
+                          <li
+                            key={doc.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2"
+                          >
+                            <span>
+                              {doc.kind === "contract" ? "قرارداد" : "چک"} — {doc.originalName}
+                              <span className="mr-2 text-slate-400">
+                                {formatJalaliDate(doc.createdAt)}
+                              </span>
+                            </span>
+                            <div className="flex gap-2">
+                              <a
+                                href={doc.path}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-cyan-800 hover:underline"
+                              >
+                                مشاهده
+                              </a>
+                              <button
+                                type="button"
+                                className="font-bold text-rose-700"
+                                disabled={busyId === doc.id}
+                                onClick={() => void removePlanDocument(p.id, doc.id)}
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   <div className="space-y-2 text-xs">
                     {(p.items || []).map((item) => (

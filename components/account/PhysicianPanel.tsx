@@ -18,9 +18,12 @@ type ReferralRow = {
   patientName: string;
   patientPhone: string;
   specialistName: string;
+  specialistSpecialty?: string;
   note?: string;
   createdAt: string;
 };
+
+type SpecialistOption = { id: string; name: string; specialty: string };
 
 type VisitPrescription = {
   id: string;
@@ -109,10 +112,13 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
   const [rxRecommendations, setRxRecommendations] = useState("");
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [referralBusy, setReferralBusy] = useState(false);
+  const [specialistOptions, setSpecialistOptions] = useState<SpecialistOption[]>([]);
   const [referralForm, setReferralForm] = useState({
     patientName: "",
     patientPhone: "",
+    specialistPickId: "",
     specialistName: "",
+    specialistSpecialty: "",
     note: "",
   });
 
@@ -145,10 +151,14 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
   }, []);
 
   const loadReferrals = useCallback(async () => {
-    const data = await fetchPatientOps<{ items: ReferralRow[] }>(
-      "/api/operations/physician/me/referrals",
-    );
-    setReferrals(data.items || []);
+    const [list, options] = await Promise.all([
+      fetchPatientOps<{ items: ReferralRow[] }>("/api/operations/physician/me/referrals"),
+      fetchPatientOps<{ specialists: SpecialistOption[] }>(
+        "/api/operations/physician/me/referrals?mode=options",
+      ),
+    ]);
+    setReferrals(list.items || []);
+    setSpecialistOptions(options.specialists || []);
   }, []);
 
   useEffect(() => {
@@ -175,7 +185,9 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
       setReferralForm({
         patientName: "",
         patientPhone: "",
+        specialistPickId: "",
         specialistName: "",
+        specialistSpecialty: "",
         note: "",
       });
       setMessage("ارجاع به متخصص ثبت شد.");
@@ -298,11 +310,32 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
             </div>
             <div className="sm:col-span-2">
               <FormLabel>متخصص ارجاع‌شده</FormLabel>
+              <select
+                className="mb-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                value={referralForm.specialistPickId}
+                onChange={(e) => {
+                  const sp = specialistOptions.find((x) => x.id === e.target.value);
+                  setReferralForm((f) => ({
+                    ...f,
+                    specialistPickId: e.target.value,
+                    specialistName: sp?.name || f.specialistName,
+                    specialistSpecialty: sp?.specialty || f.specialistSpecialty,
+                  }));
+                }}
+              >
+                <option value="">— انتخاب از لیست —</option>
+                {specialistOptions.map((sp) => (
+                  <option key={sp.id} value={sp.id}>
+                    {sp.name} — {sp.specialty}
+                  </option>
+                ))}
+              </select>
               <FormInput
                 value={referralForm.specialistName}
                 onChange={(e) =>
                   setReferralForm((f) => ({ ...f, specialistName: e.target.value }))
                 }
+                placeholder="یا نام دستی"
                 required
               />
             </div>
@@ -342,7 +375,10 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
                     </div>
                     <p className="text-slate-500">{formatJalaliDate(item.createdAt)}</p>
                   </div>
-                  <p className="mt-2 font-bold text-teal-800">→ {item.specialistName}</p>
+                  <p className="mt-2 font-bold text-teal-800">
+                    → {item.specialistName}
+                    {item.specialistSpecialty ? ` (${item.specialistSpecialty})` : ""}
+                  </p>
                   {item.note ? (
                     <p className="mt-1 text-slate-600">{item.note}</p>
                   ) : null}

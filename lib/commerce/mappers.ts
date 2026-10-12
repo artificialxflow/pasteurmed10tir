@@ -291,6 +291,14 @@ export function mapInstallmentPlan(
       paidAt: Date | null;
       createdAt: Date;
     }>;
+    documents?: Array<{
+      id: string;
+      kind: string;
+      path: string;
+      mimeType: string;
+      originalName: string;
+      createdAt: Date;
+    }>;
   },
 ) {
   const items = (row.scheduleItems || []).map((item) => {
@@ -327,6 +335,14 @@ export function mapInstallmentPlan(
     createdAt: row.createdAt.toISOString(),
     items,
     payments: (row.payments || []).map(mapInstallmentPayment),
+    documents: (row.documents || []).map((d) => ({
+      id: d.id,
+      kind: d.kind as 'contract' | 'cheque',
+      path: d.path,
+      mimeType: d.mimeType,
+      originalName: d.originalName,
+      createdAt: d.createdAt.toISOString(),
+    })),
     overdueAmount,
     overduePenalty,
   };

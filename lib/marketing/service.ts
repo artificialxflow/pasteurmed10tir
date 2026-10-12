@@ -63,6 +63,8 @@ export type CreateMarketingReportInput = {
   successContract?: unknown;
   successBanner?: unknown;
   successSkin?: unknown;
+  successProforma?: unknown;
+  successSalesInvoice?: unknown;
   contractDate?: unknown;
   unsuccessfulReason?: unknown;
   unsuccessfulNotes?: unknown;
@@ -91,6 +93,8 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
   const successContract = Boolean(body.successContract);
   const successBanner = Boolean(body.successBanner);
   const successSkin = Boolean(body.successSkin);
+  const successProforma = Boolean(body.successProforma);
+  const successSalesInvoice = Boolean(body.successSalesInvoice);
   const contractDate = parseIsoDateOnly(body.contractDate);
 
   const unsuccessfulReasonRaw = String(body.unsuccessfulReason || '').trim();
@@ -117,7 +121,14 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
     kind === 'blocked' || (kind === 'new_case' && newCaseOutcome === 'blocked');
 
   if (needsSuccess) {
-    if (!successRequest && !successContract && !successBanner && !successSkin) {
+    if (
+      !successRequest &&
+      !successContract &&
+      !successBanner &&
+      !successSkin &&
+      !successProforma &&
+      !successSalesInvoice
+    ) {
       throw new Error('حداقل یک اقدام موفق را انتخاب کنید.');
     }
   }
@@ -144,6 +155,8 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
     successContract,
     successBanner,
     successSkin,
+    successProforma,
+    successSalesInvoice,
     contractDate,
     unsuccessfulReason,
     unsuccessfulNotes: unsuccessfulNotes || null,

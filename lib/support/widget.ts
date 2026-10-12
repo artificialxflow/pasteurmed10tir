@@ -47,6 +47,12 @@ export const SUPPORT_WIDGET_OPTIONS = [
     label: 'درباره هزینه و اقساط سؤال دارم',
     href: { web: ROUTES.web.installments, app: ROUTES.app.installments },
   },
+  {
+    id: 'contact',
+    emoji: '📞',
+    label: 'تماس با ما',
+    href: { web: ROUTES.web.contact, app: ROUTES.app.contact },
+  },
 ] as const;
 
 export const SUPPORT_WIDGET_OTHER_SUBJECT = 'سؤال دیگری دارم';

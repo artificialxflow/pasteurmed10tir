@@ -29,6 +29,7 @@ export function smsBodyIds() {
     videoPatient: Number(env('SMS_VIDEO_PATIENT_BODY_ID') || 0),
     installmentDue: Number(env('SMS_INSTALLMENT_DUE_BODY_ID') || 0),
     installmentOverdue: Number(env('SMS_INSTALLMENT_OVERDUE_BODY_ID') || 0),
+    followUpThankYou: Number(env('SMS_FOLLOW_UP_THANK_YOU_BODY_ID') || 0),
   };
 }
 
@@ -247,4 +248,13 @@ export async function sendInstallmentOverdueSms(
     installmentLabel || 'قسط',
     amountLabel || '—',
   ]);
+}
+
+/** پس از ثبت فالوآپ — متن الگو در پنل پیامک (۲۷/۰۵) */
+export async function sendFollowUpThankYouSms(phone: string): Promise<SmsSendResult> {
+  const id = smsBodyIds().followUpThankYou;
+  if (!id) {
+    return { ok: false, error: 'پترن تشکر فالوآپ تنظیم نشده.' };
+  }
+  return sendByPattern(id, phone, ['پاستور پلاس']);
 }

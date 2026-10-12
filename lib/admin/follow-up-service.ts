@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import {
   FOLLOW_UP_ATTENDED_ACTION_OPTIONS,
   FOLLOW_UP_DISSATISFACTION_OPTIONS,
+  FOLLOW_UP_NO_SHOW_REASON_OPTIONS,
   FOLLOW_UP_SERVICE_OPTIONS,
   normalizePhoneDigits,
   parseIsoDateOnly,
@@ -69,14 +70,8 @@ export function buildFollowUpWhere(
     const d = parseIsoDateOnly(input.followUpDate);
     if (d) tabFilter.followUpDate = d;
   } else if (tab === 'completed') {
-    tabFilter = {
-      OR: [
-        { outcome: 'no_show' },
-        { outcome: 'dissatisfied' },
-        { outcome: 'attended', attendedAction: 'appointment_needed', appointmentGiven: true },
-        { outcome: 'attended', attendedAction: 'follow_up_needed', followUpDone: true },
-      ],
-    };
+    /** همهٔ تماس‌های ثبت‌شده — لاگ فالوآپ (۲۷/۰۷) */
+    tabFilter = {};
   } else if (tab === 'new') {
     tabFilter = { workDate: todayDateOnlyUtc() };
   }
@@ -98,6 +93,7 @@ export type CreateFollowUpInput = {
   outcome?: unknown;
   attendedAction?: unknown;
   dissatisfactionTarget?: unknown;
+  noShowReason?: unknown;
   followUpDate?: unknown;
   followUpTime?: unknown;
   assistantNames?: unknown;
@@ -136,27 +132,33 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
   const satisfactionReception = parseRating(body.satisfactionReception);
   const satisfactionEnvironment = parseRating(body.satisfactionEnvironment);
 
-  let attendedAction: 'appointment_needed' | 'follow_up_needed' | null = null;
+  let attendedAction: 'appointment_needed' | 'follow_up_needed' | 'in_progress' | null = null;
   let dissatisfactionTarget: 'doctor' | 'staff' | 'environment' | null = null;
+  let noShowReason: import('@prisma/client').FollowUpNoShowReason | null = null;
   let followUpDate: Date | null = null;
   let followUpTime: string | null = null;
 
   if (outcome === 'attended') {
     const action = String(body.attendedAction || '');
     if (!FOLLOW_UP_ATTENDED_ACTION_OPTIONS.some((o) => o.id === action)) {
-      throw new Error('برای «آمد» یکی از گزینه‌های نوبت یا پیگیری را انتخاب کنید.');
+      throw new Error('برای «آمد» یکی از گزینه‌های اقدام را انتخاب کنید.');
     }
-    attendedAction = action as 'appointment_needed' | 'follow_up_needed';
+    attendedAction = action as 'appointment_needed' | 'follow_up_needed' | 'in_progress';
     if (attendedAction === 'follow_up_needed') {
       followUpDate = parseIsoDateOnly(body.followUpDate);
       if (!followUpDate) throw new Error('تاریخ پیگیری بعدی را انتخاب کنید.');
       followUpTime = parseFollowUpTime(body.followUpTime);
-      if (!followUpTime) throw new Error('ساعت پیشنهادی پیگیری را وارد کنید (مثلاً ۱۴:۳۰).');
     }
+  } else if (outcome === 'no_show') {
+    const reason = String(body.noShowReason || '');
+    if (!FOLLOW_UP_NO_SHOW_REASON_OPTIONS.some((o) => o.id === reason)) {
+      throw new Error('علت «نیامد» را انتخاب کنید.');
+    }
+    noShowReason = reason as import('@prisma/client').FollowUpNoShowReason;
   } else {
     const target = String(body.dissatisfactionTarget || '');
     if (!FOLLOW_UP_DISSATISFACTION_OPTIONS.some((o) => o.id === target)) {
-      throw new Error('علت نارضایتی / عدم مراجعه را انتخاب کنید.');
+      throw new Error('علت نارضایتی را انتخاب کنید.');
     }
     dissatisfactionTarget = target as 'doctor' | 'staff' | 'environment';
   }
@@ -185,6 +187,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
     outcome: outcome as 'attended' | 'no_show' | 'dissatisfied',
     attendedAction,
     dissatisfactionTarget,
+    noShowReason,
     followUpDate,
     followUpTime,
     assistantNamesJson,

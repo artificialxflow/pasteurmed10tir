@@ -1,4 +1,5 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import { listSpecialistPickOptions } from '@/lib/admin/specialist-referral-options';
 import { findPhysicianByPhone } from '@/lib/home-visit/service';
 import { mapSpecialistReferral } from '@/lib/follow-up/mappers';
 import { normalizePhoneDigits } from '@/lib/follow-up/types';
@@ -7,12 +8,18 @@ import { requirePatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requirePatient();
   if (auth.error) return auth.error;
 
   const physician = await findPhysicianByPhone(auth.session.phone);
   if (!physician) return jsonError('دسترسی پزشک یافت نشد.', 403);
+
+  const mode = new URL(request.url).searchParams.get('mode');
+  if (mode === 'options') {
+    const specialists = await listSpecialistPickOptions();
+    return NextResponse.json({ specialists });
+  }
 
   const rows = await prisma.specialistReferral.findMany({
     where: {
@@ -32,6 +39,7 @@ type PostBody = {
   patientName?: string;
   patientPhone?: string;
   specialistName?: string;
+  specialistSpecialty?: string;
   note?: string;
 };
 
@@ -48,6 +56,7 @@ export async function POST(request: Request) {
   const patientName = String(body.patientName || '').trim();
   const patientPhone = normalizePhoneDigits(body.patientPhone);
   const specialistName = String(body.specialistName || '').trim();
+  const specialistSpecialty = String(body.specialistSpecialty || '').trim() || null;
   const note = String(body.note || '').trim() || null;
 
   if (patientName.length < 2) return jsonError('نام بیمار الزامی است.');
@@ -61,6 +70,7 @@ export async function POST(request: Request) {
       patientName,
       patientPhone,
       specialistName,
+      specialistSpecialty,
       note,
       createdByAdminId: auth.session.userId,
     },

@@ -7,8 +7,10 @@ import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   FOLLOW_UP_ATTENDED_ACTION_OPTIONS,
   FOLLOW_UP_DISSATISFACTION_OPTIONS,
+  FOLLOW_UP_NO_SHOW_REASON_OPTIONS,
   FOLLOW_UP_OUTCOME_OPTIONS,
   FOLLOW_UP_SERVICE_OPTIONS,
+  FOLLOW_UP_UNKNOWN_DENTIST,
 } from "@/lib/follow-up/types";
 import {
   downloadAdminOpsExport,
@@ -152,6 +154,7 @@ export default function AdminFollowUpPage() {
   const [satisfactionCategory, setSatisfactionCategory] = useState("all");
   const [satisfactionRole, setSatisfactionRole] = useState("doctor");
   const [satisfactionDoctorName, setSatisfactionDoctorName] = useState("");
+  const [satisfactionAssistantName, setSatisfactionAssistantName] = useState("");
   const [stats, setStats] = useState<SatisfactionStats | null>(null);
   const [formDoctorNames, setFormDoctorNames] = useState<string[]>([]);
   const [satisfactionDoctorNames, setSatisfactionDoctorNames] = useState<string[]>([]);
@@ -174,6 +177,7 @@ export default function AdminFollowUpPage() {
     outcome: "attended",
     attendedAction: "appointment_needed",
     dissatisfactionTarget: "doctor",
+    noShowReason: "",
     followUpDate: "",
     followUpTime: "",
     notes: "",
@@ -221,11 +225,14 @@ export default function AdminFollowUpPage() {
     if (satisfactionDoctorName) {
       params.set("doctorName", satisfactionDoctorName);
     }
+    if (satisfactionAssistantName) {
+      params.set("assistantName", satisfactionAssistantName);
+    }
     const data = await fetchAdminOps<SatisfactionStats>(
       `/api/admin/operations/follow-up/satisfaction?${params}`,
     );
     setStats(data);
-  }, [satisfactionCategory, satisfactionRole, satisfactionDoctorName]);
+  }, [satisfactionCategory, satisfactionRole, satisfactionDoctorName, satisfactionAssistantName]);
 
   const loadFormDoctorNames = useCallback(async (serviceCategory: string) => {
     if (!categoryUsesDoctorPicklist(serviceCategory)) {
@@ -363,9 +370,27 @@ export default function AdminFollowUpPage() {
     );
   }
 
+  function startFollowUpFromYesterday(row: YesterdayListItem) {
+    setTab("new");
+    setShowForm(true);
+    setForm((f) => ({
+      ...f,
+      patientName: row.name || "",
+      patientPhone: row.patientPhone,
+      doctorName: row.doctorName || "",
+      serviceCategory: row.source === "booking" ? "dental" : f.serviceCategory,
+    }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-extrabold text-slate-900">فالوآپ</h1>
+
+      <p className="animate-pulse rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-center text-sm font-extrabold leading-relaxed text-rose-700">
+        در صورت کنسلی و لغو نوبت حتماً حداکثر ۶ ساعت قبل با شماره{" "}
+        <span dir="ltr">۰۴۱۳۴۴۴۹۳۱۳</span> تماس حاصل فرمایید.
+      </p>
 
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => (
@@ -485,6 +510,9 @@ export default function AdminFollowUpPage() {
                       }
                     >
                       <option value="">انتخاب کنید…</option>
+                      {form.serviceCategory === "dental" ? (
+                        <option value={FOLLOW_UP_UNKNOWN_DENTIST}>{FOLLOW_UP_UNKNOWN_DENTIST}</option>
+                      ) : null}
                       {formDoctorNames.map((name) => (
                         <option key={name} value={name}>
                           {name}
@@ -600,15 +628,31 @@ export default function AdminFollowUpPage() {
                             type="time"
                             value={form.followUpTime}
                             onChange={(e) => setForm((f) => ({ ...f, followUpTime: e.target.value }))}
-                            required
                           />
                         </div>
                       </div>
                     ) : null}
                   </>
+                ) : form.outcome === "no_show" ? (
+                  <div className="md:col-span-2">
+                    <FormLabel>علت نیامدن</FormLabel>
+                    <div className="mt-2 flex flex-wrap gap-3">
+                      {FOLLOW_UP_NO_SHOW_REASON_OPTIONS.map((o) => (
+                        <label key={o.id} className="flex items-center gap-2 text-sm font-bold">
+                          <input
+                            type="radio"
+                            name="noShowReason"
+                            checked={form.noShowReason === o.id}
+                            onChange={() => setForm((f) => ({ ...f, noShowReason: o.id }))}
+                          />
+                          {o.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="md:col-span-2">
-                    <FormLabel>علت</FormLabel>
+                    <FormLabel>علت نارضایتی</FormLabel>
                     <div className="mt-2 flex flex-wrap gap-3">
                       {FOLLOW_UP_DISSATISFACTION_OPTIONS.map((o) => (
                         <label key={o.id} className="flex items-center gap-2 text-sm font-bold">
@@ -705,6 +749,9 @@ export default function AdminFollowUpPage() {
           <div className="max-w-sm">
             <FormLabel>فیلتر تاریخ پیگیری</FormLabel>
             <JalaliBirthDateField
+              label="تاریخ پیگیری (شمسی)"
+              minJalaliYear={1405}
+              maxJalaliYear={1410}
               value={followUpFilterDate}
               onChange={(iso) => setFollowUpFilterDate(iso || "")}
             />
@@ -754,7 +801,7 @@ export default function AdminFollowUpPage() {
           </div>
           <AdminTable
             headers={["بیمار", "تماس", "بخش", "نتیجه", "توضیح"]}
-            empty="مورد بسته‌شده‌ای نیست."
+            empty="هنوز فالوآپی ثبت نشده."
           >
             {items.map((row) => (
               <tr key={row.id} className="border-t border-slate-100">
@@ -798,7 +845,7 @@ export default function AdminFollowUpPage() {
             </Button>
           </Card>
           <AdminTable
-            headers={["منبع", "بیمار", "تماس", "پزشک", "زمان نوبت", "نوع", "وضعیت", "یادداشت"]}
+            headers={["منبع", "بیمار", "تماس", "پزشک", "زمان نوبت", "نوع", "وضعیت", "یادداشت", "فالوآپ"]}
             empty="برای دیروز نوبتی ثبت نشده."
           >
             {yesterdayItems.map((row) => (
@@ -814,6 +861,11 @@ export default function AdminFollowUpPage() {
                 <td className="px-4 py-3 text-xs">{row.statusLabel || row.status || "—"}</td>
                 <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-600">
                   {row.note || "—"}
+                </td>
+                <td className="px-4 py-3">
+                  <Button type="button" variant="outline" className="text-xs" onClick={() => startFollowUpFromYesterday(row)}>
+                    فالوآپ
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -924,6 +976,22 @@ export default function AdminFollowUpPage() {
                 <option value="environment">محیط</option>
               </FormSelect>
             </div>
+            {satisfactionRole === "assistants" && satisfactionCategory === "dental" ? (
+              <div className="md:col-span-3">
+                <FormLabel>نام دستیار</FormLabel>
+                <FormSelect
+                  value={satisfactionAssistantName}
+                  onChange={(e) => setSatisfactionAssistantName(e.target.value)}
+                >
+                  <option value="">همه دستیاران ثبت‌شده</option>
+                  {dentalAssistants.map((a) => (
+                    <option key={a.id} value={a.name}>
+                      {a.name}
+                    </option>
+                  ))}
+                </FormSelect>
+              </div>
+            ) : null}
           </div>
           <Card hover={false} className="p-5">
             <p className="text-lg font-extrabold text-teal-900">

@@ -63,6 +63,18 @@ export async function POST(request: Request) {
   }
 
   const session = await optionalPatient();
+  if (session) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      include: { profile: true },
+    });
+    if (!user?.profile || user.profile.status !== 'approved') {
+      return jsonError('ثبت نظر فقط برای کاربران با تأیید کاربری امکان‌پذیر است.', 403);
+    }
+    if (normalizePhoneDigits(user.phone) !== patientPhone) {
+      return jsonError('شماره موبایل باید با حساب ورود شما یکسان باشد.', 403);
+    }
+  }
   const userId =
     session && normalizePhoneDigits(session.phone) === patientPhone
       ? session.userId

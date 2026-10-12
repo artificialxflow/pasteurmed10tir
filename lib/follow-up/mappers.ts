@@ -8,6 +8,8 @@ export function mapSpecialistReferral(row: SpecialistReferral) {
     patientName: row.patientName,
     patientPhone: row.patientPhone,
     specialistName: row.specialistName,
+    specialistSpecialty: row.specialistSpecialty ?? undefined,
+    emergencyPhysicianId: row.emergencyPhysicianId ?? undefined,
     note: row.note ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
@@ -30,6 +32,7 @@ export function mapFollowUpCase(row: FollowUpCase) {
     outcomeLabel: followUpOutcomeLabel(row.outcome),
     attendedAction: row.attendedAction ?? undefined,
     dissatisfactionTarget: row.dissatisfactionTarget ?? undefined,
+    noShowReason: row.noShowReason ?? undefined,
     followUpDate: row.followUpDate?.toISOString().slice(0, 10),
     followUpTime: row.followUpTime ?? undefined,
     assistantNames: (() => {
@@ -70,6 +73,7 @@ export function isAwaitingFollowUp(row: Pick<FollowUpCase, 'outcome' | 'attended
 export function isCompletedCase(row: FollowUpCase): boolean {
   if (row.outcome === 'no_show' || row.outcome === 'dissatisfied') return true;
   if (row.outcome === 'attended') {
+    if (row.attendedAction === 'in_progress') return false;
     if (row.attendedAction === 'appointment_needed') return row.appointmentGiven;
     if (row.attendedAction === 'follow_up_needed') return row.followUpDone;
   }

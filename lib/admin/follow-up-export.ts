@@ -17,6 +17,7 @@ const REFERRAL_HEADERS = [
   'نام بیمار',
   'تماس بیمار',
   'متخصص ارجاع‌شده',
+  'تخصص',
   'توضیح',
 ];
 
@@ -27,6 +28,7 @@ export function referralRowsForExport(rows: SpecialistReferral[]) {
     r.patientName,
     r.patientPhone,
     r.specialistName,
+    r.specialistSpecialty || '',
     r.note || '',
   ]);
 }

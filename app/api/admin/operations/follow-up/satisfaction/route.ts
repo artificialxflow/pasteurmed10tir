@@ -29,13 +29,20 @@ export async function GET(request: Request) {
   const serviceCategory = parseCategory(searchParams.get('serviceCategory'));
   const role = parseRole(searchParams.get('role'));
   const doctorName = searchParams.get('doctorName')?.trim() || null;
+  const assistantName = searchParams.get('assistantName')?.trim() || null;
 
   const rows = await prisma.followUpCase.findMany({
     orderBy: { createdAt: 'desc' },
     take: 5000,
   });
 
-  const stats = computeSatisfactionStats(rows, serviceCategory, role, doctorName);
+  const stats = computeSatisfactionStats(
+    rows,
+    serviceCategory,
+    role,
+    doctorName,
+    assistantName,
+  );
   return NextResponse.json(stats);
 }
 

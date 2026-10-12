@@ -64,7 +64,7 @@ export function normalizeConsultationFormTypeId(
 
 export function modalityCapabilityHint(typeId?: string | null): string {
   const t = String(typeId || '').trim().toLowerCase();
-  if (t === 'emergency') return 'متن + صوت + تصویر (اورژانسی)';
+  if (t === 'emergency') return 'متن + صوت + تصویر — ویزیت تصویری';
   const m = consultationModality(typeId);
   if (m === 'video') return 'تصویر + متن + صوت';
   if (m === 'audio') return 'صوت + متن';

@@ -3,17 +3,25 @@
 import { FormLabel } from "@/components/ui/Card";
 import { JALALI_MONTHS, isoToJalali, jalaliToIso } from "@/lib/date/jalali";
 
-const YEARS = Array.from({ length: 90 }, (_, i) => 1410 - i);
+const DEFAULT_YEARS = Array.from({ length: 90 }, (_, i) => 1410 - i);
 
 export function JalaliBirthDateField({
   value,
   onChange,
   label = "تاریخ تولد (شمسی)",
+  minJalaliYear,
+  maxJalaliYear,
 }: {
   value: string;
   onChange: (iso: string) => void;
   label?: string;
+  minJalaliYear?: number;
+  maxJalaliYear?: number;
 }) {
+  const years =
+    minJalaliYear != null && maxJalaliYear != null
+      ? Array.from({ length: maxJalaliYear - minJalaliYear + 1 }, (_, i) => maxJalaliYear - i)
+      : DEFAULT_YEARS;
   const parts = isoToJalali(value);
   const jy = parts?.jy ?? 0;
   const jm = parts?.jm ?? 0;
@@ -61,7 +69,7 @@ export function JalaliBirthDateField({
           onChange={(e) => commit(Number(e.target.value) || 0, jm || 1, jd || 1)}
         >
           <option value="">سال</option>
-          {YEARS.map((y) => (
+          {years.map((y) => (
             <option key={y} value={y}>
               {y.toLocaleString("fa-IR")}
             </option>
