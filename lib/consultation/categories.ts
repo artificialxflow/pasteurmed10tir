@@ -36,6 +36,7 @@ export function supportsConsultationVideo(categoryId?: string | null): boolean {
 
 /** مسیرهای اختصاصی — Quick Links عمومی نمایش داده نمی‌شود. */
 export const FOCUSED_CONSULTATION_CATEGORIES = [
+  'dental',
   MEDICAL_HOME_CATEGORY,
   ...MEDICAL_CLINIC_CATEGORIES,
   ...CONSULTATION_CALLBACK_CATEGORIES,

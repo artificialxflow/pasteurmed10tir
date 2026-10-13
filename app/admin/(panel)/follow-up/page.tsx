@@ -387,11 +387,6 @@ export default function AdminFollowUpPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-extrabold text-slate-900">فالوآپ</h1>
 
-      <p className="animate-pulse rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-center text-sm font-extrabold leading-relaxed text-rose-700">
-        در صورت کنسلی و لغو نوبت حتماً حداکثر ۶ ساعت قبل با شماره{" "}
-        <span dir="ltr">۰۴۱۳۴۴۴۹۳۱۳</span> تماس حاصل فرمایید.
-      </p>
-
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button

@@ -7,7 +7,9 @@ import { isConsultationVideoWindowExpired } from "@/lib/jitsi/video-window";
 import { staffCommissionSourceLabel, staffCommissionStatusLabel } from "@/lib/home-visit/labels";
 import { fetchPatientOps, postPatientOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
+import { ROUTES } from "@/lib/routes";
 import { cn, formatPrice } from "@/lib/utils";
+import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 type PhysicianTab = "visits" | "stats" | "commissions" | "referrals";
@@ -47,6 +49,7 @@ type VisitRow = {
   preferredTime?: string;
   videoStatus?: string | null;
   supportsVideo?: boolean;
+  canOpenTrack?: boolean;
   canJoinVideo: boolean;
   canWritePrescription?: boolean;
   prescriptions?: VisitPrescription[];
@@ -559,6 +562,14 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
                       >
                         {busyId === v.id ? "در حال اتصال…" : "ورود به ویزیت تصویری"}
                       </Button>
+                    ) : null}
+                    {v.kind === "consultation" && v.canOpenTrack && !v.canJoinVideo ? (
+                      <Link
+                        href={`${ROUTES.web.consultationTrack}/${v.id}`}
+                        className="inline-flex rounded-xl border border-teal-300 bg-white px-3 py-2 text-xs font-extrabold text-teal-900 hover:bg-teal-50"
+                      >
+                        صفحه ویزیت
+                      </Link>
                     ) : null}
                     {v.canWritePrescription && !writingRx ? (
                       <button

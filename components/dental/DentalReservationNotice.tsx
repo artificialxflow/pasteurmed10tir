@@ -5,19 +5,21 @@ export function DentalReservationNotice({
   variant = 'teal',
 }: {
   adminNote?: string;
-  variant?: 'teal' | 'amber';
+  variant?: 'teal' | 'amber' | 'wizard';
 }) {
   const note = (adminNote || '').trim();
   const box =
     variant === 'amber'
       ? 'rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-800'
-      : 'rounded-lg border border-teal-100 bg-white p-3 text-xs leading-6 text-teal-900';
+      : variant === 'wizard'
+        ? 'rounded-lg border border-amber-200 bg-amber-50/90 p-3 text-xs leading-6 text-amber-900'
+        : 'rounded-lg border border-teal-100 bg-white p-3 text-xs leading-6 text-teal-900';
 
   return (
     <div className={box}>
       <p>{DENTAL_RESERVATION_DEFAULT_NOTICE.main}</p>
       <p className="mt-1 text-slate-600">{DENTAL_RESERVATION_DEFAULT_NOTICE.sub}</p>
-      {variant === 'amber' ? (
+      {variant === 'amber' || variant === 'wizard' ? (
         <p className="mt-2">{DENTAL_RESERVATION_DEFAULT_NOTICE.cancel}</p>
       ) : null}
       {note ? (

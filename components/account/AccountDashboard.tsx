@@ -12,7 +12,10 @@ import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
-import { consultationSupportsVideoSession } from "@/lib/consultation/modality";
+import {
+  consultationSupportsTrackPage,
+  consultationSupportsVideoSession,
+} from "@/lib/consultation/modality";
 import {
   consultationVideoJoinKind,
   videoStatusLabel,
@@ -683,6 +686,10 @@ export function AccountDashboard({
               category: c.category ? String(c.category) : undefined,
               type: c.type ? String(c.type) : undefined,
             });
+            const trackOk = consultationSupportsTrackPage({
+              category: c.category ? String(c.category) : undefined,
+              type: c.type ? String(c.type) : undefined,
+            });
             const videoStatus = String(c.videoStatus || "none");
             const preferredDate = c.preferredDate ? String(c.preferredDate) : undefined;
             const preferredTime = c.preferredTime ? String(c.preferredTime) : undefined;
@@ -718,12 +725,12 @@ export function AccountDashboard({
                 tone={tone}
                 action={
                   <div className="flex flex-wrap items-center gap-2">
-                    {videoOk ? (
+                    {trackOk || videoOk ? (
                       <Link
                         href={trackHref}
                         className="inline-flex items-center rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-teal-800"
                       >
-                        پیگیری و لینک اتاق
+                        {videoOk ? "پیگیری و لینک اتاق" : "صفحه ویزیت"}
                       </Link>
                     ) : null}
                     {joinable ? (

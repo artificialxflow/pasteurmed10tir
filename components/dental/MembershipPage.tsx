@@ -45,7 +45,7 @@ import { cn, normalizePhone } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 
@@ -116,6 +116,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
   const dentalHref = app ? ROUTES.app.dental : ROUTES.web.dental;
 
   const plans = membershipPlans;
+  const applyFormRef = useRef<HTMLFormElement>(null);
   const [loanTier, setLoanTier] = useState<MembershipTier>("regular");
   const [loanAmount, setLoanAmount] = useState("50000000");
   const [loanMonths, setLoanMonths] = useState(15);
@@ -552,6 +553,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 onClick={() => {
                   updateForm("tier", m.id as MembershipTier);
                   setLoanTier(m.id as MembershipTier);
+                  window.requestAnimationFrame(() => {
+                    applyFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
                 }}
               >
                 انتخاب طرح {m.name}
@@ -760,6 +764,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
         </Card>
 
         <form
+          ref={applyFormRef}
           onSubmit={submitApplication}
           className="space-y-5 rounded-[1.25rem] border border-sky-200 bg-white/95 p-6"
         >

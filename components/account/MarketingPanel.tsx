@@ -51,6 +51,7 @@ export function MarketingPanel() {
   const [unsuccessfulNotes, setUnsuccessfulNotes] = useState("");
   const [followUpKind, setFollowUpKind] = useState("");
   const [followUpDueDate, setFollowUpDueDate] = useState("");
+  const [followUpNotes, setFollowUpNotes] = useState("");
   const [blockedNote, setBlockedNote] = useState("");
 
   const [slotForms, setSlotForms] = useState<Record<number, { date: string; note: string }>>({});
@@ -96,8 +97,21 @@ export function MarketingPanel() {
     setUnsuccessfulNotes("");
     setFollowUpKind("");
     setFollowUpDueDate("");
+    setFollowUpNotes("");
     setBlockedNote("");
     setError("");
+  }
+
+  function openEditForm(row: MarketingReportPublic) {
+    setKind("new_case");
+    setCompanyName(row.companyName || "");
+    const fromRow = row.contacts?.length ? row.contacts : emptyContacts();
+    const padded = emptyContacts().map((c, i) => fromRow[i] || c);
+    setContacts(padded);
+    setNewCaseOutcome(row.newCaseOutcome || "");
+    setView("form");
+    setError("");
+    setSuccess("");
   }
 
   function openDetail(row: MarketingReportPublic) {
@@ -113,10 +127,10 @@ export function MarketingPanel() {
     setSuccess("");
     try {
       await postPatientOps("/api/operations/marketing/reports", {
-        kind,
+        kind: "new_case",
         companyName,
         contacts,
-        newCaseOutcome: kind === "new_case" ? newCaseOutcome : undefined,
+        newCaseOutcome: newCaseOutcome || undefined,
         successRequest: successFlags.request,
         successContract: successFlags.contract,
         successBanner: successFlags.banner,
@@ -128,6 +142,7 @@ export function MarketingPanel() {
         unsuccessfulNotes: unsuccessfulNotes || undefined,
         followUpKind: followUpKind || undefined,
         followUpDueDate: followUpDueDate || undefined,
+        followUpNotes: followUpNotes || undefined,
         blockedNote: blockedNote || undefined,
       });
       setSuccess("گزارش ثبت شد.");
@@ -271,9 +286,9 @@ export function MarketingPanel() {
                       <button
                         type="button"
                         className="text-xs font-bold text-cyan-800 hover:underline"
-                        onClick={() => openDetail(row)}
+                        onClick={() => openEditForm(row)}
                       >
-                        مشاهده
+                        ویرایش / ثبت
                       </button>
                     </td>
                   </tr>
@@ -349,20 +364,13 @@ export function MarketingPanel() {
       {view === "form" ? (
         <Card hover={false} className="p-4">
           <form className="space-y-4" onSubmit={(e) => void submitReport(e)}>
-            <FormLabel>نوع گزارش</FormLabel>
-            <div className="flex flex-wrap gap-2">
-              {MARKETING_KIND_OPTIONS.map((o) => (
-                <label key={o.id} className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold">
-                  <input type="radio" name="kind" checked={kind === o.id} onChange={() => setKind(o.id)} />
-                  {o.label}
-                </label>
-              ))}
-            </div>
+            <p className="text-xs font-bold text-slate-600">
+              ثبت مورد جدید — نوع نهایی از «نتیجه ویزیت» مشخص می‌شود.
+            </p>
 
-            {(kind === "new_case" || companyName) && kind !== "blocked" ? (
-              <>
+            <>
                 <FormLabel>نام شرکت / مؤسسه</FormLabel>
-                <FormInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} required={kind === "new_case"} />
+                <FormInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="grid gap-2 rounded-xl border border-slate-100 p-3 sm:grid-cols-3">
                     <div>
@@ -406,11 +414,9 @@ export function MarketingPanel() {
                     </div>
                   </div>
                 ))}
-              </>
-            ) : null}
+            </>
 
-            {kind === "new_case" ? (
-              <>
+            <>
                 <FormLabel>نتیجه ویزیت</FormLabel>
                 <div className="flex flex-wrap gap-2">
                   {MARKETING_NEW_CASE_OUTCOME_OPTIONS.map((o) => (
@@ -425,8 +431,7 @@ export function MarketingPanel() {
                     </label>
                   ))}
                 </div>
-              </>
-            ) : null}
+            </>
 
             {showSuccessBranch ? (
               <div className="space-y-2 rounded-xl border border-teal-100 bg-teal-50/40 p-3">
@@ -488,8 +493,15 @@ export function MarketingPanel() {
                     {o.label}
                   </label>
                 ))}
-                <FormLabel>تاریخ پیگیری</FormLabel>
+                <FormLabel>تاریخ پیگیری (اختیاری)</FormLabel>
                 <JalaliBirthDateField value={followUpDueDate} onChange={(iso) => setFollowUpDueDate(iso || "")} />
+                <FormLabel>توضیحات پیگیری</FormLabel>
+                <FormTextarea
+                  rows={3}
+                  value={followUpNotes}
+                  onChange={(e) => setFollowUpNotes(e.target.value)}
+                  placeholder="یادداشت برای پیگیری‌های بعدی"
+                />
               </div>
             ) : null}
 

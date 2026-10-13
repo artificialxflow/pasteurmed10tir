@@ -201,14 +201,15 @@ export function ConsultationTrack({
   if (!videoOk) {
     const modalityNote =
       modality === "audio"
-        ? "این درخواست مشاوره صوتی است (صوت + متن). اتاق ویدیو و آپلود تصویر فعال نیست؛ هماهنگی تماس از طریق مرکز انجام می‌شود."
+        ? "ویزیت صوتی (صوت + متن). دوربین و اتاق تصویری غیرفعال است؛ کارشناسان ظرف چند ساعت هماهنگی می‌کنند."
         : modality === "text"
-          ? "این درخواست مشاوره متنی است (فقط متن). اتاق ویدیو، صوت و آپلود تصویر فعال نیست."
-          : "برای این نوع خدمت لینک اتاق ویزیت تصویری فعال نیست. پیگیری از طریق تماس مرکز انجام می‌شود.";
+          ? "ویزیت متنی (فقط متن). صوت، تصویر و اتاق ویدیو غیرفعال است؛ پیگیری از همین صفحه انجام می‌شود."
+          : "پیگیری ویزیت از همین صفحه؛ اتاق تصویری برای این نوع فعال نیست.";
     return (
       <div className="space-y-4">
         <Card hover={false} className="p-5">
-          <p className="text-sm font-extrabold text-slate-900">
+          <p className="text-xs font-bold text-teal-800">صفحه ویزیت</p>
+          <p className="mt-1 text-sm font-extrabold text-slate-900">
             {item.typeLabel || item.categoryLabel || "درخواست"}
           </p>
           <p className="mt-1 text-xs font-bold text-slate-500">
@@ -221,6 +222,18 @@ export function ConsultationTrack({
               ? ` · ${item.doctorName || item.specialtyLabel}`
               : ""}
           </p>
+          <Card hover={false} className="mt-4 border-violet-100 bg-violet-50/50 p-4">
+            <p className="text-sm font-extrabold text-violet-950">نسخه و پرونده سلامت</p>
+            <p className="mt-1 text-xs leading-6 text-slate-600">
+              پس از ویزیت، نسخه الکترونیک در پرونده سلامت ذخیره می‌شود.
+            </p>
+            <Link
+              href={healthHref}
+              className="mt-3 inline-flex rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-violet-800"
+            >
+              مشاهده پرونده سلامت
+            </Link>
+          </Card>
           {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
           <Button href={accountHref} variant="outline" className="mt-4 w-full !rounded-xl">
             بازگشت به پنل کاربری

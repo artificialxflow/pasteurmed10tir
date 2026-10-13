@@ -70,6 +70,7 @@ export type CreateMarketingReportInput = {
   unsuccessfulNotes?: unknown;
   followUpKind?: unknown;
   followUpDueDate?: unknown;
+  followUpNotes?: unknown;
   blockedNote?: unknown;
 };
 
@@ -108,6 +109,7 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
   const followUpKind =
     followUpKindRaw && isFollowUpKind(followUpKindRaw) ? followUpKindRaw : null;
   const followUpDueDate = parseIsoDateOnly(body.followUpDueDate);
+  const followUpNotes = String(body.followUpNotes || '').trim();
 
   const blockedNote = String(body.blockedNote || '').trim();
 
@@ -139,7 +141,6 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
 
   if (needsFollowUp) {
     if (!followUpKind) throw new Error('نوع پیگیری را انتخاب کنید.');
-    if (!followUpDueDate) throw new Error('تاریخ پیگیری الزامی است.');
   }
 
   if (needsBlocked && kind === 'blocked' && blockedNote.length < 2) {
@@ -162,6 +163,7 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
     unsuccessfulNotes: unsuccessfulNotes || null,
     followUpKind,
     followUpDueDate,
+    followUpNotes: followUpNotes || null,
     blockedNote: blockedNote || null,
   };
 }
@@ -188,6 +190,7 @@ export async function createMarketingReport(
   body: CreateMarketingReportInput,
 ) {
   const parsed = parseCreateMarketingReportBody(body);
+  const { followUpNotes, ...reportData } = parsed;
   const id = generateOperationId();
 
   const row = await prisma.marketingReport.create({
@@ -195,7 +198,7 @@ export async function createMarketingReport(
       id,
       visitorId: visitor.id,
       visitorPhone: visitor.phone,
-      ...parsed,
+      ...reportData,
     },
     include: { followUpSlots: true },
   });
@@ -205,6 +208,12 @@ export async function createMarketingReport(
     (parsed.kind === 'new_case' && parsed.newCaseOutcome === 'follow_up');
   if (effectiveFollowUp) {
     await ensureFollowUpSlots(id);
+    if (followUpNotes) {
+      await prisma.marketingFollowUpSlot.updateMany({
+        where: { reportId: id, slotIndex: 1 },
+        data: { note: followUpNotes },
+      });
+    }
     const refreshed = await prisma.marketingReport.findUnique({
       where: { id },
       include: { followUpSlots: true },

@@ -37,6 +37,7 @@ import {
 import {
   CONSULTATION_FORM_TYPE_IDS,
   consultationAllowsImage,
+  consultationTypeSupportsVideoRoom,
   modalityCapabilityHint,
   normalizeConsultationFormTypeId,
 } from "@/lib/consultation/modality";
@@ -107,6 +108,8 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const requiresDoctor = category === "medical-specialty" && Boolean(selectedSpecialty);
   const isVisitBooking =
     category === "medical" || category === "medical-specialty";
+  const showMedicalVisitSlots =
+    isVisitBooking && consultationTypeSupportsVideoRoom(selectedType);
   const selectedDoctor = useMemo(
     () => physicians.find((doctor) => doctor.id === doctorId) || null,
     [physicians, doctorId],
@@ -468,7 +471,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         </div>
       ) : null}
 
-      {selectedDoctor && (dateOptions.length > 0 || isVisitBooking) ? (
+      {selectedDoctor && (dateOptions.length > 0 || showMedicalVisitSlots) ? (
         <div className="space-y-4">
           <div>
             <FormLabel>روز ویزیت</FormLabel>

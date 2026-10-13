@@ -2,7 +2,7 @@
 
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { Button } from "@/components/ui/Button";
-import { Logo } from "@/components/ui/Card";
+import { FormLabel, FormSelect, Logo } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { PASTEUR_DATA } from "@/lib/data";
 import { HEALTH_SECTIONS, isKnownSection } from "@/lib/health-record/sections";
@@ -26,15 +26,24 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
   const { profile } = usePatientProfile();
   const { institute } = PASTEUR_DATA;
   const [items, setItems] = useState<Entry[]>([]);
+  const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
+  const [dependentId, setDependentId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(() => {
     setLoading(true);
-    void fetchPatientOps<{ items: Entry[] }>("/api/operations/health-record/entries")
+    const q = dependentId ? `?dependentId=${encodeURIComponent(dependentId)}` : "";
+    void fetchPatientOps<{ items: Entry[] }>(`/api/operations/health-record/entries${q}`)
       .then((data) => setItems(data.items || []))
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
+  }, [dependentId]);
+
+  useEffect(() => {
+    void fetchPatientOps<{ items: Array<{ id: string; name: string }> }>("/api/auth/dependents")
+      .then((data) => setDependents(data.items || []))
+      .catch(() => setDependents([]));
   }, []);
 
   useEffect(() => {
@@ -129,6 +138,24 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
           </Link>
         </div>
       </div>
+
+      {dependents.length > 0 ? (
+        <div className="print:hidden">
+          <FormLabel>گزارش برای</FormLabel>
+          <FormSelect
+            value={dependentId}
+            onChange={(e) => setDependentId(e.target.value)}
+            className="max-w-md"
+          >
+            <option value="">خودم — {profile?.name || "سرپرست"}</option>
+            {dependents.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </FormSelect>
+        </div>
+      ) : null}
 
       <div className="health-report-sheet rounded-xl border-2 border-cyan-800 bg-white p-5 sm:p-6 print:rounded-none">
         {letterhead}

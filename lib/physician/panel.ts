@@ -1,4 +1,7 @@
-import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
+import {
+  consultationSupportsTrackPage,
+  consultationSupportsVideoSession,
+} from '@/lib/consultation/modality';
 import { canJoinConsultationVideoNow } from '@/lib/jitsi/video-window';
 import { findPhysicianByPhone, listMyStaffCommissionsByPhone } from '@/lib/home-visit/service';
 import { mapBooking, mapConsultation } from '@/lib/operations/mappers';
@@ -55,6 +58,10 @@ export async function listPhysicianVisits(physicianId: number) {
       category: mapped.category,
       type: mapped.type,
     });
+    const trackOk = consultationSupportsTrackPage({
+      category: mapped.category,
+      type: mapped.type,
+    });
     return {
       kind: 'consultation' as const,
       id: mapped.id,
@@ -62,6 +69,7 @@ export async function listPhysicianVisits(physicianId: number) {
       patientPhone: mapped.phone,
       title: mapped.typeLabel || mapped.categoryLabel || 'مشاوره',
       category: mapped.category,
+      type: mapped.type,
       when:
         `${String(mapped.preferredDateLabel || '')} ${String(mapped.preferredTimeLabel || '')}`.trim() ||
         '—',
@@ -70,6 +78,7 @@ export async function listPhysicianVisits(physicianId: number) {
       preferredTime: mapped.preferredTime,
       videoStatus: mapped.videoStatus,
       supportsVideo: videoOk,
+      canOpenTrack: trackOk,
       canJoinVideo:
         videoOk &&
         canJoinConsultationVideoNow({

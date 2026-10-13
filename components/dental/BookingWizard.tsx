@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import type { DentalBasePath } from "./types";
 import { isAppDental } from "./types";
 import { DentalReservationNotice } from "@/components/dental/DentalReservationNotice";
+import { DENTAL_BOOKING_CANCELLATION_BANNER } from "@/lib/content/dental-cancellation-banner";
 import { DoctorReviewForm } from "@/components/reviews/DoctorReviewForm";
 import { ROUTES } from "@/lib/routes";
 import { isPatientApproved } from "@/lib/patient";
@@ -512,6 +513,10 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
       ) : null}
 
       {currentStep === "type" ? (
+        <div className="space-y-4">
+          <p className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-center text-sm font-extrabold leading-relaxed text-rose-700">
+            {DENTAL_BOOKING_CANCELLATION_BANNER}
+          </p>
         <div className={cn("grid gap-4", app ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
           <TypeOption
             selected={state.type === "visit"}
@@ -539,6 +544,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
             accent="blue"
             app={app}
           />
+        </div>
         </div>
       ) : null}
 
@@ -754,7 +760,7 @@ export function BookingWizard({ basePath }: { basePath: DentalBasePath }) {
                   ثبت در لیست انتظار بدون بیعانه است؛ پذیرش برای تعیین نوبت قطعی تماس می‌گیرد.
                 </p>
               ) : (
-                <DentalReservationNotice adminNote={reservationNote} variant="teal" />
+                <DentalReservationNotice adminNote={reservationNote} variant="wizard" />
               )}
             </Card>
           ) : null}

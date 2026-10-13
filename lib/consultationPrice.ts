@@ -9,6 +9,7 @@ import {
   type ConsultationType,
   type SpecialtyTariffs,
 } from './data';
+import { tariffLookupKeys } from './consultation/type-id';
 import { formatPrice } from './utils';
 
 export type ConsultationPriceInput = {
@@ -132,11 +133,25 @@ export function getConsultationPrice(input: ConsultationPriceInput): Consultatio
   const { specialtyId, specialtyName, typeId, categoryId } = input;
   const types = getConsultationTypes();
   const tariffs = getSpecialtyTariffs();
-  const type = types.find((item) => item.id === typeId);
+  const normalizedId = typeId ? tariffLookupKeys(typeId)[0] : '';
+  const type =
+    types.find((item) => item.id === typeId) ||
+    types.find((item) => item.id === normalizedId) ||
+    types.find((item) => item.id === 'image' && normalizedId === 'video');
   const category = getCategoryFallback(categoryId);
 
-  if (isGeneralMedicineCategory(input) && typeId) {
-    const generalAmount = tariffs[GENERAL_TARIFF_KEY]?.[typeId];
+  const priceTypeKeys = typeId ? tariffLookupKeys(typeId) : [];
+
+  if (isGeneralMedicineCategory(input) && priceTypeKeys.length) {
+    const row = tariffs[GENERAL_TARIFF_KEY];
+    let generalAmount: number | undefined;
+    for (const key of priceTypeKeys) {
+      const v = row?.[key];
+      if (v) {
+        generalAmount = v;
+        break;
+      }
+    }
     if (generalAmount) {
       return {
         amount: generalAmount,
@@ -146,8 +161,15 @@ export function getConsultationPrice(input: ConsultationPriceInput): Consultatio
     }
   }
 
-  if (specialtyId && specialtyId !== GENERAL_TARIFF_KEY && typeId) {
-    const tariffAmount = tariffs[specialtyId]?.[typeId];
+  if (specialtyId && specialtyId !== GENERAL_TARIFF_KEY && priceTypeKeys.length) {
+    let tariffAmount: number | undefined;
+    for (const key of priceTypeKeys) {
+      const v = tariffs[specialtyId]?.[key];
+      if (v) {
+        tariffAmount = v;
+        break;
+      }
+    }
     if (tariffAmount) {
       return {
         amount: tariffAmount,
