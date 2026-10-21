@@ -7,6 +7,9 @@ export type VisitorSelf = {
   code: string;
   phone: string;
   status: string;
+  role: 'visitor' | 'referrer';
+  showMarketingPanel: boolean;
+  referralCommissionPercent: number;
 };
 
 /** ویزیتور فعال متناظر با موبایل سشن (OTP مشترک). */
@@ -24,11 +27,15 @@ export async function findActiveVisitorByPhone(
   const row = rows.find((v) => normalizePhoneDigits(v.phone) === key);
   if (!row) return null;
 
+  const role = row.role === 'referrer' ? 'referrer' : 'visitor';
   return {
     id: row.id,
     name: row.name,
     code: row.code,
     phone: key,
     status: row.status,
+    role,
+    showMarketingPanel: role === 'visitor',
+    referralCommissionPercent: row.commissionRate,
   };
 }

@@ -231,10 +231,13 @@ export interface ShopVip {
   facilityTerms: string[];
 }
 
+export type VisitorRoleKind = 'visitor' | 'referrer';
+
 export interface Visitor {
   id: number;
   name: string;
   code: string;
+  role?: VisitorRoleKind;
   commissionRate: number;
   commissionRateClinical?: number;
   commissionRateShop?: number;

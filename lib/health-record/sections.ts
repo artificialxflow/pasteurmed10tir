@@ -136,18 +136,21 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   pulm: SPECIALIST_FIELDS,
   imaging: ATTACHMENT_ONLY_FIELDS,
   endo_proc: ATTACHMENT_ONLY_FIELDS,
-  other: [
-    { key: 'summary', label: 'خلاصه پرونده', kind: 'textarea' },
-    { key: 'course', label: 'سیر بیماری', kind: 'textarea' },
-    { key: 'dischargeEducation', label: 'آموزش حین ترخیص', kind: 'textarea' },
-    { key: 'otherNotes', label: 'سایر', kind: 'textarea' },
-  ],
+  other: [],
 };
+
+export const HOSPITAL_DOCUMENT_SLOTS = [
+  { key: 'summary', label: 'خلاصه پرونده' },
+  { key: 'course', label: 'سیر بیماری' },
+  { key: 'dischargeEducation', label: 'آموزش حین ترخیص' },
+  { key: 'otherNotes', label: 'سایر' },
+] as const;
 
 export const HEALTH_RECORD_ATTACHMENT_SECTIONS = new Set<HealthSectionId>([
   'labs',
   'imaging',
   'endo_proc',
+  'other',
 ]);
 
 export const HEALTH_RECORD_FILE_ACCEPT =
@@ -207,7 +210,7 @@ export function sectionCreateHint(id: HealthSectionId): string {
     return 'نسخه ویزیت را با دارو، دوز و توصیه‌ها ثبت کنید؛ بیمار در پرونده سلامت می‌بیند.';
   }
   if (id === 'other') {
-    return 'برای هر بخش می‌توانید متن و عکس مدرک بیمارستان را بارگذاری کنید.';
+    return 'برای هر یک از چهار بخش (خلاصه پرونده، سیر بیماری، آموزش حین ترخیص، سایر) تاریخ را انتخاب کنید و فقط عکس مدرک را بارگذاری کنید.';
   }
   return 'در صورت نیاز مدرک، عکس یا PDF را بارگذاری کنید (jpg، png، pdf).';
 }

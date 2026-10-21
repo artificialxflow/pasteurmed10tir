@@ -144,18 +144,20 @@ export function getConsultationPrice(input: ConsultationPriceInput): Consultatio
 
   if (isGeneralMedicineCategory(input) && priceTypeKeys.length) {
     const row = tariffs[GENERAL_TARIFF_KEY];
-    let generalAmount: number | undefined;
+    let generalTariff: number | undefined;
     for (const key of priceTypeKeys) {
       const v = row?.[key];
       if (v) {
-        generalAmount = v;
+        generalTariff = v;
         break;
       }
     }
+    const typeAmount = type?.priceNum && type.priceNum > 0 ? type.priceNum : undefined;
+    const generalAmount = typeAmount ?? generalTariff;
     if (generalAmount) {
       return {
         amount: generalAmount,
-        source: 'tariff',
+        source: typeAmount ? 'type' : 'tariff',
         label: buildPreviewLabel(generalAmount, type, null, category),
       };
     }

@@ -658,6 +658,7 @@ model Consultation {
   @@index([status])
   @@index([dependentId])
   @@index([videoStatus])
+  @@index([doctorId, preferredDate, preferredTime])
 }
 
 model InsuranceInquiry {
@@ -1021,10 +1022,16 @@ model ShopOrder {
   @@index([status])
 }
 
+enum VisitorRole {
+  visitor
+  referrer
+}
+
 model Visitor {
   id                     Int            @id
   name                   String
   code                   String         @unique
+  role                   VisitorRole    @default(visitor)
   commissionRate         Int
   commissionRateClinical Int?
   commissionRateShop     Int?

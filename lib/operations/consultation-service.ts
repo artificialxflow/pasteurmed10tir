@@ -1,5 +1,10 @@
 import { addClubPoints } from '@/lib/club/service';
+import { isDoctorVisitSlotTaken } from '@/lib/consultation/doctor-slots';
 import { consultationAllowsImage } from '@/lib/consultation/modality';
+import {
+  amountsMatchConsultationPrice,
+  resolveConsultationPriceServer,
+} from '@/lib/consultation/server-pricing';
 import { resolveOwnedDependent } from '@/lib/dependents';
 import { generateOperationId, mapConsultation } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
@@ -54,6 +59,33 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
   const patientName = (dependent?.name || String(body.patientName || '').trim());
   if (!patientName) throw new Error('نام را وارد کنید.');
 
+  if (
+    body.doctorId &&
+    body.preferredDate &&
+    body.preferredTime &&
+    (await isDoctorVisitSlotTaken({
+      doctorId: String(body.doctorId),
+      preferredDate: String(body.preferredDate),
+      preferredTime: String(body.preferredTime),
+    }))
+  ) {
+    throw new Error('این ساعت برای این پزشک قبلاً رزرو شده است.');
+  }
+
+  const pricing = await resolveConsultationPriceServer({
+    specialtyId: body.specialty ? String(body.specialty) : null,
+    specialtyName: body.specialtyLabel ? String(body.specialtyLabel) : null,
+    typeId: body.type ? String(body.type) : null,
+    categoryId: body.category ? String(body.category) : null,
+  });
+  const clientAmount = Number(body.amount || 0);
+  if (pricing.amount < 100) {
+    throw new Error('مبلغ مشاوره نامعتبر است.');
+  }
+  if (!amountsMatchConsultationPrice(clientAmount, pricing.amount)) {
+    throw new Error('مبلغ پرداخت با تعرفه فعلی مطابقت ندارد. صفحه را refresh کنید.');
+  }
+
   const row = await prisma.consultation.create({
     data: {
       id: generateOperationId(),
@@ -70,9 +102,9 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
       doctorId: body.doctorId != null ? String(body.doctorId) : null,
       doctorName: body.doctorName ? String(body.doctorName) : null,
       description: body.description ? String(body.description) : null,
-      estimate: body.estimate ? String(body.estimate) : null,
-      amount: Number(body.amount || 0),
-      priceSource: body.priceSource ? String(body.priceSource) : null,
+      estimate: pricing.label || (body.estimate ? String(body.estimate) : null),
+      amount: pricing.amount,
+      priceSource: pricing.source,
       hasImage: Boolean(body.hasImage) && consultationAllowsImage(body.type),
       /** بیمه تکمیلی موقتاً غیرفعال — همیشه false تا پورسانت از کل مبلغ باشد. */
       onlineInsuranceCovered: false,

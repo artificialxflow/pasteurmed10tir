@@ -10,6 +10,7 @@ import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import {
   HEALTH_SECTIONS,
   fieldsForSection,
+  HOSPITAL_DOCUMENT_SLOTS,
   isKnownSection,
   sectionIsAttachmentOnly,
   type HealthSectionField,
@@ -56,6 +57,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     ),
   );
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [hospitalFiles, setHospitalFiles] = useState<Record<string, File | null>>({});
   const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
   const [dependentId, setDependentId] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
@@ -86,6 +88,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   useEffect(() => {
     setValues(emptyValues(fields));
     setPendingFile(null);
+    setHospitalFiles({});
   }, [fields]);
 
   const reload = useCallback(() => {
@@ -106,6 +109,40 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     e.preventDefault();
     setError("");
     setMessage("");
+
+    if (section === "other") {
+      const uploads = HOSPITAL_DOCUMENT_SLOTS.filter((slot) => hospitalFiles[slot.key]);
+      if (!uploads.length) {
+        setError("حداقل یک عکس برای یکی از بخش‌های مدارک بیمارستان انتخاب کنید.");
+        return;
+      }
+      void (async () => {
+        try {
+          for (const slot of uploads) {
+            const file = hospitalFiles[slot.key];
+            if (!file) continue;
+            const data = await postPatientOps<{ item: Entry }>(
+              "/api/operations/health-record/entries",
+              {
+                section,
+                date,
+                docKind: slot.key,
+                docKindLabel: slot.label,
+                ...(dependentId ? { dependentId } : {}),
+              },
+            );
+            if (data.item?.id) await uploadFor(data.item.id, file);
+          }
+          setHospitalFiles({});
+          setMessage("مدارک بیمارستان در پرونده ثبت شد.");
+          reload();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "ثبت ناموفق");
+        }
+      })();
+      return;
+    }
+
     const payload: Record<string, unknown> = {};
     for (const field of fields) {
       const raw = (values[field.key] || "").trim();
@@ -204,11 +241,30 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         </h2>
         <form onSubmit={submit} className="space-y-3">
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
-          <HealthRecordAttachmentFormField
-            section={section}
-            file={pendingFile}
-            onFileChange={setPendingFile}
-          />
+          {section === "other" ? (
+            <div className="space-y-4">
+              {HOSPITAL_DOCUMENT_SLOTS.map((slot) => (
+                <div key={slot.key} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                  <FormLabel>{slot.label} (بارگذاری عکس)</FormLabel>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                    className="mt-2 block w-full text-xs"
+                    onChange={(ev) => {
+                      const file = ev.target.files?.[0] || null;
+                      setHospitalFiles((prev) => ({ ...prev, [slot.key]: file }));
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <HealthRecordAttachmentFormField
+              section={section}
+              file={pendingFile}
+              onFileChange={setPendingFile}
+            />
+          )}
           {!sectionIsAttachmentOnly(section) ? (
             <HealthRecordFormFields
               fields={fields}

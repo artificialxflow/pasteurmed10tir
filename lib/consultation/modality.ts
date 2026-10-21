@@ -50,6 +50,14 @@ export function consultationSupportsVideoSession(input: {
   return consultationTypeSupportsVideoRoom(typeId);
 }
 
+/** ورود زنده به اتاق (Jitsi یا لینک خارجی) — متنی، صوتی، تصویری، اورژانس */
+export function consultationSupportsLiveSession(input: {
+  category?: string | null;
+  type?: string | null;
+}): boolean {
+  return consultationSupportsConsultationRoom(input);
+}
+
 /** اتاق/لینک مشاوره در ادمین — متنی، صوتی، تصویری، اورژانس */
 export function consultationSupportsConsultationRoom(input: {
   category?: string | null;

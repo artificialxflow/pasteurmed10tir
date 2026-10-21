@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import type { Consultation, ConsultationVideoStatus } from '@prisma/client';
 import {
   consultationSupportsConsultationRoom,
-  consultationSupportsVideoSession,
+  consultationSupportsLiveSession,
 } from '@/lib/consultation/modality';
 import { mintJitsiJwt } from '@/lib/jitsi/jwt';
 import {
@@ -106,8 +106,8 @@ export async function mintConsultationVideoAccess(input: {
     where: { id: input.consultationId },
   });
   if (!existing) throw new Error('مشاوره یافت نشد.');
-  if (!consultationSupportsVideoSession({ category: existing.category, type: existing.type })) {
-    throw new Error('ویزیت تصویری فقط برای مشاوره تصویری فعال است.');
+  if (!consultationSupportsLiveSession({ category: existing.category, type: existing.type })) {
+    throw new Error('اتاق مشاوره برای این نوع یا دسته فعال نیست.');
   }
   if (!canJoinConsultationVideo(existing.videoStatus)) {
     throw new Error(

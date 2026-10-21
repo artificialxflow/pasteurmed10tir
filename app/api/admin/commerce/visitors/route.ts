@@ -3,7 +3,7 @@ import { mapVisitor } from '@/lib/commerce/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { PASTEUR_DATA } from '@/lib/data';
 import { prisma } from '@/lib/prisma';
-import type { VisitorStatus } from '@prisma/client';
+import type { VisitorRole, VisitorStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -32,15 +32,24 @@ export async function PUT(request: Request) {
 
   const cleaned = source.map((v, index) => {
     const raw = v as Record<string, unknown>;
-    const clinical = Number(raw.commissionRateClinical ?? raw.commissionRate ?? 0);
-    const shop = Number(raw.commissionRateShop ?? raw.commissionRate ?? clinical);
+    const role: VisitorRole =
+      String(raw.role || 'visitor') === 'referrer' ? 'referrer' : 'visitor';
+    const referralRate = Number(raw.commissionRate ?? 0);
+    const clinical = Number(
+      raw.commissionRateClinical ?? (role === 'referrer' ? referralRate : raw.commissionRate ?? 0),
+    );
+    const shop = Number(
+      raw.commissionRateShop ?? (role === 'referrer' ? referralRate : clinical),
+    );
+    const commissionRate = role === 'referrer' ? referralRate : clinical;
     return {
       id: Number(raw.id ?? index + 1),
       name: String(raw.name || ''),
       code: String(raw.code || '').trim().toUpperCase(),
-      commissionRate: clinical,
-      commissionRateClinical: clinical,
-      commissionRateShop: shop,
+      role,
+      commissionRate,
+      commissionRateClinical: role === 'referrer' ? null : clinical,
+      commissionRateShop: role === 'referrer' ? null : shop,
       phone: String(raw.phone || ''),
       status: (String(raw.status || 'active') === 'inactive' ? 'inactive' : 'active') as VisitorStatus,
     };
@@ -56,6 +65,7 @@ export async function PUT(request: Request) {
         update: {
           name: item.name,
           code: item.code,
+          role: item.role,
           commissionRate: item.commissionRate,
           commissionRateClinical: item.commissionRateClinical,
           commissionRateShop: item.commissionRateShop,

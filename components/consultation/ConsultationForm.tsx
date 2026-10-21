@@ -93,6 +93,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
 
   const selectedSpecialty = useMemo(() => {
     if (!requestedSpecialty) return null;
@@ -149,7 +150,20 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   useEffect(() => {
     setPreferredDate("");
     setPreferredTime("");
+    setOccupiedSlots([]);
   }, [doctorId]);
+
+  useEffect(() => {
+    if (!selectedDoctor?.id || !preferredDate) {
+      setOccupiedSlots([]);
+      return;
+    }
+    void fetchPublic<{ slots?: string[] }>(
+      `/api/content/medical-doctors/${encodeURIComponent(String(selectedDoctor.id))}/occupied-slots?date=${encodeURIComponent(preferredDate)}`,
+    )
+      .then((data) => setOccupiedSlots(Array.isArray(data.slots) ? data.slots : []))
+      .catch(() => setOccupiedSlots([]));
+  }, [selectedDoctor?.id, preferredDate]);
 
   useEffect(() => {
     setPreferredTime("");
@@ -507,21 +521,29 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
               <FormLabel>ساعت ویزیت (۱۵ دقیقه‌ای)</FormLabel>
               {timeOptions.length ? (
                 <div className="mt-2 grid max-h-48 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
-                  {timeOptions.map((t) => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setPreferredTime(t.value)}
-                      className={cn(
-                        "rounded-xl border px-2 py-2 text-xs font-bold transition",
-                        preferredTime === t.value
-                          ? "border-teal-500 bg-teal-50 text-teal-900"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
-                      )}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
+                  {timeOptions.map((t) => {
+                    const taken = occupiedSlots.includes(t.value);
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        disabled={taken}
+                        onClick={() => setPreferredTime(t.value)}
+                        className={cn(
+                          "rounded-xl border px-2 py-2 text-xs font-bold transition",
+                          taken && "cursor-not-allowed opacity-40",
+                          preferredTime === t.value
+                            ? "border-teal-500 bg-teal-50 text-teal-900"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
+                        )}
+                      >
+                        {t.label}
+                        {taken ? (
+                          <span className="mt-1 block text-[10px] text-red-600">رزرو شده</span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-amber-700">

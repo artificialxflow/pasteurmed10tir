@@ -12,7 +12,10 @@ import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
+import { visitorRefPath } from "@/lib/commerce/referral-ref";
+import type { VisitorSelf } from "@/lib/commerce/visitor-service";
 import {
+  consultationSupportsLiveSession,
   consultationSupportsTrackPage,
   consultationSupportsVideoSession,
 } from "@/lib/consultation/modality";
@@ -123,7 +126,8 @@ type PanelSection =
   | "consultations"
   | "orders"
   | "organization"
-  | "marketing";
+  | "marketing"
+  | "referrer";
 
 function MenuRow({
   label,
@@ -174,7 +178,7 @@ export function AccountDashboard({
   const [cancelMessage, setCancelMessage] = useState("");
   const [isStaff, setIsStaff] = useState(false);
   const [isPhysician, setIsPhysician] = useState(false);
-  const [isVisitor, setIsVisitor] = useState(false);
+  const [commerceSelf, setCommerceSelf] = useState<VisitorSelf | null>(null);
   const [panel, setPanel] = useState<PanelSection>(
     profile.isOrganizationRep ? "organization" : "overview",
   );
@@ -210,9 +214,9 @@ export function AccountDashboard({
       .then((data) => setIsPhysician(Boolean(data.item)))
       .catch(() => setIsPhysician(false));
 
-    void fetchPatientOps<{ item: unknown }>("/api/operations/marketing/me")
-      .then((data) => setIsVisitor(Boolean(data.item)))
-      .catch(() => setIsVisitor(false));
+    void fetchPatientOps<{ item: VisitorSelf | null }>("/api/operations/marketing/me")
+      .then((data) => setCommerceSelf(data.item || null))
+      .catch(() => setCommerceSelf(null));
   }, []);
 
   const franchisePercent = resolveFranchisePercent(profile);
@@ -325,8 +329,14 @@ export function AccountDashboard({
           { id: "physician-referrals", label: "ارجاع به متخصص" },
         ] satisfies { id: PanelSection; label: string }[])
       : []),
-    ...(isVisitor
+    ...(commerceSelf?.showMarketingPanel
       ? ([{ id: "marketing", label: "بازاریابی" }] satisfies { id: PanelSection; label: string }[])
+      : []),
+    ...(commerceSelf?.role === "referrer"
+      ? ([{ id: "referrer", label: "کد معرف من" }] satisfies {
+          id: PanelSection;
+          label: string;
+        }[])
       : []),
     { id: "loan", label: "درخواست وام / اعتبار" },
     { id: "installments", label: "اقساط" },
@@ -511,6 +521,40 @@ export function AccountDashboard({
     panelBody = <PhysicianPanel section="referrals" />;
   } else if (panel === "marketing") {
     panelBody = <MarketingPanel />;
+  } else if (panel === "referrer" && commerceSelf) {
+    const refHref =
+      typeof window !== "undefined"
+        ? `${window.location.origin}${visitorRefPath(commerceSelf.code)}`
+        : visitorRefPath(commerceSelf.code);
+    panelBody = (
+      <Card hover={false} className="space-y-3 p-4">
+        <p className="text-sm font-extrabold text-slate-900">پنل معرف</p>
+        <p className="text-xs leading-6 text-slate-600">
+          فقط پورسانت معرفی برای ثبت‌نام با کد شما محاسبه می‌شود. گزارش بازاریابی در این
+          پنل نمایش داده نمی‌شود.
+        </p>
+        <p className="text-xs text-slate-500">
+          کد: <span className="font-mono font-bold text-teal-800">{commerceSelf.code}</span>
+        </p>
+        <p className="text-xs text-slate-500">
+          پورسانت معرفی:{" "}
+          <span className="font-bold">{commerceSelf.referralCommissionPercent}٪</span>
+        </p>
+        <p className="break-all text-xs font-semibold text-cyan-900" dir="ltr">
+          {refHref}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="text-sm"
+          onClick={() => {
+            void navigator.clipboard.writeText(refHref);
+          }}
+        >
+          کپی لینک معرف
+        </Button>
+      </Card>
+    );
   } else if (panel === "loan") {
     panelBody = (
       <LoanRequestCard
@@ -682,6 +726,10 @@ export function AccountDashboard({
           activity.consultations.map((c) => {
             const st = String(c.status || "");
             const cancelled = st === "cancelled";
+            const liveOk = consultationSupportsLiveSession({
+              category: c.category ? String(c.category) : undefined,
+              type: c.type ? String(c.type) : undefined,
+            });
             const videoOk = consultationSupportsVideoSession({
               category: c.category ? String(c.category) : undefined,
               type: c.type ? String(c.type) : undefined,
@@ -694,7 +742,7 @@ export function AccountDashboard({
             const preferredDate = c.preferredDate ? String(c.preferredDate) : undefined;
             const preferredTime = c.preferredTime ? String(c.preferredTime) : undefined;
             const joinable =
-              videoOk &&
+              liveOk &&
               !cancelled &&
               canJoinConsultationVideoNow({
                 videoStatus,
@@ -710,7 +758,7 @@ export function AccountDashboard({
                 ? ` · ${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
                 : "";
             const videoMeta =
-              videoOk && videoStatus !== "none"
+              liveOk && videoStatus !== "none"
                 ? ` · ${videoStatusLabel(videoStatus)}`
                 : "";
             const statusLabel =
@@ -725,12 +773,12 @@ export function AccountDashboard({
                 tone={tone}
                 action={
                   <div className="flex flex-wrap items-center gap-2">
-                    {trackOk || videoOk ? (
+                    {trackOk || liveOk ? (
                       <Link
                         href={trackHref}
                         className="inline-flex items-center rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-teal-800"
                       >
-                        {videoOk ? "پیگیری و لینک اتاق" : "صفحه ویزیت"}
+                        {liveOk ? "پیگیری و لینک اتاق" : "صفحه ویزیت"}
                       </Link>
                     ) : null}
                     {joinable ? (

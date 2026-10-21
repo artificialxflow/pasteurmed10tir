@@ -3,7 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import {
   consultationSupportsConsultationRoom,
-  consultationSupportsVideoSession,
+  consultationSupportsLiveSession,
 } from "@/lib/consultation/modality";
 import { videoStatusLabel } from "@/lib/jitsi/labels";
 import { canJoinConsultationVideoNow } from "@/lib/jitsi/video-window";
@@ -309,13 +309,13 @@ export default function AdminConsultationsPage() {
             category: c.category ? String(c.category) : undefined,
             type: c.type ? String(c.type) : undefined,
           });
-          const videoOk = consultationSupportsVideoSession({
+          const liveOk = consultationSupportsLiveSession({
             category: c.category ? String(c.category) : undefined,
             type: c.type ? String(c.type) : undefined,
           });
           const videoStatus = String(c.videoStatus || "none");
           const joinable =
-            videoOk &&
+            liveOk &&
             canJoinConsultationVideoNow({
               videoStatus,
               preferredDate: c.preferredDate,
@@ -372,7 +372,7 @@ export default function AdminConsultationsPage() {
                 </AdminBadge>
               </td>
               <td className="px-4 py-3 text-xs font-bold text-slate-700">
-                {videoOk ? videoStatusLabel(videoStatus) : "—"}
+                {liveOk ? videoStatusLabel(videoStatus) : "—"}
               </td>
               <td className="space-y-1 px-4 py-3">
                 {c.status !== "answered" && c.status !== "cancelled" ? (
@@ -403,7 +403,7 @@ export default function AdminConsultationsPage() {
                     باز کردن اتاق مشاوره
                   </button>
                 ) : null}
-                {videoOk && c.status !== "cancelled" && joinable ? (
+                {liveOk && c.status !== "cancelled" && joinable ? (
                   <>
                     <button
                       type="button"
@@ -411,7 +411,7 @@ export default function AdminConsultationsPage() {
                       className="block text-xs font-semibold text-teal-700 disabled:opacity-50"
                       onClick={() => void joinVideo(String(c.id))}
                     >
-                      ورود به ویزیت تصویری
+                      ورود به اتاق مشاوره
                     </button>
                     <button
                       type="button"

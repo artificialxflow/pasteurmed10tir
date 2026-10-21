@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
   consultationModality,
+  consultationSupportsLiveSession,
   consultationSupportsVideoSession,
   modalityCapabilityHint,
 } from "@/lib/consultation/modality";
@@ -91,12 +92,12 @@ export function ConsultationTrack({
     const data = await getConsultationApi(id);
     const next = data.item as TrackItem;
     setItem(next);
-    const videoOk = consultationSupportsVideoSession({
+    const liveOk = consultationSupportsLiveSession({
       category: next.category,
       type: next.type,
     });
     if (
-      videoOk &&
+      liveOk &&
       next.videoMeetingUrl &&
       canJoinConsultationVideoNow({
         videoStatus: next.videoStatus,
@@ -134,7 +135,7 @@ export function ConsultationTrack({
       const url = await ensureJoinUrl();
       window.location.href = url;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "ورود به ویزیت تصویری ناموفق بود.");
+      setError(e instanceof Error ? e.message : "ورود به اتاق مشاوره ناموفق بود.");
       setJoining(false);
     }
   }
@@ -167,6 +168,10 @@ export function ConsultationTrack({
   }
 
   const cancelled = item.status === "cancelled";
+  const liveOk = consultationSupportsLiveSession({
+    category: item.category,
+    type: item.type,
+  });
   const videoOk = consultationSupportsVideoSession({
     category: item.category,
     type: item.type,
@@ -184,7 +189,7 @@ export function ConsultationTrack({
     preferredTime: item.preferredTime,
   });
   const joinable =
-    videoOk &&
+    liveOk &&
     !cancelled &&
     canJoinConsultationVideoNow({
       videoStatus: item.videoStatus,
@@ -198,43 +203,20 @@ export function ConsultationTrack({
     resolvedJoinUrl ||
     (item.videoMeetingUrl && joinable ? String(item.videoMeetingUrl) : "");
 
-  if (!videoOk) {
-    const modalityNote =
-      modality === "audio"
-        ? "ویزیت صوتی (صوت + متن). دوربین و اتاق تصویری غیرفعال است؛ کارشناسان ظرف چند ساعت هماهنگی می‌کنند."
-        : modality === "text"
-          ? "ویزیت متنی (فقط متن). صوت، تصویر و اتاق ویدیو غیرفعال است؛ پیگیری از همین صفحه انجام می‌شود."
-          : "پیگیری ویزیت از همین صفحه؛ اتاق تصویری برای این نوع فعال نیست.";
+  if (!liveOk) {
     return (
       <div className="space-y-4">
         <Card hover={false} className="p-5">
-          <p className="text-xs font-bold text-teal-800">صفحه ویزیت</p>
+          <p className="text-xs font-bold text-teal-800">پیگیری درخواست</p>
           <p className="mt-1 text-sm font-extrabold text-slate-900">
             {item.typeLabel || item.categoryLabel || "درخواست"}
           </p>
-          <p className="mt-1 text-xs font-bold text-slate-500">
-            امکانات: {modalityCapabilityHint(item.type)}
-          </p>
-          <p className="mt-2 text-xs leading-6 text-slate-600">{modalityNote}</p>
           <p className="mt-3 text-xs text-slate-500">
             وضعیت: {statusLabel}
             {item.doctorName || item.specialtyLabel
               ? ` · ${item.doctorName || item.specialtyLabel}`
               : ""}
           </p>
-          <Card hover={false} className="mt-4 border-violet-100 bg-violet-50/50 p-4">
-            <p className="text-sm font-extrabold text-violet-950">نسخه و پرونده سلامت</p>
-            <p className="mt-1 text-xs leading-6 text-slate-600">
-              پس از ویزیت، نسخه الکترونیک در پرونده سلامت ذخیره می‌شود.
-            </p>
-            <Link
-              href={healthHref}
-              className="mt-3 inline-flex rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-extrabold text-white hover:bg-violet-800"
-            >
-              مشاهده پرونده سلامت
-            </Link>
-          </Card>
-          {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
           <Button href={accountHref} variant="outline" className="mt-4 w-full !rounded-xl">
             بازگشت به پنل کاربری
           </Button>
@@ -247,7 +229,9 @@ export function ConsultationTrack({
     <div className="space-y-4">
       <Card hover={false} className="overflow-hidden border-cyan-100 p-0 shadow-sm">
         <div className="bg-gradient-to-l from-cyan-700 to-teal-600 px-5 py-4 text-white">
-          <p className="text-xs font-bold text-cyan-50/90">پیگیری مشاوره تصویری</p>
+          <p className="text-xs font-bold text-cyan-50/90">
+            {videoOk ? "پیگیری مشاوره تصویری" : "پیگیری مشاوره / ویزیت"}
+          </p>
           <h1 className="mt-1 text-xl font-extrabold">
             {item.typeLabel || item.categoryLabel || "مشاوره"}
           </h1>
@@ -330,7 +314,9 @@ export function ConsultationTrack({
 
       {!cancelled && joinable ? (
         <Card hover={false} className="border-cyan-200 p-5 shadow-sm">
-          <p className="text-sm font-extrabold text-slate-900">ورود به ویزیت تصویری</p>
+          <p className="text-sm font-extrabold text-slate-900">
+            {videoOk ? "ورود به ویزیت تصویری" : "ورود به اتاق مشاوره"}
+          </p>
           <p className="mt-1 text-xs leading-6 text-slate-500">
             شما با اکانت خودتان وارد این صفحه شده‌اید. فقط دکمه زیر را بزنید تا مستقیم به اتاق
             ویزیت وصل شوید. ضبط جلسه برای بیمار غیرفعال است.

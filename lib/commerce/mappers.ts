@@ -153,6 +153,7 @@ export function mapVisitor(row: Visitor) {
     id: row.id,
     name: row.name,
     code: row.code,
+    role: row.role === 'referrer' ? 'referrer' : 'visitor',
     commissionRate: row.commissionRate,
     commissionRateClinical: row.commissionRateClinical ?? row.commissionRate,
     commissionRateShop: row.commissionRateShop ?? row.commissionRate,

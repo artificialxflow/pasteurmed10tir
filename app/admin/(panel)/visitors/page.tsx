@@ -7,7 +7,7 @@ import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
 import { visitorRefPath } from "@/lib/commerce/referral-ref";
-import { type Visitor } from "@/lib/data";
+import { type Visitor, type VisitorRoleKind } from "@/lib/data";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminVisitorsPage() {
@@ -15,8 +15,10 @@ export default function AdminVisitorsPage() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<VisitorRoleKind>("visitor");
   const [rateClinical, setRateClinical] = useState("5");
   const [rateShop, setRateShop] = useState("5");
+  const [rateReferral, setRateReferral] = useState("5");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [qrVisitorId, setQrVisitorId] = useState<number | null>(null);
@@ -55,11 +57,17 @@ export default function AdminVisitorsPage() {
     const trimmedCode = code.trim().toUpperCase();
     const clinical = validateRate(rateClinical);
     const shop = validateRate(rateShop);
+    const referral = validateRate(rateReferral);
     if (!trimmedName || !trimmedCode) {
       setError("نام و کد معرف الزامی است.");
       return;
     }
-    if (clinical === null || shop === null) {
+    if (role === "referrer") {
+      if (referral === null) {
+        setError("درصد پورسانت معرفی باید بین ۰ تا ۱۰۰ باشد.");
+        return;
+      }
+    } else if (clinical === null || shop === null) {
       setError("درصد پورسانت بالینی و فروشگاه باید بین ۰ تا ۱۰۰ باشد.");
       return;
     }
@@ -67,18 +75,31 @@ export default function AdminVisitorsPage() {
     persist(
       [
         ...visitors,
-        {
-          id: nextId,
-          name: trimmedName,
-          code: trimmedCode,
-          phone: phone.trim(),
-          commissionRate: clinical,
-          commissionRateClinical: clinical,
-          commissionRateShop: shop,
-          status: "active",
-        },
+        role === "referrer"
+          ? {
+              id: nextId,
+              name: trimmedName,
+              code: trimmedCode,
+              phone: phone.trim(),
+              role: "referrer",
+              commissionRate: referral!,
+              status: "active",
+            }
+          : {
+              id: nextId,
+              name: trimmedName,
+              code: trimmedCode,
+              phone: phone.trim(),
+              role: "visitor",
+              commissionRate: clinical!,
+              commissionRateClinical: clinical!,
+              commissionRateShop: shop!,
+              status: "active",
+            },
       ],
-      `ویزیتور ${trimmedName} ثبت شد (بالینی ${clinical}٪ · فروشگاه ${shop}٪).`,
+      role === "referrer"
+        ? `معرف ${trimmedName} ثبت شد (پورسانت معرفی ${referral}٪).`
+        : `ویزیتور ${trimmedName} ثبت شد (بالینی ${clinical}٪ · فروشگاه ${shop}٪).`,
     );
     setName("");
     setCode("");
@@ -153,7 +174,18 @@ export default function AdminVisitorsPage() {
         <h2 className="mb-4 font-bold">افزودن ویزیتور / معرف</h2>
         <form onSubmit={addVisitor} className="space-y-3">
           <div>
-            <FormLabel>نام ویزیتور</FormLabel>
+            <FormLabel>نقش</FormLabel>
+            <select
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"
+              value={role}
+              onChange={(e) => setRole(e.target.value as VisitorRoleKind)}
+            >
+              <option value="visitor">ویزیتور (بازاریابی + پورسانت بالینی/فروشگاه)</option>
+              <option value="referrer">معرف (فقط پورسانت معرفی + QR)</option>
+            </select>
+          </div>
+          <div>
+            <FormLabel>{role === "referrer" ? "نام معرف" : "نام ویزیتور"}</FormLabel>
             <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
@@ -164,32 +196,46 @@ export default function AdminVisitorsPage() {
             <FormLabel>شماره تماس</FormLabel>
             <FormInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          {role === "referrer" ? (
             <div>
-              <FormLabel>پورسانت بالینی (٪)</FormLabel>
+              <FormLabel>پورسانت معرفی (٪)</FormLabel>
               <FormInput
                 type="number"
-                value={rateClinical}
-                onChange={(e) => setRateClinical(e.target.value)}
+                value={rateReferral}
+                onChange={(e) => setRateReferral(e.target.value)}
                 min={0}
                 max={100}
                 required
               />
             </div>
-            <div>
-              <FormLabel>پورسانت فروشگاه (٪)</FormLabel>
-              <FormInput
-                type="number"
-                value={rateShop}
-                onChange={(e) => setRateShop(e.target.value)}
-                min={0}
-                max={100}
-                required
-              />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <FormLabel>پورسانت بالینی (٪)</FormLabel>
+                <FormInput
+                  type="number"
+                  value={rateClinical}
+                  onChange={(e) => setRateClinical(e.target.value)}
+                  min={0}
+                  max={100}
+                  required
+                />
+              </div>
+              <div>
+                <FormLabel>پورسانت فروشگاه (٪)</FormLabel>
+                <FormInput
+                  type="number"
+                  value={rateShop}
+                  onChange={(e) => setRateShop(e.target.value)}
+                  min={0}
+                  max={100}
+                  required
+                />
+              </div>
             </div>
-          </div>
+          )}
           <Button type="submit" className="w-full text-sm">
-            ثبت ویزیتور
+            {role === "referrer" ? "ثبت معرف" : "ثبت ویزیتور"}
           </Button>
         </form>
       </Card>
