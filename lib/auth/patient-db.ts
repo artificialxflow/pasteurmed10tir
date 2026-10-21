@@ -34,5 +34,6 @@ export function mapDbToPatientProfile(
     organizationName: extras?.organizationName,
     isOrganizationRep: extras?.isOrganizationRep,
     acquisitionSource: (profile?.acquisitionSource as AcquisitionSource | null) ?? undefined,
+    referralCode: profile?.referralCode ?? undefined,
   };
 }

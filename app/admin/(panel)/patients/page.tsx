@@ -440,6 +440,7 @@ export default function AdminPatientsPage() {
           "بیمه تکمیلی",
           "زحل",
           "نحوه آشنایی",
+          "کد معرف",
           "وضعیت",
           "یادداشت / عملیات",
         ]}
@@ -494,6 +495,7 @@ export default function AdminPatientsPage() {
               <td className="px-4 py-3 text-xs">
                 {acquisitionSourceLabel(p.acquisitionSource)}
               </td>
+              <td className="px-4 py-3 font-mono text-xs">{p.referralCode || "—"}</td>
               <td className="px-4 py-3">
                 <AdminBadge
                   tone={

@@ -1,8 +1,15 @@
 "use client";
 
+import { CompetitorClinicFormFields } from "@/components/admin/CompetitorClinicFormFields";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
-import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { Card, FormInput } from "@/components/ui/Card";
+import {
+  competitorFormFromApi,
+  competitorFormToBody,
+  emptyCompetitorClinicForm,
+  type CompetitorClinicForm,
+} from "@/lib/competitor/clinic-form";
 import { fetchAdminOps, patchAdminOps, postAdminOps } from "@/lib/operations/client";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
@@ -22,18 +29,11 @@ type Detail = ListItem & {
   }>;
 };
 
-const emptyForm = {
-  clinicName: "",
-  managementName: "",
-  city: "",
-  region: "",
-  notes: "",
-};
-
 export default function AdminCompetitorAnalysisPage() {
   const [tab, setTab] = useState<"new" | "centers">("new");
   const [items, setItems] = useState<ListItem[]>([]);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<CompetitorClinicForm>(emptyCompetitorClinicForm());
+  const [editForm, setEditForm] = useState<CompetitorClinicForm>(emptyCompetitorClinicForm());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState("");
@@ -55,6 +55,7 @@ export default function AdminCompetitorAnalysisPage() {
       `/api/admin/operations/competitor-clinics/${encodeURIComponent(id)}`,
     );
     setDetail(data.item);
+    setEditForm(competitorFormFromApi(data.item as Record<string, unknown>));
     setSelectedId(id);
     setTab("centers");
   }
@@ -66,14 +67,30 @@ export default function AdminCompetitorAnalysisPage() {
     try {
       const data = await postAdminOps<{ item: { id: string } }>(
         "/api/admin/operations/competitor-clinics",
-        form,
+        competitorFormToBody(form),
       );
       setSuccess("مرکز ثبت شد.");
-      setForm(emptyForm);
+      setForm(emptyCompetitorClinicForm());
       await reload();
       await loadDetail(data.item.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "ثبت ناموفق");
+    }
+  }
+
+  async function saveClinicFields() {
+    if (!detail) return;
+    setError("");
+    try {
+      await patchAdminOps(
+        `/api/admin/operations/competitor-clinics/${detail.id}`,
+        competitorFormToBody(editForm),
+      );
+      setSuccess("اطلاعات مرکز ذخیره شد.");
+      await loadDetail(detail.id);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ذخیره ناموفق");
     }
   }
 
@@ -114,44 +131,9 @@ export default function AdminCompetitorAnalysisPage() {
 
       {tab === "new" ? (
         <Card hover={false} className="p-5">
-          <form onSubmit={onCreate} className="grid gap-4 md:grid-cols-2">
-            <div>
-              <FormLabel>نام کلینیک</FormLabel>
-              <FormInput
-                value={form.clinicName}
-                onChange={(e) => setForm((f) => ({ ...f, clinicName: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <FormLabel>نام مدیریت</FormLabel>
-              <FormInput
-                value={form.managementName}
-                onChange={(e) => setForm((f) => ({ ...f, managementName: e.target.value }))}
-              />
-            </div>
-            <div>
-              <FormLabel>شهر</FormLabel>
-              <FormInput value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
-            </div>
-            <div>
-              <FormLabel>منطقه</FormLabel>
-              <FormInput
-                value={form.region}
-                onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <FormLabel>یادداشت</FormLabel>
-              <FormTextarea
-                rows={3}
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Button type="submit">ثبت مرکز</Button>
-            </div>
+          <form onSubmit={onCreate} className="space-y-4">
+            <CompetitorClinicFormFields form={form} onChange={setForm} requireName />
+            <Button type="submit">ثبت مرکز</Button>
           </form>
         </Card>
       ) : null}
@@ -178,38 +160,50 @@ export default function AdminCompetitorAnalysisPage() {
           </AdminTable>
 
           {detail ? (
-            <Card hover={false} className="p-5">
-              <h2 className="mb-3 text-lg font-bold">{detail.clinicName}</h2>
-              <p className="mb-4 text-xs text-slate-500">لیست قیمت — تعرفه دندان</p>
-              <div className="max-h-96 space-y-2 overflow-y-auto">
-                {(detail.prices || []).map((p) => (
-                  <div key={p.id} className="flex items-center gap-2 text-sm">
-                    <span className="min-w-0 flex-1 truncate">{p.dentalTariffItem.title}</span>
-                    <FormInput
-                      type="number"
-                      className="w-28"
-                      value={p.priceNum ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value === "" ? null : Number(e.target.value);
-                        setDetail((d) =>
-                          d
-                            ? {
-                                ...d,
-                                prices: d.prices?.map((row) =>
-                                  row.id === p.id ? { ...row, priceNum: v } : row,
-                                ),
-                              }
-                            : d,
-                        );
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <Button type="button" className="mt-4" onClick={() => void savePrices()}>
-                ذخیره قیمت‌ها
-              </Button>
-            </Card>
+            <div className="space-y-4">
+              <Card hover={false} className="p-5">
+                <h2 className="mb-3 text-lg font-bold">{detail.clinicName}</h2>
+                <p className="mb-4 text-xs text-slate-500">
+                  بروزرسانی: {new Date(detail.updatedAt).toLocaleString("fa-IR")}
+                </p>
+                <CompetitorClinicFormFields form={editForm} onChange={setEditForm} requireName />
+                <Button type="button" className="mt-4" onClick={() => void saveClinicFields()}>
+                  ذخیره اطلاعات مرکز
+                </Button>
+              </Card>
+              <Card hover={false} className="p-5">
+                <p className="mb-4 text-xs text-slate-500">لیست قیمت — تعرفه دندان</p>
+                <div className="max-h-96 space-y-2 overflow-y-auto">
+                  {(detail.prices || []).map((p) => (
+                    <div key={p.id} className="flex items-center gap-2 text-sm">
+                      <span className="min-w-0 flex-1 truncate">{p.dentalTariffItem.title}</span>
+                      <FormInput
+                        type="number"
+                        inputMode="numeric"
+                        className="w-28"
+                        value={p.priceNum ?? ""}
+                        onChange={(e) => {
+                          const v = e.target.value === "" ? null : Number(e.target.value);
+                          setDetail((d) =>
+                            d
+                              ? {
+                                  ...d,
+                                  prices: d.prices?.map((row) =>
+                                    row.id === p.id ? { ...row, priceNum: v } : row,
+                                  ),
+                                }
+                              : d,
+                          );
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" className="mt-4" onClick={() => void savePrices()}>
+                  ذخیره قیمت‌ها
+                </Button>
+              </Card>
+            </div>
           ) : null}
         </div>
       ) : null}

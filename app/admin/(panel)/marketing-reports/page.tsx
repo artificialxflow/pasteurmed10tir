@@ -222,6 +222,12 @@ export default function AdminMarketingReportsPage() {
             {detail.unsuccessfulReasonLabel !== "—" ? ` · ${detail.unsuccessfulReasonLabel}` : ""}
             {detail.followUpKindLabel !== "—" ? ` · ${detail.followUpKindLabel}` : ""}
           </p>
+          {detail.successNotes ? (
+            <p className="rounded-lg border border-teal-100 bg-teal-50/50 p-3 text-sm text-slate-800">
+              <span className="font-bold">توضیحات موفق: </span>
+              {detail.successNotes}
+            </p>
+          ) : null}
           {detail.unsuccessfulNotes ? (
             <p className="text-sm text-slate-700">{detail.unsuccessfulNotes}</p>
           ) : null}

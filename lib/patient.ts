@@ -59,6 +59,8 @@ export type PatientProfile = {
   isOrganizationRep?: boolean;
   /** نحوه آشنایی — فقط ثبت‌نام جدید اشخاص */
   acquisitionSource?: AcquisitionSource;
+  /** کد معرف ویزیتور (ثبت‌نام) */
+  referralCode?: string;
 };
 
 export type InsuranceMode = 'none' | 'base' | 'complementary' | 'both';
