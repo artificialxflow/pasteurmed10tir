@@ -71,6 +71,7 @@ const FOLLOW_UP_HEADERS = [
   'تاریخ پیگیری',
   'ساعت پیگیری',
   'توضیح',
+  'احتمال معرفی (۱–۵)',
 ];
 
 function parseAssistantNames(json: string | null | undefined): string {
@@ -100,6 +101,7 @@ export function followUpRowsForExport(rows: FollowUpCase[]) {
     r.followUpDate?.toISOString().slice(0, 10) ?? '',
     r.followUpTime ?? '',
     r.notes || '',
+    r.referralLikelihood ?? '',
   ]);
 }
 

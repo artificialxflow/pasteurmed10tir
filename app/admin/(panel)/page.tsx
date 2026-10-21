@@ -62,6 +62,10 @@ export default function AdminDashboardPage() {
   const [acqTo, setAcqTo] = useState("");
   const [acqStats, setAcqStats] = useState<AcquisitionReportStats | null>(null);
   const [acqExportBusy, setAcqExportBusy] = useState<string | null>(null);
+  const [returnRate, setReturnRate] = useState<{
+    generalReturns: number;
+    specialistReturns: number;
+  } | null>(null);
   const [queue, setQueue] = useState<QueueCounts>({
     pendingPatients: 0,
     pendingInsuranceInquiries: 0,
@@ -133,6 +137,15 @@ export default function AdminDashboardPage() {
         setOverview(overviewRes);
       } catch {
         setOverview(null);
+      }
+
+      try {
+        const rr = await fetchAdminOps<{ generalReturns: number; specialistReturns: number }>(
+          "/api/admin/operations/patient-return-rate",
+        );
+        setReturnRate(rr);
+      } catch {
+        setReturnRate(null);
       }
     })();
   }, [period]);
@@ -287,6 +300,19 @@ export default function AdminDashboardPage() {
           </button>
         ))}
       </div>
+
+      {returnRate ? (
+        <Card hover={false} className="border-teal-200 bg-teal-50/50 p-4">
+          <h2 className="text-sm font-extrabold text-teal-950">نرخ بازگشت بیمار (رزرو دندان)</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            عمومی — بازگشت در بازه حدود ۴ ماه:{" "}
+            <span className="font-bold">{returnRate.generalReturns.toLocaleString("fa-IR")}</span>
+            {" · "}
+            تخصصی — بازگشت پس از بیش از یک سال:{" "}
+            <span className="font-bold">{returnRate.specialistReturns.toLocaleString("fa-IR")}</span>
+          </p>
+        </Card>
+      ) : null}
 
       {exportError ? (
         <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">

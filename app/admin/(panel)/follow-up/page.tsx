@@ -181,6 +181,7 @@ export default function AdminFollowUpPage() {
     followUpDate: "",
     followUpTime: "",
     notes: "",
+    referralLikelihood: "",
   });
 
   const todayLabel = useMemo(() => formatJalaliDate(new Date().toISOString()), []);
@@ -665,6 +666,11 @@ export default function AdminFollowUpPage() {
                     </div>
                   </div>
                 )}
+                <RatingSelect
+                  label="چقدر احتمال دارد کلینیک مارو به آشنایان معرفی کنید؟"
+                  value={form.referralLikelihood}
+                  onChange={(v) => setForm((f) => ({ ...f, referralLikelihood: v }))}
+                />
                 <div className="md:col-span-2">
                   <FormLabel>توضیحات</FormLabel>
                   <FormTextarea

@@ -19,7 +19,7 @@ export const HEALTH_SECTIONS = [
   { id: 'pulm', label: 'ریه', emoji: '🌬️' },
   { id: 'imaging', label: 'سونو / مامو / راد', emoji: '📷' },
   { id: 'endo_proc', label: 'آندوسکوپی / کولون', emoji: '🔬' },
-  { id: 'other', label: 'سایر', emoji: '📋' },
+  { id: 'other', label: 'مدارک بیمارستان', emoji: '🏥' },
 ] as const;
 
 export type HealthSectionId = (typeof HEALTH_SECTIONS)[number]['id'];
@@ -136,7 +136,12 @@ const FIELDS_BY_SECTION: Record<HealthSectionId, HealthSectionField[]> = {
   pulm: SPECIALIST_FIELDS,
   imaging: ATTACHMENT_ONLY_FIELDS,
   endo_proc: ATTACHMENT_ONLY_FIELDS,
-  other: SPECIALIST_FIELDS,
+  other: [
+    { key: 'summary', label: 'خلاصه پرونده', kind: 'textarea' },
+    { key: 'course', label: 'سیر بیماری', kind: 'textarea' },
+    { key: 'dischargeEducation', label: 'آموزش حین ترخیص', kind: 'textarea' },
+    { key: 'otherNotes', label: 'سایر', kind: 'textarea' },
+  ],
 };
 
 export const HEALTH_RECORD_ATTACHMENT_SECTIONS = new Set<HealthSectionId>([
@@ -200,6 +205,9 @@ export function sectionCreateHint(id: HealthSectionId): string {
   if (id === 'dental') return 'یادداشت دندانپزشکی و در صورت نیاز عکس دندان یا مدارک مرتبط را بارگذاری کنید.';
   if (id === 'prescription') {
     return 'نسخه ویزیت را با دارو، دوز و توصیه‌ها ثبت کنید؛ بیمار در پرونده سلامت می‌بیند.';
+  }
+  if (id === 'other') {
+    return 'برای هر بخش می‌توانید متن و عکس مدرک بیمارستان را بارگذاری کنید.';
   }
   return 'در صورت نیاز مدرک، عکس یا PDF را بارگذاری کنید (jpg، png، pdf).';
 }

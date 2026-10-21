@@ -38,8 +38,10 @@ function ConsultationPageBody({ variant }: { variant: "web" | "app" }) {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
   const doctor = searchParams.get("doctor");
-  /** ویزیت پزشک با category اختصاصی یا با doctor در query — Quick Links نامرتبط نشان داده نشود. */
-  const focused = isFocusedConsultationCategory(category) || Boolean(doctor);
+  /** فرم بدون query دسته=dental — Quick Links تخصصی نشان داده نشود (۲۹/۰۳). */
+  const effectiveCategory = category || (doctor ? null : "dental");
+  const focused =
+    isFocusedConsultationCategory(effectiveCategory) || Boolean(doctor);
   const consultationBase = variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation;
 
   const title = focused

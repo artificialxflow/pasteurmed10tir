@@ -3,8 +3,13 @@ import { requireAdmin } from '@/lib/content/require-admin';
 import { parseIsoDateOnly } from '@/lib/follow-up/types';
 import { generateOperationId } from '@/lib/operations/mappers';
 import { prisma } from '@/lib/prisma';
+import {
+  emptyPasteurWorkPayload,
+  parsePasteurWorkPayload,
+} from '@/lib/pasteur-work-report/payload';
 import { prismaRouteError } from '@/lib/prisma/route-error';
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 
 function mapRow(row: {
   id: string;
@@ -14,6 +19,8 @@ function mapRow(row: {
   followUpDate: Date | null;
   followUpNotes: string | null;
   details: string | null;
+  reportedAt: Date | null;
+  payloadJson: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -25,6 +32,8 @@ function mapRow(row: {
     followUpDate: row.followUpDate?.toISOString().slice(0, 10),
     followUpNotes: row.followUpNotes ?? undefined,
     details: row.details ?? undefined,
+    reportedAt: row.reportedAt?.toISOString(),
+    payload: parsePasteurWorkPayload(row.payloadJson),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -48,6 +57,8 @@ type PostBody = {
   followUpDate?: string;
   followUpNotes?: string;
   details?: string;
+  reportedAt?: string;
+  payload?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -67,6 +78,10 @@ export async function POST(request: Request) {
         followUpDate: body.followUpDate ? parseIsoDateOnly(body.followUpDate) : null,
         followUpNotes: String(body.followUpNotes || '').trim() || null,
         details: String(body.details || '').trim() || null,
+        reportedAt: body.reportedAt ? new Date(body.reportedAt) : new Date(),
+        payloadJson: JSON.parse(
+          JSON.stringify(parsePasteurWorkPayload(body.payload ?? emptyPasteurWorkPayload())),
+        ),
         createdByAdminId: auth.session.userId,
       },
     });
@@ -105,6 +120,16 @@ export async function PATCH(request: Request) {
         followUpNotes:
           body.followUpNotes !== undefined ? String(body.followUpNotes || '').trim() || null : undefined,
         details: body.details !== undefined ? String(body.details || '').trim() || null : undefined,
+        reportedAt:
+          body.reportedAt !== undefined
+            ? body.reportedAt
+              ? new Date(body.reportedAt)
+              : null
+            : undefined,
+        payloadJson:
+          body.payload !== undefined
+            ? JSON.parse(JSON.stringify(parsePasteurWorkPayload(body.payload)))
+            : undefined,
       },
     });
     return NextResponse.json({ item: mapRow(row) });

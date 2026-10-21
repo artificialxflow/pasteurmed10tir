@@ -6,6 +6,8 @@ export const ACQUISITION_SOURCES = [
   'outdoor_ads',
   'previous_visitors',
   'acquaintances',
+  'organizational_contracts',
+  'clinic_patient',
 ] as const;
 
 export type AcquisitionSource = (typeof ACQUISITION_SOURCES)[number];
@@ -16,6 +18,8 @@ export const ACQUISITION_SOURCE_LABELS: Record<AcquisitionSource, string> = {
   outdoor_ads: 'تبلیغات محیطی',
   previous_visitors: 'مراجعین قبلی کلینیک',
   acquaintances: 'از طریق آشنایان',
+  organizational_contracts: 'قراردادهای سازمانی',
+  clinic_patient: 'بیمار کلینیک پاستور',
 };
 
 export function isAcquisitionSource(value: string): value is AcquisitionSource {

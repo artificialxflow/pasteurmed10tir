@@ -1,4 +1,9 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
+import {
+  CONSULTATION_STANDARD_TYPE_IDS,
+  filterStandardConsultationTypes,
+  isStandardConsultationTypeId,
+} from '@/lib/consultation/standard-types';
 import { requireAdmin } from '@/lib/content/require-admin';
 import {
   DEFAULT_HOME_VISIT_TARIFFS,
@@ -22,14 +27,16 @@ type ConsultationTypeBody = {
 export async function GET() {
   const auth = await requireAdmin('consultationPrices');
   if (auth.error) return auth.error;
-  const [types, tariffRow] = await Promise.all([
+  const [typesRaw, tariffRow] = await Promise.all([
     prisma.consultationType.findMany({ orderBy: { id: 'asc' } }),
     prisma.specialtyTariff.findUnique({ where: { id: 'default' } }),
   ]);
+  const types = filterStandardConsultationTypes(typesRaw);
   const raw = (tariffRow?.tariffs as SpecialtyTariffs) || {};
   const { specialtyTariffs, homeVisitTariffs } = splitTariffStore(raw);
   return NextResponse.json({
     consultationTypes: types,
+    legacyTypeIds: typesRaw.filter((t) => !isStandardConsultationTypeId(t.id)).map((t) => t.id),
     specialtyTariffs,
     homeVisitTariffs,
   });
@@ -59,6 +66,14 @@ export async function PUT(request: Request) {
     priceNum: t.priceNum != null ? Number(t.priceNum) : null,
     price: t.price?.trim() || null,
   }));
+
+  for (const t of types) {
+    if (!isStandardConsultationTypeId(t.id)) {
+      return jsonError(
+        `شناسه نوع مشاوره نامعتبر: ${t.id}. مجاز: ${CONSULTATION_STANDARD_TYPE_IDS.join(', ')}`,
+      );
+    }
+  }
 
   await prisma.$transaction([
     prisma.consultationType.deleteMany(),

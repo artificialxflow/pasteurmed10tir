@@ -3,6 +3,7 @@ import { verifyOtpCode } from '@/lib/auth/otp-service';
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { setPatientSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+import { normalizeReferralCode } from '@/lib/commerce/referral-ref';
 import { parseAcquisitionSource } from '@/lib/patient/acquisition-source';
 import { normalizePhone } from '@/lib/utils';
 import { NextResponse } from 'next/server';
@@ -14,6 +15,7 @@ type Body = {
   loginKind?: 'person' | 'organization';
   organizationName?: string;
   acquisitionSource?: string;
+  referralCode?: string;
 };
 
 export async function POST(request: Request) {
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
   }
 
   const isNewPerson = !existing && loginKind === 'person';
+  const referralCode = normalizeReferralCode(body.referralCode);
   const acquisitionSource = parseAcquisitionSource(body.acquisitionSource);
   if (isNewPerson && !acquisitionSource) {
     return jsonError('لطفاً نحوه آشنایی با ما را انتخاب کنید.');
@@ -67,7 +70,13 @@ export async function POST(request: Request) {
         franchisePercent: 30,
         status: 'pending',
         ...(isNewPerson && acquisitionSource ? { acquisitionSource } : {}),
+        ...(referralCode ? { referralCode } : {}),
       },
+    });
+  } else if (referralCode && user.profile && !user.profile.referralCode) {
+    await prisma.patientProfile.update({
+      where: { userId: user.id },
+      data: { referralCode },
     });
   }
 

@@ -45,6 +45,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.laserServices, label: "لیزر", permission: "laserServices" },
       { href: ROUTES.admin.nursingServices, label: "پرستاری", permission: "nursingServices" },
       { href: ROUTES.admin.dentalTariffs, label: "تعرفه دندان", permission: "dental-tariffs" },
+      { href: ROUTES.admin.competitorAnalysis, label: "تحلیل رقبا", permission: "dental-tariffs" },
       { href: ROUTES.admin.doctors, label: "پزشکان", permission: "doctors" },
       { href: ROUTES.admin.fieldStaff, label: "پرسنل میدانی", permission: "fieldStaff" },
       { href: ROUTES.admin.consultationPrices, label: "قیمت مشاوره", permission: "consultationPrices" },

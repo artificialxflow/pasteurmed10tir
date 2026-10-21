@@ -56,6 +56,7 @@ export default function AdminDentalTariffsPage() {
         title: String(category.title || "").trim(),
         emoji: String(category.emoji || "🦷").trim() || "🦷",
         description: String(category.description || "").trim(),
+        image: String(category.image || "").trim() || undefined,
         active: category.active !== false,
         items: (category.items || [])
           .map((item) => normalizeItem(item))
@@ -240,6 +241,13 @@ export default function AdminDentalTariffsPage() {
                   }
                   placeholder="توضیح"
                   className="md:col-span-2 min-h-[72px]"
+                />
+                <FormInput
+                  value={category.image || ""}
+                  onChange={(e) => updateCategory(categoryIndex, { image: e.target.value })}
+                  placeholder="آدرس عکس دسته (URL)"
+                  className="md:col-span-2"
+                  dir="ltr"
                 />
               </div>
 

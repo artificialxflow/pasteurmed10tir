@@ -20,6 +20,11 @@ import {
   type InsuranceCompany,
   type PatientProfile,
 } from "@/lib/patient";
+import {
+  captureReferralRefFromLocation,
+  normalizeReferralCode,
+  readStoredReferralCode,
+} from "@/lib/commerce/referral-ref";
 import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
@@ -46,6 +51,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
   const [loginKind, setLoginKind] = useState<"person" | "organization">("person");
   const [organizationName, setOrganizationName] = useState("");
   const [acquisitionSource, setAcquisitionSource] = useState<AcquisitionSource | "">("");
+  const [referralCode, setReferralCode] = useState("");
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
   const [editing, setEditing] = useState(false);
@@ -60,6 +66,12 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
     setCompId(p.complementaryInsuranceId || "");
     setFranchise(String(p.franchisePercent ?? DEFAULT_FRANCHISE_PERCENT));
     if (p.status === "approved") setEditing(false);
+  }, []);
+
+  useEffect(() => {
+    captureReferralRefFromLocation();
+    const stored = readStoredReferralCode();
+    if (stored) setReferralCode(stored);
   }, []);
 
   useEffect(() => {
@@ -189,6 +201,9 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             : {}),
           ...(!registered && loginKind === "person" && acquisitionSource
             ? { acquisitionSource }
+            : {}),
+          ...(referralCode.trim()
+            ? { referralCode: normalizeReferralCode(referralCode) }
             : {}),
         }),
       });
@@ -399,6 +414,18 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
                         </option>
                       ))}
                     </FormSelect>
+                  </div>
+                ) : null}
+                {otpSent && !registered && loginKind === "person" ? (
+                  <div>
+                    <FormLabel>کد معرف (اختیاری)</FormLabel>
+                    <FormInput
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(normalizeReferralCode(e.target.value))}
+                      dir="ltr"
+                      className="text-left uppercase"
+                      placeholder="مثلاً PLUS100"
+                    />
                   </div>
                 ) : null}
                 {otpSent && loginKind === "organization" && !hasOrganization ? (

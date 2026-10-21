@@ -47,6 +47,7 @@ export function mapFollowUpCase(row: FollowUpCase) {
     appointmentGiven: row.appointmentGiven,
     followUpDone: row.followUpDone,
     notes: row.notes ?? undefined,
+    referralLikelihood: row.referralLikelihood ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

@@ -58,6 +58,7 @@ export function mapMarketingReport(
     followUpKindLabel: marketingFollowUpKindLabel(row.followUpKind),
     followUpDueDate: row.followUpDueDate?.toISOString().slice(0, 10),
     blockedNote: row.blockedNote ?? undefined,
+    successNotes: row.successNotes ?? undefined,
     followUpSlots: (row.followUpSlots || [])
       .sort((a, b) => a.slotIndex - b.slotIndex)
       .map(mapMarketingFollowUpSlot),

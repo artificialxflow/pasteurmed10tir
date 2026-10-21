@@ -19,6 +19,8 @@ enum AcquisitionSource {
   outdoor_ads
   previous_visitors
   acquaintances
+  organizational_contracts
+  clinic_patient
 }
 
 model User {
@@ -92,10 +94,12 @@ model PatientProfile {
   shahkarMatched           Boolean?
   zohalCheckedAt           DateTime?
   acquisitionSource        AcquisitionSource?
+  referralCode             String?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
 
   @@index([acquisitionSource])
+  @@index([referralCode])
   @@index([createdAt])
 }
 
@@ -225,21 +229,23 @@ model DentalTariffCategory {
   title       String
   emoji       String            @default("🦷")
   description String            @default("")
+  image       String?
   active      Boolean           @default(true)
   sortOrder   Int               @default(0)
   items       DentalTariffItem[]
 }
 
 model DentalTariffItem {
-  id         String               @id
-  categoryId String
-  category   DentalTariffCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  title      String
-  priceNum   Int
-  price      String?
-  unit       String?
-  active     Boolean              @default(true)
-  sortOrder  Int                  @default(0)
+  id                    String                  @id
+  categoryId            String
+  category              DentalTariffCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title                 String
+  priceNum              Int
+  price                 String?
+  unit                  String?
+  active                Boolean                 @default(true)
+  sortOrder             Int                     @default(0)
+  competitorClinicPrices CompetitorClinicPrice[]
 
   @@index([categoryId])
 }
@@ -598,6 +604,8 @@ model FollowUpCase {
   followUpDone             Boolean                        @default(false)
   noShowReason             FollowUpNoShowReason?
   notes                    String?
+  /** احتمال معرفی کلینیک به آشنایان — ۱ تا ۵ (بسته ۲۹/۱۲) */
+  referralLikelihood       Int?
   createdByAdminId         String?
   createdAt                DateTime                       @default(now())
   updatedAt                DateTime                       @updatedAt
@@ -1081,6 +1089,7 @@ model MarketingReport {
   followUpKind        MarketingFollowUpKind?
   followUpDueDate     DateTime?                    @db.Date
   blockedNote         String?
+  successNotes        String?
   createdAt           DateTime                     @default(now())
   updatedAt           DateTime                     @updatedAt
   followUpSlots       MarketingFollowUpSlot[]
@@ -1503,10 +1512,60 @@ model PasteurWorkReport {
   followUpDate     DateTime? @db.Date
   followUpNotes    String?
   details          String?
+  reportedAt       DateTime?
+  payloadJson      Json?
   createdByAdminId String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   @@index([followUpDate])
+  @@index([reportedAt])
   @@index([createdAt])
+}
+
+/// تحلیل رقبا — مراکز (بسته ۲۹/۰۸–۰۹)
+model CompetitorClinic {
+  id                    String                 @id @default(cuid())
+  clinicName            String
+  managementName        String?
+  city                  String?
+  region                String?
+  moreSpecializedPct    Int?
+  services              String?
+  equipment             String?
+  generalDentistCount   Int?
+  specialistDentistCount Int?
+  website               String?
+  websiteDomain         String?
+  onlineServices        String?
+  instagramPage         String?
+  followerCount         Int?
+  engagementRate        Int?
+  contentType           String?
+  mapsFeedback          String?
+  commentReaction       String?
+  strengths             String?
+  weaknesses            String?
+  strategyScore         Int?
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  prices                CompetitorClinicPrice[]
+
+  @@index([clinicName])
+  @@index([city])
+  @@index([updatedAt])
+}
+
+model CompetitorClinicPrice {
+  id                 String           @id @default(cuid())
+  competitorId       String
+  competitor         CompetitorClinic @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  dentalTariffItemId String
+  dentalTariffItem   DentalTariffItem @relation(fields: [dentalTariffItemId], references: [id], onDelete: Cascade)
+  priceNum           Int?
+
+  @@unique([competitorId, dentalTariffItemId])
+  @@index([competitorId])
+  @@index([dentalTariffItemId])
 }

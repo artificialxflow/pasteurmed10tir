@@ -19,6 +19,7 @@ import {
   formatToman,
   getLoanRequestTermOptionsForTier,
   getMembershipPlans,
+  getMembershipPlansAsync,
   isAllowedLoanRequestTerm,
   loanTermInterestLabel,
   type MembershipTier,
@@ -80,7 +81,11 @@ export function LoanRequestCard({
       .catch(() => setDocs([]));
   }, []);
 
-  const membershipPlans = useMemo(() => getMembershipPlans(), []);
+  const [membershipPlans, setMembershipPlans] = useState(() => getMembershipPlans());
+
+  useEffect(() => {
+    void getMembershipPlansAsync().then(setMembershipPlans);
+  }, []);
   const termOptions = useMemo(
     () => getLoanRequestTermOptionsForTier(tier, membershipPlans),
     [tier, membershipPlans],

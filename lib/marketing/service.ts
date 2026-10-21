@@ -72,6 +72,7 @@ export type CreateMarketingReportInput = {
   followUpDueDate?: unknown;
   followUpNotes?: unknown;
   blockedNote?: unknown;
+  successNotes?: unknown;
 };
 
 export function parseCreateMarketingReportBody(body: CreateMarketingReportInput) {
@@ -112,6 +113,7 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
   const followUpNotes = String(body.followUpNotes || '').trim();
 
   const blockedNote = String(body.blockedNote || '').trim();
+  const successNotes = String(body.successNotes || '').trim();
 
   const needsSuccess =
     kind === 'success' || (kind === 'new_case' && newCaseOutcome === 'success');
@@ -165,6 +167,7 @@ export function parseCreateMarketingReportBody(body: CreateMarketingReportInput)
     followUpDueDate,
     followUpNotes: followUpNotes || null,
     blockedNote: blockedNote || null,
+    successNotes: successNotes || null,
   };
 }
 

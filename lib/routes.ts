@@ -136,6 +136,7 @@ export const ROUTES = {
     laserServices: '/admin/laser-services',
     nursingServices: '/admin/nursing-services',
     dentalTariffs: '/admin/dental-tariffs',
+    competitorAnalysis: '/admin/competitor-analysis',
     wallets: '/admin/wallets',
     creditActivation: '/admin/credit-activation',
     consultationPrices: '/admin/consultation-prices',

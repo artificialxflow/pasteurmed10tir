@@ -50,6 +50,24 @@ export function consultationSupportsVideoSession(input: {
   return consultationTypeSupportsVideoRoom(typeId);
 }
 
+/** اتاق/لینک مشاوره در ادمین — متنی، صوتی، تصویری، اورژانس */
+export function consultationSupportsConsultationRoom(input: {
+  category?: string | null;
+  type?: string | null;
+}): boolean {
+  if (!supportsConsultationVideo(input.category)) return false;
+  const typeId = String(input.type || '').trim().toLowerCase();
+  if (!typeId) return true;
+  return (
+    typeId === 'text' ||
+    typeId === 'phone' ||
+    typeId === 'audio' ||
+    typeId === 'video' ||
+    typeId === 'image' ||
+    typeId === 'emergency'
+  );
+}
+
 /** صفحه پیگیری `/consultations/[id]` برای متنی، صوتی، تصویری و اورژانس */
 export function consultationSupportsTrackPage(input: {
   category?: string | null;

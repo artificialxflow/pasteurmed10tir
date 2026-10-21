@@ -1,5 +1,8 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
+import {
+  consultationSupportsConsultationRoom,
+  consultationSupportsVideoSession,
+} from '@/lib/consultation/modality';
 import {
   completeConsultationVideoSession,
   openConsultationVideoSession,
@@ -64,8 +67,8 @@ export async function PATCH(request: Request) {
     body.preferredDateLabel !== undefined;
 
   if (hasMeetingSchedulePatch) {
-    if (!consultationSupportsVideoSession({ category: existing.category, type: existing.type })) {
-      return jsonError('ویزیت تصویری / لینک اتاق فقط برای مشاوره تصویری فعال است.');
+    if (!consultationSupportsConsultationRoom({ category: existing.category, type: existing.type })) {
+      return jsonError('لینک اتاق برای این نوع مشاوره فعال نیست.');
     }
     let videoMeetingUrl: string | null | undefined;
     try {

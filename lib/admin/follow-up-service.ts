@@ -99,6 +99,7 @@ export type CreateFollowUpInput = {
   assistantNames?: unknown;
   workDate?: unknown;
   notes?: unknown;
+  referralLikelihood?: unknown;
 };
 
 function parseFollowUpTime(raw: unknown): string | null {
@@ -165,6 +166,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
 
   const workDate = parseIsoDateOnly(body.workDate) || todayDateOnlyUtc();
   const notes = String(body.notes || '').trim() || null;
+  const referralLikelihood = parseRating(body.referralLikelihood);
 
   let assistantNamesJson: string | null = null;
   if (Array.isArray(body.assistantNames)) {
@@ -192,6 +194,7 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
     followUpTime,
     assistantNamesJson,
     notes,
+    referralLikelihood,
   };
 }
 

@@ -40,23 +40,24 @@ export default function ContactPage() {
         </Card>
 
         <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2">
-          <a href={`tel:${institute.phoneDigits}`}>
-            <Card className="h-full bg-white p-6 hover:border-teal-500">
-              <span className="text-3xl">📞</span>
-              <h2 className="mt-3 text-lg font-bold">شماره تماس اصلی</h2>
-              <p className="mt-2 text-2xl font-extrabold text-teal-700">{institute.phone}</p>
-              <p className="mt-2 text-sm text-slate-500">برای تماس مستقیم با درمانگاه</p>
+          {(institute.phoneGroups || []).map((group) => (
+            <Card key={group.label} hover={false} className="h-full bg-white p-6">
+              <h2 className="text-lg font-bold text-slate-900">{group.label}</h2>
+              <ul className="mt-3 space-y-2">
+                {group.numbers.map((num, i) => (
+                  <li key={group.digits[i] || num}>
+                    <a
+                      href={`tel:${group.digits[i]}`}
+                      className="text-xl font-extrabold text-teal-700 hover:underline"
+                      dir="ltr"
+                    >
+                      {num}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </Card>
-          </a>
-
-          <a href={`tel:${institute.phoneAltDigits}`}>
-            <Card className="h-full bg-white p-6 hover:border-cyan-500">
-              <span className="text-3xl">☎️</span>
-              <h2 className="mt-3 text-lg font-bold">شماره تماس دوم</h2>
-              <p className="mt-2 text-2xl font-extrabold text-cyan-700">{institute.phoneAlt}</p>
-              <p className="mt-2 text-sm text-slate-500">برای پیگیری و هماهنگی خدمات</p>
-            </Card>
-          </a>
+          ))}
 
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
             <Card className="h-full bg-white p-6 hover:border-green-500">

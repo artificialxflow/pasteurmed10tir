@@ -26,7 +26,9 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
   const { profile } = usePatientProfile();
   const { institute } = PASTEUR_DATA;
   const [items, setItems] = useState<Entry[]>([]);
-  const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
+  const [dependents, setDependents] = useState<
+    Array<{ id: string; name: string; nationalId?: string }>
+  >([]);
   const [dependentId, setDependentId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,13 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
 
   const preparedAt = new Date().toLocaleDateString("fa-IR");
 
+  const selectedDependent = dependentId
+    ? dependents.find((d) => d.id === dependentId)
+    : null;
+  const reportPatientName = selectedDependent?.name || profile?.name || "—";
+  const reportPatientPhone = selectedDependent ? undefined : profile?.phone;
+  const reportNationalId = selectedDependent?.nationalId || profile?.nationalId;
+
   const letterhead = (
     <header className="health-report-letterhead">
       <div className="flex items-start justify-between gap-4 border-b-2 border-cyan-800 pb-3">
@@ -97,15 +106,17 @@ export function HealthRecordReportPage({ variant = "web" }: { variant?: "web" | 
           <div className="rounded-md border border-cyan-200 bg-cyan-50/80 px-3 py-1.5 text-[11px] leading-5">
             <p>
               <span className="text-slate-500">بیمار: </span>
-              <span className="font-extrabold text-slate-900">{profile.name}</span>
+              <span className="font-extrabold text-slate-900">{reportPatientName}</span>
             </p>
-            <p dir="ltr" className="font-bold text-slate-700">
-              {profile.phone}
-            </p>
-            {profile.nationalId ? (
+            {reportPatientPhone ? (
+              <p dir="ltr" className="font-bold text-slate-700">
+                {reportPatientPhone}
+              </p>
+            ) : null}
+            {reportNationalId ? (
               <p>
                 <span className="text-slate-500">کد ملی: </span>
-                {profile.nationalId}
+                {reportNationalId}
               </p>
             ) : null}
           </div>

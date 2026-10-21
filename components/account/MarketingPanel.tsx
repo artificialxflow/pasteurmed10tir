@@ -53,6 +53,7 @@ export function MarketingPanel() {
   const [followUpDueDate, setFollowUpDueDate] = useState("");
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [blockedNote, setBlockedNote] = useState("");
+  const [successNotes, setSuccessNotes] = useState("");
 
   const [slotForms, setSlotForms] = useState<Record<number, { date: string; note: string }>>({});
 
@@ -99,6 +100,7 @@ export function MarketingPanel() {
     setFollowUpDueDate("");
     setFollowUpNotes("");
     setBlockedNote("");
+    setSuccessNotes("");
     setError("");
   }
 
@@ -109,6 +111,22 @@ export function MarketingPanel() {
     const padded = emptyContacts().map((c, i) => fromRow[i] || c);
     setContacts(padded);
     setNewCaseOutcome(row.newCaseOutcome || "");
+    setSuccessFlags({
+      request: row.successRequest,
+      contract: row.successContract,
+      banner: row.successBanner,
+      skin: row.successSkin,
+      proforma: row.successProforma,
+      salesInvoice: row.successSalesInvoice,
+    });
+    setContractDate(row.contractDate || "");
+    setUnsuccessfulReason(row.unsuccessfulReason || "");
+    setUnsuccessfulNotes(row.unsuccessfulNotes || "");
+    setFollowUpKind(row.followUpKind || "");
+    setFollowUpDueDate(row.followUpDueDate || "");
+    setFollowUpNotes(row.followUpSlots?.[0]?.note || "");
+    setBlockedNote(row.blockedNote || "");
+    setSuccessNotes(row.successNotes || "");
     setView("form");
     setError("");
     setSuccess("");
@@ -144,6 +162,7 @@ export function MarketingPanel() {
         followUpDueDate: followUpDueDate || undefined,
         followUpNotes: followUpNotes || undefined,
         blockedNote: blockedNote || undefined,
+        successNotes: successNotes || undefined,
       });
       setSuccess("گزارش ثبت شد.");
       resetForm();
@@ -457,6 +476,13 @@ export function MarketingPanel() {
                 ))}
                 <FormLabel>زمان قرارداد</FormLabel>
                 <JalaliBirthDateField value={contractDate} onChange={(iso) => setContractDate(iso || "")} />
+                <FormLabel>توضیحات</FormLabel>
+                <FormTextarea
+                  rows={3}
+                  value={successNotes}
+                  onChange={(e) => setSuccessNotes(e.target.value)}
+                  placeholder="توضیحات تکمیلی برای موفق"
+                />
               </div>
             ) : null}
 

@@ -22,6 +22,11 @@ export interface Institute {
   phoneDigits: string;
   phoneAlt: string;
   phoneAltDigits: string;
+  phoneGroups?: Array<{
+    label: string;
+    numbers: string[];
+    digits: string[];
+  }>;
   whatsapp: string;
   whatsappDigits: string;
   contactHours: string;
@@ -375,6 +380,23 @@ export const PASTEUR_DATA = {
     phoneDigits: '04134449313',
     phoneAlt: '۰۴۱۳۴۴۱۴۲۳۵',
     phoneAltDigits: '04134414235',
+    phoneGroups: [
+      {
+        label: 'دندانپزشکی',
+        numbers: ['۰۴۱۳۴۴۴۹۳۱۳', '۰۴۱۳۴۴۴۹۳۰۰', '۰۴۱۳۴۴۱۴۲۳۵'],
+        digits: ['04134449313', '04134449300', '04134414235'],
+      },
+      {
+        label: 'پزشکی / پرستاری',
+        numbers: ['۰۴۱۳۴۴۴۹۳۰۳'],
+        digits: ['04134449303'],
+      },
+      {
+        label: 'فروشگاه تجهیزات',
+        numbers: ['۰۴۱۳۴۴۳۸۳۱۴'],
+        digits: ['04134438314'],
+      },
+    ],
     whatsapp: '۰۹۳۵۴۳۳۴۴۱۲',
     whatsappDigits: '989354334412',
     contactHours: 'پاسخگویی تلفنی و واتساپ در ساعات کاری درمانگاه',

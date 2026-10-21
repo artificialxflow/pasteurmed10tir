@@ -17,18 +17,20 @@ export default function AppContactPage() {
       </section>
 
       <div className="mb-4 space-y-2">
-        <a href={`tel:${i.phoneDigits}`}>
-          <Card className="p-4">
-            <p className="font-bold text-slate-900">📞 {i.phone}</p>
-            <p className="mt-1 text-xs text-slate-500">تماس اصلی — درمانگاه</p>
+        {(i.phoneGroups || []).map((group) => (
+          <Card key={group.label} className="p-4">
+            <p className="font-bold text-slate-900">{group.label}</p>
+            <ul className="mt-2 space-y-1">
+              {group.numbers.map((num, idx) => (
+                <li key={group.digits[idx] || num}>
+                  <a href={`tel:${group.digits[idx]}`} className="font-bold text-teal-800" dir="ltr">
+                    {num}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </Card>
-        </a>
-        <a href={`tel:${i.phoneAltDigits}`}>
-          <Card className="p-4">
-            <p className="font-bold text-slate-900">☎️ {i.phoneAlt}</p>
-            <p className="mt-1 text-xs text-slate-500">تماس دوم — پیگیری خدمات</p>
-          </Card>
-        </a>
+        ))}
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
           <Card className="p-4">
             <p className="font-bold text-slate-900">💬 واتساپ</p>
