@@ -1,17 +1,48 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { listServiceReviews, updateServiceReviewStatus } from '@/lib/home-visit/service';
+import { mapServiceReview } from '@/lib/home-visit/mappers';
+import { updateServiceReviewStatus } from '@/lib/home-visit/service';
 import { mapDoctorReview } from '@/lib/operations/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+function reviewSubmitterLabel(input: {
+  patientPhone: string;
+  user?: { name?: string | null; profile?: { name?: string | null } | null } | null;
+}): string {
+  const name = input.user?.profile?.name?.trim() || input.user?.name?.trim();
+  if (name) return `${name} (${input.patientPhone})`;
+  return input.patientPhone;
+}
+
 export async function GET() {
   const auth = await requireAdmin('reviews');
   if (auth.error) return auth.error;
 
-  const rows = await prisma.doctorReview.findMany({ orderBy: { createdAt: 'desc' } });
-  const serviceReviews = await listServiceReviews();
-  return NextResponse.json({ items: rows.map(mapDoctorReview), serviceReviews });
+  const rows = await prisma.doctorReview.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { user: { include: { profile: true } } },
+  });
+  const serviceRows = await prisma.serviceReview.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { user: { include: { profile: true } } },
+  });
+
+  const items = rows.map((row) => ({
+    ...mapDoctorReview(row),
+    patientName:
+      row.user?.profile?.name?.trim() || row.user?.name?.trim() || undefined,
+    submittedBy: reviewSubmitterLabel(row),
+  }));
+
+  const serviceReviews = serviceRows.map((row) => ({
+    ...mapServiceReview(row),
+    patientName:
+      row.user?.profile?.name?.trim() || row.user?.name?.trim() || undefined,
+    submittedBy: reviewSubmitterLabel(row),
+  }));
+
+  return NextResponse.json({ items, serviceReviews });
 }
 
 export async function PATCH(request: Request) {

@@ -13,6 +13,8 @@ type ServiceReviewRow = {
   rating: number;
   comment: string;
   status: string;
+  submittedBy?: string;
+  patientPhone?: string;
 };
 
 export default function AdminReviewsPage() {
@@ -37,10 +39,16 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-8">
-      <AdminTable headers={["پزشک", "امتیاز", "نظر", "وضعیت", "عملیات"]} empty="نظری نیست.">
+      <AdminTable
+        headers={["پزشک", "ثبت‌کننده نظر", "امتیاز", "نظر", "وضعیت", "عملیات"]}
+        empty="نظری نیست."
+      >
         {items.map((r) => (
           <tr key={r.id} className="border-t border-slate-100">
             <td className="px-4 py-3">{r.doctorName}</td>
+            <td className="px-4 py-3 text-xs font-semibold text-slate-700">
+              {r.submittedBy || r.patientName || r.phone || "—"}
+            </td>
             <td className="px-4 py-3">{r.rating}</td>
             <td className="max-w-xs truncate px-4 py-3">{r.comment}</td>
             <td className="px-4 py-3">
@@ -92,7 +100,10 @@ export default function AdminReviewsPage() {
           <option value="nurse">پرستار</option>
           <option value="physician">پزشک</option>
         </select>
-        <AdminTable headers={["نیرو", "امتیاز", "نظر", "وضعیت", "عملیات"]} empty="امتیاز خانگی ثبت نشده.">
+        <AdminTable
+          headers={["نیرو", "ثبت‌کننده نظر", "امتیاز", "نظر", "وضعیت", "عملیات"]}
+          empty="امتیاز خانگی ثبت نشده."
+        >
           {serviceReviews
             .filter((r) => staffKind === "all" || r.staffKind === staffKind)
             .map((r) => (
@@ -102,6 +113,9 @@ export default function AdminReviewsPage() {
                 <span className="mr-1 text-xs text-slate-500">
                   {r.staffKind === "physician" ? "پزشک" : "پرستار"}
                 </span>
+              </td>
+              <td className="px-4 py-3 text-xs font-semibold text-slate-700">
+                {r.submittedBy || r.patientPhone || "—"}
               </td>
               <td className="px-4 py-3">{r.rating}</td>
               <td className="max-w-xs truncate px-4 py-3">{r.comment}</td>

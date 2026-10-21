@@ -88,6 +88,10 @@ export type DoctorReview = {
   doctorName: string;
   doctorKind: 'dental' | 'medical';
   phone: string;
+  /** نام ثبت‌کننده (ادمین) — از پروفایل کاربر */
+  patientName?: string;
+  /** نمایش ادمین: نام + موبایل یا فقط موبایل */
+  submittedBy?: string;
   rating: number;
   comment: string;
   status: 'pending' | 'approved' | 'hidden';
