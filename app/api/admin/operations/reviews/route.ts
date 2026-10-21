@@ -8,9 +8,9 @@ import { NextResponse } from 'next/server';
 
 function reviewSubmitterLabel(input: {
   patientPhone: string;
-  user?: { name?: string | null; profile?: { name?: string | null } | null } | null;
+  user?: { name?: string | null } | null;
 }): string {
-  const name = input.user?.profile?.name?.trim() || input.user?.name?.trim();
+  const name = input.user?.name?.trim();
   if (name) return `${name} (${input.patientPhone})`;
   return input.patientPhone;
 }
@@ -30,15 +30,13 @@ export async function GET() {
 
   const items = rows.map((row) => ({
     ...mapDoctorReview(row),
-    patientName:
-      row.user?.profile?.name?.trim() || row.user?.name?.trim() || undefined,
+    patientName: row.user?.name?.trim() || undefined,
     submittedBy: reviewSubmitterLabel(row),
   }));
 
   const serviceReviews = serviceRows.map((row) => ({
     ...mapServiceReview(row),
-    patientName:
-      row.user?.profile?.name?.trim() || row.user?.name?.trim() || undefined,
+    patientName: row.user?.name?.trim() || undefined,
     submittedBy: reviewSubmitterLabel(row),
   }));
 
