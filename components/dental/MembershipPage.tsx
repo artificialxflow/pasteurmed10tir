@@ -610,7 +610,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             {isZeroInterestLoanTerm(loanMonths) ? "سود ۰٪ (کوتاه‌مدت)" : "سود ۱۲٪ سالانه"}
           </span>
         </div>
-        <div className={cn("grid gap-4", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-4")}>
+        <div
+          className={cn(
+            "grid gap-4",
+            app ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+          )}
+        >
           <div>
             <FormLabel>نوع طرح</FormLabel>
             <FormSelect
@@ -651,7 +656,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             </div>
           </div>
         </div>
-        <div className={cn("mt-5 grid gap-3", app ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-5")}>
+        <div
+          className={cn(
+            "mt-5 grid gap-3",
+            app ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
+          )}
+        >
           <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4">
             <p className="text-xs text-slate-500">سقف وام {loanResult.plan.name}</p>
             <p className="mt-1 font-extrabold text-cyan-800">{formatToman(loanResult.limit)}</p>
@@ -968,7 +978,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
 
           {error ? <p className="text-sm font-bold text-red-600">{error}</p> : null}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 max-sm:[&_button]:w-full sm:grid-cols-2">
             <Button type="button" variant="accent" onClick={() => setContractOpen(true)}>
               پیش‌نمایش قرارداد
             </Button>

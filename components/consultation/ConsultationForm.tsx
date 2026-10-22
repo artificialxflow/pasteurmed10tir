@@ -75,6 +75,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   const blockedLaser = requestedCategory === "laser";
 
   const [consultationTypes, setConsultationTypes] = useState(() => getConsultationTypes());
+  const [pricingReady, setPricingReady] = useState(() => getConsultationTypes().length > 0);
   const [selectedType, setSelectedType] = useState(initialType);
   const [category, setCategory] = useState(initialCategory);
   const [doctorId, setDoctorId] = useState<number | null>(
@@ -193,8 +194,26 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
     }
   }, [requestedDoctor]);
 
+  const priceInput = useMemo(
+    () => ({
+      specialtyId: selectedSpecialty?.id || null,
+      specialtyName: selectedSpecialty?.name || null,
+      typeId: selectedType,
+      categoryId: category,
+    }),
+    [selectedSpecialty?.id, selectedSpecialty?.name, selectedType, category],
+  );
+
+  const selectedCardPrice = useMemo(() => {
+    if (!pricingReady) return null;
+    return getConsultationPrice(priceInput);
+  }, [pricingReady, priceInput]);
+
   useEffect(() => {
-    void loadConsultationPricing().then(() => setConsultationTypes(getConsultationTypes()));
+    void loadConsultationPricing().then(() => {
+      setConsultationTypes(getConsultationTypes());
+      setPricingReady(true);
+    });
     void fetchPublic<{ items: Physician[] }>("/api/content/physicians")
       .then((data) => setPhysicians(data.items))
       .catch(() => setPhysicians([]));
@@ -225,17 +244,6 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
   }, [consultationTypes]);
   const selectedTypeMeta = formTypes.find((type) => type.id === selectedType);
   const allowsImage = consultationAllowsImage(selectedType);
-  const pricePreview = useMemo(
-    () =>
-      getConsultationPrice({
-        specialtyId: selectedSpecialty?.id || null,
-        specialtyName: selectedSpecialty?.name || null,
-        typeId: selectedType,
-        categoryId: category,
-      }),
-    [selectedSpecialty?.id, selectedSpecialty?.name, selectedType, category],
-  );
-
   useEffect(() => {
     if (!allowsImage && imagePreview) setImagePreview(null);
   }, [allowsImage, imagePreview]);
@@ -260,13 +268,13 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
       }
     }
 
+    if (!pricingReady) {
+      setSubmitError("تعرفه‌ها هنوز بارگذاری نشده‌اند؛ لطفاً چند ثانیه صبر کنید.");
+      return;
+    }
+
     const type = consultationTypes.find((item) => item.id === selectedType);
-    const pricing = getConsultationPrice({
-      specialtyId: selectedSpecialty?.id || null,
-      specialtyName: selectedSpecialty?.name || null,
-      typeId: selectedType,
-      categoryId: category,
-    });
+    const pricing = getConsultationPrice(priceInput);
 
     /** بیمه تکمیلی / فرانشیز موقتاً غیرفعال — پورسانت باید از کل مبلغ محاسبه شود. */
     const payableAmount = pricing.amount;
@@ -493,14 +501,14 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
               فقط ویزیت — هر نوبت ۱۵ دقیقه (یک ربع)
             </p>
             {dateOptions.length ? (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="-mx-1 mt-2 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {dateOptions.map((d) => (
                   <button
                     key={d.isoDate}
                     type="button"
                     onClick={() => setPreferredDate(d.isoDate)}
                     className={cn(
-                      "rounded-xl border px-3 py-2 text-xs font-bold transition",
+                      "shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition",
                       preferredDate === d.isoDate
                         ? "border-teal-500 bg-teal-50 text-teal-900"
                         : "border-slate-200 bg-white text-slate-700 hover:border-teal-300",
@@ -570,16 +578,20 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
         <div
           className={cn(
             "grid gap-3",
-            variant === "app" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-3",
+            variant === "app"
+              ? "grid-cols-1"
+              : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4",
           )}
         >
           {formTypes.map((t) => {
-            const cardPrice = getConsultationPrice({
-              specialtyId: selectedSpecialty?.id || null,
-              specialtyName: selectedSpecialty?.name || null,
-              typeId: t.id,
-              categoryId: category,
-            });
+            const cardPrice = pricingReady
+              ? getConsultationPrice({
+                  specialtyId: selectedSpecialty?.id || null,
+                  specialtyName: selectedSpecialty?.name || null,
+                  typeId: t.id,
+                  categoryId: category,
+                })
+              : null;
             return (
               <button
                 key={t.id}
@@ -598,7 +610,7 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
                   {modalityCapabilityHint(t.id)}
                 </p>
                 <p className="mt-1 text-xs font-bold text-teal-700">
-                  {formatPrice(cardPrice.amount)}
+                  {cardPrice ? formatPrice(cardPrice.amount) : "در حال بارگذاری…"}
                 </p>
                 {variant === "web" ? (
                   <p className="mt-1 text-xs text-slate-500">{t.desc}</p>
@@ -720,18 +732,24 @@ export function ConsultationForm({ variant = "web" }: { variant?: "web" | "app" 
 
       <Card hover={false} className="border-teal-200 bg-teal-50 p-5">
         <h3 className="mb-2 font-bold text-teal-800">🔮 پیش‌نمایش هوشمند</h3>
-        <p className="text-sm text-slate-700">
-          {selectedSpecialty && selectedTypeMeta
-            ? pricePreview.label
-            : `خدمت پیشنهادی: ${cat?.service || "—"}`}
-        </p>
-        <p className="mt-2 text-lg font-bold text-teal-700">
-          {formatPrice(pricePreview.amount)}
-        </p>
-        <p className="mt-2 text-xs text-slate-500">
-          مبلغ نهایی بر اساس نوع ویزیت
-          {selectedSpecialty ? " و تخصص انتخاب‌شده" : ""} محاسبه شده است.
-        </p>
+        {!pricingReady || !selectedCardPrice ? (
+          <p className="text-sm text-slate-600">در حال بارگذاری تعرفه…</p>
+        ) : (
+          <>
+            <p className="text-sm text-slate-700">
+              {selectedSpecialty && selectedTypeMeta
+                ? selectedCardPrice.label
+                : `خدمت پیشنهادی: ${cat?.service || "—"}`}
+            </p>
+            <p className="mt-2 text-lg font-bold text-teal-700">
+              {formatPrice(selectedCardPrice.amount)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              همان مبلغ کارت انتخاب‌شده — مبنای پرداخت پس از تأیید.
+              {selectedSpecialty ? " (تخصص انتخاب‌شده)" : ""}
+            </p>
+          </>
+        )}
       </Card>
 
       <ReferralCodeField value={referralCode} onChange={setReferralCode} />

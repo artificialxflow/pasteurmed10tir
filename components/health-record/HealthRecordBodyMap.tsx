@@ -278,6 +278,12 @@ export function HealthRecordBodyMap({
   const previewLabel = displayLabel(previewId);
   const canEnter = previewId !== committedSection;
 
+  const mobileSectionIds = [
+    ...HEALTH_BODY_PANEL_LEFT,
+    ...HEALTH_BODY_PANEL_BOTTOM,
+    ...HEALTH_BODY_PANEL_RIGHT,
+  ];
+
   return (
     <div className="overflow-hidden rounded-[1.35rem] border border-sky-200/80 bg-gradient-to-br from-sky-100 via-cyan-50 to-blue-100 p-3 shadow-inner sm:p-4">
       <div className="mb-2 text-center sm:mb-3">
@@ -287,7 +293,20 @@ export function HealthRecordBodyMap({
         </p>
       </div>
 
-      <div className="mx-auto flex w-fit max-w-full items-start justify-center gap-0.5 sm:gap-1 md:gap-2">
+      <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:hidden">
+        {mobileSectionIds.map((id) => (
+          <PanelPill
+            key={`m-${id}`}
+            sectionId={id}
+            previewId={previewId}
+            committedSection={committedSection}
+            onTap={handleTap}
+            variant="bottom"
+          />
+        ))}
+      </div>
+
+      <div className="mx-auto hidden w-fit max-w-full items-start justify-center gap-0.5 sm:gap-1 md:flex md:gap-2">
         <SidePanel
           title="گزینه‌های پرونده"
           sectionIds={HEALTH_BODY_PANEL_LEFT}

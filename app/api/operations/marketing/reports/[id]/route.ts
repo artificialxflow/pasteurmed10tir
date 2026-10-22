@@ -1,25 +1,22 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { findActiveVisitorByPhone } from '@/lib/commerce/visitor-service';
+import { requireVisitorRoleVisitor } from '@/lib/commerce/require-visitor';
 import {
   getMarketingReportForVisitor,
   updateMarketingFollowUpSlot,
   type UpdateFollowUpSlotInput,
 } from '@/lib/marketing/service';
-import { requirePatient } from '@/lib/operations/require-patient';
 import { prismaRouteError } from '@/lib/prisma/route-error';
 import { NextResponse } from 'next/server';
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, ctx: Ctx) {
-  const auth = await requirePatient();
-  if (auth.error) return auth.error;
-  const visitor = await findActiveVisitorByPhone(auth.session.phone);
-  if (!visitor) return jsonError('حساب ویزیتور فعال برای این موبایل یافت نشد.');
+  const { error, visitor } = await requireVisitorRoleVisitor();
+  if (error) return error;
 
   const { id } = await ctx.params;
   try {
-    const item = await getMarketingReportForVisitor(id, visitor.id);
+    const item = await getMarketingReportForVisitor(id, visitor!.id);
     if (!item) return jsonError('گزارش یافت نشد.', 404);
     return NextResponse.json({ item });
   } catch (e) {
@@ -28,10 +25,8 @@ export async function GET(_request: Request, ctx: Ctx) {
 }
 
 export async function PATCH(request: Request, ctx: Ctx) {
-  const auth = await requirePatient();
-  if (auth.error) return auth.error;
-  const visitor = await findActiveVisitorByPhone(auth.session.phone);
-  if (!visitor) return jsonError('حساب ویزیتور فعال برای این موبایل یافت نشد.');
+  const { error, visitor } = await requireVisitorRoleVisitor();
+  if (error) return error;
 
   const body = await parseJson<UpdateFollowUpSlotInput & { action?: string }>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
@@ -42,7 +37,7 @@ export async function PATCH(request: Request, ctx: Ctx) {
   }
 
   try {
-    const item = await updateMarketingFollowUpSlot(id, visitor.id, body);
+    const item = await updateMarketingFollowUpSlot(id, visitor!.id, body);
     return NextResponse.json({ item });
   } catch (e) {
     if (e instanceof Error) return jsonError(e.message);

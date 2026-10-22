@@ -239,17 +239,17 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         <h2 className="text-sm font-extrabold text-slate-900">
           ثبت جدید — {HEALTH_SECTIONS.find((s) => s.id === section)?.label}
         </h2>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="space-y-4">
           <JalaliBirthDateField label="تاریخ (شمسی)" value={date} onChange={setDate} />
           {section === "other" ? (
             <div className="space-y-4">
               {HOSPITAL_DOCUMENT_SLOTS.map((slot) => (
-                <div key={slot.key} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                <div key={slot.key} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
                   <FormLabel>{slot.label} (بارگذاری عکس)</FormLabel>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                    className="mt-2 block w-full text-xs"
+                    className="mt-2 block w-full max-w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-teal-800"
                     onChange={(ev) => {
                       const file = ev.target.files?.[0] || null;
                       setHospitalFiles((prev) => ({ ...prev, [slot.key]: file }));

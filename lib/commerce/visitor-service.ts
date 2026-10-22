@@ -9,6 +9,7 @@ export type VisitorSelf = {
   status: string;
   role: 'visitor' | 'referrer';
   showMarketingPanel: boolean;
+  showCompetitorPanel: boolean;
   referralCommissionPercent: number;
 };
 
@@ -36,6 +37,7 @@ export async function findActiveVisitorByPhone(
     status: row.status,
     role,
     showMarketingPanel: role === 'visitor',
+    showCompetitorPanel: role === 'visitor',
     referralCommissionPercent: row.commissionRate,
   };
 }

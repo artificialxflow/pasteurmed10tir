@@ -7,6 +7,7 @@ import { DependentsCard } from "@/components/account/DependentsCard";
 import { FieldStaffAvailabilityCard } from "@/components/account/FieldStaffAvailabilityCard";
 import { FieldStaffCommissionsCard } from "@/components/account/FieldStaffCommissionsCard";
 import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
+import { CompetitorAnalysisPanel } from "@/components/account/CompetitorAnalysisPanel";
 import { MarketingPanel } from "@/components/account/MarketingPanel";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
@@ -127,6 +128,7 @@ type PanelSection =
   | "orders"
   | "organization"
   | "marketing"
+  | "competitor-analysis"
   | "referrer";
 
 function MenuRow({
@@ -332,6 +334,12 @@ export function AccountDashboard({
     ...(commerceSelf?.showMarketingPanel
       ? ([{ id: "marketing", label: "بازاریابی" }] satisfies { id: PanelSection; label: string }[])
       : []),
+    ...(commerceSelf?.showCompetitorPanel
+      ? ([{ id: "competitor-analysis", label: "تحلیل رقبا" }] satisfies {
+          id: PanelSection;
+          label: string;
+        }[])
+      : []),
     ...(commerceSelf?.role === "referrer"
       ? ([{ id: "referrer", label: "کد معرف من" }] satisfies {
           id: PanelSection;
@@ -389,7 +397,7 @@ export function AccountDashboard({
           ) : null}{" "}
           برای رزرو دیگر نیازی به وارد کردن دوباره نام و موبایل نیست.
         </Card>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
           <StatusBadge label="کاربری" value={patientStatusLabel(profile.status)} tone={userTone} />
           <StatusBadge
             label="کد ملی (شاهکار)"
@@ -521,6 +529,8 @@ export function AccountDashboard({
     panelBody = <PhysicianPanel section="referrals" />;
   } else if (panel === "marketing") {
     panelBody = <MarketingPanel />;
+  } else if (panel === "competitor-analysis") {
+    panelBody = <CompetitorAnalysisPanel />;
   } else if (panel === "referrer" && commerceSelf) {
     const refHref =
       typeof window !== "undefined"
@@ -873,10 +883,10 @@ export function AccountDashboard({
   }
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[16.5rem_minmax(0,1fr)]">
-      <aside className={cn("lg:sticky lg:top-28", !mobileMenu && "hidden lg:block")}>{menu}</aside>
-      <div className={cn("min-w-0 space-y-4", mobileMenu && "hidden lg:block")}>
-        <div className="flex items-center justify-between gap-2 lg:hidden">
+    <div className="grid items-start gap-6 xl:grid-cols-[16.5rem_minmax(0,1fr)]">
+      <aside className={cn("xl:sticky xl:top-28", !mobileMenu && "hidden xl:block")}>{menu}</aside>
+      <div className={cn("min-w-0 space-y-4", mobileMenu && "hidden xl:block")}>
+        <div className="flex items-center justify-between gap-2 xl:hidden">
           <button
             type="button"
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700"

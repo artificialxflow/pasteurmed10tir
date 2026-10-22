@@ -1,29 +1,15 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
-import { findActiveVisitorByPhone } from '@/lib/commerce/visitor-service';
+import { requireVisitorRoleVisitor } from '@/lib/commerce/require-visitor';
 import {
   createMarketingReport,
   listMarketingReportsForVisitor,
   type CreateMarketingReportInput,
 } from '@/lib/marketing/service';
-import { requirePatient } from '@/lib/operations/require-patient';
 import { prismaRouteError } from '@/lib/prisma/route-error';
 import { NextResponse } from 'next/server';
 
-async function requireVisitor() {
-  const auth = await requirePatient();
-  if (auth.error) return { error: auth.error, visitor: null };
-  const visitor = await findActiveVisitorByPhone(auth.session.phone);
-  if (!visitor) {
-    return {
-      error: jsonError('حساب ویزیتور فعال برای این موبایل یافت نشد.'),
-      visitor: null,
-    };
-  }
-  return { error: null, visitor };
-}
-
 export async function GET() {
-  const { error, visitor } = await requireVisitor();
+  const { error, visitor } = await requireVisitorRoleVisitor();
   if (error) return error;
   try {
     const items = await listMarketingReportsForVisitor(visitor!.id);
@@ -34,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { error, visitor } = await requireVisitor();
+  const { error, visitor } = await requireVisitorRoleVisitor();
   if (error) return error;
   const body = await parseJson<CreateMarketingReportInput>(request);
   if (!body) return jsonError('درخواست نامعتبر است.');
