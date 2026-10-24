@@ -1,23 +1,46 @@
+import { cn } from "@/lib/utils";
 import { Children, isValidElement, type ReactNode } from "react";
 
 export function AdminTable({
   headers,
   children,
   empty,
+  compact,
+  colWidths,
+  minTableWidth,
 }: {
   headers: string[];
   children: ReactNode;
   empty?: string;
+  /** فشرده‌تر برای جدول‌های پرستون */
+  compact?: boolean;
+  /** با table-fixed — مثلاً ["14%","22%",...] */
+  colWidths?: string[];
+  minTableWidth?: string;
 }) {
   const hasRows = Children.toArray(children).some(isValidElement);
+  const thPad = compact ? "px-2 py-2 text-xs" : "px-4 py-3.5";
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-cyan-100 bg-white shadow-[0_10px_32px_-28px_rgb(8_145_178_/_0.35)]">
-      <table className="min-w-full text-sm">
+      <table
+        className={cn(
+          "w-full text-sm",
+          colWidths?.length ? "table-fixed" : "min-w-full",
+          minTableWidth,
+        )}
+      >
+        {colWidths?.length ? (
+          <colgroup>
+            {colWidths.map((w, i) => (
+              <col key={`${w}-${i}`} style={{ width: w }} />
+            ))}
+          </colgroup>
+        ) : null}
         <thead className="border-b border-cyan-100 bg-gradient-to-l from-cyan-50/80 to-slate-50 text-slate-600">
           <tr>
             {headers.map((h) => (
-              <th key={h} className="whitespace-nowrap px-4 py-3.5 text-right font-bold">
+              <th key={h} className={cn("whitespace-nowrap text-right font-bold", thPad)}>
                 {h}
               </th>
             ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
+import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
 import {
   consultationSupportsConsultationRoom,
   consultationSupportsLiveSession,
@@ -15,7 +16,24 @@ import {
 } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { confirmAction } from "@/lib/ui/confirm-action";
+import { cn, formatPrice } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
+
+function actionBtnClass(tone: "teal" | "cyan" | "violet" | "rose" | "slate") {
+  const tones = {
+    teal: "border-teal-200 text-teal-800 hover:bg-teal-50",
+    cyan: "border-cyan-200 text-cyan-900 hover:bg-cyan-50",
+    violet: "border-violet-200 text-violet-900 hover:bg-violet-50",
+    rose: "border-rose-200 text-rose-800 hover:bg-rose-50",
+    slate: "border-slate-200 text-slate-800 hover:bg-slate-50",
+  };
+  return cn(
+    "rounded-md border bg-white px-2 py-1 text-[11px] font-bold leading-snug disabled:opacity-50",
+    tones[tone],
+  );
+}
+
+const TD = "px-2 py-2 align-top text-xs text-slate-800";
 
 type Consultation = Record<string, unknown> & {
   id: string;
@@ -274,9 +292,11 @@ export default function AdminConsultationsPage() {
       {rxMessage ? <p className="text-sm text-teal-700">{rxMessage}</p> : null}
       {linkMessage ? <p className="text-sm text-teal-700">{linkMessage}</p> : null}
 
-      <div className="rounded-xl border border-cyan-100 bg-cyan-50/50 p-4 text-sm leading-7 text-slate-700">
-        <p className="font-extrabold text-cyan-950">راهنمای ویزیت تصویری (پزشک / اپراتور)</p>
-        <ol className="mt-2 list-decimal space-y-1 pr-5 text-xs font-bold text-slate-600">
+      <details className="rounded-xl border border-cyan-100 bg-cyan-50/50 p-3 text-sm text-slate-700">
+        <summary className="cursor-pointer font-extrabold text-cyan-950">
+          راهنمای اتاق مشاوره (پزشک / اپراتور)
+        </summary>
+        <ol className="mt-2 list-decimal space-y-1 pr-5 text-xs font-bold leading-6 text-slate-600">
           <li>جلسه را با «باز کردن ویزیت تصویری» یا «ثبت لینک اتاق / ساعت» آماده کنید.</li>
           <li>
             برای بیمار لینک صفحه پیگیری را کپی یا با پیامک بفرستید — بیمار با اکانت خودش وارد همان
@@ -285,23 +305,13 @@ export default function AdminConsultationsPage() {
           <li>خودتان با «ورود به ویزیت تصویری» وارد اتاق شوید؛ ۵ دقیقه قبل در اتاق باشید.</li>
           <li>لینک مستقیم Jitsi پزشک را برای بیمار نفرستید؛ لینک بیمار همان صفحه پیگیری است.</li>
         </ol>
-      </div>
+      </details>
 
       <AdminTable
-        headers={[
-          "نام",
-          "موبایل",
-          "نوع",
-          "دسته",
-          "تخصص",
-          "پزشک",
-          "روز / ساعت",
-          "شرح",
-          "مبلغ",
-          "وضعیت",
-          "ویدیو",
-          "عملیات",
-        ]}
+        compact
+        minTableWidth="min-w-[52rem]"
+        colWidths={["14%", "20%", "17%", "11%", "12%", "26%"]}
+        headers={["مراجع", "خدمت", "پزشک و زمان", "مبلغ", "وضعیت", "عملیات"]}
         empty="درخواست مشاوره‌ای ثبت نشده."
       >
         {items.map((c) => {
@@ -322,272 +332,311 @@ export default function AdminConsultationsPage() {
               preferredTime: c.preferredTime,
             });
           const busy = busyId === c.id;
-          const editing = editingId === c.id;
-          const writingRx = rxId === c.id;
+          const serviceLine = [
+            c.typeLabel,
+            c.categoryLabel,
+            c.specialtyLabel,
+          ]
+            .map((x) => String(x || "").trim())
+            .filter(Boolean)
+            .join(" · ");
+          const whenLabel =
+            c.preferredDateLabel || c.preferredTimeLabel
+              ? `${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
+              : "—";
+          const desc = String(c.description || "").trim();
           return (
             <tr key={c.id} className="border-t border-slate-100">
-              <td className="px-4 py-3">{String(c.name || "—")}</td>
-              <td className="px-4 py-3">{String(c.phone || "—")}</td>
-              <td className="px-4 py-3">{String(c.typeLabel || "—")}</td>
-              <td className="px-4 py-3">{String(c.categoryLabel || "—")}</td>
-              <td className="px-4 py-3">{String(c.specialtyLabel || "—")}</td>
-              <td className="px-4 py-3">{String(c.doctorName || "—")}</td>
-              <td className="px-4 py-3 text-xs">
-                {c.preferredDateLabel || c.preferredTimeLabel
-                  ? `${String(c.preferredDateLabel || "")} ${String(c.preferredTimeLabel || "")}`.trim()
-                  : "—"}
-                {c.videoMeetingUrl ? (
-                  <p className="mt-1 max-w-[12rem] truncate text-[11px] text-cyan-800">
-                    لینک: {String(c.videoMeetingUrl)}
+              <td className={TD}>
+                <p className="font-bold text-slate-900">{String(c.name || "—")}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-slate-500" dir="ltr">
+                  {String(c.phone || "—")}
+                </p>
+                {desc ? (
+                  <p className="mt-1 line-clamp-2 text-[11px] text-slate-500" title={desc}>
+                    {desc}
                   </p>
                 ) : null}
               </td>
-              <td className="max-w-xs truncate px-4 py-3 text-xs">
-                {String(c.description || "—")}
+              <td className={TD}>
+                <p className="font-bold text-slate-800">{serviceLine || "—"}</p>
               </td>
-              <td className="px-4 py-3">
-                {Number(c.amount || 0).toLocaleString("fa-IR")}
+              <td className={TD}>
+                <p className="font-bold">{String(c.doctorName || "—")}</p>
+                <p className="mt-0.5 text-slate-600">{whenLabel}</p>
+                {c.videoMeetingUrl ? (
+                  <p
+                    className="mt-1 truncate text-[10px] text-cyan-800"
+                    dir="ltr"
+                    title={String(c.videoMeetingUrl)}
+                  >
+                    لینک خارجی
+                  </p>
+                ) : null}
+              </td>
+              <td className={cn(TD, "whitespace-nowrap")}>
+                <p className="font-bold">{formatPrice(Number(c.amount || 0))}</p>
                 {c.estimate ? (
-                  <>
-                    <br />
-                    <span className="text-xs text-slate-500">{String(c.estimate)}</span>
-                  </>
+                  <p className="mt-0.5 text-[10px] text-slate-500">{String(c.estimate)}</p>
                 ) : null}
               </td>
-              <td className="px-4 py-3">
-                <AdminBadge
-                  tone={
-                    c.status === "answered"
-                      ? "success"
+              <td className={TD}>
+                <div className="flex flex-col gap-1">
+                  <AdminBadge
+                    tone={
+                      c.status === "answered"
+                        ? "success"
+                        : c.status === "cancelled"
+                          ? "danger"
+                          : "warn"
+                    }
+                  >
+                    {c.status === "answered"
+                      ? "پاسخ داده"
                       : c.status === "cancelled"
-                        ? "danger"
-                        : "warn"
-                  }
-                >
-                  {c.status === "answered"
-                    ? "پاسخ داده"
-                    : c.status === "cancelled"
-                      ? "لغو شده"
-                      : "در انتظار"}
-                </AdminBadge>
+                        ? "لغو شده"
+                        : "در انتظار"}
+                  </AdminBadge>
+                  {liveOk ? (
+                    <span className="text-[10px] font-bold text-slate-600">
+                      {videoStatusLabel(videoStatus)}
+                    </span>
+                  ) : null}
+                </div>
               </td>
-              <td className="px-4 py-3 text-xs font-bold text-slate-700">
-                {liveOk ? videoStatusLabel(videoStatus) : "—"}
-              </td>
-              <td className="space-y-1 px-4 py-3">
-                {c.status !== "answered" && c.status !== "cancelled" ? (
-                  <button
-                    type="button"
-                    className="block text-xs font-semibold text-teal-700"
-                    onClick={() => markAnswered(String(c.id))}
-                  >
-                    علامت پاسخ
-                  </button>
-                ) : null}
-                {c.status !== "cancelled" && c.status !== "answered" ? (
-                  <button
-                    type="button"
-                    className="block text-xs font-semibold text-rose-700"
-                    onClick={() => markCancelled(String(c.id))}
-                  >
-                    لغو مشاوره
-                  </button>
-                ) : null}
-                {roomOk && c.status !== "cancelled" && videoStatus === "none" ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    className="block text-xs font-semibold text-cyan-800 disabled:opacity-50"
-                    onClick={() => void openVideo(String(c.id))}
-                  >
-                    باز کردن اتاق مشاوره
-                  </button>
-                ) : null}
-                {liveOk && c.status !== "cancelled" && joinable ? (
-                  <>
+              <td className={cn(TD, "lg:sticky lg:left-0 lg:z-[1] lg:bg-white")}>
+                <div className="flex max-w-[14rem] flex-wrap gap-1">
+                  {c.status !== "answered" && c.status !== "cancelled" ? (
+                    <button
+                      type="button"
+                      className={actionBtnClass("teal")}
+                      onClick={() => markAnswered(String(c.id))}
+                    >
+                      پاسخ
+                    </button>
+                  ) : null}
+                  {c.status !== "cancelled" && c.status !== "answered" ? (
+                    <button
+                      type="button"
+                      className={actionBtnClass("rose")}
+                      onClick={() => markCancelled(String(c.id))}
+                    >
+                      لغو
+                    </button>
+                  ) : null}
+                  {roomOk && c.status !== "cancelled" && videoStatus === "none" ? (
                     <button
                       type="button"
                       disabled={busy}
-                      className="block text-xs font-semibold text-teal-700 disabled:opacity-50"
-                      onClick={() => void joinVideo(String(c.id))}
+                      className={actionBtnClass("cyan")}
+                      onClick={() => void openVideo(String(c.id))}
                     >
-                      ورود به اتاق مشاوره
+                      باز کردن اتاق
                     </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      className="block text-xs font-semibold text-cyan-800 disabled:opacity-50"
-                      onClick={() => void copyPatientLink(String(c.id))}
-                    >
-                      کپی لینک بیمار
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      className="block text-xs font-semibold text-violet-800 disabled:opacity-50"
-                      onClick={() => void smsPatientLink(String(c.id))}
-                    >
-                      پیامک لینک به بیمار
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      className="block text-xs font-semibold text-rose-700 disabled:opacity-50"
-                      onClick={() => void completeVideo(String(c.id))}
-                    >
-                      پایان جلسه ویدیو
-                    </button>
-                  </>
-                ) : null}
-                {roomOk && c.status !== "cancelled" && !editing ? (
-                  <button
-                    type="button"
-                    disabled={busy || videoStatus === "completed"}
-                    className="block text-xs font-semibold text-slate-800 disabled:opacity-50"
-                    onClick={() => startEdit(c)}
-                  >
-                    ثبت لینک اتاق / ساعت
-                  </button>
-                ) : null}
-                {roomOk && c.status !== "cancelled" && editing ? (
-                  <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      لینک اتاق
-                      <input
-                        type="url"
-                        dir="ltr"
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        placeholder="https://..."
-                        value={meetingUrl}
-                        onChange={(e) => setMeetingUrl(e.target.value)}
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      روز ویزیت
-                      <input
-                        type="text"
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        placeholder="مثلاً ۱۴۰۵/۰۷/۱۱"
-                        value={visitDateLabel}
-                        onChange={(e) => setVisitDateLabel(e.target.value)}
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      ساعت ویزیت
-                      <input
-                        type="text"
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        placeholder="مثلاً ۱۴:۳۰"
-                        value={visitTimeLabel}
-                        onChange={(e) => setVisitTimeLabel(e.target.value)}
-                      />
-                    </label>
-                    <div className="flex flex-wrap gap-2">
+                  ) : null}
+                  {liveOk && c.status !== "cancelled" && joinable ? (
+                    <>
                       <button
                         type="button"
                         disabled={busy}
-                        className="text-xs font-bold text-teal-700 disabled:opacity-50"
-                        onClick={() => void saveMeetingLink(c.id)}
+                        className={actionBtnClass("teal")}
+                        onClick={() => void joinVideo(String(c.id))}
                       >
-                        ذخیره
+                        ورود اتاق
                       </button>
                       <button
                         type="button"
                         disabled={busy}
-                        className="text-xs font-bold text-slate-500 disabled:opacity-50"
-                        onClick={cancelEdit}
+                        className={actionBtnClass("cyan")}
+                        onClick={() => void copyPatientLink(String(c.id))}
                       >
-                        انصراف
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-                {c.status !== "cancelled" && !writingRx ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    className="block text-xs font-semibold text-violet-800 disabled:opacity-50"
-                    onClick={() => startRx(c)}
-                  >
-                    ثبت نسخه در پرونده
-                  </button>
-                ) : null}
-                {c.status !== "cancelled" && writingRx ? (
-                  <div className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-violet-50/60 p-2">
-                    <p className="text-[11px] font-bold text-violet-900">
-                      نسخه در پرونده سلامت ذخیره می‌شود
-                    </p>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      پزشک
-                      <input
-                        type="text"
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        value={rxDoctor}
-                        onChange={(e) => setRxDoctor(e.target.value)}
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      داروها / نسخه
-                      <textarea
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        rows={3}
-                        value={rxMedications}
-                        onChange={(e) => setRxMedications(e.target.value)}
-                        placeholder="نام دارو، دوز، نحوه مصرف"
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      زمان‌بندی مصرف
-                      <textarea
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        rows={2}
-                        value={rxDosage}
-                        onChange={(e) => setRxDosage(e.target.value)}
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      تشخیص
-                      <textarea
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        rows={2}
-                        value={rxDiagnosis}
-                        onChange={(e) => setRxDiagnosis(e.target.value)}
-                      />
-                    </label>
-                    <label className="block text-[11px] font-bold text-slate-600">
-                      توصیه‌ها
-                      <textarea
-                        className="mt-1 w-56 rounded border border-slate-200 px-2 py-1 text-xs"
-                        rows={2}
-                        value={rxRecommendations}
-                        onChange={(e) => setRxRecommendations(e.target.value)}
-                      />
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className="text-xs font-bold text-violet-800 disabled:opacity-50"
-                        onClick={() => void savePrescription(c)}
-                      >
-                        ذخیره در پرونده
+                        کپی لینک
                       </button>
                       <button
                         type="button"
                         disabled={busy}
-                        className="text-xs font-bold text-slate-500 disabled:opacity-50"
-                        onClick={cancelRx}
+                        className={actionBtnClass("violet")}
+                        onClick={() => void smsPatientLink(String(c.id))}
                       >
-                        انصراف
+                        SMS بیمار
                       </button>
-                    </div>
-                  </div>
-                ) : null}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className={actionBtnClass("rose")}
+                        onClick={() => void completeVideo(String(c.id))}
+                      >
+                        پایان
+                      </button>
+                    </>
+                  ) : null}
+                  {roomOk && c.status !== "cancelled" ? (
+                    <button
+                      type="button"
+                      disabled={busy || videoStatus === "completed"}
+                      className={actionBtnClass("slate")}
+                      onClick={() => startEdit(c)}
+                    >
+                      لینک / ساعت
+                    </button>
+                  ) : null}
+                  {c.status !== "cancelled" ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className={actionBtnClass("violet")}
+                      onClick={() => startRx(c)}
+                    >
+                      نسخه
+                    </button>
+                  ) : null}
+                </div>
               </td>
             </tr>
           );
         })}
       </AdminTable>
+
+      {editingId ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          role="presentation"
+          onClick={cancelEdit}
+        >
+          <div
+            className="w-full max-w-md"
+            role="dialog"
+            aria-labelledby="edit-meeting-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+          <Card hover={false} className="space-y-3 p-5">
+            <h3 id="edit-meeting-title" className="font-extrabold text-slate-900">
+              ثبت لینک اتاق و زمان ویزیت
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <FormLabel>لینک اتاق (اختیاری)</FormLabel>
+                <FormInput
+                  type="url"
+                  dir="ltr"
+                  placeholder="https://..."
+                  value={meetingUrl}
+                  onChange={(e) => setMeetingUrl(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <FormLabel>روز ویزیت</FormLabel>
+                  <FormInput
+                    placeholder="مثلاً ۱۴۰۵/۰۷/۱۱"
+                    value={visitDateLabel}
+                    onChange={(e) => setVisitDateLabel(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FormLabel>ساعت ویزیت</FormLabel>
+                  <FormInput
+                    placeholder="مثلاً ۱۴:۳۰"
+                    value={visitTimeLabel}
+                    onChange={(e) => setVisitTimeLabel(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                disabled={busyId === editingId}
+                className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                onClick={() => void saveMeetingLink(editingId)}
+              >
+                ذخیره
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700"
+                onClick={cancelEdit}
+              >
+                انصراف
+              </button>
+            </div>
+          </Card>
+          </div>
+        </div>
+      ) : null}
+
+      {rxId ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          role="presentation"
+          onClick={cancelRx}
+        >
+          <div
+            className="w-full max-w-lg"
+            role="dialog"
+            aria-labelledby="rx-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+          <Card hover={false} className="max-h-[90vh] space-y-3 overflow-y-auto p-5">
+            <h3 id="rx-title" className="font-extrabold text-slate-900">
+              ثبت نسخه در پرونده سلامت
+            </h3>
+            <p className="text-xs text-slate-500">نسخه برای بیمار با موبایل ثبت‌شده ذخیره می‌شود.</p>
+            <div className="space-y-3">
+              <div>
+                <FormLabel>پزشک</FormLabel>
+                <FormInput value={rxDoctor} onChange={(e) => setRxDoctor(e.target.value)} />
+              </div>
+              <div>
+                <FormLabel>داروها / نسخه</FormLabel>
+                <FormTextarea
+                  rows={3}
+                  value={rxMedications}
+                  onChange={(e) => setRxMedications(e.target.value)}
+                  placeholder="نام دارو، دوز، نحوه مصرف"
+                />
+              </div>
+              <div>
+                <FormLabel>زمان‌بندی مصرف</FormLabel>
+                <FormTextarea rows={2} value={rxDosage} onChange={(e) => setRxDosage(e.target.value)} />
+              </div>
+              <div>
+                <FormLabel>تشخیص</FormLabel>
+                <FormTextarea rows={2} value={rxDiagnosis} onChange={(e) => setRxDiagnosis(e.target.value)} />
+              </div>
+              <div>
+                <FormLabel>توصیه‌ها</FormLabel>
+                <FormTextarea
+                  rows={2}
+                  value={rxRecommendations}
+                  onChange={(e) => setRxRecommendations(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                disabled={busyId === rxId}
+                className="rounded-xl bg-violet-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                onClick={() => {
+                  const row = items.find((i) => i.id === rxId);
+                  if (row) void savePrescription(row);
+                }}
+              >
+                ذخیره در پرونده
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700"
+                onClick={cancelRx}
+              >
+                انصراف
+              </button>
+            </div>
+          </Card>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
