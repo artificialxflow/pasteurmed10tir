@@ -8,6 +8,7 @@ import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
 import { visitorRefPath } from "@/lib/commerce/referral-ref";
 import { type Visitor, type VisitorRoleKind } from "@/lib/data";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { FormEvent, useEffect, useState } from "react";
 
 export default function AdminVisitorsPage() {
@@ -154,6 +155,24 @@ export default function AdminVisitorsPage() {
     const next = visitors.map((v) => ({ ...v }));
     next[index].status = next[index].status === "active" ? "inactive" : "active";
     persist(next);
+  }
+
+  function deleteVisitor(index: number) {
+    const v = visitors[index];
+    if (!v) return;
+    const label = v.role === "referrer" ? "معرف" : "ویزیتور";
+    if (
+      !confirmAction(
+        `${label} «${v.name.trim()}» حذف شود؟ پورسانت‌ها و گزارش‌های بازاریابی مرتبط هم پاک می‌شوند.`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    const next = visitors.filter((_, i) => i !== index);
+    persist(next, `${label} ${v.name.trim()} حذف شد.`);
+    if (qrVisitorId === Number(v.id)) setQrVisitorId(null);
   }
 
   const qrVisitor = visitors.find((v) => Number(v.id) === qrVisitorId) || null;
@@ -355,6 +374,13 @@ export default function AdminVisitorsPage() {
                 onClick={() => toggleVisitor(i)}
               >
                 {v.status === "active" ? "غیرفعال" : "فعال"}
+              </button>
+              <button
+                type="button"
+                className="text-xs font-semibold text-rose-700"
+                onClick={() => deleteVisitor(i)}
+              >
+                حذف
               </button>
             </td>
           </tr>

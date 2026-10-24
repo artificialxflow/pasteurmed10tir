@@ -505,7 +505,7 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
         <p className="text-sm font-extrabold text-slate-900">ویزیت‌ها و نوبت‌های من</p>
         <p className="mt-1 text-xs text-slate-500">
           {physicianName ? `${physicianName} · ` : ""}
-          مشاوره‌ها و نوبت‌های ثبت‌شده برای شما. برای ویزیت تصویری آماده، دکمه ورود را بزنید.
+          مشاوره‌ها و نوبت‌های ثبت‌شده برای شما. وقتی اتاق باز شد، با دکمه ورود به ویزیت متصل شوید.
         </p>
       </div>
       {error ? <p className="text-sm font-bold text-rose-600">{error}</p> : null}
@@ -560,7 +560,11 @@ export function PhysicianPanel({ section }: { section: PhysicianTab }) {
                         disabled={busyId === v.id}
                         onClick={() => void joinVideo(v.id)}
                       >
-                        {busyId === v.id ? "در حال اتصال…" : "ورود به ویزیت تصویری"}
+                        {busyId === v.id
+                          ? "در حال اتصال…"
+                          : v.supportsVideo
+                            ? "ورود به ویزیت تصویری"
+                            : "ورود به اتاق ویزیت"}
                       </Button>
                     ) : null}
                     {v.kind === "consultation" && v.canOpenTrack && !v.canJoinVideo ? (

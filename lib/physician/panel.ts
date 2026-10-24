@@ -1,4 +1,5 @@
 import {
+  consultationSupportsLiveSession,
   consultationSupportsTrackPage,
   consultationSupportsVideoSession,
 } from '@/lib/consultation/modality';
@@ -58,6 +59,10 @@ export async function listPhysicianVisits(physicianId: number) {
       category: mapped.category,
       type: mapped.type,
     });
+    const liveOk = consultationSupportsLiveSession({
+      category: mapped.category,
+      type: mapped.type,
+    });
     const trackOk = consultationSupportsTrackPage({
       category: mapped.category,
       type: mapped.type,
@@ -80,7 +85,7 @@ export async function listPhysicianVisits(physicianId: number) {
       supportsVideo: videoOk,
       canOpenTrack: trackOk,
       canJoinVideo:
-        videoOk &&
+        liveOk &&
         canJoinConsultationVideoNow({
           videoStatus: mapped.videoStatus,
           preferredDate: mapped.preferredDate,

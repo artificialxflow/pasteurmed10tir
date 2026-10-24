@@ -1,8 +1,9 @@
-import { consultationSupportsVideoSession } from '@/lib/consultation/modality';
+import { consultationSupportsLiveSession } from '@/lib/consultation/modality';
 import { mintConsultationVideoAccess } from '@/lib/jitsi/consultation-video';
 import { consultationPatientTrackUrl } from '@/lib/jitsi/patient-track';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
+import { ROUTES } from '@/lib/routes';
 import {
   isSmsConfigured,
   sendVideoVisitDoctorSms,
@@ -22,6 +23,10 @@ async function resolveDoctorPhone(doctorId: string | null | undefined): Promise<
   });
   const phone = normalizePhoneDigits(physician?.phone || '');
   return phone.length >= 10 ? phone : null;
+}
+
+function physicianPanelUrl(): string {
+  return `${getSiteUrl()}${ROUTES.app.account}`;
 }
 
 function visitTimeLabel(row: Consultation): string {
@@ -51,22 +56,22 @@ async function buildDoctorJoinUrl(row: Consultation): Promise<string> {
     }
   }
 
-  return `${getSiteUrl()}/admin/consultations`;
+  return physicianPanelUrl();
 }
 
-/** پیامک به پزشک وقتی ویزیت تصویری آماده شد — خطا جریان ادمین را قطع نمی‌کند */
+/** پیامک به پزشک وقتی اتاق ویزیت (متنی/صوتی/تصویری) آماده شد — خطا جریان ادمین را قطع نمی‌کند */
 export async function notifyDoctorVideoVisitSms(consultationId: string) {
   if (!isSmsConfigured()) return;
 
   try {
     const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
     if (!row || row.status === 'cancelled') return;
-    if (!consultationSupportsVideoSession({ category: row.category, type: row.type })) return;
+    if (!consultationSupportsLiveSession({ category: row.category, type: row.type })) return;
     if (row.videoStatus !== 'scheduled' && row.videoStatus !== 'in_call') return;
 
     const doctorPhone = await resolveDoctorPhone(row.doctorId);
     if (!doctorPhone) {
-      console.warn('[sms] video-doctor skipped — no physician phone', {
+      console.warn('[sms] live-doctor skipped — no physician phone', {
         consultationId,
         doctorId: row.doctorId,
       });
@@ -93,7 +98,7 @@ export async function notifyPatientVideoVisitSms(consultationId: string) {
   try {
     const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
     if (!row || row.status === 'cancelled') return;
-    if (!consultationSupportsVideoSession({ category: row.category, type: row.type })) return;
+    if (!consultationSupportsLiveSession({ category: row.category, type: row.type })) return;
     if (row.videoStatus !== 'scheduled' && row.videoStatus !== 'in_call') return;
 
     const phone = normalizePhoneDigits(row.patientPhone || '');
@@ -119,4 +124,36 @@ export async function notifyVideoVisitReadySms(consultationId: string) {
     notifyDoctorVideoVisitSms(consultationId),
     notifyPatientVideoVisitSms(consultationId),
   ]);
+}
+
+/** پیامک به پزشک پس از ثبت مشاوره با پزشک و زمان ویزیت (پنل کاربری برای ورود بعدی) */
+export async function notifyDoctorConsultationAssignedSms(consultationId: string) {
+  if (!isSmsConfigured()) return;
+
+  try {
+    const row = await prisma.consultation.findUnique({ where: { id: consultationId } });
+    if (!row || row.status === 'cancelled') return;
+    if (!row.doctorId) return;
+    if (!consultationSupportsLiveSession({ category: row.category, type: row.type })) return;
+
+    const doctorPhone = await resolveDoctorPhone(row.doctorId);
+    if (!doctorPhone) {
+      console.warn('[sms] consultation-assigned-doctor skipped — no physician phone', {
+        consultationId,
+        doctorId: row.doctorId,
+      });
+      return;
+    }
+
+    const patientName = String(row.patientName || 'بیمار').slice(0, 40);
+    const timeLabel = visitTimeLabel(row).slice(0, 40);
+    const panelUrl = physicianPanelUrl().slice(0, 200);
+
+    const result = await sendVideoVisitDoctorSms(doctorPhone, patientName, timeLabel, panelUrl);
+    if (!result.ok) {
+      console.error('[sms] consultation-assigned-doctor', result.error);
+    }
+  } catch (e) {
+    console.error('[sms] consultation-assigned-doctor', e);
+  }
 }

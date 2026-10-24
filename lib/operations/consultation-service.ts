@@ -10,6 +10,8 @@ import { generateOperationId, mapConsultation } from '@/lib/operations/mappers';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { optionalPatient } from '@/lib/operations/require-patient';
 import { prisma } from '@/lib/prisma';
+import { consultationSupportsLiveSession } from '@/lib/consultation/modality';
+import { notifyDoctorConsultationAssignedSms } from '@/lib/jitsi/doctor-sms';
 import { isSmsConfigured, sendConsultationSms } from '@/lib/sms/client';
 
 export type CreateConsultationInput = {
@@ -133,6 +135,13 @@ export async function createConsultationRecord(body: CreateConsultationInput) {
     } catch (e) {
       console.error('[sms] consultation', e);
     }
+  }
+
+  if (
+    row.doctorId &&
+    consultationSupportsLiveSession({ category: row.category, type: row.type })
+  ) {
+    void notifyDoctorConsultationAssignedSms(row.id);
   }
 
   return mapConsultation(row);
