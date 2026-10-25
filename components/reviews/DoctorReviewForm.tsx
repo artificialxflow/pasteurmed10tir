@@ -99,10 +99,10 @@ export function DoctorReviewForm({
           <p className="text-xs text-slate-500">در حال بارگذاری...</p>
         ) : stats ? (
           <p className="text-xs font-bold text-amber-700">
-            {stats.avg.toFixed(1)} از {stats.count.toLocaleString("fa-IR")} نظر
+            میانگین {stats.avg.toFixed(1)} از {stats.count.toLocaleString("fa-IR")} امتیاز
           </p>
         ) : (
-          <p className="text-xs text-slate-500">هنوز نظری ثبت نشده</p>
+          <p className="text-xs text-slate-500">هنوز امتیازی ثبت نشده</p>
         )}
       </div>
 
@@ -124,7 +124,7 @@ export function DoctorReviewForm({
 
       {done ? (
         <p className="text-xs font-bold text-green-700">
-          نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.
+          امتیاز شما در میانگین اعمال شد. متن نظر پس از تأیید مدیر در سایت نمایش داده می‌شود.
         </p>
       ) : null}
       {error ? <p className="text-xs font-bold text-red-600">{error}</p> : null}

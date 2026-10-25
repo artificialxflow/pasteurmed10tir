@@ -3,7 +3,7 @@ import { generateOperationId } from '@/lib/operations/mappers';
 import { prisma } from '@/lib/prisma';
 import type { FollowUpCase } from '@prisma/client';
 
-/** پل خودکار: امتیاز رضایت دکتر در فالوآپ → نظر pending در پنل ادمین */
+/** پل خودکار: امتیاز رضایت دکتر در فالوآپ → میانگین سایت (بدون نام)؛ یادداشت → نظر در انتظار تأیید */
 export async function bridgeFollowUpDoctorRatingToReview(row: FollowUpCase): Promise<void> {
   if (row.satisfactionDoctor == null || row.satisfactionDoctor < 1) return;
   if (!row.doctorName || row.doctorName === FOLLOW_UP_UNKNOWN_DENTIST) return;
@@ -19,6 +19,7 @@ export async function bridgeFollowUpDoctorRatingToReview(row: FollowUpCase): Pro
   const until = new Date(row.createdAt.getTime() + 60_000);
   const duplicate = await prisma.doctorReview.findFirst({
     where: {
+      source: 'follow_up',
       patientPhone: row.patientPhone,
       doctorId,
       rating: row.satisfactionDoctor,
@@ -27,9 +28,8 @@ export async function bridgeFollowUpDoctorRatingToReview(row: FollowUpCase): Pro
   });
   if (duplicate) return;
 
-  const comment =
-    row.notes?.trim() ||
-    `ثبت خودکار از فالوآپ (${row.workDate.toISOString().slice(0, 10)}) — امتیاز ${row.satisfactionDoctor}`;
+  const noteText = row.notes?.trim() || '';
+  const hasComment = noteText.length > 0;
 
   await prisma.doctorReview.create({
     data: {
@@ -39,8 +39,12 @@ export async function bridgeFollowUpDoctorRatingToReview(row: FollowUpCase): Pro
       doctorName: dentist.name,
       doctorKind: 'dental',
       rating: row.satisfactionDoctor,
-      comment,
-      status: 'pending',
+      comment: hasComment ? noteText : '',
+      source: 'follow_up',
+      showSubmitterOnSite: false,
+      ratingStatus: 'approved',
+      commentStatus: hasComment ? 'pending' : 'hidden',
+      status: hasComment ? 'pending' : 'approved',
     },
   });
 }

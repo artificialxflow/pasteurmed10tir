@@ -13,6 +13,8 @@ function mapPublicReview(row: {
   rating: number;
   comment: string;
   createdAt: Date;
+  showSubmitterOnSite: boolean;
+  source: string;
 }) {
   return {
     id: row.id,
@@ -22,6 +24,8 @@ function mapPublicReview(row: {
     rating: row.rating,
     comment: row.comment,
     createdAt: row.createdAt.toISOString(),
+    authorLabel:
+      row.showSubmitterOnSite && row.source !== 'follow_up' ? undefined : 'بیمار',
   };
 }
 
@@ -29,19 +33,28 @@ export async function GET(request: Request) {
   const doctorId = new URL(request.url).searchParams.get('doctorId')?.trim();
   if (!doctorId) return jsonError('شناسه پزشک الزامی است.');
 
-  const rows = await prisma.doctorReview.findMany({
-    where: { doctorId, status: 'approved' },
+  const ratingRows = await prisma.doctorReview.findMany({
+    where: { doctorId, ratingStatus: 'approved' },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const commentRows = await prisma.doctorReview.findMany({
+    where: {
+      doctorId,
+      commentStatus: 'approved',
+      NOT: { comment: '' },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
   const avg =
-    rows.length > 0
-      ? rows.reduce((sum, row) => sum + row.rating, 0) / rows.length
+    ratingRows.length > 0
+      ? ratingRows.reduce((sum, row) => sum + row.rating, 0) / ratingRows.length
       : 0;
 
   return NextResponse.json({
-    items: rows.map(mapPublicReview),
-    stats: { avg, count: rows.length },
+    items: commentRows.map(mapPublicReview),
+    stats: { avg, count: ratingRows.length },
   });
 }
 
@@ -90,6 +103,10 @@ export async function POST(request: Request) {
       doctorKind: String(body.doctorKind || 'dental'),
       rating: Math.min(5, Math.max(1, Number(body.rating || 5))),
       comment,
+      source: 'patient',
+      showSubmitterOnSite: true,
+      ratingStatus: 'approved',
+      commentStatus: 'pending',
       status: 'pending',
     },
   });

@@ -32,7 +32,10 @@ import {
 } from "@/lib/validation/file-number";
 import { zohalStatusLabel } from "@/lib/zohal/patient-verify";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+
+const TD = "px-2 py-2 align-top text-xs text-slate-800";
 
 const STATUS_ACTIONS: {
   status: PatientStatus;
@@ -429,18 +432,33 @@ export default function AdminPatientsPage() {
       {loading ? <p className="text-sm text-slate-500">در حال بارگذاری…</p> : null}
 
       <AdminTable
+        compact
+        minTableWidth="min-w-[56rem]"
+        colWidths={[
+          "14%",
+          "8%",
+          "9%",
+          "8%",
+          "7%",
+          "5%",
+          "11%",
+          "7%",
+          "8%",
+          "6%",
+          "7%",
+          "20%",
+        ]}
         headers={[
           "نام",
           "سازمان",
           "موبایل",
           "کد ملی",
-          "شماره پرونده",
-          "فرانشیز٪",
-          "بیمه پایه",
-          "بیمه تکمیلی",
+          "پرونده",
+          "٪",
+          "بیمه",
           "زحل",
-          "نحوه آشنایی",
-          "کد معرف",
+          "آشنایی",
+          "معرف",
           "وضعیت",
           "یادداشت / عملیات",
         ]}
@@ -450,8 +468,8 @@ export default function AdminPatientsPage() {
           const busy = busyPhone === p.phone;
           return (
             <tr key={p.phone} className="border-t border-slate-100 align-top">
-              <td className="px-4 py-3">
-                <div>{p.name || "—"}</div>
+              <td className={TD}>
+                <div className="font-bold">{p.name || "—"}</div>
                 {(p.dependents || []).length ? (
                   <ul className="mt-1 space-y-0.5 text-[0.7rem] text-slate-500">
                     {(p.dependents || []).map((d) => (
@@ -465,7 +483,7 @@ export default function AdminPatientsPage() {
                   </ul>
                 ) : null}
               </td>
-              <td className="px-4 py-3 text-xs">
+              <td className={cn(TD, "text-[10px]")}>
                 {p.organizationName ? (
                   <>
                     {p.organizationName}
@@ -477,26 +495,34 @@ export default function AdminPatientsPage() {
                   "—"
                 )}
               </td>
-              <td className="px-4 py-3 font-mono text-xs">{p.phone}</td>
-              <td className="px-4 py-3 font-mono text-xs">{p.nationalId || "—"}</td>
-              <td className="px-4 py-3 font-mono text-xs">{p.fileNumber || "—"}</td>
-              <td className="px-4 py-3">
+              <td className={cn(TD, "font-mono text-[10px]")} dir="ltr">{p.phone}</td>
+              <td className={cn(TD, "font-mono text-[10px]")}>{p.nationalId || "—"}</td>
+              <td className={cn(TD, "font-mono text-[10px]")}>{p.fileNumber || "—"}</td>
+              <td className={cn(TD, "whitespace-nowrap text-[10px]")}>
                 {resolveFranchisePercent(p).toLocaleString("fa-IR")}٪
               </td>
-              <td className="px-4 py-3 text-xs">
-                {insuranceName(baseList, p.baseInsuranceId)}
+              <td className={cn(TD, "text-[10px] leading-snug")} title={`${insuranceName(baseList, p.baseInsuranceId)} · ${insuranceName(compList, p.complementaryInsuranceId)}`}>
+                <span className="block truncate">{insuranceName(baseList, p.baseInsuranceId)}</span>
+                <span className="block truncate text-slate-500">
+                  {insuranceName(compList, p.complementaryInsuranceId)}
+                </span>
               </td>
-              <td className="px-4 py-3 text-xs">
-                {insuranceName(compList, p.complementaryInsuranceId)}
-              </td>
-              <td className="px-4 py-3 text-xs font-medium">
+              <td
+                className={cn(TD, "max-w-[4.5rem] truncate text-[10px] font-medium")}
+                title={zohalStatusLabel(p.zohalStatus, p.shahkarMatched)}
+              >
                 {zohalStatusLabel(p.zohalStatus, p.shahkarMatched)}
               </td>
-              <td className="px-4 py-3 text-xs">
+              <td
+                className={cn(TD, "max-w-[4rem] truncate text-[10px]")}
+                title={acquisitionSourceLabel(p.acquisitionSource)}
+              >
                 {acquisitionSourceLabel(p.acquisitionSource)}
               </td>
-              <td className="px-4 py-3 font-mono text-xs">{p.referralCode || "—"}</td>
-              <td className="px-4 py-3">
+              <td className={cn(TD, "max-w-[3.5rem] truncate font-mono text-[10px]")} title={p.referralCode || ""}>
+                {p.referralCode || "—"}
+              </td>
+              <td className={TD}>
                 <AdminBadge
                   tone={
                     p.status === "approved"
@@ -509,10 +535,10 @@ export default function AdminPatientsPage() {
                   {patientStatusLabel(p.status)}
                 </AdminBadge>
               </td>
-              <td className="px-4 py-3">
-                <div className="flex min-w-[16rem] flex-col gap-2">
+              <td className={cn(TD, "lg:sticky lg:left-0 lg:z-[1] lg:bg-white")}>
+                <div className="flex min-w-[12rem] max-w-[14rem] flex-col gap-1.5">
                   <textarea
-                    className="w-full resize-y rounded-lg border border-slate-200 px-2 py-1.5 text-xs leading-5 text-slate-700 outline-none focus:border-teal-500"
+                    className="w-full resize-y rounded-lg border border-slate-200 px-2 py-1 text-[11px] leading-4 text-slate-700 outline-none focus:border-teal-500"
                     rows={2}
                     placeholder="یادداشت بررسی (اختیاری)"
                     value={notes[p.phone] ?? ""}
@@ -521,14 +547,14 @@ export default function AdminPatientsPage() {
                       setNotes((prev) => ({ ...prev, [p.phone]: e.target.value }))
                     }
                   />
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1">
                     {STATUS_ACTIONS.map((action) => {
                       const isCurrent = p.status === action.status;
                       return (
                         <Button
                           key={action.status}
                           variant={isCurrent ? "primary" : action.variant || "outline"}
-                          className="px-3 py-1.5 text-xs"
+                          className="px-2 py-1 text-[10px]"
                           disabled={busy || isCurrent || Boolean(busyPhone)}
                           onClick={() => void setStatus(p.phone, action.status)}
                         >
@@ -540,16 +566,16 @@ export default function AdminPatientsPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="px-3 py-1.5 text-xs"
+                      className="px-2 py-1 text-[10px]"
                       disabled={busy || Boolean(busyPhone)}
                       onClick={() => void saveNote(p.phone, p.status)}
                     >
-                      ذخیره یادداشت
+                      یادداشت
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      className="px-3 py-1.5 text-xs"
+                      className="px-2 py-1 text-[10px]"
                       disabled={busy || Boolean(busyPhone)}
                       onClick={() => openEdit(p)}
                     >
@@ -558,16 +584,16 @@ export default function AdminPatientsPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="px-3 py-1.5 text-xs"
+                      className="px-2 py-1 text-[10px]"
                       disabled={busy || Boolean(busyPhone) || !p.nationalId}
                       onClick={() => void recheckZohal(p.phone)}
                     >
-                      استعلام زحل
+                      زحل
                     </Button>
                     <Button
                       type="button"
                       variant="danger"
-                      className="px-3 py-1.5 text-xs"
+                      className="px-2 py-1 text-[10px]"
                       disabled={busy || Boolean(busyPhone)}
                       onClick={() => void removePatient(p.phone, p.name)}
                     >

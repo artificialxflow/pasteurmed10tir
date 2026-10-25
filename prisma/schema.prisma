@@ -705,20 +705,28 @@ model Reminder {
 }
 
 model DoctorReview {
-  id           String       @id
-  userId       String?
-  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  patientPhone String
-  doctorId     String
-  doctorName   String
-  doctorKind   String
-  rating       Int
-  comment      String
-  status       ReviewStatus @default(pending)
-  createdAt    DateTime     @default(now())
+  id                  String       @id
+  userId              String?
+  user                User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  patientPhone        String
+  doctorId            String
+  doctorName          String
+  doctorKind          String
+  rating              Int
+  comment             String
+  /** @deprecated use ratingStatus + commentStatus — kept in sync on admin PATCH */
+  status              ReviewStatus @default(pending)
+  source              String       @default("patient")
+  ratingStatus        ReviewStatus @default(pending)
+  commentStatus       ReviewStatus @default(pending)
+  showSubmitterOnSite Boolean      @default(true)
+  createdAt           DateTime     @default(now())
 
   @@index([userId])
   @@index([status])
+  @@index([ratingStatus])
+  @@index([commentStatus])
+  @@index([source])
 }
 
 model Complaint {

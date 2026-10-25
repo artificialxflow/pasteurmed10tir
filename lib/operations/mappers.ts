@@ -134,6 +134,10 @@ export function mapDoctorReview(row: DoctorReview) {
     rating: row.rating,
     comment: row.comment,
     status: row.status,
+    source: row.source || 'patient',
+    ratingStatus: row.ratingStatus,
+    commentStatus: row.commentStatus,
+    showSubmitterOnSite: row.showSubmitterOnSite,
     createdAt: row.createdAt.toISOString(),
   };
 }

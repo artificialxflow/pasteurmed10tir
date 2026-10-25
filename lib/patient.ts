@@ -95,6 +95,10 @@ export type DoctorReview = {
   rating: number;
   comment: string;
   status: 'pending' | 'approved' | 'hidden';
+  source?: string;
+  ratingStatus?: 'pending' | 'approved' | 'hidden';
+  commentStatus?: 'pending' | 'approved' | 'hidden';
+  showSubmitterOnSite?: boolean;
   createdAt: string;
 };
 
