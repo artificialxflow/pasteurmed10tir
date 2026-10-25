@@ -794,21 +794,22 @@ export function AccountDashboard({
                         type="button"
                         className="rounded-xl border border-cyan-300 bg-white px-3 py-2 text-xs font-bold text-cyan-900 hover:bg-cyan-50"
                         onClick={() => {
+                          const meetingUrl = c.videoMeetingUrl
+                            ? String(c.videoMeetingUrl)
+                            : undefined;
                           const kind = consultationVideoJoinKind({
                             videoStatus,
-                            videoMeetingUrl: c.videoMeetingUrl
-                              ? String(c.videoMeetingUrl)
-                              : undefined,
+                            videoMeetingUrl: meetingUrl,
                             videoRoomName: c.videoRoomName ? String(c.videoRoomName) : undefined,
                             preferredDate,
                             preferredTime,
                           });
                           if (
                             kind === "external" &&
-                            c.videoMeetingUrl &&
-                            isExternalConsultationMeetingUrl(c.videoMeetingUrl)
+                            meetingUrl &&
+                            isExternalConsultationMeetingUrl(meetingUrl)
                           ) {
-                            window.location.href = String(c.videoMeetingUrl);
+                            window.location.href = meetingUrl;
                             return;
                           }
                           void mintPatientConsultationVideoToken(String(c.id))
