@@ -7,6 +7,7 @@ import {
   consultationSupportsLiveSession,
 } from "@/lib/consultation/modality";
 import { videoStatusLabel } from "@/lib/jitsi/labels";
+import { isExternalConsultationMeetingUrl } from "@/lib/jitsi/meeting-url";
 import { canJoinConsultationVideoNow } from "@/lib/jitsi/video-window";
 import {
   fetchAdminOps,
@@ -195,7 +196,7 @@ export default function AdminConsultationsPage() {
     setBusyId(id);
     try {
       const row = items.find((c) => c.id === id);
-      if (row?.videoMeetingUrl) {
+      if (row?.videoMeetingUrl && isExternalConsultationMeetingUrl(row.videoMeetingUrl)) {
         window.location.href = String(row.videoMeetingUrl);
         return;
       }

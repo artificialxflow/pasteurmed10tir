@@ -1,5 +1,6 @@
 import { consultationSupportsLiveSession } from '@/lib/consultation/modality';
 import { mintConsultationVideoAccess } from '@/lib/jitsi/consultation-video';
+import { isExternalConsultationMeetingUrl } from '@/lib/jitsi/meeting-url';
 import { consultationPatientTrackUrl } from '@/lib/jitsi/patient-track';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { prisma } from '@/lib/prisma';
@@ -39,8 +40,8 @@ function visitTimeLabel(row: Consultation): string {
 }
 
 async function buildDoctorJoinUrl(row: Consultation): Promise<string> {
-  const external = String(row.videoMeetingUrl || '').trim();
-  if (external) return external;
+  const saved = String(row.videoMeetingUrl || '').trim();
+  if (saved && isExternalConsultationMeetingUrl(saved)) return saved;
 
   if (row.videoStatus === 'scheduled' || row.videoStatus === 'in_call') {
     try {

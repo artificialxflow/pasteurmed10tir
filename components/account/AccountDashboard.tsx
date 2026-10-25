@@ -20,10 +20,8 @@ import {
   consultationSupportsTrackPage,
   consultationSupportsVideoSession,
 } from "@/lib/consultation/modality";
-import {
-  consultationVideoJoinKind,
-  videoStatusLabel,
-} from "@/lib/jitsi/labels";
+import { consultationVideoJoinKind, videoStatusLabel } from "@/lib/jitsi/labels";
+import { isExternalConsultationMeetingUrl } from "@/lib/jitsi/meeting-url";
 import { canJoinConsultationVideoNow } from "@/lib/jitsi/video-window";
 import {
   fetchMyActivityApi,
@@ -805,7 +803,11 @@ export function AccountDashboard({
                             preferredDate,
                             preferredTime,
                           });
-                          if (kind === "external" && c.videoMeetingUrl) {
+                          if (
+                            kind === "external" &&
+                            c.videoMeetingUrl &&
+                            isExternalConsultationMeetingUrl(c.videoMeetingUrl)
+                          ) {
                             window.location.href = String(c.videoMeetingUrl);
                             return;
                           }

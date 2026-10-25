@@ -8,10 +8,8 @@ import {
   consultationSupportsVideoSession,
   modalityCapabilityHint,
 } from "@/lib/consultation/modality";
-import {
-  consultationVideoJoinKind,
-  videoStatusLabel,
-} from "@/lib/jitsi/labels";
+import { consultationVideoJoinKind, videoStatusLabel } from "@/lib/jitsi/labels";
+import { isExternalConsultationMeetingUrl } from "@/lib/jitsi/meeting-url";
 import {
   canJoinConsultationVideoNow,
   isConsultationVideoWindowExpired,
@@ -96,19 +94,19 @@ export function ConsultationTrack({
       category: next.category,
       type: next.type,
     });
-    if (
+    const joinableNow = canJoinConsultationVideoNow({
+      videoStatus: next.videoStatus,
+      preferredDate: next.preferredDate,
+      preferredTime: next.preferredTime,
+    });
+    const externalUrl =
       liveOk &&
+      joinableNow &&
       next.videoMeetingUrl &&
-      canJoinConsultationVideoNow({
-        videoStatus: next.videoStatus,
-        preferredDate: next.preferredDate,
-        preferredTime: next.preferredTime,
-      })
-    ) {
-      setResolvedJoinUrl(String(next.videoMeetingUrl));
-    } else {
-      setResolvedJoinUrl("");
-    }
+      isExternalConsultationMeetingUrl(next.videoMeetingUrl)
+        ? String(next.videoMeetingUrl)
+        : "";
+    setResolvedJoinUrl(externalUrl);
   }, [id]);
 
   useEffect(() => {
@@ -121,9 +119,8 @@ export function ConsultationTrack({
     if (kind === "external" && item.videoMeetingUrl) {
       return item.videoMeetingUrl;
     }
-    if (resolvedJoinUrl && kind === "external") return resolvedJoinUrl;
+    if (kind === "external" && resolvedJoinUrl) return resolvedJoinUrl;
     const token = await mintPatientConsultationVideoToken(item.id);
-    setResolvedJoinUrl(token.url);
     return token.url;
   }
 
@@ -201,7 +198,11 @@ export function ConsultationTrack({
     : videoStatusLabel(item.videoStatus);
   const displayLink =
     resolvedJoinUrl ||
-    (item.videoMeetingUrl && joinable ? String(item.videoMeetingUrl) : "");
+    (item.videoMeetingUrl &&
+    joinable &&
+    isExternalConsultationMeetingUrl(item.videoMeetingUrl)
+      ? String(item.videoMeetingUrl)
+      : "");
 
   if (!liveOk) {
     return (

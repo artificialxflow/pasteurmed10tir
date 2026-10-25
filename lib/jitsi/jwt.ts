@@ -37,10 +37,10 @@ const PATIENT_TOOLBAR = [
   'videoquality',
 ];
 
-function patientJoinHash(): string {
-  return `#config.toolbarButtons=${encodeURIComponent(
-    JSON.stringify(PATIENT_TOOLBAR),
-  )}&config.disableDeepLinking=true`;
+/** Query params (not hash) — mobile browsers mishandle long `?jwt=#config` URLs. */
+function patientJoinConfigQuery(): string {
+  const buttons = encodeURIComponent(JSON.stringify(PATIENT_TOOLBAR));
+  return `&config.disableDeepLinking=true&config.toolbarButtons=${buttons}`;
 }
 
 /** HS256 JWT for docker-jitsi-meet AUTH_TYPE=jwt — never put APP_SECRET in query. */
@@ -65,7 +65,8 @@ export function mintJitsiJwt(input: MintJitsiJwtInput): MintedJitsiJwt {
     sub: String(input.sub || 'user').slice(0, 128),
     room,
     moderator: isModerator,
-    nbf: now - 10,
+    /** Clock skew between app host and meet VPS */
+    nbf: now - 120,
     exp,
     context: {
       user: {
@@ -93,7 +94,7 @@ export function mintJitsiJwt(input: MintJitsiJwtInput): MintedJitsiJwt {
   const jwt = `${header}.${payload}.${signature}`;
   let url = `https://${domain}/${encodeURIComponent(room)}?jwt=${encodeURIComponent(jwt)}`;
   if (!isModerator) {
-    url += patientJoinHash();
+    url += patientJoinConfigQuery();
   }
 
   return {

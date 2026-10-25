@@ -1,3 +1,4 @@
+import { isExternalConsultationMeetingUrl } from '@/lib/jitsi/meeting-url';
 import { isConsultationVideoWindowExpired } from '@/lib/jitsi/video-window';
 
 export function videoStatusLabel(status: string | null | undefined): string {
@@ -21,8 +22,7 @@ export function consultationVideoJoinKind(input: {
 }): 'external' | 'jitsi' | 'none' {
   if (!canJoinConsultationVideoStatus(input.videoStatus)) return 'none';
   if (isConsultationVideoWindowExpired(input)) return 'none';
-  const url = String(input.videoMeetingUrl || '').trim();
-  if (url) return 'external';
+  if (isExternalConsultationMeetingUrl(input.videoMeetingUrl)) return 'external';
   if (input.videoRoomName) return 'jitsi';
   return 'jitsi';
 }
