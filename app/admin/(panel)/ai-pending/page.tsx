@@ -3,6 +3,11 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormLabel, FormTextarea } from "@/components/ui/Card";
+import {
+  AI_PENDING_STATUS_LABELS,
+  labelAiPendingStatus,
+  type AiPendingStatusKey,
+} from "@/lib/ai/admin-labels";
 import { fetchAdminOps, postAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
@@ -16,9 +21,11 @@ type PendingRow = {
   createdAt: string;
 };
 
+const FILTER_KEYS: AiPendingStatusKey[] = ["open", "answered", "dismissed", "all"];
+
 export default function AdminAiPendingPage() {
   const [items, setItems] = useState<PendingRow[]>([]);
-  const [filter, setFilter] = useState("open");
+  const [filter, setFilter] = useState<AiPendingStatusKey>("open");
   const [selected, setSelected] = useState<PendingRow | null>(null);
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState("");
@@ -76,7 +83,7 @@ export default function AdminAiPendingPage() {
       {success ? <p className="text-sm font-bold text-teal-800">{success}</p> : null}
 
       <div className="flex flex-wrap gap-2">
-        {(["open", "answered", "dismissed", "all"] as const).map((s) => (
+        {FILTER_KEYS.map((s) => (
           <Button
             key={s}
             type="button"
@@ -84,7 +91,7 @@ export default function AdminAiPendingPage() {
             className="text-xs"
             onClick={() => setFilter(s)}
           >
-            {s}
+            {AI_PENDING_STATUS_LABELS[s]}
           </Button>
         ))}
       </div>
@@ -94,7 +101,9 @@ export default function AdminAiPendingPage() {
           <tr key={row.id} className="border-t border-slate-100 align-top">
             <td className="max-w-md px-4 py-3 text-sm">{row.questionText}</td>
             <td className="px-4 py-3">
-              <AdminBadge tone={row.status === "open" ? "warn" : "neutral"}>{row.status}</AdminBadge>
+              <AdminBadge tone={row.status === "open" ? "warn" : "neutral"}>
+                {labelAiPendingStatus(row.status)}
+              </AdminBadge>
             </td>
             <td className="px-4 py-3 text-xs">{new Date(row.createdAt).toLocaleString("fa-IR")}</td>
             <td className="px-4 py-3">

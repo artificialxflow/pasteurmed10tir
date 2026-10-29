@@ -29,14 +29,17 @@ type ClubSection =
   | "history"
   | "rules";
 
-const INSTAGRAM_URL = "https://instagram.com/pastor.beauty.tbz";
-const INSTAGRAM_USERNAME = "pastor.beauty.tbz";
+function instagramProfileUrl(username: string) {
+  return `https://www.instagram.com/${username.replace(/^@/, "")}/`;
+}
 
 function digitsOnly(value: string) {
   return value.replace(/[^\d]/g, "");
 }
 
 export function ClubPage({ variant = "web" }: { variant?: Variant }) {
+  const instagramUsername = PASTEUR_DATA.institute.instagramUsername;
+  const instagramUrl = instagramProfileUrl(instagramUsername);
   const [phone, setPhone] = useState("");
   const [currentPhone, setCurrentPhone] = useState("");
   const [profile, setProfile] = useState<ClubProfile | null>(null);
@@ -282,10 +285,10 @@ export function ClubPage({ variant = "web" }: { variant?: Variant }) {
                     برای دیدن نمونه کارها، اخبار و پیشنهادهای ویژه، پیج ما را دنبال کنید.
                   </p>
                   <p className="mb-4 rounded-xl border border-pink-100 bg-pink-50 p-3 text-sm font-bold text-pink-800">
-                    @{INSTAGRAM_USERNAME}
+                    @{instagramUsername}
                   </p>
                   <a
-                    href={INSTAGRAM_URL}
+                    href={instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-slate-900 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:bg-slate-50 sm:w-auto"

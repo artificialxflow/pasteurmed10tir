@@ -3,6 +3,7 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
+import { labelAiKnowledgeSource, orgNameById, orgSelectLabel } from "@/lib/ai/admin-labels";
 import { deleteAdminOps, fetchAdminOps, patchAdminOps, postAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { confirmAction } from "@/lib/ui/confirm-action";
@@ -20,7 +21,7 @@ type DocRow = {
   updatedAt: string;
 };
 
-type OrgRow = { id: string; name: string };
+type OrgRow = { id: string; name: string; representativePhone?: string | null };
 
 export default function AdminAiKnowledgePage() {
   const searchParams = useSearchParams();
@@ -76,7 +77,7 @@ export default function AdminAiKnowledgePage() {
       });
       setTitle("");
       setBody("");
-      setSuccess("سند ذخیره و embedding ساخته شد.");
+      setSuccess("سند ذخیره و برای جستجو ایندکس شد.");
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
@@ -119,7 +120,7 @@ export default function AdminAiKnowledgePage() {
     setBusy(true);
     try {
       await postAdminOps(`/api/admin/operations/ai/documents/${id}/reembed`, {});
-      setSuccess("embedding بازسازی شد.");
+      setSuccess("ایندکس جستجو بازسازی شد.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
     } finally {
@@ -143,7 +144,7 @@ export default function AdminAiKnowledgePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">مدیریت پایگاه دانش دستیار RAG</p>
+        <p className="text-sm text-slate-600">مدیریت پایگاه دانش دستیار هوشمند</p>
         <Link href={ROUTES.admin.aiPending} className="text-sm font-bold text-cyan-800 underline">
           سوالات بدون پاسخ
         </Link>
@@ -159,7 +160,7 @@ export default function AdminAiKnowledgePage() {
             <FormInput value={voiceMaxSeconds} onChange={(e) => setVoiceMaxSeconds(e.target.value)} />
           </div>
           <div>
-            <FormLabel>آستانه فاصله cosine (کمتر = دقیق‌تر)</FormLabel>
+            <FormLabel>آستانه شباهت (عدد کمتر = پاسخ دقیق‌تر)</FormLabel>
             <FormInput value={threshold} onChange={(e) => setThreshold(e.target.value)} />
           </div>
         </div>
@@ -173,10 +174,10 @@ export default function AdminAiKnowledgePage() {
         <div>
           <FormLabel>سازمان (خالی = سراسری)</FormLabel>
           <FormSelect value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
-            <option value="">— سراسری pasteur.plus —</option>
+            <option value="">— سراسری (کل سایت) —</option>
             {orgs.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.name}
+                {orgSelectLabel(o)}
               </option>
             ))}
           </FormSelect>
@@ -191,7 +192,7 @@ export default function AdminAiKnowledgePage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" disabled={busy} onClick={() => void createDoc()}>
-            ذخیره و embed
+            ذخیره و ایندکس
           </Button>
           <Button type="button" variant="outline" disabled={busy} onClick={() => void ingestSiteMap()}>
             بارگذاری نقشه سایت
@@ -199,24 +200,26 @@ export default function AdminAiKnowledgePage() {
         </div>
       </Card>
 
-      <AdminTable headers={["عنوان", "منبع", "chunks", "عملیات"]} empty="سندی ثبت نشده.">
+      <AdminTable headers={["عنوان", "منبع", "بخش‌ها", "عملیات"]} empty="سندی ثبت نشده.">
         {items.map((row) => (
           <tr key={row.id} className="border-t border-slate-100">
             <td className="px-4 py-3 text-sm">
               <div className="font-bold">{row.title}</div>
               {row.organizationId ? (
-                <div className="text-xs text-slate-500">سازمان: {row.organizationId}</div>
+                <div className="text-xs text-slate-500">
+                  سازمان: {orgNameById(orgs, row.organizationId)}
+                </div>
               ) : null}
             </td>
-            <td className="px-4 py-3 text-xs">{row.source}</td>
-            <td className="px-4 py-3 text-xs">{row.chunkCount}</td>
+            <td className="px-4 py-3 text-xs">{labelAiKnowledgeSource(row.source)}</td>
+            <td className="px-4 py-3 text-xs">{row.chunkCount.toLocaleString("fa-IR")}</td>
             <td className="px-4 py-3 space-x-2 space-x-reverse">
               <button
                 type="button"
                 className="text-xs font-bold text-cyan-800"
                 onClick={() => void reembed(row.id)}
               >
-                re-embed
+                بازسازی ایندکس
               </button>
               <button
                 type="button"

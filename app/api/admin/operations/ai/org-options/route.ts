@@ -7,9 +7,19 @@ export async function GET() {
   if (auth.error) return auth.error;
 
   const rows = await prisma.organization.findMany({
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      representative: { select: { phone: true } },
+    },
     orderBy: { name: 'asc' },
   });
 
-  return NextResponse.json({ items: rows });
+  return NextResponse.json({
+    items: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      representativePhone: row.representative.phone,
+    })),
+  });
 }

@@ -29,6 +29,8 @@ export interface Institute {
   }>;
   whatsapp: string;
   whatsappDigits: string;
+  /** Instagram handle without @ */
+  instagramUsername: string;
   contactHours: string;
   welcome: string;
   subtitle: string;
@@ -402,6 +404,7 @@ export const PASTEUR_DATA = {
     ],
     whatsapp: '۰۹۳۵۴۳۳۴۴۱۲',
     whatsappDigits: '989354334412',
+    instagramUsername: 'pasteurclinics',
     contactHours: 'پاسخگویی تلفنی و واتساپ در ساعات کاری درمانگاه',
     welcome: 'به سامانه خدمات مرکز پاستور خوش آمدید',
     subtitle: 'دندانپزشکی، پزشکی، پرستاری، مشاوره و تجهیزات پزشکی',
