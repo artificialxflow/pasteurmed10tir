@@ -80,6 +80,8 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.complaints, label: "شکایات", permission: "complaints" },
       { href: ROUTES.admin.support, label: "پشتیبانی", permission: "complaints" },
       { href: ROUTES.admin.help, label: "آموزش", permission: "help" },
+      { href: ROUTES.admin.aiKnowledge, label: "دانش AI", permission: "aiKnowledge" },
+      { href: ROUTES.admin.aiPending, label: "سوالات AI", permission: "aiKnowledge" },
     ],
   },
   {
@@ -126,6 +128,8 @@ const titles: Record<string, string> = {
   [ROUTES.admin.complaints]: "شکایات بیماران",
   [ROUTES.admin.support]: "پشتیبانی / تیکت",
   [ROUTES.admin.help]: "آموزش سامانه",
+  [ROUTES.admin.aiKnowledge]: "پایگاه دانش دستیار",
+  [ROUTES.admin.aiPending]: "سوالات بدون پاسخ دستیار",
   [ROUTES.admin.installments]: "اقساط کاربران",
   [ROUTES.admin.patients]: "تأیید کاربری و فرانشیز",
   [ROUTES.admin.healthRecords]: "پرونده سلامت بیماران",

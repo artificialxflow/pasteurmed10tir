@@ -174,6 +174,15 @@ export default function AdminOrganizationDetailPage() {
           <Button type="button" disabled={busy} onClick={() => void saveOrg()}>
             ذخیره قرارداد
           </Button>
+          <p className="text-sm text-slate-600">
+            دانش اختصاصی این سازمان (قرارداد، سیاست‌ها):{" "}
+            <Link
+              href={`${ROUTES.admin.aiKnowledge}?organizationId=${org.id}`}
+              className="font-bold text-cyan-800 underline"
+            >
+              مدیریت در پایگاه دانش AI
+            </Link>
+          </p>
         </Card>
       ) : (
         <p className="text-sm text-slate-500">در حال بارگذاری…</p>

@@ -32,6 +32,16 @@ export function HelpPage({ variant = "web" }: { variant?: "web" | "app" }) {
           </Link>{" "}
           بروید.
         </p>
+        <p className="mt-2 text-sm text-slate-600">
+          برای سوالات متداول درباره سایت از{" "}
+          <Link
+            href={variant === "app" ? ROUTES.app.assistant : ROUTES.web.assistant}
+            className="font-bold text-cyan-800 underline"
+          >
+            دستیار هوشمند
+          </Link>{" "}
+          استفاده کنید.
+        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {items.map((item) => (

@@ -32,7 +32,8 @@ export type AdminPermission =
   | 'patients'
   | 'specialistReferrals'
   | 'followUp'
-  | 'access';
+  | 'access'
+  | 'aiKnowledge';
 
 export type AdminRole = {
   id: string;
@@ -101,6 +102,8 @@ export const ADMIN_PERMISSION_META: {
   { id: 'reviews', label: 'نظرات پزشکان', href: ROUTES.admin.reviews },
   { id: 'complaints', label: 'شکایات', href: ROUTES.admin.complaints },
   { id: 'help', label: 'آموزش سامانه', href: ROUTES.admin.help },
+  { id: 'aiKnowledge', label: 'دانش دستیار AI', href: ROUTES.admin.aiKnowledge },
+  { id: 'aiKnowledge', label: 'سوالات بدون پاسخ AI', href: ROUTES.admin.aiPending },
   { id: 'installments', label: 'اقساط', href: ROUTES.admin.installments },
   { id: 'patients', label: 'تأیید کاربری / فرانشیز', href: ROUTES.admin.patients },
   { id: 'patients', label: 'پرونده سلامت', href: ROUTES.admin.healthRecords },
@@ -138,6 +141,8 @@ export const DEFAULT_ADMIN_ROLES: AdminRole[] = [
       'doctors',
       'consultationPrices',
       'gallery',
+      'help',
+      'aiKnowledge',
     ],
   },
   {

@@ -56,6 +56,7 @@ model Organization {
   /** درصد تخفیف قرارداد مجموعه — توسط ادمین */
   contractDiscountPercent  Int                  @default(0)
   members                  OrganizationMember[]
+  aiKnowledgeDocuments     AiKnowledgeDocument[]
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 }
@@ -1583,4 +1584,75 @@ model CompetitorClinicPrice {
   @@unique([competitorId, dentalTariffItemId])
   @@index([competitorId])
   @@index([dentalTariffItemId])
+}
+
+enum AiKnowledgeSource {
+  site_map
+  admin_manual
+  from_pending
+  org_policy
+}
+
+enum AiPendingStatus {
+  open
+  answered
+  dismissed
+}
+
+model AiSetting {
+  id                    String   @id @default("default")
+  voiceMaxSeconds       Int      @default(180)
+  similarityThreshold   Float    @default(0.42)
+  retrievalTopK         Int      @default(5)
+  preferredProvider     String   @default("gapgpt")
+  updatedAt             DateTime @updatedAt
+}
+
+model AiKnowledgeDocument {
+  id               String            @id @default(cuid())
+  title            String
+  source           AiKnowledgeSource @default(admin_manual)
+  organizationId   String?
+  organization     Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  published        Boolean           @default(true)
+  body             String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  chunks           AiKnowledgeChunk[]
+  pendingAnswers   AiPendingQuestion[] @relation("PendingAnswerDocument")
+
+  @@index([organizationId])
+  @@index([source])
+  @@index([published])
+}
+
+model AiKnowledgeChunk {
+  id         String              @id @default(cuid())
+  documentId String
+  document   AiKnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([documentId])
+}
+
+model AiPendingQuestion {
+  id                 String              @id @default(cuid())
+  questionText       String
+  userId             String?
+  sessionId          String?
+  organizationId     String?
+  status             AiPendingStatus     @default(open)
+  answerDocumentId   String?
+  answerDocument     AiKnowledgeDocument? @relation("PendingAnswerDocument", fields: [answerDocumentId], references: [id], onDelete: SetNull)
+  adminAnswerText    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  answeredAt         DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([organizationId])
 }

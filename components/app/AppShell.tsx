@@ -1,6 +1,7 @@
 "use client";
 
 import { SupportWidget } from "@/components/support/SupportWidget";
+import { AssistantWidget } from "@/components/ai/AssistantWidget";
 import { Logo } from "@/components/ui/Card";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ export function AppShell({
       </header>
       <main className={cn("flex-1 overflow-y-auto px-4 py-4", showNav ? "pb-24" : "pb-4")}>{children}</main>
       <SupportWidget variant="app" liftForNav={showNav} />
+      <AssistantWidget variant="app" />
       {showNav ? (
         <nav
           data-site-chrome="app-nav"
