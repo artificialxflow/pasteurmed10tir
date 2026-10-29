@@ -26,8 +26,9 @@ export function AssistantWidget({ variant }: { variant: "web" | "app" }) {
         aria-label="دستیار هوشمند"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-700 text-2xl text-white shadow-lg",
-          variant === "app" ? "bottom-24 end-4" : "bottom-6 end-6",
+          "fixed z-40 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-700 text-2xl text-white shadow-lg",
+          /* RTL: start = راست فیزیکی؛ پشتیبانی چپ (left-3) می‌ماند */
+          variant === "app" ? "bottom-24 start-4" : "bottom-6 start-6",
         )}
       >
         🤖
@@ -35,8 +36,8 @@ export function AssistantWidget({ variant }: { variant: "web" | "app" }) {
       {open ? (
         <div
           className={cn(
-            "fixed z-50 flex w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl",
-            variant === "app" ? "bottom-40 end-3" : "bottom-24 end-6",
+            "fixed z-40 flex w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl",
+            variant === "app" ? "bottom-40 start-3" : "bottom-24 start-6",
           )}
         >
           <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-3 py-2">
