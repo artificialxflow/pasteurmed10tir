@@ -64,3 +64,46 @@ export async function embedDocumentFromBody(documentId: string, body: string, ti
   await replaceDocumentChunks(documentId, chunks.length ? chunks : [title || '']);
   return chunks.length || 1;
 }
+
+export function parseKeywordList(keywords?: string | null): string[] {
+  if (!keywords?.trim()) return [];
+  return keywords
+    .split(/[,،]/)
+    .map((k) => k.trim())
+    .filter(Boolean);
+}
+
+export function buildPendingSearchChunkContent(input: {
+  title: string;
+  questionText: string;
+  keywords?: string;
+}): string {
+  const parts: string[] = [];
+  const title = input.title.trim();
+  if (title) parts.push(title);
+  for (const k of parseKeywordList(input.keywords)) parts.push(k);
+  const q = input.questionText.trim();
+  if (q) parts.push(q);
+  return parts.join('\n');
+}
+
+export async function embedPendingAnswerDocument(
+  documentId: string,
+  input: {
+    title: string;
+    questionText: string;
+    answerText: string;
+    keywords?: string;
+    fullBody: string;
+  },
+): Promise<number> {
+  const searchChunk = buildPendingSearchChunkContent({
+    title: input.title,
+    questionText: input.questionText,
+    keywords: input.keywords,
+  });
+  const fullBody = input.fullBody.trim();
+  const contents = [searchChunk, fullBody].filter((c) => c.length > 0);
+  await replaceDocumentChunks(documentId, contents.length ? contents : [input.title || input.answerText]);
+  return contents.length || 1;
+}

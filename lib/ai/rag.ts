@@ -11,6 +11,61 @@ export type RetrievedChunk = {
   distance: number;
 };
 
+export const SHORT_QUESTION_KEYWORD_MAX_LEN = 30;
+
+function normalizeQuestionForKeywordMatch(question: string): string {
+  return question.trim().replace(/\s+/g, ' ');
+}
+
+export async function findChunksByKeywordFallback(
+  question: string,
+  options?: { organizationId?: string | null; limit?: number },
+): Promise<RetrievedChunk[]> {
+  const normalized = normalizeQuestionForKeywordMatch(question);
+  if (!normalized || normalized.length > SHORT_QUESTION_KEYWORD_MAX_LEN) return [];
+
+  const orgId = options?.organizationId ?? null;
+  const limit = options?.limit ?? 5;
+  const pattern = `%${normalized}%`;
+
+  if (orgId) {
+    return prisma.$queryRawUnsafe<RetrievedChunk[]>(
+      `SELECT c.id,
+              c.content,
+              c."documentId",
+              d.title AS "documentTitle",
+              0::double precision AS distance
+       FROM "AiKnowledgeChunk" c
+       INNER JOIN "AiKnowledgeDocument" d ON d.id = c."documentId"
+       WHERE d.published = true
+         AND (d."organizationId" IS NULL OR d."organizationId" = $3)
+         AND c.content ILIKE $1
+       ORDER BY length(c.content) DESC
+       LIMIT $2`,
+      pattern,
+      limit,
+      orgId,
+    );
+  }
+
+  return prisma.$queryRawUnsafe<RetrievedChunk[]>(
+    `SELECT c.id,
+            c.content,
+            c."documentId",
+            d.title AS "documentTitle",
+            0::double precision AS distance
+     FROM "AiKnowledgeChunk" c
+     INNER JOIN "AiKnowledgeDocument" d ON d.id = c."documentId"
+     WHERE d.published = true
+       AND d."organizationId" IS NULL
+       AND c.content ILIKE $1
+     ORDER BY length(c.content) DESC
+     LIMIT $2`,
+    pattern,
+    limit,
+  );
+}
+
 export async function retrieveChunks(
   queryEmbedding: number[],
   options?: { organizationId?: string | null; topK?: number },

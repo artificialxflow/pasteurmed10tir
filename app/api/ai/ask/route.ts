@@ -5,6 +5,7 @@ import { clientRateLimitKey, checkRateLimit } from '@/lib/ai/rate-limit';
 import {
   answerFromRetrieval,
   enqueuePendingQuestion,
+  findChunksByKeywordFallback,
   retrieveChunks,
 } from '@/lib/ai/rag';
 import { getAiSettings } from '@/lib/ai/settings';
@@ -51,7 +52,18 @@ export async function POST(request: Request) {
     });
 
     const best = chunks[0];
-    const hasMatch = best && Number(best.distance) <= settings.similarityThreshold;
+    let hasMatch = best && Number(best.distance) <= settings.similarityThreshold;
+    let chunksForAnswer = chunks;
+
+    if (!hasMatch) {
+      const keywordChunks = await findChunksByKeywordFallback(question, {
+        organizationId: body.organizationId || null,
+      });
+      if (keywordChunks.length > 0) {
+        hasMatch = true;
+        chunksForAnswer = keywordChunks;
+      }
+    }
 
     if (!hasMatch) {
       const pending = await enqueuePendingQuestion({
@@ -68,11 +80,11 @@ export async function POST(request: Request) {
       });
     }
 
-    const answer = await answerFromRetrieval(question, chunks);
+    const answer = await answerFromRetrieval(question, chunksForAnswer);
     return NextResponse.json({
       answer,
       matched: true,
-      sources: chunks.map((c) => ({ title: c.documentTitle, distance: c.distance })),
+      sources: chunksForAnswer.map((c) => ({ title: c.documentTitle, distance: c.distance })),
     });
   } catch (err) {
     if (err instanceof AiClientError) {
