@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app/AppShell";
+import { InstagramContactCard } from "@/components/contact/InstagramContactCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PASTEUR_DATA, instagramProfileUrl } from "@/lib/data";
@@ -38,14 +39,7 @@ export default function AppContactPage() {
             <p className="mt-1 text-xs text-slate-500">{i.whatsapp}</p>
           </Card>
         </a>
-        <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
-          <Card className="p-4">
-            <p className="font-bold text-slate-900">📸 اینستاگرام</p>
-            <p className="mt-1 text-sm font-bold text-pink-800" dir="ltr">
-              @{i.instagramUsername}
-            </p>
-          </Card>
-        </a>
+        <InstagramContactCard username={i.instagramUsername} variant="compact" />
       </div>
 
       <Card hover={false} className="mb-4 p-4">

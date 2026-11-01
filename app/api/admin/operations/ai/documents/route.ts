@@ -1,6 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
-import { createKnowledgeDocument } from '@/lib/ai/admin-knowledge';
+import { createKnowledgeDocument, knowledgeBodyPreview } from '@/lib/ai/admin-knowledge';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -25,6 +25,7 @@ export async function GET(request: Request) {
       organizationId: r.organizationId,
       published: r.published,
       chunkCount: r._count.chunks,
+      bodyPreview: knowledgeBodyPreview(r.body),
       updatedAt: r.updatedAt.toISOString(),
     })),
   });

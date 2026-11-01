@@ -9,7 +9,7 @@ import { ROUTES } from "@/lib/routes";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 
 type DocRow = {
   id: string;
@@ -18,6 +18,7 @@ type DocRow = {
   organizationId: string | null;
   published: boolean;
   chunkCount: number;
+  bodyPreview: string;
   updatedAt: string;
 };
 
@@ -34,6 +35,12 @@ export default function AdminAiKnowledgePage() {
   const [organizationId, setOrganizationId] = useState(orgFilter);
   const [voiceMaxSeconds, setVoiceMaxSeconds] = useState("180");
   const [threshold, setThreshold] = useState("0.42");
+  const [expandedId, setExpandedId] = useState("");
+  const [editing, setEditing] = useState<DocRow | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editPublished, setEditPublished] = useState(true);
+  const [editSource, setEditSource] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,6 +67,60 @@ export default function AdminAiKnowledgePage() {
       .then((d) => setOrgs(d.items || []))
       .catch(() => {});
   }, [reload]);
+
+  function closeEdit() {
+    setEditing(null);
+    setEditTitle("");
+    setEditBody("");
+    setEditPublished(true);
+    setEditSource("");
+  }
+
+  async function openEdit(row: DocRow) {
+    setBusy(true);
+    setError("");
+    try {
+      const doc = await fetchAdminOps<{
+        title: string;
+        body: string | null;
+        published: boolean;
+        source: string;
+      }>(`/api/admin/operations/ai/documents/${row.id}`);
+      setEditing(row);
+      setEditTitle(doc.title);
+      setEditBody(doc.body || "");
+      setEditPublished(doc.published);
+      setEditSource(doc.source);
+      setExpandedId(row.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editing || !editTitle.trim() || !editBody.trim()) {
+      setError("عنوان و متن الزامی است.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await patchAdminOps(`/api/admin/operations/ai/documents/${editing.id}`, {
+        title: editTitle,
+        body: editBody,
+        published: editPublished,
+      });
+      setSuccess("سند به‌روزرسانی و ایندکس شد.");
+      closeEdit();
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function createDoc() {
     if (!title.trim() || !body.trim()) {
@@ -133,6 +194,8 @@ export default function AdminAiKnowledgePage() {
     setBusy(true);
     try {
       await deleteAdminOps(`/api/admin/operations/ai/documents/${id}`);
+      if (editing?.id === id) closeEdit();
+      if (expandedId === id) setExpandedId("");
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
@@ -202,36 +265,113 @@ export default function AdminAiKnowledgePage() {
 
       <AdminTable headers={["عنوان", "منبع", "بخش‌ها", "عملیات"]} empty="سندی ثبت نشده.">
         {items.map((row) => (
-          <tr key={row.id} className="border-t border-slate-100">
-            <td className="px-4 py-3 text-sm">
-              <div className="font-bold">{row.title}</div>
-              {row.organizationId ? (
-                <div className="text-xs text-slate-500">
-                  سازمان: {orgNameById(orgs, row.organizationId)}
-                </div>
-              ) : null}
-            </td>
-            <td className="px-4 py-3 text-xs">{labelAiKnowledgeSource(row.source)}</td>
-            <td className="px-4 py-3 text-xs">{row.chunkCount.toLocaleString("fa-IR")}</td>
-            <td className="px-4 py-3 space-x-2 space-x-reverse">
-              <button
-                type="button"
-                className="text-xs font-bold text-cyan-800"
-                onClick={() => void reembed(row.id)}
-              >
-                بازسازی ایندکس
-              </button>
-              <button
-                type="button"
-                className="text-xs font-bold text-red-600"
-                onClick={() => void removeDoc(row.id)}
-              >
-                حذف
-              </button>
-            </td>
-          </tr>
+          <Fragment key={row.id}>
+            <tr className="border-t border-slate-100 align-top">
+              <td className="max-w-md px-4 py-3 text-sm">
+                <button
+                  type="button"
+                  className="text-right font-bold hover:text-cyan-900"
+                  onClick={() => setExpandedId(expandedId === row.id ? "" : row.id)}
+                >
+                  {row.title}
+                </button>
+                {row.bodyPreview && expandedId !== row.id ? (
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{row.bodyPreview}</p>
+                ) : null}
+                {row.organizationId ? (
+                  <div className="text-xs text-slate-500">
+                    سازمان: {orgNameById(orgs, row.organizationId)}
+                  </div>
+                ) : null}
+              </td>
+              <td className="px-4 py-3 text-xs">{labelAiKnowledgeSource(row.source)}</td>
+              <td className="px-4 py-3 text-xs">{row.chunkCount.toLocaleString("fa-IR")}</td>
+              <td className="space-y-1 px-4 py-3">
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-cyan-800"
+                  onClick={() => void openEdit(row)}
+                >
+                  ویرایش
+                </button>
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-slate-600"
+                  onClick={() => setExpandedId(expandedId === row.id ? "" : row.id)}
+                >
+                  {expandedId === row.id ? "بستن" : "پیش‌نمایش"}
+                </button>
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-cyan-800"
+                  onClick={() => void reembed(row.id)}
+                >
+                  بازسازی ایندکس
+                </button>
+                <button
+                  type="button"
+                  className="block text-xs font-bold text-red-600"
+                  onClick={() => void removeDoc(row.id)}
+                >
+                  حذف
+                </button>
+              </td>
+            </tr>
+            {expandedId === row.id ? (
+              <tr className="border-t border-slate-50 bg-slate-50/50">
+                <td colSpan={4} className="px-4 py-3">
+                  <p className="mb-1 text-xs font-bold text-slate-600">پیش‌نمایش پاسخ</p>
+                  <p className="whitespace-pre-wrap break-words rounded-xl bg-white p-3 text-sm text-slate-800">
+                    {row.bodyPreview || "—"}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-2 text-xs"
+                    disabled={busy}
+                    onClick={() => void openEdit(row)}
+                  >
+                    ویرایش این سند
+                  </Button>
+                </td>
+              </tr>
+            ) : null}
+          </Fragment>
         ))}
       </AdminTable>
+
+      {editing ? (
+        <Card hover={false} className="space-y-3 p-4">
+          <p className="text-sm font-bold">ویرایش سند دانش</p>
+          <p className="text-xs text-slate-500">منبع: {labelAiKnowledgeSource(editSource)}</p>
+          <div>
+            <FormLabel>عنوان</FormLabel>
+            <FormInput value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+          </div>
+          <div>
+            <FormLabel>متن / پاسخ</FormLabel>
+            <FormTextarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={8} />
+          </div>
+          {editSource !== "site_map" ? (
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+              <input
+                type="checkbox"
+                checked={editPublished}
+                onChange={(e) => setEditPublished(e.target.checked)}
+              />
+              منتشر شده (در جستجوی دستیار)
+            </label>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled={busy} onClick={() => void saveEdit()}>
+              ذخیره تغییرات
+            </Button>
+            <Button type="button" variant="outline" onClick={closeEdit}>
+              انصراف
+            </Button>
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

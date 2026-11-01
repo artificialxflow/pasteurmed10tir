@@ -41,6 +41,64 @@ export function buildPendingAnswerBody(input: {
   return `${kwBlock}سوال:\n${input.questionText.trim()}\n\nپاسخ:\n${input.answerText.trim()}`;
 }
 
+const KNOWLEDGE_PREVIEW_MAX = 160;
+
+export function knowledgeBodyPreview(body: string | null | undefined): string {
+  if (!body?.trim()) return '';
+  const parsed = parsePendingDocumentBody(body);
+  const text = (parsed.answerText || body.trim()).replace(/\s+/g, ' ').trim();
+  if (text.length <= KNOWLEDGE_PREVIEW_MAX) return text;
+  return `${text.slice(0, KNOWLEDGE_PREVIEW_MAX)}…`;
+}
+
+export function parsePendingDocumentBody(body: string): {
+  questionText: string;
+  answerText: string;
+  keywords?: string;
+} {
+  const trimmed = body.trim();
+  const kwMatch = trimmed.match(/^کلمات کلیدی:\s*(.+?)(?:\n\n)/);
+  let keywords: string | undefined;
+  let rest = trimmed;
+  if (kwMatch) {
+    keywords = kwMatch[1].trim();
+    rest = trimmed.slice(kwMatch[0].length);
+  }
+  const qa = rest.match(/^سوال:\n([\s\S]*?)\n\nپاسخ:\n([\s\S]*)$/);
+  if (qa) {
+    return { questionText: qa[1].trim(), answerText: qa[2].trim(), keywords };
+  }
+  return { questionText: '', answerText: trimmed, keywords };
+}
+
+async function reembedKnowledgeDocument(doc: {
+  id: string;
+  title: string;
+  body: string | null;
+  source: AiKnowledgeSource;
+}) {
+  if (doc.source === 'from_pending') {
+    const parsed = parsePendingDocumentBody(doc.body || '');
+    let questionText = parsed.questionText;
+    if (!questionText) {
+      const linked = await prisma.aiPendingQuestion.findFirst({
+        where: { answerDocumentId: doc.id },
+        select: { questionText: true },
+      });
+      questionText = linked?.questionText || doc.title;
+    }
+    await embedPendingAnswerDocument(doc.id, {
+      title: doc.title,
+      questionText,
+      answerText: parsed.answerText,
+      keywords: parsed.keywords,
+      fullBody: doc.body || '',
+    });
+    return;
+  }
+  await embedDocumentFromBody(doc.id, doc.body || '', doc.title);
+}
+
 export async function createKnowledgeDocument(data: {
   title: string;
   body: string;
@@ -94,7 +152,7 @@ export async function updateKnowledgeDocument(
 
   const doc = await prisma.aiKnowledgeDocument.update({ where: { id }, data: update });
   if (data.reembed !== false && (data.body !== undefined || data.title !== undefined)) {
-    await embedDocumentFromBody(doc.id, doc.body || '', doc.title);
+    await reembedKnowledgeDocument(doc);
   }
   return doc;
 }
@@ -193,26 +251,6 @@ export async function updatePendingAnswer(id: string, answerText: string, keywor
   });
 }
 
-export function parsePendingDocumentBody(body: string): {
-  questionText: string;
-  answerText: string;
-  keywords?: string;
-} {
-  const trimmed = body.trim();
-  const kwMatch = trimmed.match(/^کلمات کلیدی:\s*(.+?)(?:\n\n)/);
-  let keywords: string | undefined;
-  let rest = trimmed;
-  if (kwMatch) {
-    keywords = kwMatch[1].trim();
-    rest = trimmed.slice(kwMatch[0].length);
-  }
-  const qa = rest.match(/^سوال:\n([\s\S]*?)\n\nپاسخ:\n([\s\S]*)$/);
-  if (qa) {
-    return { questionText: qa[1].trim(), answerText: qa[2].trim(), keywords };
-  }
-  return { questionText: '', answerText: trimmed, keywords };
-}
-
 /** بازسازی chunkهای جستجو برای همه پاسخ‌های ثبت‌شده از صف (پس از deploy یا داده قدیمی) */
 export async function reembedAllAnsweredPendingKnowledge(): Promise<{ count: number }> {
   const rows = await prisma.aiPendingQuestion.findMany({
@@ -245,4 +283,10 @@ export async function reembedAllAnsweredPendingKnowledge(): Promise<{ count: num
   }
 
   return { count };
+}
+
+export async function reembedKnowledgeDocumentById(id: string): Promise<void> {
+  const doc = await prisma.aiKnowledgeDocument.findUnique({ where: { id } });
+  if (!doc) throw new Error('NOT_FOUND');
+  await reembedKnowledgeDocument(doc);
 }

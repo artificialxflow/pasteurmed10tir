@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { InstagramContactCard } from "@/components/contact/InstagramContactCard";
 import { PASTEUR_DATA, instagramProfileUrl } from "@/lib/data";
 import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import type { Metadata } from "next";
@@ -69,16 +70,7 @@ export default function ContactPage() {
             </Card>
           </a>
 
-          <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
-            <Card className="h-full bg-white p-6 hover:border-pink-400">
-              <span className="text-3xl">📸</span>
-              <h2 className="mt-3 text-lg font-bold">اینستاگرام</h2>
-              <p className="mt-2 text-2xl font-extrabold text-pink-700" dir="ltr">
-                @{institute.instagramUsername}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">اخبار، نمونه کارها و پیشنهادهای ویژه</p>
-            </Card>
-          </a>
+          <InstagramContactCard username={institute.instagramUsername} />
 
           <Card hover={false} className="bg-white p-6">
             <span className="text-3xl">🕐</span>

@@ -1,6 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
+import { reembedKnowledgeDocumentById } from '@/lib/ai/admin-knowledge';
 import { requireAdmin } from '@/lib/content/require-admin';
-import { embedDocumentFromBody } from '@/lib/ai/embed';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -15,7 +15,7 @@ export async function POST(_request: Request, { params }: Params) {
   if (!doc) return jsonError('یافت نشد.', 404);
 
   try {
-    await embedDocumentFromBody(id, doc.body || '', doc.title);
+    await reembedKnowledgeDocumentById(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin ai reembed]', err);
