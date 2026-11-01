@@ -59,6 +59,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [hospitalFiles, setHospitalFiles] = useState<Record<string, File | null>>({});
   const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
+  const [registrarOptions, setRegistrarOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [dependentId, setDependentId] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +70,14 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         setDependents(data.items || []),
       )
       .catch(() => setDependents([]));
+  }, []);
+
+  useEffect(() => {
+    void fetchPatientOps<{ items: Array<{ id: string; name: string }> }>(
+      "/api/operations/emergency-physicians",
+    )
+      .then((data) => setRegistrarOptions(data.items || []))
+      .catch(() => setRegistrarOptions([]));
   }, []);
 
   function commitSection(id: HealthSectionId) {
@@ -270,6 +279,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
               fields={fields}
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+              registrarOptions={registrarOptions}
             />
           ) : null}
           <Button type="submit" className="text-sm">

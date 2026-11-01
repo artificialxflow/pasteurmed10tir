@@ -1,18 +1,24 @@
 "use client";
 
-import { FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import type { HealthSectionField } from "@/lib/health-record/sections";
+
+export type RegistrarOption = { id: string; name: string };
 
 export function HealthRecordFormFields({
   fields,
   values,
   onChange,
+  registrarOptions,
 }: {
   fields: HealthSectionField[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
+  registrarOptions?: RegistrarOption[];
 }) {
+  const useRegistrarSelect = Boolean(registrarOptions?.length);
+
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {fields.map((field) => (
@@ -23,6 +29,22 @@ export function HealthRecordFormFields({
               value={values[field.key] || ""}
               onChange={(iso) => onChange(field.key, iso)}
             />
+          ) : field.key === "doctorName" && useRegistrarSelect ? (
+            <>
+              <FormLabel>{field.label}</FormLabel>
+              {field.hint ? <p className="mb-1 text-[0.65rem] text-slate-500">{field.hint}</p> : null}
+              <FormSelect
+                value={values[field.key] || ""}
+                onChange={(e) => onChange(field.key, e.target.value)}
+              >
+                <option value="">— انتخاب از لیست پزشکان —</option>
+                {registrarOptions!.map((p) => (
+                  <option key={p.id} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </FormSelect>
+            </>
           ) : (
             <>
               <FormLabel>{field.label}</FormLabel>

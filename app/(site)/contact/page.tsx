@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
+import { PASTEUR_DATA, instagramProfileUrl } from "@/lib/data";
 import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "تماس با ما",
-  description: "تماس با پاستور پلاس — تلفن، واتساپ و آدرس درمانگاه",
+  description: "تماس با پاستور پلاس — تلفن، واتساپ، اینستاگرام و آدرس درمانگاه",
 };
 
 export default function ContactPage() {
   const { institute } = PASTEUR_DATA;
   const whatsappUrl = `https://wa.me/${institute.whatsappDigits}`;
+  const instagramUrl = instagramProfileUrl(institute.instagramUsername);
 
   return (
     <main className="flex-1 py-10">
@@ -26,7 +27,7 @@ export default function ContactPage() {
           <h1 className="mb-3 text-2xl font-extrabold text-slate-950 sm:text-4xl">تماس با ما</h1>
           <p className="max-w-3xl leading-7 text-slate-600">
             برای هماهنگی نوبت، خدمات پرستاری، فروشگاه تجهیزات، مشاوره و پیگیری عضویت می‌توانید از
-            شماره‌های تماس یا واتساپ استفاده کنید.
+            شماره‌های تماس، واتساپ یا اینستاگرام استفاده کنید.
           </p>
         </Card>
 
@@ -68,6 +69,17 @@ export default function ContactPage() {
             </Card>
           </a>
 
+          <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
+            <Card className="h-full bg-white p-6 hover:border-pink-400">
+              <span className="text-3xl">📸</span>
+              <h2 className="mt-3 text-lg font-bold">اینستاگرام</h2>
+              <p className="mt-2 text-2xl font-extrabold text-pink-700" dir="ltr">
+                @{institute.instagramUsername}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">اخبار، نمونه کارها و پیشنهادهای ویژه</p>
+            </Card>
+          </a>
+
           <Card hover={false} className="bg-white p-6">
             <span className="text-3xl">🕐</span>
             <h2 className="mt-3 text-lg font-bold">ساعات پاسخگویی</h2>
@@ -95,10 +107,13 @@ export default function ContactPage() {
             />
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Button href={`tel:${institute.phoneDigits}`}>تماس فوری</Button>
             <Button href={whatsappUrl} variant="accent">
               ارسال واتساپ
+            </Button>
+            <Button href={instagramUrl} variant="outline">
+              اینستاگرام
             </Button>
             <Button href={institute.mapUrl} variant="outline">
               مسیریابی در گوگل‌مپ

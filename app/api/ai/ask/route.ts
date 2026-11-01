@@ -5,6 +5,8 @@ import { clientRateLimitKey, checkRateLimit } from '@/lib/ai/rate-limit';
 import {
   answerFromRetrieval,
   enqueuePendingQuestion,
+  extractAnswerFromKnowledgeChunks,
+  findAnsweredPendingText,
   findChunksByKeywordFallback,
   retrieveChunks,
 } from '@/lib/ai/rag';
@@ -66,6 +68,17 @@ export async function POST(request: Request) {
     }
 
     if (!hasMatch) {
+      const pendingAnswer = await findAnsweredPendingText(question, body.organizationId || null);
+      if (pendingAnswer) {
+        return NextResponse.json({
+          answer: pendingAnswer,
+          matched: true,
+          source: 'admin_pending',
+        });
+      }
+    }
+
+    if (!hasMatch) {
       const pending = await enqueuePendingQuestion({
         questionText: question,
         userId: body.userId,
@@ -80,7 +93,9 @@ export async function POST(request: Request) {
       });
     }
 
-    const answer = await answerFromRetrieval(question, chunksForAnswer);
+    const extracted = extractAnswerFromKnowledgeChunks(chunksForAnswer);
+    const answer =
+      extracted ?? (await answerFromRetrieval(question, chunksForAnswer));
     return NextResponse.json({
       answer,
       matched: true,

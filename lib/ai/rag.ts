@@ -118,6 +118,80 @@ const SYSTEM_PROMPT = `تو دستیار فارسی‌زبان سایت پاست
 برای تشخیص پزشکی، تجویز دارو، یا تصمیم حقوقی/مالی قطعی، کاربر را به پزشک یا واحد رسمی ارجاع بده.
 پاسخ را کوتاه، مودبانه و قابل فهم بنویس.`;
 
+export async function findAnsweredPendingText(
+  question: string,
+  organizationId?: string | null,
+): Promise<string | null> {
+  const q = normalizeQuestionForKeywordMatch(question);
+  if (!q) return null;
+
+  const orgId = organizationId ?? null;
+
+  const exact = await prisma.aiPendingQuestion.findFirst({
+    where: {
+      status: 'answered',
+      adminAnswerText: { not: null },
+      organizationId: orgId,
+      questionText: { equals: q, mode: 'insensitive' },
+    },
+    orderBy: { answeredAt: 'desc' },
+    select: { adminAnswerText: true },
+  });
+  const exactText = exact?.adminAnswerText?.trim();
+  if (exactText) return exactText;
+
+  if (q.length > SHORT_QUESTION_KEYWORD_MAX_LEN) return null;
+
+  const candidates = await prisma.aiPendingQuestion.findMany({
+    where: {
+      status: 'answered',
+      adminAnswerText: { not: null },
+      organizationId: orgId,
+      questionText: { contains: q, mode: 'insensitive' },
+    },
+    orderBy: { answeredAt: 'desc' },
+    take: 5,
+    select: { questionText: true, adminAnswerText: true },
+  });
+
+  for (const row of candidates) {
+    const text = row.adminAnswerText?.trim();
+    if (text) return text;
+  }
+
+  const shortStored = await prisma.aiPendingQuestion.findMany({
+    where: {
+      status: 'answered',
+      adminAnswerText: { not: null },
+      organizationId: orgId,
+    },
+    orderBy: { answeredAt: 'desc' },
+    take: 100,
+    select: { questionText: true, adminAnswerText: true },
+  });
+
+  const qLower = q.toLowerCase();
+  for (const row of shortStored) {
+    const stored = normalizeQuestionForKeywordMatch(row.questionText);
+    if (!stored || stored.length > SHORT_QUESTION_KEYWORD_MAX_LEN) continue;
+    if (qLower.includes(stored.toLowerCase()) || stored.toLowerCase().includes(qLower)) {
+      const text = row.adminAnswerText?.trim();
+      if (text) return text;
+    }
+  }
+
+  return null;
+}
+
+export function extractAnswerFromKnowledgeChunks(chunks: RetrievedChunk[]): string | null {
+  for (const chunk of chunks) {
+    const match = chunk.content.match(/(?:^|\n)پاسخ:\n([\s\S]+)$/);
+    const text = match?.[1]?.trim();
+    if (text) return text;
+  }
+  return null;
+}
+
 export async function answerFromRetrieval(
   question: string,
   chunks: RetrievedChunk[],

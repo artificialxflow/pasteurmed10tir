@@ -192,3 +192,57 @@ export async function updatePendingAnswer(id: string, answerText: string, keywor
     },
   });
 }
+
+export function parsePendingDocumentBody(body: string): {
+  questionText: string;
+  answerText: string;
+  keywords?: string;
+} {
+  const trimmed = body.trim();
+  const kwMatch = trimmed.match(/^کلمات کلیدی:\s*(.+?)(?:\n\n)/);
+  let keywords: string | undefined;
+  let rest = trimmed;
+  if (kwMatch) {
+    keywords = kwMatch[1].trim();
+    rest = trimmed.slice(kwMatch[0].length);
+  }
+  const qa = rest.match(/^سوال:\n([\s\S]*?)\n\nپاسخ:\n([\s\S]*)$/);
+  if (qa) {
+    return { questionText: qa[1].trim(), answerText: qa[2].trim(), keywords };
+  }
+  return { questionText: '', answerText: trimmed, keywords };
+}
+
+/** بازسازی chunkهای جستجو برای همه پاسخ‌های ثبت‌شده از صف (پس از deploy یا داده قدیمی) */
+export async function reembedAllAnsweredPendingKnowledge(): Promise<{ count: number }> {
+  const rows = await prisma.aiPendingQuestion.findMany({
+    where: { status: 'answered', answerDocumentId: { not: null } },
+    include: { answerDocument: true },
+  });
+
+  let count = 0;
+  for (const row of rows) {
+    if (!row.answerDocumentId || !row.answerDocument || !row.adminAnswerText?.trim()) continue;
+
+    const parsed = parsePendingDocumentBody(row.answerDocument.body || '');
+    const questionText = parsed.questionText || row.questionText;
+    const answerText = row.adminAnswerText.trim();
+    const keywords = parsed.keywords;
+    const body = buildPendingAnswerBody({ questionText, answerText, keywords });
+
+    await prisma.aiKnowledgeDocument.update({
+      where: { id: row.answerDocumentId },
+      data: { body },
+    });
+    await embedPendingAnswerDocument(row.answerDocumentId, {
+      title: row.answerDocument.title,
+      questionText,
+      answerText,
+      keywords,
+      fullBody: body,
+    });
+    count += 1;
+  }
+
+  return { count };
+}

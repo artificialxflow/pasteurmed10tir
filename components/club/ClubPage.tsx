@@ -12,7 +12,7 @@ import {
   postClubBrushApi,
   postClubRedeemApi,
 } from "@/lib/club/client";
-import { PASTEUR_DATA, type ClubReward } from "@/lib/data";
+import { PASTEUR_DATA, instagramProfileUrl, type ClubReward } from "@/lib/data";
 import { PasteurStorage, type BrushStatus, type ClubProfile } from "@/lib/storage";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -28,10 +28,6 @@ type ClubSection =
   | "invite"
   | "history"
   | "rules";
-
-function instagramProfileUrl(username: string) {
-  return `https://www.instagram.com/${username.replace(/^@/, "")}/`;
-}
 
 function digitsOnly(value: string) {
   return value.replace(/[^\d]/g, "");

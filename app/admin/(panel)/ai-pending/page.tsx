@@ -151,6 +151,22 @@ export default function AdminAiPendingPage() {
     }
   }
 
+  async function reembedAnswered() {
+    setBusy(true);
+    setError("");
+    try {
+      const data = await postAdminOps<{ count: number }>(
+        "/api/admin/operations/ai/pending/reembed-answered",
+        {},
+      );
+      setSuccess(`ایندکس ${data.count.toLocaleString("fa-IR")} پاسخ بازسازی شد.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function dismiss(id: string) {
     setBusy(true);
     try {
@@ -184,6 +200,15 @@ export default function AdminAiPendingPage() {
             {AI_PENDING_STATUS_LABELS[s]}
           </Button>
         ))}
+        <Button
+          type="button"
+          variant="outline"
+          className="text-xs"
+          disabled={busy}
+          onClick={() => void reembedAnswered()}
+        >
+          بازسازی ایندکس پاسخ‌های ثبت‌شده
+        </Button>
       </div>
 
       <AdminTable headers={["سوال", "وضعیت", "تاریخ", ""]} empty="موردی نیست.">

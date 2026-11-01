@@ -1,12 +1,13 @@
 import { AppShell } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { PASTEUR_DATA } from "@/lib/data";
+import { PASTEUR_DATA, instagramProfileUrl } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 
 export default function AppContactPage() {
   const i = PASTEUR_DATA.institute;
   const whatsappUrl = `https://wa.me/${i.whatsappDigits}`;
+  const instagramUrl = instagramProfileUrl(i.instagramUsername);
 
   return (
     <AppShell title="تماس با ما" backHref={ROUTES.app.home} showNav>
@@ -35,6 +36,14 @@ export default function AppContactPage() {
           <Card className="p-4">
             <p className="font-bold text-slate-900">💬 واتساپ</p>
             <p className="mt-1 text-xs text-slate-500">{i.whatsapp}</p>
+          </Card>
+        </a>
+        <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
+          <Card className="p-4">
+            <p className="font-bold text-slate-900">📸 اینستاگرام</p>
+            <p className="mt-1 text-sm font-bold text-pink-800" dir="ltr">
+              @{i.instagramUsername}
+            </p>
           </Card>
         </a>
       </div>
@@ -74,6 +83,9 @@ export default function AppContactPage() {
         </Button>
         <Button href={whatsappUrl} variant="accent" className="px-3 py-2.5 text-sm">
           واتساپ
+        </Button>
+        <Button href={instagramUrl} variant="outline" className="col-span-2 px-3 py-2.5 text-sm">
+          اینستاگرام @{i.instagramUsername}
         </Button>
       </div>
     </AppShell>

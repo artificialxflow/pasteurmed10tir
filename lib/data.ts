@@ -36,6 +36,10 @@ export interface Institute {
   subtitle: string;
 }
 
+export function instagramProfileUrl(username: string): string {
+  return `https://www.instagram.com/${username.replace(/^@/, '')}/`;
+}
+
 export interface Service {
   id: string;
   title: string;
