@@ -2,7 +2,10 @@
 
 import { FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
-import type { HealthSectionField } from "@/lib/health-record/sections";
+import {
+  HEALTH_RECORD_REGISTRAR_FIELD_LABEL,
+  type HealthSectionField,
+} from "@/lib/health-record/sections";
 
 export type RegistrarOption = { id: string; name: string };
 
@@ -31,7 +34,7 @@ export function HealthRecordFormFields({
             />
           ) : field.key === "doctorName" && useRegistrarSelect ? (
             <>
-              <FormLabel>{field.label}</FormLabel>
+              <FormLabel>{HEALTH_RECORD_REGISTRAR_FIELD_LABEL}</FormLabel>
               {field.hint ? <p className="mb-1 text-[0.65rem] text-slate-500">{field.hint}</p> : null}
               <FormSelect
                 value={values[field.key] || ""}

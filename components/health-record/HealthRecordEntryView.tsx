@@ -2,6 +2,7 @@
 
 import {
   HEALTH_RECORD_FILE_ACCEPT,
+  HEALTH_RECORD_REGISTRAR_FIELD_LABEL,
   payloadDisplayRows,
   sectionIsAttachmentOnly,
   sectionUploadHint,
@@ -38,6 +39,7 @@ export function HealthRecordEntryView({
       row.label !== "نام پزشک" &&
       row.label !== "نام دندانپزشک" &&
       row.label !== "نام پزشک / ثبت‌کننده" &&
+      row.label !== HEALTH_RECORD_REGISTRAR_FIELD_LABEL &&
       row.label !== "نام ثبت‌کننده",
   );
 

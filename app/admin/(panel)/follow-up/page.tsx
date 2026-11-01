@@ -164,6 +164,9 @@ export default function AdminFollowUpPage() {
   const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
   const [dentalAssistants, setDentalAssistants] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
+  const [completedEditId, setCompletedEditId] = useState<string | null>(null);
+  const [completedEditDraft, setCompletedEditDraft] = useState("");
+  const [completedSavingId, setCompletedSavingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     patientName: "",
@@ -290,6 +293,8 @@ export default function AdminFollowUpPage() {
 
   useEffect(() => {
     setError("");
+    setCompletedEditId(null);
+    setCompletedEditDraft("");
     if (tab === "satisfaction") {
       void loadSatisfaction().catch((e) => setError(e instanceof Error ? e.message : "خطا"));
       return;
@@ -362,19 +367,41 @@ export default function AdminFollowUpPage() {
     await loadCases();
   }
 
-  async function saveCompletedCaseField(id: string, patientName: string, previous: CaseItem) {
-    const trimmed = patientName.trim();
-    if (trimmed === previous.patientName) return;
+  function startCompletedNameEdit(row: CaseItem) {
+    setCompletedEditId(row.id);
+    setCompletedEditDraft(row.patientName);
+  }
 
+  function cancelCompletedNameEdit() {
+    setCompletedEditId(null);
+    setCompletedEditDraft("");
+  }
+
+  async function saveCompletedPatientName(id: string) {
+    const row = items.find((r) => r.id === id);
+    if (!row) return;
+    const trimmed = completedEditDraft.trim();
+    if (trimmed.length < 2) {
+      setError("نام بیمار معتبر نیست.");
+      return;
+    }
+    if (trimmed === row.patientName) {
+      cancelCompletedNameEdit();
+      return;
+    }
+
+    setCompletedSavingId(id);
     try {
       const res = await patchAdminOps<{ item: CaseItem }>(
         "/api/admin/operations/follow-up/cases",
         { id, patientName: trimmed },
       );
       setItems((rows) => rows.map((r) => (r.id === id ? { ...r, ...res.item } : r)));
+      cancelCompletedNameEdit();
     } catch (err) {
       setError(err instanceof Error ? err.message : "ذخیره ناموفق");
-      await loadCases();
+    } finally {
+      setCompletedSavingId(null);
     }
   }
 
@@ -830,25 +857,66 @@ export default function AdminFollowUpPage() {
             </Button>
           </div>
           <AdminTable
-            headers={["بیمار", "تماس", "بخش", "نتیجه", "توضیح"]}
+            headers={["بیمار", "تماس", "بخش", "نتیجه", "توضیح", "عملیات"]}
             empty="هنوز فالوآپی ثبت نشده."
           >
-            {items.map((row) => (
+            {items.map((row) => {
+              const editing = completedEditId === row.id;
+              const saving = completedSavingId === row.id;
+              return (
               <tr key={row.id} className="border-t border-slate-100">
                 <td className="px-4 py-3">
-                  <FormInput
-                    className="min-w-[8rem] text-sm font-bold"
-                    defaultValue={row.patientName}
-                    key={`${row.id}-name-${row.patientName}`}
-                    onBlur={(e) => void saveCompletedCaseField(row.id, e.target.value, row)}
-                  />
+                  {editing ? (
+                    <FormInput
+                      className="min-w-[8rem] text-sm font-bold"
+                      value={completedEditDraft}
+                      autoFocus
+                      onChange={(e) => setCompletedEditDraft(e.target.value)}
+                    />
+                  ) : (
+                    <span className="text-sm font-bold text-slate-900">{row.patientName}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
                 <td className="px-4 py-3 text-xs">{row.serviceCategoryLabel}</td>
                 <td className="px-4 py-3 text-xs">{row.outcomeLabel}</td>
                 <td className="max-w-xs px-4 py-3 text-xs text-slate-600">{row.notes || "—"}</td>
+                <td className="px-4 py-3">
+                  {editing ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        className="text-xs"
+                        disabled={saving}
+                        onClick={() => void saveCompletedPatientName(row.id)}
+                      >
+                        {saving ? "…" : "ذخیره"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-xs"
+                        disabled={saving}
+                        onClick={cancelCompletedNameEdit}
+                      >
+                        انصراف
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="text-xs"
+                      disabled={completedEditId !== null && completedEditId !== row.id}
+                      onClick={() => startCompletedNameEdit(row)}
+                    >
+                      ویرایش
+                    </Button>
+                  )}
+                </td>
               </tr>
-            ))}
+            );
+            })}
           </AdminTable>
         </>
       ) : null}

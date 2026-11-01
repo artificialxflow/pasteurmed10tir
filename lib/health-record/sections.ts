@@ -39,6 +39,9 @@ export type HealthSectionField = {
   hint?: string;
 };
 
+/** برچسب فیلد انتخاب ثبت‌کننده — بسته ۳۲/۰۶ */
+export const HEALTH_RECORD_REGISTRAR_FIELD_LABEL = 'لیست پرسنل اورژانس';
+
 const VITALS_EXTRA: HealthSectionField[] = [
   { key: 'age', label: 'سن', kind: 'number' },
   { key: 'height', label: 'قد', kind: 'text' },
@@ -46,7 +49,7 @@ const VITALS_EXTRA: HealthSectionField[] = [
 ];
 
 const GENERAL_FIELDS: HealthSectionField[] = [
-  { key: 'doctorName', label: 'نام پزشک / ثبت‌کننده', kind: 'text' },
+  { key: 'doctorName', label: HEALTH_RECORD_REGISTRAR_FIELD_LABEL, kind: 'text' },
   ...VITALS_EXTRA,
   { key: 'diseaseHistory', label: 'سوابق بیماری', kind: 'textarea' },
   { key: 'medications', label: 'داروهای مصرفی', kind: 'textarea' },
@@ -60,7 +63,7 @@ const GENERAL_FIELDS: HealthSectionField[] = [
 ];
 
 const DENTAL_FIELDS: HealthSectionField[] = [
-  { key: 'doctorName', label: 'نام دندانپزشک', kind: 'text' },
+  { key: 'doctorName', label: HEALTH_RECORD_REGISTRAR_FIELD_LABEL, kind: 'text' },
   { key: 'needRestore', label: 'دندان‌های نیازمند ترمیم', kind: 'textarea', hint: 'متنی' },
   { key: 'needExtract', label: 'دندان‌های نیازمند کشیدن', kind: 'textarea' },
   { key: 'needSurgery', label: 'دندان‌های نیازمند جراحی', kind: 'textarea' },
