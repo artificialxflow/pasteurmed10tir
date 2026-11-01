@@ -70,7 +70,7 @@ export const ADMIN_PERMISSION_META: {
   { id: 'specialistReferrals', label: 'ارجاع متخصص', href: ROUTES.admin.specialistReferrals },
   {
     id: 'specialistReferrals',
-    label: 'پزشکان اورژانس',
+    label: 'لیست پرسنل اورژانس',
     href: ROUTES.admin.emergencyPhysicians,
   },
   { id: 'followUp', label: 'فالوآپ', href: ROUTES.admin.followUp },

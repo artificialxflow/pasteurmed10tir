@@ -362,6 +362,22 @@ export default function AdminFollowUpPage() {
     await loadCases();
   }
 
+  async function saveCompletedCaseField(id: string, patientName: string, previous: CaseItem) {
+    const trimmed = patientName.trim();
+    if (trimmed === previous.patientName) return;
+
+    try {
+      const res = await patchAdminOps<{ item: CaseItem }>(
+        "/api/admin/operations/follow-up/cases",
+        { id, patientName: trimmed },
+      );
+      setItems((rows) => rows.map((r) => (r.id === id ? { ...r, ...res.item } : r)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ذخیره ناموفق");
+      await loadCases();
+    }
+  }
+
   async function exportReport(format: "xlsx" | "csv" | "pdf") {
     const params = new URLSearchParams({ format, tab });
     const stamp = new Date().toISOString().slice(0, 10);
@@ -819,7 +835,14 @@ export default function AdminFollowUpPage() {
           >
             {items.map((row) => (
               <tr key={row.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">{row.patientName}</td>
+                <td className="px-4 py-3">
+                  <FormInput
+                    className="min-w-[8rem] text-sm font-bold"
+                    defaultValue={row.patientName}
+                    key={`${row.id}-name-${row.patientName}`}
+                    onBlur={(e) => void saveCompletedCaseField(row.id, e.target.value, row)}
+                  />
+                </td>
                 <td className="px-4 py-3 font-mono text-xs">{row.patientPhone}</td>
                 <td className="px-4 py-3 text-xs">{row.serviceCategoryLabel}</td>
                 <td className="px-4 py-3 text-xs">{row.outcomeLabel}</td>

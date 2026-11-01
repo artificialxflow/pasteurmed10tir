@@ -198,4 +198,44 @@ export function parseCreateFollowUpBody(body: CreateFollowUpInput) {
   };
 }
 
+export type FollowUpCaseTextPatch = {
+  patientName?: unknown;
+  patientPhone?: unknown;
+  doctorName?: unknown;
+  notes?: unknown;
+};
+
+/** ویرایش نام/تماس/توضیح در لیست فالوآپ‌شده‌ها */
+export function parseFollowUpCaseTextPatch(body: FollowUpCaseTextPatch) {
+  const data: {
+    patientName?: string;
+    patientPhone?: string;
+    doctorName?: string;
+    notes?: string | null;
+  } = {};
+
+  if (body.patientName !== undefined) {
+    const patientName = String(body.patientName).trim();
+    if (patientName.length < 2) throw new Error('نام بیمار معتبر نیست.');
+    data.patientName = patientName;
+  }
+  if (body.patientPhone !== undefined) {
+    const patientPhone = normalizePhoneDigits(body.patientPhone);
+    if (patientPhone.length < 10) throw new Error('شماره تماس معتبر نیست.');
+    data.patientPhone = patientPhone;
+  }
+  if (body.doctorName !== undefined) {
+    const doctorName = String(body.doctorName).trim();
+    if (doctorName.length < 2) throw new Error('نام دکتر معتبر نیست.');
+    data.doctorName = doctorName;
+  }
+  if (body.notes !== undefined) {
+    const notes = String(body.notes).trim();
+    data.notes = notes || null;
+  }
+
+  if (!Object.keys(data).length) throw new Error('فیلدی برای ذخیره ارسال نشده.');
+  return data;
+}
+
 export { isAwaitingAppointment, isAwaitingFollowUp, isCompletedCase };

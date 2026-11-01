@@ -45,7 +45,7 @@ export default function AdminEmergencyPhysiciansPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-extrabold text-slate-900">پزشکان اورژانس (ارجاع‌دهنده)</h1>
+      <h1 className="text-xl font-extrabold text-slate-900">لیست پرسنل اورژانس</h1>
       {error ? (
         <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>
       ) : null}
@@ -53,14 +53,14 @@ export default function AdminEmergencyPhysiciansPage() {
       <Card hover={false} className="p-4">
         <form className="flex flex-wrap items-end gap-3" onSubmit={add}>
           <div className="min-w-[200px] flex-1">
-            <FormLabel>نام پزشک</FormLabel>
+            <FormLabel>نام پرسنل</FormLabel>
             <FormInput value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <Button type="submit">افزودن</Button>
         </form>
       </Card>
 
-      <AdminTable headers={["نام", "ترتیب", "فعال", "حذف"]} empty="پزشکی ثبت نشده.">
+      <AdminTable headers={["نام", "ترتیب", "فعال", "حذف"]} empty="پرسنلی ثبت نشده.">
         {items.map((row, index) => (
           <tr key={row.id} className="border-t border-slate-100">
             <td className="px-4 py-3">

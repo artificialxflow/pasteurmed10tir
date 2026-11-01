@@ -3,6 +3,7 @@ import { bridgeFollowUpDoctorRatingToReview } from '@/lib/admin/follow-up-doctor
 import {
   buildFollowUpWhere,
   parseCreateFollowUpBody,
+  parseFollowUpCaseTextPatch,
   parseFollowUpTab,
 } from '@/lib/admin/follow-up-service';
 import { requireAdmin } from '@/lib/content/require-admin';
@@ -69,6 +70,10 @@ type PatchBody = {
   appointmentGiven?: boolean;
   followUpDone?: boolean;
   followUpDate?: string;
+  patientName?: string;
+  patientPhone?: string;
+  doctorName?: string;
+  notes?: string;
 };
 
 export async function PATCH(request: Request) {
@@ -84,12 +89,27 @@ export async function PATCH(request: Request) {
   const followUpDate =
     body.followUpDate !== undefined ? parseIsoDateOnly(body.followUpDate) : undefined;
 
+  let textPatch: ReturnType<typeof parseFollowUpCaseTextPatch> | undefined;
+  try {
+    if (
+      body.patientName !== undefined ||
+      body.patientPhone !== undefined ||
+      body.doctorName !== undefined ||
+      body.notes !== undefined
+    ) {
+      textPatch = parseFollowUpCaseTextPatch(body);
+    }
+  } catch (e) {
+    return jsonError(e instanceof Error ? e.message : 'داده نامعتبر است.');
+  }
+
   const row = await prisma.followUpCase.update({
     where: { id: body.id },
     data: {
       ...(body.appointmentGiven !== undefined ? { appointmentGiven: body.appointmentGiven } : {}),
       ...(body.followUpDone !== undefined ? { followUpDone: body.followUpDone } : {}),
       ...(followUpDate !== undefined ? { followUpDate } : {}),
+      ...(textPatch || {}),
     },
   });
 

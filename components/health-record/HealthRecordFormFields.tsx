@@ -37,7 +37,7 @@ export function HealthRecordFormFields({
                 value={values[field.key] || ""}
                 onChange={(e) => onChange(field.key, e.target.value)}
               >
-                <option value="">— انتخاب از لیست پزشکان —</option>
+                <option value="">— انتخاب از لیست پرسنل و پزشکان —</option>
                 {registrarOptions!.map((p) => (
                   <option key={p.id} value={p.name}>
                     {p.name}
