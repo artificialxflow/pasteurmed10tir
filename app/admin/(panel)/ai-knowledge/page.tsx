@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminTable } from "@/components/admin/AdminTable";
+import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect, FormTextarea } from "@/components/ui/Card";
 import { labelAiKnowledgeSource, orgNameById, orgSelectLabel } from "@/lib/ai/admin-labels";
@@ -9,7 +9,7 @@ import { ROUTES } from "@/lib/routes";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 type DocRow = {
   id: string;
@@ -24,9 +24,17 @@ type DocRow = {
 
 type OrgRow = { id: string; name: string; representativePhone?: string | null };
 
+type LoadedDoc = {
+  title: string;
+  body: string;
+  published: boolean;
+  source: string;
+};
+
 export default function AdminAiKnowledgePage() {
   const searchParams = useSearchParams();
   const orgFilter = searchParams.get("organizationId") || "";
+  const expandAnchorRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState<DocRow[]>([]);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
@@ -36,7 +44,10 @@ export default function AdminAiKnowledgePage() {
   const [voiceMaxSeconds, setVoiceMaxSeconds] = useState("180");
   const [threshold, setThreshold] = useState("0.42");
   const [expandedId, setExpandedId] = useState("");
-  const [editing, setEditing] = useState<DocRow | null>(null);
+  const [panelMode, setPanelMode] = useState<"preview" | "edit">("preview");
+  const [loadedDocs, setLoadedDocs] = useState<Record<string, LoadedDoc>>({});
+  const [loadExpandBusy, setLoadExpandBusy] = useState("");
+  const [editingId, setEditingId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
   const [editPublished, setEditPublished] = useState(true);
@@ -68,52 +79,99 @@ export default function AdminAiKnowledgePage() {
       .catch(() => {});
   }, [reload]);
 
-  function closeEdit() {
-    setEditing(null);
+  function scrollToPanel() {
+    window.setTimeout(() => {
+      expandAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 80);
+  }
+
+  async function loadDoc(id: string): Promise<LoadedDoc> {
+    if (loadedDocs[id]) return loadedDocs[id];
+    const doc = await fetchAdminOps<LoadedDoc & { id: string }>(
+      `/api/admin/operations/ai/documents/${id}`,
+    );
+    const loaded: LoadedDoc = {
+      title: doc.title,
+      body: doc.body || "",
+      published: doc.published,
+      source: doc.source,
+    };
+    setLoadedDocs((prev) => ({ ...prev, [id]: loaded }));
+    return loaded;
+  }
+
+  function closePanel() {
+    setExpandedId("");
+    setPanelMode("preview");
+    setEditingId("");
     setEditTitle("");
     setEditBody("");
     setEditPublished(true);
     setEditSource("");
   }
 
+  async function openPreview(row: DocRow) {
+    if (expandedId === row.id && panelMode === "preview") {
+      closePanel();
+      return;
+    }
+    setExpandedId(row.id);
+    setPanelMode("preview");
+    setEditingId("");
+    setLoadExpandBusy(row.id);
+    setError("");
+    try {
+      await loadDoc(row.id);
+      scrollToPanel();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "خطا");
+    } finally {
+      setLoadExpandBusy("");
+    }
+  }
+
   async function openEdit(row: DocRow) {
+    setExpandedId(row.id);
+    setPanelMode("edit");
+    setEditingId(row.id);
     setBusy(true);
     setError("");
     try {
-      const doc = await fetchAdminOps<{
-        title: string;
-        body: string | null;
-        published: boolean;
-        source: string;
-      }>(`/api/admin/operations/ai/documents/${row.id}`);
-      setEditing(row);
+      const doc = await loadDoc(row.id);
       setEditTitle(doc.title);
-      setEditBody(doc.body || "");
+      setEditBody(doc.body);
       setEditPublished(doc.published);
       setEditSource(doc.source);
-      setExpandedId(row.id);
+      scrollToPanel();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
+      setEditingId("");
+      setPanelMode("preview");
     } finally {
       setBusy(false);
     }
   }
 
   async function saveEdit() {
-    if (!editing || !editTitle.trim() || !editBody.trim()) {
+    if (!editingId || !editTitle.trim() || !editBody.trim()) {
       setError("عنوان و متن الزامی است.");
       return;
     }
     setBusy(true);
     setError("");
     try {
-      await patchAdminOps(`/api/admin/operations/ai/documents/${editing.id}`, {
+      await patchAdminOps(`/api/admin/operations/ai/documents/${editingId}`, {
         title: editTitle,
         body: editBody,
         published: editPublished,
       });
       setSuccess("سند به‌روزرسانی و ایندکس شد.");
-      closeEdit();
+      setLoadedDocs((prev) => {
+        const next = { ...prev };
+        delete next[editingId];
+        return next;
+      });
+      closePanel();
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
@@ -194,8 +252,12 @@ export default function AdminAiKnowledgePage() {
     setBusy(true);
     try {
       await deleteAdminOps(`/api/admin/operations/ai/documents/${id}`);
-      if (editing?.id === id) closeEdit();
-      if (expandedId === id) setExpandedId("");
+      if (expandedId === id) closePanel();
+      setLoadedDocs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا");
@@ -212,11 +274,19 @@ export default function AdminAiKnowledgePage() {
           سوالات بدون پاسخ
         </Link>
       </div>
-      {error ? <p className="text-sm font-bold text-red-700">{error}</p> : null}
-      {success ? <p className="text-sm font-bold text-teal-800">{success}</p> : null}
+      {error ? (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+          {error}
+        </p>
+      ) : null}
+      {success ? (
+        <p className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 text-sm font-bold text-teal-800">
+          {success}
+        </p>
+      ) : null}
 
-      <Card hover={false} className="space-y-3 p-4">
-        <p className="font-bold">تنظیمات</p>
+      <Card hover={false} className="space-y-3 border-cyan-100 p-4">
+        <p className="font-bold text-slate-900">تنظیمات</p>
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
             <FormLabel>حداکثر ضبط صوتی (ثانیه)</FormLabel>
@@ -232,8 +302,8 @@ export default function AdminAiKnowledgePage() {
         </Button>
       </Card>
 
-      <Card hover={false} className="space-y-3 p-4">
-        <p className="font-bold">سند جدید</p>
+      <Card hover={false} className="space-y-3 border-cyan-100 p-4">
+        <p className="font-bold text-slate-900">سند جدید</p>
         <div>
           <FormLabel>سازمان (خالی = سراسری)</FormLabel>
           <FormSelect value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
@@ -263,115 +333,163 @@ export default function AdminAiKnowledgePage() {
         </div>
       </Card>
 
-      <AdminTable headers={["عنوان", "منبع", "بخش‌ها", "عملیات"]} empty="سندی ثبت نشده.">
-        {items.map((row) => (
-          <Fragment key={row.id}>
-            <tr className="border-t border-slate-100 align-top">
-              <td className="max-w-md px-4 py-3 text-sm">
-                <button
-                  type="button"
-                  className="text-right font-bold hover:text-cyan-900"
-                  onClick={() => setExpandedId(expandedId === row.id ? "" : row.id)}
-                >
-                  {row.title}
-                </button>
-                {row.bodyPreview && expandedId !== row.id ? (
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{row.bodyPreview}</p>
-                ) : null}
-                {row.organizationId ? (
-                  <div className="text-xs text-slate-500">
-                    سازمان: {orgNameById(orgs, row.organizationId)}
-                  </div>
-                ) : null}
-              </td>
-              <td className="px-4 py-3 text-xs">{labelAiKnowledgeSource(row.source)}</td>
-              <td className="px-4 py-3 text-xs">{row.chunkCount.toLocaleString("fa-IR")}</td>
-              <td className="space-y-1 px-4 py-3">
-                <button
-                  type="button"
-                  className="block text-xs font-bold text-cyan-800"
-                  onClick={() => void openEdit(row)}
-                >
-                  ویرایش
-                </button>
-                <button
-                  type="button"
-                  className="block text-xs font-bold text-slate-600"
-                  onClick={() => setExpandedId(expandedId === row.id ? "" : row.id)}
-                >
-                  {expandedId === row.id ? "بستن" : "پیش‌نمایش"}
-                </button>
-                <button
-                  type="button"
-                  className="block text-xs font-bold text-cyan-800"
-                  onClick={() => void reembed(row.id)}
-                >
-                  بازسازی ایندکس
-                </button>
-                <button
-                  type="button"
-                  className="block text-xs font-bold text-red-600"
-                  onClick={() => void removeDoc(row.id)}
-                >
-                  حذف
-                </button>
-              </td>
-            </tr>
-            {expandedId === row.id ? (
-              <tr className="border-t border-slate-50 bg-slate-50/50">
-                <td colSpan={4} className="px-4 py-3">
-                  <p className="mb-1 text-xs font-bold text-slate-600">پیش‌نمایش پاسخ</p>
-                  <p className="whitespace-pre-wrap break-words rounded-xl bg-white p-3 text-sm text-slate-800">
-                    {row.bodyPreview || "—"}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-2 text-xs"
-                    disabled={busy}
-                    onClick={() => void openEdit(row)}
-                  >
-                    ویرایش این سند
-                  </Button>
-                </td>
-              </tr>
-            ) : null}
-          </Fragment>
-        ))}
-      </AdminTable>
+      <div ref={expandAnchorRef}>
+        <AdminTable headers={["عنوان", "منبع", "بخش‌ها", "عملیات"]} empty="سندی ثبت نشده.">
+          {items.map((row) => {
+            const isOpen = expandedId === row.id;
+            const loaded = loadedDocs[row.id];
+            const isEditing = isOpen && panelMode === "edit" && editingId === row.id;
 
-      {editing ? (
-        <Card hover={false} className="space-y-3 p-4">
-          <p className="text-sm font-bold">ویرایش سند دانش</p>
-          <p className="text-xs text-slate-500">منبع: {labelAiKnowledgeSource(editSource)}</p>
-          <div>
-            <FormLabel>عنوان</FormLabel>
-            <FormInput value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
-          </div>
-          <div>
-            <FormLabel>متن / پاسخ</FormLabel>
-            <FormTextarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={8} />
-          </div>
-          {editSource !== "site_map" ? (
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input
-                type="checkbox"
-                checked={editPublished}
-                onChange={(e) => setEditPublished(e.target.checked)}
-              />
-              منتشر شده (در جستجوی دستیار)
-            </label>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" disabled={busy} onClick={() => void saveEdit()}>
-              ذخیره تغییرات
-            </Button>
-            <Button type="button" variant="outline" onClick={closeEdit}>
-              انصراف
-            </Button>
-          </div>
-        </Card>
-      ) : null}
+            return (
+              <Fragment key={row.id}>
+                <tr
+                  className={`border-t align-top transition-colors ${
+                    isOpen ? "border-cyan-200 bg-cyan-50/40" : "border-slate-100"
+                  }`}
+                >
+                  <td className="max-w-md px-4 py-3 text-sm">
+                    <button
+                      type="button"
+                      className="text-right font-bold text-slate-900 hover:text-cyan-800"
+                      onClick={() => void openPreview(row)}
+                    >
+                      {row.title}
+                    </button>
+                    {!isOpen && row.bodyPreview ? (
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                        {row.bodyPreview}
+                      </p>
+                    ) : null}
+                    {row.organizationId ? (
+                      <div className="mt-1 text-xs text-slate-500">
+                        سازمان: {orgNameById(orgs, row.organizationId)}
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-3">
+                    <AdminBadge tone="neutral">{labelAiKnowledgeSource(row.source)}</AdminBadge>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-bold text-slate-700">
+                    {row.chunkCount.toLocaleString("fa-IR")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button
+                        type="button"
+                        variant={isEditing ? "primary" : "outline"}
+                        className="px-2 py-1 text-[0.65rem]"
+                        disabled={busy}
+                        onClick={() => void openEdit(row)}
+                      >
+                        ویرایش
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={isOpen && !isEditing ? "primary" : "outline"}
+                        className="px-2 py-1 text-[0.65rem]"
+                        onClick={() => void openPreview(row)}
+                      >
+                        {isOpen && !isEditing ? "بستن" : "پیش‌نمایش"}
+                      </Button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-cyan-200 bg-white px-2 py-1 text-[0.65rem] font-bold text-cyan-800 hover:bg-cyan-50"
+                        onClick={() => void reembed(row.id)}
+                      >
+                        ایندکس
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-full border border-red-200 bg-white px-2 py-1 text-[0.65rem] font-bold text-red-600 hover:bg-red-50"
+                        onClick={() => void removeDoc(row.id)}
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {isOpen ? (
+                  <tr className="border-t border-cyan-100 bg-gradient-to-bl from-cyan-50/60 to-white">
+                    <td colSpan={4} className="px-4 py-4">
+                      {loadExpandBusy === row.id ? (
+                        <p className="text-sm text-slate-500">در حال بارگذاری…</p>
+                      ) : isEditing ? (
+                        <div className="space-y-3 rounded-2xl border border-cyan-200 bg-white p-4 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                            <p className="text-sm font-extrabold text-cyan-900">ویرایش سند</p>
+                            <span className="text-xs text-slate-500">
+                              {labelAiKnowledgeSource(editSource)}
+                            </span>
+                          </div>
+                          <div>
+                            <FormLabel>عنوان</FormLabel>
+                            <FormInput
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <FormLabel>متن / پاسخ (قابل ویرایش)</FormLabel>
+                            <FormTextarea
+                              value={editBody}
+                              onChange={(e) => setEditBody(e.target.value)}
+                              rows={10}
+                              className="font-normal leading-relaxed"
+                            />
+                          </div>
+                          {editSource !== "site_map" ? (
+                            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={editPublished}
+                                onChange={(e) => setEditPublished(e.target.checked)}
+                              />
+                              منتشر شده در جستجوی دستیار
+                            </label>
+                          ) : null}
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <Button type="button" disabled={busy} onClick={() => void saveEdit()}>
+                              ذخیره تغییرات
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setPanelMode("preview");
+                                setEditingId("");
+                              }}
+                            >
+                              انصراف
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-extrabold text-slate-800">پیش‌نمایش محتوا</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={busy}
+                              onClick={() => void openEdit(row)}
+                            >
+                              ویرایش این سند
+                            </Button>
+                          </div>
+                          <p className="max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-sm leading-relaxed text-slate-800">
+                            {loaded?.body || row.bodyPreview || "—"}
+                          </p>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ) : null}
+              </Fragment>
+            );
+          })}
+        </AdminTable>
+      </div>
     </div>
   );
 }
