@@ -206,8 +206,8 @@ function BodyFigure({
           <svg viewBox="0 0 200 340" className="h-full w-full" aria-hidden>
             <defs>
               <radialGradient id="bodyBg" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#0369a1" stopOpacity="0.15" />
+                <stop offset="0%" stopColor="#aec6ff" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#5568c4" stopOpacity="0.15" />
               </radialGradient>
             </defs>
             <ellipse cx="100" cy="170" rx="72" ry="155" fill="url(#bodyBg)" />

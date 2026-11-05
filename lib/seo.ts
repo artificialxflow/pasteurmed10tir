@@ -1,4 +1,5 @@
 import { PASTEUR_DATA } from '@/lib/data';
+import { BRAND_CACHE } from '@/lib/brand';
 import { ROUTES } from '@/lib/routes';
 import type { Metadata } from 'next';
 
@@ -46,8 +47,8 @@ export function clinicJsonLd() {
     name: inst.nameFa,
     alternateName: inst.nameEn,
     url: SITE,
-    logo: `${SITE}/brand/pasteur-plus-logo.jpg`,
-    image: `${SITE}/brand/pasteur-plus-logo.jpg`,
+    logo: `${SITE}/brand/pasteur-plus-logo.jpg${BRAND_CACHE}`,
+    image: `${SITE}/brand/pasteur-plus-logo.jpg${BRAND_CACHE}`,
     telephone: [`+98${inst.phoneDigits.replace(/^0/, '')}`, `+98${inst.phoneAltDigits.replace(/^0/, '')}`],
     address: {
       '@type': 'PostalAddress',

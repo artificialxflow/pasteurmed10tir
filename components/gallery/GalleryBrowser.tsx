@@ -67,7 +67,7 @@ export function GalleryBrowser({ compact = false }: { compact?: boolean }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") setLightbox(g);
               }}
-              className="cursor-pointer overflow-hidden rounded-[1.25rem] border border-sky-300/45 bg-white shadow-[0_18px_45px_-28px_rgb(8_145_178_/_0.45)] transition hover:-translate-y-0.5 hover:border-teal-500"
+              className="cursor-pointer overflow-hidden rounded-[1.25rem] border border-sky-300/45 bg-white shadow-[0_18px_45px_-28px_rgb(107_143_239_/_0.4)] transition hover:-translate-y-0.5 hover:border-teal-500"
             >
               <div className="grid grid-cols-2 gap-0.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

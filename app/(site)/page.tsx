@@ -45,14 +45,14 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse 70% 55% at 85% 40%, rgb(0 173 239 / 0.28), transparent), radial-gradient(ellipse 50% 45% at 10% 80%, rgb(233 30 140 / 0.12), transparent), linear-gradient(160deg, #f0fbfd 0%, #e8f7fc 45%, #f8fafc 100%)",
+              "radial-gradient(ellipse 70% 55% at 85% 40%, rgb(174 198 255 / 0.55), transparent), radial-gradient(ellipse 50% 45% at 10% 80%, rgb(233 30 140 / 0.1), transparent), linear-gradient(160deg, #f4f7ff 0%, #e8efff 45%, #f8fafc 100%)",
           }}
         />
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230891b2' fill-opacity='0.06'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236b8fef' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
           }}
         />
         <div className="relative mx-auto grid min-h-[min(92vh,860px)] max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-8">
@@ -122,7 +122,7 @@ export default function HomePage() {
               <Link
                 key={service.id}
                 href={service.href}
-                className="group relative block overflow-hidden rounded-[1.25rem] border border-sky-200/80 bg-white shadow-[0_12px_36px_-28px_rgb(8_145_178_/_0.4)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-[0_20px_48px_-30px_rgb(8_145_178_/_0.55)]"
+                className="group relative block overflow-hidden rounded-[1.25rem] border border-sky-200/80 bg-white shadow-[0_12px_36px_-28px_rgb(107_143_239_/_0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-[0_20px_48px_-30px_rgb(107_143_239_/_0.45)]"
                 style={{ animationDelay: `${index * 0.08}s` }}
               >
                 <div className="relative h-40 overflow-hidden sm:h-48">

@@ -22,7 +22,7 @@ export function AdminTable({
   const thPad = compact ? "px-2 py-2 text-xs" : "px-4 py-3.5";
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-cyan-100 bg-white shadow-[0_10px_32px_-28px_rgb(8_145_178_/_0.35)]">
+    <div className="overflow-x-auto rounded-2xl border border-cyan-100 bg-white shadow-[0_10px_32px_-28px_rgb(107_143_239_/_0.35)]">
       <table
         className={cn(
           "w-full text-sm",

@@ -297,7 +297,7 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen bg-[linear-gradient(180deg,#f0f9fb_0%,#f1f5f9_40%,#f8fafc_100%)]">
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-l border-primary/15 bg-white/95 shadow-[_-8px_0_40px_-28px_rgb(88_86_214_/_0.25)] backdrop-blur lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-l border-primary/15 bg-white/95 shadow-[_-8px_0_40px_-28px_rgb(107_143_239_/_0.25)] backdrop-blur lg:flex">
         <div className="border-b border-primary/10 px-5 py-5">
           <div className="flex items-center gap-3">
             <Logo className="h-12 w-auto max-w-[9rem]" />

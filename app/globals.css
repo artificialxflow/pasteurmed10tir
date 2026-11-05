@@ -29,19 +29,22 @@
 :root {
   --background: #f5efeb;
   --foreground: #0f172a;
-  --color-primary: #5856d6;
-  --color-primary-dark: #4338ca;
-  --color-primary-light: #e8e7ff;
-  --color-accent: #6366f1;
+  /* Pastel periwinkle — base #AEC6FF; darker steps for buttons & text on light fills */
+  --color-pastel: #aec6ff;
+  --color-pastel-muted: #b5c8f8;
+  --color-primary: #6b8fef;
+  --color-primary-dark: #4f63b8;
+  --color-primary-light: #d4e2ff;
+  --color-accent: #aec6ff;
   --color-vip: #f59e0b;
   --color-vip-dark: #b45309;
   --color-vip-light: #fef3c7;
   --color-surface: #f5efeb;
-  --color-border: #ddd6fe;
+  --color-border: #c5d6ff;
   --color-text-muted: #64748b;
   --brand-pink: #e91e8c;
-  --brand-cyan: #5856d6;
-  --brand-blue: #4338ca;
+  --brand-cyan: #aec6ff;
+  --brand-blue: #6b8fef;
   --app-nav-height: 4.25rem;
 }
 
@@ -52,6 +55,7 @@
   --color-primary-dark: var(--color-primary-dark);
   --color-primary-light: var(--color-primary-light);
   --color-accent: var(--color-accent);
+  --color-pastel: var(--color-pastel);
   --color-vip: var(--color-vip);
   --color-vip-dark: var(--color-vip-dark);
   --color-vip-light: var(--color-vip-light);
@@ -61,11 +65,57 @@
   --color-brand-cyan: var(--brand-cyan);
   --color-brand-blue: var(--brand-blue);
   --font-sans: "BYekan", Tahoma, sans-serif;
+
+  /* Remap sky/cyan/teal (legacy UI) → pastel periwinkle scale */
+  --color-cyan-50: #f4f7ff;
+  --color-cyan-100: #e8efff;
+  --color-cyan-200: #d4e2ff;
+  --color-cyan-300: #aec6ff;
+  --color-cyan-400: #9ab5f5;
+  --color-cyan-500: #849ee8;
+  --color-cyan-600: #6b8fef;
+  --color-cyan-700: #5568c4;
+  --color-cyan-800: #445589;
+  --color-cyan-900: #364268;
+  --color-cyan-950: #252b45;
+  --color-sky-50: #f4f7ff;
+  --color-sky-100: #e8efff;
+  --color-sky-200: #d4e2ff;
+  --color-sky-300: #b5c8f8;
+  --color-sky-400: #aec6ff;
+  --color-sky-500: #849ee8;
+  --color-sky-600: #6b8fef;
+  --color-sky-700: #5568c4;
+  --color-sky-800: #445589;
+  --color-sky-900: #364268;
+  --color-sky-950: #252b45;
+  --color-teal-50: #f4f7ff;
+  --color-teal-100: #e8efff;
+  --color-teal-200: #d4e2ff;
+  --color-teal-300: #aec6ff;
+  --color-teal-400: #9ab5f5;
+  --color-teal-500: #6b8fef;
+  --color-teal-600: #5568c4;
+  --color-teal-700: #445589;
+  --color-teal-800: #364268;
+  --color-teal-900: #2d3550;
+  --color-teal-950: #1e2438;
+  --color-blue-50: #f4f7ff;
+  --color-blue-100: #e8efff;
+  --color-blue-200: #d4e2ff;
+  --color-blue-300: #aec6ff;
+  --color-blue-400: #9ab5f5;
+  --color-blue-500: #6b8fef;
+  --color-blue-600: #5568c4;
+  --color-blue-700: #445589;
+  --color-blue-800: #364268;
+  --color-blue-900: #2d3550;
+  --color-blue-950: #1e2438;
 }
 
 body {
   background:
-    radial-gradient(circle at 10% 0%, rgb(232 231 255 / 0.55), transparent 22rem),
+    radial-gradient(circle at 10% 0%, rgb(174 198 255 / 0.45), transparent 22rem),
     linear-gradient(180deg, var(--background) 0%, var(--color-surface) 55%, #faf8f6 100%);
   color: var(--foreground);
   font-family: "BYekan", Tahoma, sans-serif;
@@ -257,7 +307,7 @@ p {
   }
 
   body[data-print-page="health-record-report"] .health-report-sheet {
-    border: 2px solid #155e75;
+    border: 2px solid #5568c4;
     padding: 10mm 8mm 8mm;
     min-height: 260mm;
     box-sizing: border-box;

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LOGO_SRC } from "@/lib/brand";
 import type { ReactNode } from "react";
 
 export function Card({
@@ -99,10 +100,10 @@ export function Logo({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo.jpg?v=20261105"
+      src={LOGO_SRC}
       alt="پاستور پلاس"
       className={cn(
-        "h-12 w-auto max-w-[9rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[10rem]",
+        "h-12 w-auto max-w-[11rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[14rem]",
         className,
       )}
     />

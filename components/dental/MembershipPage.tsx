@@ -8,6 +8,7 @@ import {
   FormSelect,
   FormTextarea,
 } from "@/components/ui/Card";
+import { LOGO_SRC } from "@/lib/brand";
 import { PASTEUR_DATA, type Membership } from "@/lib/data";
 import {
   calculateLoan,
@@ -1016,7 +1017,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/logo.jpg?v=20261105"
+                  src={LOGO_SRC}
                   alt="Clinique Pasteur | پاستور پلاس"
                   className="h-12 w-auto max-w-[8rem] object-contain"
                 />

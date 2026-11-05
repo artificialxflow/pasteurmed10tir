@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { CaptureReferralRef } from "@/components/commerce/CaptureReferralRef";
+import { BRAND_CACHE } from "@/lib/brand";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#5856D6",
+  themeColor: "#AEC6FF",
 };
 
-const BRAND_CACHE = "?v=20261105";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pasteur.plus"),
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: `/icon.svg${BRAND_CACHE}`, type: "image/svg+xml" },
-      { url: `/logo.jpg${BRAND_CACHE}`, type: "image/jpeg" },
+      { url: `/icon.png${BRAND_CACHE}`, type: "image/png", sizes: "32x32" },
     ],
     apple: [{ url: `/icon-192.jpg${BRAND_CACHE}`, type: "image/jpeg", sizes: "192x192" }],
     shortcut: [`/icon.svg${BRAND_CACHE}`],

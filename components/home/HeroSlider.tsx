@@ -55,8 +55,8 @@ export function HeroSlider() {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <div className="pointer-events-none absolute -inset-8 rounded-full bg-cyan-300/25 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-cyan-200/80 bg-slate-100 shadow-[0_40px_80px_-40px_rgb(8_145_178_/_0.55)]">
+      <div className="pointer-events-none absolute -inset-8 rounded-full bg-cyan-300/35 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-cyan-200/80 bg-slate-100 shadow-[0_40px_80px_-40px_rgb(107_143_239_/_0.45)]">
         <div className="relative aspect-[4/5] w-full">
           {slides.map((slide, index) => (
             <Link

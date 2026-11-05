@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(160deg,#e8e7ff_0%,#f5efeb_55%,#faf8f6_100%)] p-4">
-      <Card hover={false} className="w-full max-w-md border-primary/20 bg-white/95 p-8 shadow-[0_24px_60px_-36px_rgb(88_86_214_/_0.35)]">
+      <Card hover={false} className="w-full max-w-md border-primary/20 bg-white/95 p-8 shadow-[0_24px_60px_-36px_rgb(107_143_239_/_0.35)]">
         <div className="mb-8 text-center">
           <Logo className="mx-auto mb-4 h-20 w-auto max-w-[12rem]" />
           <p className="text-lg font-extrabold text-slate-900">پاستور پلاس</p>
