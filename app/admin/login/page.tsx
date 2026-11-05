@@ -50,12 +50,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(160deg,#e8f7fc_0%,#f8fafc_55%,#fff7ed_100%)] p-4">
-      <Card hover={false} className="w-full max-w-md border-cyan-100 bg-white/95 p-8 shadow-[0_24px_60px_-36px_rgb(8_145_178_/_0.45)]">
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(160deg,#e8e7ff_0%,#f5efeb_55%,#faf8f6_100%)] p-4">
+      <Card hover={false} className="w-full max-w-md border-primary/20 bg-white/95 p-8 shadow-[0_24px_60px_-36px_rgb(88_86_214_/_0.35)]">
         <div className="mb-8 text-center">
           <Logo className="mx-auto mb-4 h-20 w-auto max-w-[12rem]" />
           <p className="text-lg font-extrabold text-slate-900">پاستور پلاس</p>
-          <h1 className="mt-1 text-base font-bold text-cyan-800">ورود به پنل مدیریت</h1>
+          <h1 className="mt-1 text-base font-bold text-primary-dark">ورود به پنل مدیریت</h1>
           <p className="mt-2 text-xs text-slate-500">ورود با دیتابیس — سطح دسترسی بر اساس نقش</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,7 +85,7 @@ export default function AdminLoginPage() {
         </form>
         <Link
           href={ROUTES.web.home}
-          className="mt-6 block text-center text-sm text-teal-700 hover:underline"
+          className="mt-6 block text-center text-sm text-primary-dark hover:underline"
         >
           بازگشت به سایت
         </Link>

@@ -80,7 +80,7 @@ export function AppShell({
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center rounded-2xl text-[0.62rem] font-bold",
-                  active ? "bg-cyan-50 text-primary-dark" : "text-slate-500",
+                  active ? "bg-primary-light text-primary-dark" : "text-slate-500",
                 )}
               >
                 <span className="text-base">{item.icon}</span>

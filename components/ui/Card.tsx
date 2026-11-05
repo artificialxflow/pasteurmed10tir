@@ -19,7 +19,7 @@ export function Card({
         vip
           ? "border-amber-200 bg-gradient-to-br from-orange-50/80 via-white to-amber-50/70"
           : "border-slate-200",
-        hover && "transition-colors duration-200 hover:border-cyan-200 hover:shadow-md",
+        hover && "transition-colors duration-200 hover:border-primary/30 hover:shadow-md",
         className,
       )}
     >
@@ -55,7 +55,7 @@ export function FormInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-right text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-cyan-100",
+        "w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-right text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
         props.className,
       )}
     />
@@ -79,7 +79,7 @@ export function FormSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>)
     <select
       {...props}
       className={cn(
-        "w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-right text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-cyan-100",
+        "w-full rounded-xl border border-sky-200 bg-white px-3 py-2.5 text-right text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
         props.className,
       )}
     />
@@ -99,8 +99,8 @@ export function Logo({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo.png"
-      alt="Clinique Pasteur | پاستور پلاس"
+      src="/logo.jpg?v=20261105"
+      alt="پاستور پلاس"
       className={cn(
         "h-12 w-auto max-w-[9rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[10rem]",
         className,

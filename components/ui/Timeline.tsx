@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export type { TimelineItem };
 
 const stateDot: Record<TimelineItem["state"], string> = {
-  done: "border-teal-600 bg-teal-600 text-white",
+  done: "border-primary bg-primary text-white",
   current: "border-amber-500 bg-amber-50 text-amber-800 ring-4 ring-amber-100",
   upcoming: "border-slate-300 bg-white text-slate-400",
   cancelled: "border-rose-500 bg-rose-500 text-white",
@@ -35,7 +35,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
               <span
                 className={cn(
                   "mt-1 w-px flex-1 min-h-[1.25rem]",
-                  item.state === "done" ? "bg-teal-300" : "bg-slate-200",
+                  item.state === "done" ? "bg-primary/40" : "bg-slate-200",
                 )}
               />
             ) : null}

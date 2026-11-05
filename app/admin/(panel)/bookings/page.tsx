@@ -272,8 +272,18 @@ export default function AdminBookingsPage() {
       </div>
 
       <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <JalaliBirthDateField label="از تاریخ (شمسی)" value={dateFrom} onChange={setDateFrom} />
-        <JalaliBirthDateField label="تا تاریخ (شمسی)" value={dateTo} onChange={setDateTo} />
+        <JalaliBirthDateField
+          yearRange="nearTerm"
+          label="از تاریخ (شمسی)"
+          value={dateFrom}
+          onChange={setDateFrom}
+        />
+        <JalaliBirthDateField
+          yearRange="nearTerm"
+          label="تا تاریخ (شمسی)"
+          value={dateTo}
+          onChange={setDateTo}
+        />
         <div className="flex flex-col justify-end gap-2 sm:col-span-2">
           <p className="text-xs leading-6 text-slate-500">
             فیلتر روی تاریخ نوبت / ثبت است.

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormLabel } from "@/components/ui/Card";
-import { JALALI_MONTHS, isoToJalali, jalaliToIso } from "@/lib/date/jalali";
+import { JALALI_MONTHS, isoToJalali, jalaliToIso, jalaliYearRangeNearTerm } from "@/lib/date/jalali";
 
 const DEFAULT_YEARS = Array.from({ length: 90 }, (_, i) => 1410 - i);
 
@@ -11,17 +11,25 @@ export function JalaliBirthDateField({
   label = "تاریخ تولد (شمسی)",
   minJalaliYear,
   maxJalaliYear,
+  yearRange = "birth",
 }: {
   value: string;
   onChange: (iso: string) => void;
   label?: string;
   minJalaliYear?: number;
   maxJalaliYear?: number;
+  yearRange?: "birth" | "nearTerm";
 }) {
+  const nearTerm = yearRange === "nearTerm" ? jalaliYearRangeNearTerm() : null;
   const years =
-    minJalaliYear != null && maxJalaliYear != null
-      ? Array.from({ length: maxJalaliYear - minJalaliYear + 1 }, (_, i) => maxJalaliYear - i)
-      : DEFAULT_YEARS;
+    nearTerm != null
+      ? Array.from(
+          { length: nearTerm.maxJalaliYear - nearTerm.minJalaliYear + 1 },
+          (_, i) => nearTerm.maxJalaliYear - i,
+        )
+      : minJalaliYear != null && maxJalaliYear != null
+        ? Array.from({ length: maxJalaliYear - minJalaliYear + 1 }, (_, i) => maxJalaliYear - i)
+        : DEFAULT_YEARS;
   const parts = isoToJalali(value);
   const jy = parts?.jy ?? 0;
   const jm = parts?.jm ?? 0;

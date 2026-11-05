@@ -77,7 +77,7 @@ export function SiteHeader() {
     <>
       <header
         data-site-chrome="header"
-        className="sticky top-0 z-[70] border-b border-cyan-100 bg-white/90 shadow-sm backdrop-blur-xl"
+        className="sticky top-0 z-[70] border-b border-primary/20 bg-white/90 shadow-sm backdrop-blur-xl"
       >
         <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-3 sm:h-24 sm:gap-4 sm:px-6 lg:px-8">
           <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-2 sm:gap-4">
@@ -94,7 +94,7 @@ export function SiteHeader() {
             className="hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex"
             aria-label="منوی اصلی"
           >
-            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto rounded-full border border-cyan-100/80 bg-gradient-to-l from-slate-50 to-cyan-50/50 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)]">
+            <div className="flex max-w-full flex-nowrap items-center gap-0.5 overflow-x-auto rounded-full border border-primary/15 bg-gradient-to-l from-slate-50 to-primary-light/40 p-1 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.8)]">
               {navItems.map((item) => (
                 <Link
                   key={item.id}
@@ -102,8 +102,8 @@ export function SiteHeader() {
                   className={cn(
                     "shrink-0 rounded-full border px-2 py-1.5 text-[0.7rem] font-semibold tracking-tight transition-colors xl:px-2.5 xl:text-xs 2xl:px-3 2xl:text-sm",
                     active === item.id
-                      ? "border-cyan-200 bg-white text-cyan-800 shadow-sm"
-                      : "border-transparent bg-white/70 text-slate-600 hover:border-cyan-200 hover:bg-white hover:text-cyan-700",
+                      ? "border-primary/25 bg-white text-primary-dark shadow-sm"
+                      : "border-transparent bg-white/70 text-slate-600 hover:border-primary/20 hover:bg-white hover:text-primary",
                   )}
                 >
                   {item.label}
@@ -115,8 +115,8 @@ export function SiteHeader() {
               className={cn(
                 "shrink-0 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors xl:text-sm",
                 patientProfile
-                  ? "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
-                  : "border border-cyan-600 bg-cyan-600 text-white hover:bg-cyan-700",
+                  ? "border border-primary/25 bg-primary-light/80 text-primary-dark hover:bg-primary-light"
+                  : "border border-primary bg-primary text-white hover:bg-primary-dark",
               )}
             >
               {patientProfile ? `${accountLabel} ✓` : accountLabel}
@@ -129,15 +129,15 @@ export function SiteHeader() {
               className={cn(
                 "rounded-xl px-3 py-2 text-xs font-semibold",
                 patientProfile
-                  ? "border border-teal-200 bg-teal-50 text-teal-800"
-                  : "border border-cyan-600 bg-cyan-600 text-white",
+                  ? "border border-primary/25 bg-primary-light/80 text-primary-dark"
+                  : "border border-primary bg-primary text-white",
               )}
             >
               {patientProfile ? accountLabel : "ورود"}
             </Link>
             <button
               type="button"
-              className="rounded-xl border border-cyan-200 bg-white/90 px-3 py-2 text-base font-bold text-slate-700"
+              className="rounded-xl border border-primary/20 bg-white/90 px-3 py-2 text-base font-bold text-slate-700"
               aria-label={open ? "بستن منو" : "باز کردن منو"}
               aria-expanded={open}
               aria-controls={menuId}
@@ -161,7 +161,7 @@ export function SiteHeader() {
           <nav
             id={menuId}
             aria-label="منوی موبایل"
-            className="absolute inset-x-0 top-[4.25rem] max-h-[min(calc(85dvh-4.25rem),32rem)] overflow-y-auto border-b border-cyan-100 bg-white px-3 py-3 shadow-xl sm:top-24 sm:max-h-[min(calc(85dvh-6rem),34rem)] animate-[appEnter_0.18s_ease]"
+            className="absolute inset-x-0 top-[4.25rem] max-h-[min(calc(85dvh-4.25rem),32rem)] overflow-y-auto border-b border-primary/15 bg-white px-3 py-3 shadow-xl sm:top-24 sm:max-h-[min(calc(85dvh-6rem),34rem)] animate-[appEnter_0.18s_ease]"
           >
             <div className="mx-auto flex max-w-7xl flex-col gap-1">
               <Link
@@ -170,8 +170,8 @@ export function SiteHeader() {
                 className={cn(
                   "rounded-xl border px-3 py-3 text-center text-sm font-semibold",
                   patientProfile
-                    ? "border-teal-200 bg-teal-50 text-teal-800"
-                    : "border-cyan-600 bg-cyan-600 text-white",
+                    ? "border-primary/25 bg-primary-light/80 text-primary-dark"
+                    : "border border-primary bg-primary text-white",
                 )}
               >
                 {patientProfile ? `${accountLabel} ✓` : accountLabel}
@@ -184,8 +184,8 @@ export function SiteHeader() {
                   className={cn(
                     "rounded-xl border px-3 py-3 text-sm font-bold transition-colors",
                     active === item.id
-                      ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-cyan-200 hover:bg-slate-50",
+                      ? "border-primary/30 bg-primary-light text-primary-dark"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-primary/20 hover:bg-slate-50",
                   )}
                 >
                   {item.label}
@@ -248,7 +248,7 @@ export function SiteFooter() {
             href={institute.mapUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-xs font-bold text-cyan-800 underline-offset-4 hover:underline"
+            className="mt-2 inline-block text-xs font-bold text-primary-dark underline-offset-4 hover:underline"
           >
             موقعیت روی گوگل‌مپ
           </a>

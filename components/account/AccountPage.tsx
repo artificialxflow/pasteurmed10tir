@@ -326,7 +326,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             type="button"
             className={`rounded-xl border px-3 py-2 text-sm font-extrabold ${
               loginKind === "person"
-                ? "border-cyan-700 bg-cyan-800 text-white"
+                ? "border-primary-dark bg-primary text-white"
                 : "border-slate-200 bg-white text-slate-700"
             }`}
             onClick={() => setLoginKind("person")}
@@ -337,7 +337,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             type="button"
             className={`rounded-xl border px-3 py-2 text-sm font-extrabold ${
               loginKind === "organization"
-                ? "border-cyan-700 bg-cyan-800 text-white"
+                ? "border-primary-dark bg-primary text-white"
                 : "border-slate-200 bg-white text-slate-700"
             }`}
             onClick={() => setLoginKind("organization")}
@@ -345,7 +345,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
             ورود سازمان
           </button>
         </div>
-        <Card hover={false} className="mb-4 border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-6 text-slate-600">
+        <Card hover={false} className="mb-4 border-primary/20 bg-primary-light/50 p-4 text-xs leading-6 text-slate-600">
           <p className="font-bold text-slate-800">مراحل</p>
           <ol className="mt-2 list-decimal space-y-1 pr-4">
             <li>موبایل را وارد کنید و «ارسال کد تأیید» بزنید</li>

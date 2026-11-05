@@ -11,7 +11,7 @@ type Variant = "primary" | "accent" | "danger" | "ghost" | "outline";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-cyan-600 text-white border border-cyan-700 shadow-sm shadow-cyan-700/15 hover:bg-cyan-700 [color:#fff]",
+    "bg-primary text-white border border-primary-dark shadow-sm shadow-primary/20 hover:bg-primary-dark [color:#fff]",
   accent:
     "bg-amber-500 text-white border border-amber-600 shadow-sm shadow-amber-700/15 hover:bg-amber-600 [color:#fff]",
   danger:

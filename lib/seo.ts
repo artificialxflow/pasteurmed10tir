@@ -46,8 +46,8 @@ export function clinicJsonLd() {
     name: inst.nameFa,
     alternateName: inst.nameEn,
     url: SITE,
-    logo: `${SITE}/brand/clinique-pasteur-logo.png`,
-    image: `${SITE}/brand/clinique-pasteur-logo.png`,
+    logo: `${SITE}/brand/pasteur-plus-logo.jpg`,
+    image: `${SITE}/brand/pasteur-plus-logo.jpg`,
     telephone: [`+98${inst.phoneDigits.replace(/^0/, '')}`, `+98${inst.phoneAltDigits.replace(/^0/, '')}`],
     address: {
       '@type': 'PostalAddress',

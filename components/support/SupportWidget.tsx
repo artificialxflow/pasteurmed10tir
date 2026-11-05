@@ -139,11 +139,11 @@ export function SupportWidget({
           aria-modal="true"
           aria-labelledby={titleId}
           className={cn(
-            "mb-3 flex max-h-[min(28rem,70dvh)] w-[min(20.5rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-xl",
+            "mb-3 flex max-h-[min(28rem,70dvh)] w-[min(20.5rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-xl",
             "animate-[appEnter_0.18s_ease]",
           )}
         >
-          <div className="flex items-start justify-between gap-2 border-b border-cyan-50 bg-cyan-50/70 px-3 py-2.5">
+          <div className="flex items-start justify-between gap-2 border-b border-primary/10 bg-primary-light/60 px-3 py-2.5">
             <p id={titleId} className="text-sm font-extrabold text-slate-900">
               {SUPPORT_WIDGET_TITLE}
             </p>
@@ -165,7 +165,7 @@ export function SupportWidget({
                   <Link
                     key={item.id}
                     href={item.href[variant]}
-                    className="flex items-start gap-2 rounded-xl px-2.5 py-2 text-sm font-bold text-slate-800 hover:bg-cyan-50"
+                    className="flex items-start gap-2 rounded-xl px-2.5 py-2 text-sm font-bold text-slate-800 hover:bg-primary-light"
                   >
                     <span aria-hidden className="text-base">
                       {item.emoji}
@@ -175,7 +175,7 @@ export function SupportWidget({
                 ))}
                 <button
                   type="button"
-                  className="flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-right text-sm font-bold text-teal-800 hover:bg-teal-50"
+                  className="flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-right text-sm font-bold text-primary-dark hover:bg-primary-light"
                   onClick={() => {
                     setAskOther(true);
                     setError("");
@@ -192,7 +192,7 @@ export function SupportWidget({
               <form onSubmit={onSubmit} className="space-y-2 p-1">
                 <button
                   type="button"
-                  className="text-xs font-bold text-teal-700"
+                  className="text-xs font-bold text-primary-dark"
                   onClick={() => {
                     setAskOther(false);
                     setError("");
@@ -231,7 +231,7 @@ export function SupportWidget({
                 </div>
                 {error ? <p className="text-xs font-bold text-rose-600">{error}</p> : null}
                 {ok ? (
-                  <p className="text-xs font-bold leading-6 text-teal-700">
+                  <p className="text-xs font-bold leading-6 text-primary-dark">
                     {ok}{" "}
                     <Link href={supportHref} className="underline">
                       رفتن به پشتیبانی
@@ -249,7 +249,7 @@ export function SupportWidget({
 
       <button
         type="button"
-        className="flex h-14 w-14 items-center justify-center rounded-full border border-cyan-200 bg-cyan-700 text-2xl text-white shadow-lg shadow-cyan-900/20 hover:bg-cyan-800"
+        className="flex h-14 w-14 items-center justify-center rounded-full border border-primary/25 bg-primary text-2xl text-white shadow-lg shadow-primary/25 hover:bg-primary-dark"
         aria-label={open ? "بستن پشتیبانی آنلاین" : "پشتیبانی آنلاین"}
         aria-expanded={open}
         aria-controls={panelId}

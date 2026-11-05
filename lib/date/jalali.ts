@@ -70,6 +70,17 @@ export function jalaliToGregorian(jy: number, jm: number, jd: number) {
   return { gy, gm, gd };
 }
 
+export function currentJalaliYear(): number {
+  const parts = isoToJalali(new Date().toISOString().slice(0, 10));
+  return parts?.jy ?? 1404;
+}
+
+/** سال جاری و سال بعد — برای فیلتر تاریخ رزرو/نوبت */
+export function jalaliYearRangeNearTerm(): { minJalaliYear: number; maxJalaliYear: number } {
+  const y = currentJalaliYear();
+  return { minJalaliYear: y, maxJalaliYear: y + 1 };
+}
+
 export function isoToJalali(iso?: string | null): { jy: number; jm: number; jd: number } | null {
   if (!iso) return null;
   const raw = iso.length === 10 ? `${iso}T12:00:00` : iso;

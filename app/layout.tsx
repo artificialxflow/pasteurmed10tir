@@ -3,8 +3,10 @@ import { CaptureReferralRef } from "@/components/commerce/CaptureReferralRef";
 import "./globals.css";
 
 export const viewport: Viewport = {
-  themeColor: "#0891b2",
+  themeColor: "#5856D6",
 };
+
+const BRAND_CACHE = "?v=20261105";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pasteur.plus"),
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
     title: "پاستور پلاس | درمانگاه پزشکی و دندانپزشکی",
     description:
       "خدمات پزشکی، دندانپزشکی و نوبت‌دهی آنلاین در پاستور پلاس.",
-    images: ["/brand/clinique-pasteur-logo.png"],
+    images: [`/brand/pasteur-plus-logo.jpg${BRAND_CACHE}`],
   },
   applicationName: "پاستور پلاس",
   keywords: [
@@ -36,15 +38,15 @@ export const metadata: Metadata = {
     "نوبت‌دهی",
     "pasteur.plus",
   ],
-  authors: [{ name: "Clinique Pasteur", url: "https://pasteur.plus" }],
+  authors: [{ name: "پاستور پلاس", url: "https://pasteur.plus" }],
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/icon.png?v=20260731", type: "image/png", sizes: "any" },
-      { url: "/logo.png?v=20260731", type: "image/png" },
+      { url: `/icon.svg${BRAND_CACHE}`, type: "image/svg+xml" },
+      { url: `/logo.jpg${BRAND_CACHE}`, type: "image/jpeg" },
     ],
-    apple: [{ url: "/icon-192.png?v=20260731", type: "image/png", sizes: "192x192" }],
-    shortcut: ["/logo.png?v=20260731"],
+    apple: [{ url: `/icon-192.jpg${BRAND_CACHE}`, type: "image/jpeg", sizes: "192x192" }],
+    shortcut: [`/icon.svg${BRAND_CACHE}`],
   },
   other: {
     enamad: "10209334",
@@ -57,7 +59,7 @@ export const metadata: Metadata = {
     title: "پاستور پلاس | درمانگاه پزشکی و دندانپزشکی",
     description:
       "خدمات پزشکی، دندانپزشکی و نوبت‌دهی آنلاین در پاستور پلاس.",
-    images: [{ url: "/brand/clinique-pasteur-logo.png", alt: "Clinique Pasteur" }],
+    images: [{ url: `/brand/pasteur-plus-logo.jpg${BRAND_CACHE}`, alt: "پاستور پلاس" }],
   },
 };
 
