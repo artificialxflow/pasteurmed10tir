@@ -46,6 +46,15 @@ export default function AdminHealthRecordsPage() {
   const fields = useMemo(() => fieldsForSection(writeSection), [writeSection]);
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [registrarOptions, setRegistrarOptions] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    void fetchAdminOps<{ items: Array<{ id: string; name: string }> }>(
+      "/api/admin/operations/health-records/registrar-options",
+    )
+      .then((data) => setRegistrarOptions(data.items || []))
+      .catch(() => setRegistrarOptions([]));
+  }, []);
 
   useEffect(() => {
     setValues(emptyValues(fields));
@@ -240,6 +249,7 @@ export default function AdminHealthRecordsPage() {
               fields={fields}
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
+              registrarOptions={registrarOptions}
             />
           ) : null}
           <Button type="submit" className="text-sm" disabled={!user}>

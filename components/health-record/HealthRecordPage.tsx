@@ -48,18 +48,20 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const fields = useMemo(() => fieldsForSection(section), [section]);
+  const formFields = useMemo(
+    () => fieldsForSection(section).filter((field) => field.key !== "doctorName"),
+    [section],
+  );
   const [values, setValues] = useState<Record<string, string>>(() =>
     emptyValues(
       fieldsForSection(
         initialSection && isKnownSection(initialSection) ? initialSection : "general",
-      ),
+      ).filter((field) => field.key !== "doctorName"),
     ),
   );
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [hospitalFiles, setHospitalFiles] = useState<Record<string, File | null>>({});
   const [dependents, setDependents] = useState<Array<{ id: string; name: string }>>([]);
-  const [registrarOptions, setRegistrarOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [dependentId, setDependentId] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -70,14 +72,6 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
         setDependents(data.items || []),
       )
       .catch(() => setDependents([]));
-  }, []);
-
-  useEffect(() => {
-    void fetchPatientOps<{ items: Array<{ id: string; name: string }> }>(
-      "/api/operations/emergency-physicians",
-    )
-      .then((data) => setRegistrarOptions(data.items || []))
-      .catch(() => setRegistrarOptions([]));
   }, []);
 
   function commitSection(id: HealthSectionId) {
@@ -95,10 +89,10 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
   }, [searchParams]);
 
   useEffect(() => {
-    setValues(emptyValues(fields));
+    setValues(emptyValues(formFields));
     setPendingFile(null);
     setHospitalFiles({});
-  }, [fields]);
+  }, [formFields]);
 
   const reload = useCallback(() => {
     const q = new URLSearchParams({ section });
@@ -153,7 +147,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
     }
 
     const payload: Record<string, unknown> = {};
-    for (const field of fields) {
+    for (const field of formFields) {
       const raw = (values[field.key] || "").trim();
       if (!raw) continue;
       payload[field.key] = field.kind === "number" ? Number(raw) : raw;
@@ -176,7 +170,7 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
               : "در پرونده این بخش ثبت شد.",
           );
         }
-        setValues(emptyValues(fields));
+        setValues(emptyValues(formFields));
         reload();
       })
       .catch((err: Error) => setError(err.message));
@@ -276,10 +270,9 @@ export function HealthRecordPage({ variant = "web" }: { variant?: "web" | "app" 
           )}
           {!sectionIsAttachmentOnly(section) ? (
             <HealthRecordFormFields
-              fields={fields}
+              fields={formFields}
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
-              registrarOptions={registrarOptions}
             />
           ) : null}
           <Button type="submit" className="text-sm">

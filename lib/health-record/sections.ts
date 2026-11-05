@@ -39,7 +39,7 @@ export type HealthSectionField = {
   hint?: string;
 };
 
-/** برچسب فیلد انتخاب ثبت‌کننده — بسته ۳۲/۰۶ */
+/** برچسب legacy در سوابق قدیمی — بسته ۳۲/۰۶؛ دیگر در فرم جدید استفاده نمی‌شود */
 export const HEALTH_RECORD_REGISTRAR_FIELD_LABEL = 'لیست پرسنل اورژانس';
 
 const VITALS_EXTRA: HealthSectionField[] = [
@@ -49,7 +49,7 @@ const VITALS_EXTRA: HealthSectionField[] = [
 ];
 
 const GENERAL_FIELDS: HealthSectionField[] = [
-  { key: 'doctorName', label: HEALTH_RECORD_REGISTRAR_FIELD_LABEL, kind: 'text' },
+  { key: 'doctorName', label: 'نام ثبت‌کننده', kind: 'text' },
   ...VITALS_EXTRA,
   { key: 'diseaseHistory', label: 'سوابق بیماری', kind: 'textarea' },
   { key: 'medications', label: 'داروهای مصرفی', kind: 'textarea' },
@@ -59,11 +59,10 @@ const GENERAL_FIELDS: HealthSectionField[] = [
   { key: 'complaint', label: 'شکایت اصلی', kind: 'textarea' },
   { key: 'diagnosis', label: 'تشخیص', kind: 'textarea' },
   { key: 'recommendations', label: 'توصیه‌ها', kind: 'textarea' },
-  { key: 'care', label: 'مراقبت‌ها', kind: 'textarea' },
 ];
 
 const DENTAL_FIELDS: HealthSectionField[] = [
-  { key: 'doctorName', label: HEALTH_RECORD_REGISTRAR_FIELD_LABEL, kind: 'text' },
+  { key: 'doctorName', label: 'نام ثبت‌کننده', kind: 'text' },
   { key: 'needRestore', label: 'دندان‌های نیازمند ترمیم', kind: 'textarea', hint: 'متنی' },
   { key: 'needExtract', label: 'دندان‌های نیازمند کشیدن', kind: 'textarea' },
   { key: 'needSurgery', label: 'دندان‌های نیازمند جراحی', kind: 'textarea' },
@@ -85,7 +84,6 @@ const SPECIALIST_FIELDS: HealthSectionField[] = [
   },
   { key: 'nextVisitDate', label: 'زمان ویزیت بعدی', kind: 'date' },
   { key: 'recommendations', label: 'توصیه‌ها', kind: 'textarea' },
-  { key: 'care', label: 'مراقبت‌ها', kind: 'textarea' },
   { key: 'otherNotes', label: 'سایر موارد', kind: 'textarea' },
 ];
 
