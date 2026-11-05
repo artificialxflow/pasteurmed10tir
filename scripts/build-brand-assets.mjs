@@ -10,7 +10,6 @@ const ROOT = join(import.meta.dirname, "..");
 const LOGO_DIR = join(ROOT, "public", "logo");
 const PUBLIC = join(ROOT, "public");
 const SURFACE = { r: 245, g: 239, b: 235, alpha: 1 }; // #F5EFEB
-const BRAND = { r: 0x6b, g: 0x8f, b: 0xef };
 const DARK_THRESHOLD = 72;
 
 async function knockOutDark(inputPath) {
@@ -31,71 +30,6 @@ async function knockOutDark(inputPath) {
   return sharp(data, {
     raw: { width: info.width, height: info.height, channels: 4 },
   }).trim({ threshold: 80 });
-}
-
-/** White wordmark on black (pasteur-plus-3) — use opaque alpha, not RGB (file is heavily compressed). */
-async function extractWhiteWordmark(inputPath) {
-  const { data, info } = await sharp(inputPath)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
-  const ALPHA_MIN = 250;
-
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] < ALPHA_MIN) {
-      data[i + 3] = 0;
-      continue;
-    }
-    data[i] = BRAND.r;
-    data[i + 1] = BRAND.g;
-    data[i + 2] = BRAND.b;
-    data[i + 3] = 255;
-  }
-
-  return sharp(data, {
-    raw: { width: info.width, height: info.height, channels: 4 },
-  }).trim({ threshold: 1 });
-}
-
-async function buildHorizontalLogo(markPath, wordPath) {
-  const markPng = await (await knockOutDark(markPath)).png().toBuffer();
-  const wordPng = await (await extractWhiteWordmark(wordPath)).png().toBuffer();
-
-  const markMeta = await sharp(markPng).metadata();
-  const wordHeight = Math.round((markMeta.height ?? 0) * 0.52);
-  const wordResized = await sharp(wordPng)
-    .resize({ height: wordHeight, withoutEnlargement: false })
-    .png()
-    .toBuffer();
-  const wordMeta = await sharp(wordResized).metadata();
-
-  const gap = Math.round((markMeta.height ?? 0) * 0.14);
-  const width = (markMeta.width ?? 0) + gap + (wordMeta.width ?? 0);
-  const height = Math.max(markMeta.height ?? 0, wordMeta.height ?? 0);
-
-  return sharp({
-    create: {
-      width,
-      height,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([
-      {
-        input: markPng,
-        left: 0,
-        top: Math.round((height - (markMeta.height ?? 0)) / 2),
-      },
-      {
-        input: wordResized,
-        left: (markMeta.width ?? 0) + gap,
-        top: Math.round((height - (wordMeta.height ?? 0)) / 2),
-      },
-    ])
-    .png()
-    .toBuffer();
 }
 
 async function compositeOnSurface(pngBuffer, width) {
@@ -153,14 +87,12 @@ async function squareIcon(pngBuffer, size) {
 
 async function main() {
   const markSrc = join(LOGO_DIR, "pasteur-plus-1@2x.png");
-  const wordSrc = join(LOGO_DIR, "pasteur-plus-3@2x.png");
 
-  const horizontalPng = await buildHorizontalLogo(markSrc, wordSrc);
   const markPng = await (await knockOutDark(markSrc)).png().toBuffer();
 
-  await sharp(horizontalPng).png().toFile(join(PUBLIC, "logo.png"));
+  await sharp(markPng).png().toFile(join(PUBLIC, "logo.png"));
 
-  const logoJpg = await compositeOnSurface(horizontalPng, 1400);
+  const logoJpg = await compositeOnSurface(markPng, 800);
   await sharp(logoJpg).toFile(join(PUBLIC, "logo.jpg"));
   await sharp(logoJpg).toFile(join(PUBLIC, "brand", "pasteur-plus-logo.jpg"));
 

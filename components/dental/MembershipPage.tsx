@@ -1019,7 +1019,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 <img
                   src={LOGO_SRC}
                   alt="Clinique Pasteur | پاستور پلاس"
-                  className="h-12 w-auto max-w-[8rem] object-contain"
+                  className="h-12 w-auto max-w-[3.5rem] object-contain"
                 />
                 <div className="flex-1 text-center">
                   <p className="text-lg font-extrabold">فرم پیشنهاد صدور عضویت</p>

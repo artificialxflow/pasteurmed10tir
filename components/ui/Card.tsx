@@ -103,7 +103,7 @@ export function Logo({ className }: { className?: string }) {
       src={LOGO_SRC}
       alt="پاستور پلاس"
       className={cn(
-        "h-12 w-auto max-w-[11rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[14rem]",
+        "h-12 w-auto max-w-[4.5rem] shrink-0 object-contain object-center sm:h-14 sm:max-w-[5.5rem]",
         className,
       )}
     />

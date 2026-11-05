@@ -81,7 +81,7 @@ export function SiteHeader() {
       >
         <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-3 sm:h-24 sm:gap-4 sm:px-6 lg:px-8">
           <Link href={ROUTES.web.home} className="flex min-w-0 items-center gap-2 sm:gap-4">
-            <Logo className="h-11 w-auto max-w-[7.5rem] sm:h-14 sm:max-w-[11rem]" />
+            <Logo className="h-11 w-auto max-w-[3.25rem] sm:h-14 sm:max-w-[4.25rem]" />
             <div className="hidden min-w-0 sm:block">
               <p className="truncate text-base font-extrabold leading-tight text-slate-900 sm:text-lg">
                 {PASTEUR_DATA.institute.nameFa}
@@ -219,7 +219,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
         <div>
           <div className="mb-4 flex items-center gap-3 sm:gap-4">
-            <Logo className="h-12 w-auto max-w-[10rem]" />
+            <Logo className="h-12 w-auto max-w-[3.5rem]" />
             <div>
               <p className="font-bold text-slate-900">{institute.nameFa}</p>
               <p className="text-xs text-slate-500">{institute.nameEn}</p>
