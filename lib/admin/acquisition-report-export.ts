@@ -4,6 +4,7 @@ import {
   type AcquisitionReportRow,
   type AcquisitionReportStats,
 } from '@/lib/admin/acquisition-report';
+import { formatJalaliExportDate } from '@/lib/patient';
 
 function escapeCsvCell(value: string | number): string {
   const text = String(value ?? '');
@@ -13,11 +14,19 @@ function escapeCsvCell(value: string | number): string {
   return text;
 }
 
+function acquisitionRangeLabel(stats: AcquisitionReportStats): { from: string; to: string } {
+  return {
+    from: stats.from ? formatJalaliExportDate(stats.from) : '—',
+    to: formatJalaliExportDate(stats.to),
+  };
+}
+
 export function buildAcquisitionReportCsv(stats: AcquisitionReportStats): Buffer {
+  const range = acquisitionRangeLabel(stats);
   const meta = [
     `بازه,${stats.periodLabel}`,
-    `از,${stats.from ?? '—'}`,
-    `تا,${stats.to}`,
+    `از,${range.from}`,
+    `تا,${range.to}`,
     `کل پروفایل,${stats.totalProfiles}`,
     '',
   ];
@@ -39,9 +48,10 @@ export async function buildAcquisitionReportXlsx(
     views: [{ rightToLeft: true }],
   });
 
+  const range = acquisitionRangeLabel(stats);
   sheet.addRow(['بازه', stats.periodLabel]);
-  sheet.addRow(['از', stats.from ?? '—']);
-  sheet.addRow(['تا', stats.to]);
+  sheet.addRow(['از', range.from]);
+  sheet.addRow(['تا', range.to]);
   sheet.addRow(['کل پروفایل در بازه', stats.totalProfiles]);
   sheet.addRow([]);
 

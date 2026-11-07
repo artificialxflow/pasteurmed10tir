@@ -1,3 +1,4 @@
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { buildAdminMarketingWhere } from '@/lib/marketing/service';
 import { buildMarketingCsv, buildMarketingXlsx } from '@/lib/admin/marketing-export';
 import { requireAdmin } from '@/lib/content/require-admin';
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="marketing-reports.csv"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('marketing-reports', 'csv')}"`,
       },
     });
   }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
   return new NextResponse(new Uint8Array(body), {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="marketing-reports.xlsx"',
+      'Content-Disposition': `attachment; filename="${adminExportFilename('marketing-reports', 'xlsx')}"`,
     },
   });
 }

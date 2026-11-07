@@ -6,6 +6,7 @@ import { Card, FormLabel } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
 import type { MarketingReportPublic } from "@/lib/marketing/mappers";
 import { MARKETING_KIND_OPTIONS } from "@/lib/marketing/types";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import { fetchAdminOps, downloadAdminOpsExport } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { ROUTES } from "@/lib/routes";
@@ -84,7 +85,7 @@ export default function AdminMarketingReportsPage() {
     const ext = format === "csv" ? "csv" : "xlsx";
     await downloadAdminOpsExport(
       `/api/admin/operations/marketing/export?${q.toString()}`,
-      `marketing-reports.${ext}`,
+      adminExportFilename("marketing-reports", ext),
     );
   }
 

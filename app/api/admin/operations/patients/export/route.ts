@@ -10,6 +10,7 @@ import {
   patientReportStatusLabel,
   type PatientReportStatusFilter,
 } from '@/lib/admin/patient-report';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { mapDbToPatientProfile } from '@/lib/auth/patient-db';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -23,8 +24,7 @@ const VALID_STATUS = new Set<PatientReportStatusFilter>([
 ]);
 
 function reportFilename(status: PatientReportStatusFilter, ext: string): string {
-  const stamp = new Date().toISOString().slice(0, 10);
-  return `patients-${status}-${stamp}.${ext}`;
+  return adminExportFilename(`patients-${status}`, ext);
 }
 
 export async function GET(request: Request) {

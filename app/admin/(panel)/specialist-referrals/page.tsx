@@ -3,6 +3,7 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormTextarea } from "@/components/ui/Card";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import { fetchAdminOps, postAdminOps, downloadAdminOpsExport } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -109,10 +110,9 @@ export default function AdminSpecialistReferralsPage() {
   }
 
   function exportFile(format: "xlsx" | "csv") {
-    const stamp = new Date().toISOString().slice(0, 10);
     void downloadAdminOpsExport(
       `/api/admin/operations/specialist-referrals/export?format=${format}`,
-      `specialist-referrals-${stamp}.${format}`,
+      adminExportFilename("specialist-referrals", format),
     );
   }
 

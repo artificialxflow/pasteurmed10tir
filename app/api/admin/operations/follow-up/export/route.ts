@@ -5,6 +5,7 @@ import {
   buildFollowUpReportPdfHtml,
   buildFollowUpXlsx,
 } from '@/lib/admin/follow-up-export';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': 'inline; filename="follow-up-report.html"',
+        'Content-Disposition': `inline; filename="${adminExportFilename('follow-up-report', 'html')}"`,
       },
     });
   }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="follow-up-report.csv"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('follow-up-report', 'csv')}"`,
       },
     });
   }
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="follow-up-report.xlsx"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('follow-up-report', 'xlsx')}"`,
       },
     });
   }

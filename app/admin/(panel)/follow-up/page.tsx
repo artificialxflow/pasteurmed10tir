@@ -12,6 +12,7 @@ import {
   FOLLOW_UP_SERVICE_OPTIONS,
   FOLLOW_UP_UNKNOWN_DENTIST,
 } from "@/lib/follow-up/types";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import {
   downloadAdminOpsExport,
   fetchAdminOps,
@@ -407,10 +408,10 @@ export default function AdminFollowUpPage() {
 
   async function exportReport(format: "xlsx" | "csv" | "pdf") {
     const params = new URLSearchParams({ format, tab });
-    const stamp = new Date().toISOString().slice(0, 10);
+    const ext = format === "pdf" ? "html" : format;
     await downloadAdminOpsExport(
       `/api/admin/operations/follow-up/export?${params}`,
-      `follow-up-${stamp}.${format === "pdf" ? "html" : format}`,
+      adminExportFilename("follow-up-report", ext),
     );
   }
 

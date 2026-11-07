@@ -10,6 +10,7 @@ import {
   summarizeAcquisitionCounts,
   type AcquisitionReportStats,
 } from '@/lib/admin/acquisition-report';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -56,8 +57,7 @@ async function loadAcquisitionReportStats(
 }
 
 function reportFilename(ext: string, period: string): string {
-  const stamp = new Date().toISOString().slice(0, 10);
-  return `acquisition-report-${period}-${stamp}.${ext}`;
+  return adminExportFilename(`acquisition-report-${period}`, ext);
 }
 
 export async function GET(request: Request) {

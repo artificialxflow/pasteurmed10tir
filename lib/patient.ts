@@ -327,6 +327,15 @@ export function formatJalaliDate(isoDate: string | null | undefined): string {
   return d.toLocaleDateString('fa-IR');
 }
 
+/** تاریخ شمسی برای خروجی Excel/CSV — مقدار خالی به‌جای «—» */
+export function formatJalaliExportDate(value: Date | string | null | undefined): string {
+  if (value == null) return '';
+  const iso = value instanceof Date ? value.toISOString() : String(value).trim();
+  if (!iso) return '';
+  const formatted = formatJalaliDate(iso);
+  return formatted === '—' ? '' : formatted;
+}
+
 /** تاریخ و ساعت شمسی — برای تشخیص داده کهنه از نتیجه تازه */
 export function formatJalaliDateTime(iso: string | null | undefined): string {
   if (!iso) return '—';

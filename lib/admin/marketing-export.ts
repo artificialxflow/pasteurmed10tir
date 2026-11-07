@@ -1,6 +1,7 @@
 import type { MarketingFollowUpSlot, MarketingReport } from '@prisma/client';
 import ExcelJS from 'exceljs';
 import { marketingFollowUpKindLabel, marketingKindLabel, marketingUnsuccessfulReasonLabel } from '@/lib/marketing/types';
+import { formatJalaliExportDate } from '@/lib/patient';
 
 function escapeCsvCell(value: string | number): string {
   const text = String(value ?? '');
@@ -67,7 +68,7 @@ type ExportRow = MarketingReport & {
 function slotField(slots: MarketingFollowUpSlot[] | undefined, index: number, field: 'date' | 'note') {
   const s = (slots || []).find((x) => x.slotIndex === index);
   if (!s) return '';
-  if (field === 'date') return s.doneAt?.toISOString().slice(0, 10) ?? '';
+  if (field === 'date') return formatJalaliExportDate(s.doneAt);
   return s.note || '';
 }
 
@@ -77,7 +78,7 @@ export function marketingRowsForExport(rows: ExportRow[]) {
     const c = (i: number) => contacts[i] || { name: '', phone: '', role: '' };
     const slots = (r.followUpSlots || []).sort((a, b) => a.slotIndex - b.slotIndex);
     return [
-      r.createdAt.toISOString().slice(0, 10),
+      formatJalaliExportDate(r.createdAt),
       r.visitor?.name ?? String(r.visitorId),
       r.visitorPhone,
       marketingKindLabel(r.kind),
@@ -97,10 +98,10 @@ export function marketingRowsForExport(rows: ExportRow[]) {
       r.successSkin ? 'بله' : '',
       r.successProforma ? 'بله' : '',
       r.successSalesInvoice ? 'بله' : '',
-      r.contractDate?.toISOString().slice(0, 10) ?? '',
+      formatJalaliExportDate(r.contractDate),
       marketingUnsuccessfulReasonLabel(r.unsuccessfulReason),
       marketingFollowUpKindLabel(r.followUpKind),
-      r.followUpDueDate?.toISOString().slice(0, 10) ?? '',
+      formatJalaliExportDate(r.followUpDueDate),
       slotField(slots, 1, 'date'),
       slotField(slots, 1, 'note'),
       slotField(slots, 2, 'date'),

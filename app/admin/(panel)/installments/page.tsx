@@ -9,6 +9,7 @@ import {
   INSTALLMENT_REPORT_TABS,
   type InstallmentReportSource,
 } from "@/lib/admin/installment-report";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import {
   deleteAdminCommerce,
   downloadAdminCommerceExport,
@@ -64,7 +65,6 @@ export default function AdminInstallmentsPage() {
   async function exportReport(format: "xlsx" | "pdf" | "csv") {
     setError("");
     setExportBusy(format);
-    const stamp = new Date().toISOString().slice(0, 10);
     const path = `/api/admin/commerce/installments/export?format=${format}&source=${encodeURIComponent(sourceFilter)}`;
     try {
       if (format === "pdf") {
@@ -72,7 +72,10 @@ export default function AdminInstallmentsPage() {
         setSuccess("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
       } else {
         const ext = format === "xlsx" ? "xlsx" : "csv";
-        await downloadAdminCommerceExport(path, `installments-${sourceFilter}-${stamp}.${ext}`);
+        await downloadAdminCommerceExport(
+          path,
+          adminExportFilename(`installments-${sourceFilter}`, ext),
+        );
         setSuccess(format === "xlsx" ? "فایل Excel دانلود شد." : "فایل CSV دانلود شد.");
       }
     } catch (e) {

@@ -3,6 +3,7 @@
 import { AdminBadge, AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import {
   summarizePatientProfiles,
   type PatientReportStatusFilter,
@@ -140,7 +141,6 @@ export default function AdminPatientsPage() {
   async function exportReport(format: "xlsx" | "pdf" | "csv") {
     setError("");
     setExportBusy(format);
-    const stamp = new Date().toISOString().slice(0, 10);
     const q = new URLSearchParams({
       format,
       status: statusFilter,
@@ -153,7 +153,10 @@ export default function AdminPatientsPage() {
         setSuccess("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
       } else {
         const ext = format === "xlsx" ? "xlsx" : "csv";
-        await downloadAdminOpsExport(path, `patients-${statusFilter}-${stamp}.${ext}`);
+        await downloadAdminOpsExport(
+          path,
+          adminExportFilename(`patients-${statusFilter}`, ext),
+        );
         setSuccess(format === "xlsx" ? "فایل Excel دانلود شد." : "فایل CSV دانلود شد.");
       }
     } catch (e) {

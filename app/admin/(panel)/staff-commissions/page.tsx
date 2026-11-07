@@ -9,6 +9,7 @@ import {
   staffCommissionSourceLabel,
   staffCommissionStatusLabel,
 } from "@/lib/home-visit/labels";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import { downloadAdminOpsExport, fetchAdminOps, patchAdminOps } from "@/lib/operations/client";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import { formatJalaliDate } from "@/lib/patient";
@@ -91,7 +92,6 @@ export default function AdminStaffCommissionsPage() {
   async function exportReport(format: "xlsx" | "pdf" | "csv") {
     setError("");
     setExportBusy(format);
-    const stamp = new Date().toISOString().slice(0, 10);
     const params = new URLSearchParams({ format });
     if (kind === "nurse" || kind === "physician" || kind === "consultant") params.set("kind", kind);
     if (status === "pending" || status === "approved" || status === "paid") params.set("status", status);
@@ -103,7 +103,7 @@ export default function AdminStaffCommissionsPage() {
         window.open(path, "_blank", "noopener,noreferrer");
       } else {
         const ext = format === "xlsx" ? "xlsx" : "csv";
-        await downloadAdminOpsExport(path, `staff-commissions-${stamp}.${ext}`);
+        await downloadAdminOpsExport(path, adminExportFilename("staff-commissions", ext));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "خروجی گزارش ناموفق");

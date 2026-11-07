@@ -8,6 +8,7 @@ import type {
   AcquisitionReportPeriod,
   AcquisitionReportStats,
 } from "@/lib/admin/acquisition-report";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import { downloadAdminOpsExport, fetchAdminOps } from "@/lib/operations/client";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage, type Booking, type BookingStats } from "@/lib/storage";
@@ -186,7 +187,7 @@ export default function AdminDashboardPage() {
     setExportError("");
     setExportOk("");
     setAcqExportBusy(format);
-    const stamp = new Date().toISOString().slice(0, 10);
+    const periodKey = acqPeriod === "custom" ? "custom" : acqPeriod;
     const path = `/api/admin/operations/acquisition-report?${acquisitionQueryString(format)}`;
     try {
       if (format === "pdf") {
@@ -194,7 +195,7 @@ export default function AdminDashboardPage() {
         setExportOk("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
       } else {
         const ext = format === "xlsx" ? "xlsx" : "csv";
-        await downloadAdminOpsExport(path, `acquisition-report-${stamp}.${ext}`);
+        await downloadAdminOpsExport(path, adminExportFilename(`acquisition-report-${periodKey}`, ext));
         setExportOk(format === "xlsx" ? "گزارش Excel دانلود شد." : "گزارش CSV دانلود شد.");
       }
     } catch (e) {
@@ -208,7 +209,6 @@ export default function AdminDashboardPage() {
     setExportError("");
     setExportOk("");
     setExportBusy(format);
-    const stamp = new Date().toISOString().slice(0, 10);
     const path = `/api/admin/operations/app-report?format=${format}`;
     try {
       if (format === "pdf") {
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
         setExportOk("صفحه گزارش PDF باز شد — از چاپ، «ذخیره به PDF» را انتخاب کنید.");
       } else {
         const ext = format === "xlsx" ? "xlsx" : "csv";
-        await downloadAdminOpsExport(path, `app-report-${stamp}.${ext}`);
+        await downloadAdminOpsExport(path, adminExportFilename("app-report", ext));
         setExportOk(format === "xlsx" ? "گزارش Excel دانلود شد." : "گزارش CSV دانلود شد.");
       }
     } catch (e) {

@@ -9,6 +9,7 @@ import {
   buildAppReportRows,
   type AppOverviewStats,
 } from '@/lib/admin/app-report';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -120,8 +121,7 @@ async function loadAppOverviewStats(): Promise<AppOverviewStats> {
 }
 
 function reportFilename(ext: string): string {
-  const stamp = new Date().toISOString().slice(0, 10);
-  return `app-report-${stamp}.${ext}`;
+  return adminExportFilename('app-report', ext);
 }
 
 export async function GET(request: Request) {

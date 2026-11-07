@@ -1,3 +1,4 @@
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { jsonError } from '@/lib/auth/api-utils';
 import {
   buildStaffCommissionCsv,
@@ -10,8 +11,7 @@ import { prismaRouteError } from '@/lib/prisma/route-error';
 import { NextResponse } from 'next/server';
 
 function reportFilename(ext: string): string {
-  const stamp = new Date().toISOString().slice(0, 10);
-  return `staff-commissions-${stamp}.${ext}`;
+  return adminExportFilename('staff-commissions', ext);
 }
 
 export async function GET(request: Request) {

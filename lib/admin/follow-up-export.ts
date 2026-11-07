@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import type { FollowUpCase, SpecialistReferral } from '@prisma/client';
 import { followUpOutcomeLabel, followUpServiceLabel } from '@/lib/follow-up/types';
 import { statusSummary } from '@/lib/follow-up/mappers';
+import { formatJalaliExportDate } from '@/lib/patient';
 
 function escapeCsvCell(value: string | number): string {
   const text = String(value ?? '');
@@ -23,7 +24,7 @@ const REFERRAL_HEADERS = [
 
 export function referralRowsForExport(rows: SpecialistReferral[]) {
   return rows.map((r) => [
-    r.createdAt.toLocaleDateString('fa-IR'),
+    formatJalaliExportDate(r.createdAt),
     r.referrerName,
     r.patientName,
     r.patientPhone,
@@ -86,7 +87,7 @@ function parseAssistantNames(json: string | null | undefined): string {
 
 export function followUpRowsForExport(rows: FollowUpCase[]) {
   return rows.map((r) => [
-    r.workDate.toISOString().slice(0, 10),
+    formatJalaliExportDate(r.workDate),
     r.patientName,
     r.patientPhone,
     r.doctorName,
@@ -98,7 +99,7 @@ export function followUpRowsForExport(rows: FollowUpCase[]) {
     r.satisfactionEnvironment ?? '',
     followUpOutcomeLabel(r.outcome),
     statusSummary(r),
-    r.followUpDate?.toISOString().slice(0, 10) ?? '',
+    formatJalaliExportDate(r.followUpDate),
     r.followUpTime ?? '',
     r.notes || '',
     r.referralLikelihood ?? '',

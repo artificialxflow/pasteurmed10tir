@@ -3,6 +3,7 @@ import {
   institutionsToCsv,
   listMarketingInstitutions,
 } from '@/lib/admin/marketing-institutions';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { NextResponse } from 'next/server';
 
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="marketing-institutions.csv"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('marketing-institutions', 'csv')}"`,
       },
     });
   }

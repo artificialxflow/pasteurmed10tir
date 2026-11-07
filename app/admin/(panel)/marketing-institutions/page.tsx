@@ -3,6 +3,7 @@
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { FormInput } from "@/components/ui/Card";
+import { adminExportFilename } from "@/lib/admin/export-filename";
 import { downloadAdminOpsExport, fetchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { useCallback, useEffect, useState } from "react";
@@ -42,7 +43,7 @@ export default function AdminMarketingInstitutionsPage() {
           onClick={() =>
             void downloadAdminOpsExport(
               `/api/admin/operations/marketing/institutions?format=csv`,
-              `marketing-institutions-${new Date().toISOString().slice(0, 10)}.csv`,
+              adminExportFilename("marketing-institutions", "csv"),
             )
           }
         >

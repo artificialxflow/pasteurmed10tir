@@ -1,3 +1,4 @@
+import { formatJalaliExportDate } from '@/lib/patient';
 import { prisma } from '@/lib/prisma';
 
 export type MarketingInstitutionRow = {
@@ -80,7 +81,7 @@ export function institutionsToCsv(rows: MarketingInstitutionRow[]): Buffer {
     const cells = [
       row.companyName,
       row.visitorName,
-      new Date(row.lastReportAt).toLocaleDateString('fa-IR'),
+      formatJalaliExportDate(row.lastReportAt),
       String(row.reportCount),
       c[0] ? `${c[0].name} (${c[0].role})` : '',
       c[1] ? `${c[1].name} (${c[1].role})` : '',

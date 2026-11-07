@@ -3,6 +3,7 @@ import {
   buildReferralsCsv,
   buildReferralsXlsx,
 } from '@/lib/admin/follow-up-export';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="specialist-referrals.csv"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('specialist-referrals', 'csv')}"`,
       },
     });
   }
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
     return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="specialist-referrals.xlsx"',
+        'Content-Disposition': `attachment; filename="${adminExportFilename('specialist-referrals', 'xlsx')}"`,
       },
     });
   }

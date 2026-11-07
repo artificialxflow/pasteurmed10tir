@@ -10,6 +10,7 @@ import {
   buildInstallmentPdfHtml,
   buildInstallmentXlsx,
 } from '@/lib/admin/installment-export';
+import { adminExportFilename } from '@/lib/admin/export-filename';
 import { mapInstallmentPlan } from '@/lib/commerce/mappers';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -24,8 +25,7 @@ const VALID_SOURCES = new Set<InstallmentReportSource>([
 ]);
 
 function reportFilename(source: InstallmentReportSource, ext: string): string {
-  const stamp = new Date().toISOString().slice(0, 10);
-  return `installments-${source}-${stamp}.${ext}`;
+  return adminExportFilename(`installments-${source}`, ext);
 }
 
 export async function GET(request: Request) {
