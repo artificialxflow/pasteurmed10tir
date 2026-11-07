@@ -187,7 +187,8 @@ export default function AdminDashboardPage() {
     setExportError("");
     setExportOk("");
     setAcqExportBusy(format);
-    const periodKey = acqPeriod === "custom" ? "custom" : acqPeriod;
+    const periodKey =
+      acqFrom.trim() && acqTo.trim() ? "custom" : acqPeriod;
     const path = `/api/admin/operations/acquisition-report?${acquisitionQueryString(format)}`;
     try {
       if (format === "pdf") {
