@@ -15,9 +15,9 @@ import { NextResponse } from 'next/server';
  * Schedule externally every 10–15 minutes against:
  *   POST https://pasteur.plus/api/cron/sms-reminders
  *
- * Installment rules (updates/10/07):
- * - 1 day before due → SMS once (SMS_INSTALLMENT_DUE_BODY_ID)
- * - while overdue → SMS once per calendar day (SMS_INSTALLMENT_OVERDUE_BODY_ID)
+ * Installment rules (updates/35/05):
+ * - 5 and 2 days before due → SMS once per slot (SMS_INSTALLMENT_DUE_BODY_ID)
+ * - 2 and 5 days overdue → SMS once per slot with penalty in amount (SMS_INSTALLMENT_OVERDUE_BODY_ID)
  */
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();

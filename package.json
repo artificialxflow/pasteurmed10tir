@@ -20,7 +20,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:restore-migrations": "node scripts/restore-migration-sql.cjs",
     "db:build-restore-migrations": "node scripts/build-restore-migration-sql.mjs",
-    "brand:assets": "node scripts/build-brand-assets.mjs"
+    "brand:assets": "node scripts/build-brand-assets.mjs",
+    "check:loan-tier": "tsx scripts/check-loan-tier-rules.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

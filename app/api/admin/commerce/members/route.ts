@@ -12,6 +12,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
+  const planId = searchParams.get('planId')?.trim();
   const fromRaw = searchParams.get('from');
   const toRaw = searchParams.get('to');
   const fromDate = fromRaw ? new Date(fromRaw) : null;
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     prisma.member.findMany({
       where: {
         ...(status && status !== 'all' ? { status } : {}),
+        ...(planId && planId !== 'all' ? { planId } : {}),
         ...(createdAt ? { createdAt } : {}),
       },
       orderBy: { createdAt: 'desc' },

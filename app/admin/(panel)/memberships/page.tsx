@@ -14,7 +14,7 @@ import {
 import { ROUTES } from "@/lib/routes";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import { type Membership } from "@/lib/data";
-import { formatToman } from "@/lib/membership";
+import { formatToman, membershipTierLabel, parseMembershipTier, type MembershipTier } from "@/lib/membership";
 import { formatJalaliDate } from "@/lib/patient";
 import { type Member } from "@/lib/storage";
 import {
@@ -72,6 +72,8 @@ export default function AdminMembershipsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [plans, setPlans] = useState<Membership[]>([]);
   const [memberStatus, setMemberStatus] = useState("paid");
+  const [memberPlanId, setMemberPlanId] = useState("all");
+  const [appTierFilter, setAppTierFilter] = useState<"all" | MembershipTier>("all");
   const [memberFrom, setMemberFrom] = useState("");
   const [memberTo, setMemberTo] = useState("");
   const [error, setError] = useState("");
@@ -83,6 +85,7 @@ export default function AdminMembershipsPage() {
   const reloadMembers = useCallback(async () => {
     const params = new URLSearchParams();
     if (memberStatus && memberStatus !== "all") params.set("status", memberStatus);
+    if (memberPlanId && memberPlanId !== "all") params.set("planId", memberPlanId);
     if (memberFrom) params.set("from", memberFrom);
     if (memberTo) params.set("to", memberTo);
     const qs = params.toString();
@@ -103,7 +106,14 @@ export default function AdminMembershipsPage() {
           .reduce((s, m) => s + Number(m.amount || 0), 0),
       },
     );
-  }, [memberStatus, memberFrom, memberTo]);
+  }, [memberStatus, memberPlanId, memberFrom, memberTo]);
+
+  const filteredApplications = useMemo(() => {
+    if (appTierFilter === "all") return applications;
+    return applications.filter(
+      (app) => parseMembershipTier(app.tier ?? app.planId) === appTierFilter,
+    );
+  }, [applications, appTierFilter]);
 
   async function reload() {
     try {
@@ -335,6 +345,18 @@ export default function AdminMembershipsPage() {
           این بخش فقط درخواست‌های وام/پیشنهاد است؛ لیست کسانی که حق عضویت پرداخت کرده‌اند پایین‌تر در
           «گزارش اعضا» آمده است.
         </p>
+        <div className="mb-3 max-w-xs">
+          <FormLabel>فیلتر طرح عضویت (وام)</FormLabel>
+          <FormSelect
+            value={appTierFilter}
+            onChange={(e) => setAppTierFilter(e.target.value as "all" | MembershipTier)}
+          >
+            <option value="all">همه طرح‌ها</option>
+            <option value="regular">عادی</option>
+            <option value="vip">VIP</option>
+            <option value="eco-plus">اکوپلاس</option>
+          </FormSelect>
+        </div>
         <AdminTable
           headers={[
             "مشتری",
@@ -349,7 +371,7 @@ export default function AdminMembershipsPage() {
           ]}
           empty="فرم عضویتی ثبت نشده است."
         >
-          {applications.map((app) => {
+          {filteredApplications.map((app) => {
             const tone = zohalCreditStatusTone(app.zohalStatus);
             const creditDisabled = app.zohalStatus === ZOHAL_CREDIT_DISABLED;
             return (
@@ -364,7 +386,15 @@ export default function AdminMembershipsPage() {
                   ? `${Number(app.loanAmount).toLocaleString("fa-IR")} تومان`
                   : "—"}
               </td>
-              <td className="px-4 py-3">{String(app.planTitle || "—")}</td>
+              <td className="px-4 py-3 text-xs">
+                {String(app.planTitle || "—")}
+                {app.tier || app.tierLabel ? (
+                  <div className="mt-0.5 font-bold text-teal-800">
+                    {app.tierLabel ||
+                      membershipTierLabel(parseMembershipTier(app.tier))}
+                  </div>
+                ) : null}
+              </td>
               <td className="px-4 py-3 text-xs font-medium">
                 <span
                   className={
@@ -503,13 +533,22 @@ export default function AdminMembershipsPage() {
           وضعیت. بازه فعلی: {memberReportHint}.
         </p>
 
-        <div className="mb-4 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-4 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <FormLabel>وضعیت</FormLabel>
             <FormSelect value={memberStatus} onChange={(e) => setMemberStatus(e.target.value)}>
               <option value="paid">پرداخت‌شده</option>
               <option value="pending">در انتظار</option>
               <option value="all">همه</option>
+            </FormSelect>
+          </div>
+          <div>
+            <FormLabel>طرح عضویت</FormLabel>
+            <FormSelect value={memberPlanId} onChange={(e) => setMemberPlanId(e.target.value)}>
+              <option value="all">همه</option>
+              <option value="regular">عادی</option>
+              <option value="vip">VIP</option>
+              <option value="eco-plus">اکوپلاس</option>
             </FormSelect>
           </div>
           <JalaliBirthDateField
