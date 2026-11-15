@@ -4,7 +4,9 @@
 import { PASTEUR_DATA, type Membership, type MembershipCoveragePlan } from './data';
 import { PasteurStorage } from './storage';
 
-export type MembershipTier = 'regular' | 'vip';
+export type MembershipTier = 'regular' | 'vip' | 'eco-plus';
+
+export const ECO_PLUS_ANNUAL_INTEREST = 0.2;
 
 export function getDurationOptions(): MembershipCoveragePlan[] {
   return PASTEUR_DATA.membershipCoveragePlans.map((plan) => ({ ...plan }));
@@ -30,9 +32,11 @@ export function membershipDurationDiscountForPayment(
   return plan.discountPercent || 0;
 }
 
+const ACTIVE_MEMBERSHIP_PLAN_IDS = ['regular', 'vip', 'eco-plus'] as const;
+
 function defaultMembershipPlans(): Membership[] {
   return PASTEUR_DATA.memberships
-    .filter((m) => m.id === 'regular' || m.id === 'vip')
+    .filter((m) => (ACTIVE_MEMBERSHIP_PLAN_IDS as readonly string[]).includes(m.id))
     .map((m) => ({
       ...m,
       features: [...m.features],
@@ -64,6 +68,9 @@ export function normalizeMemberCount(value: string | number, fallback = 1): numb
 }
 
 export function getUnitPrice(tier: MembershipTier, planId: string): number {
+  if (tier === 'eco-plus') {
+    return planId === 'two-year' ? 7_500_000 : 5_000_000;
+  }
   const plan = getDurationOptions().find((p) => p.id === planId);
   if (!plan) return 0;
   return tier === 'vip' ? plan.vipPerPerson : plan.regularPerPerson;
@@ -71,6 +78,9 @@ export function getUnitPrice(tier: MembershipTier, planId: string): number {
 
 export function getValidityLabel(tier: MembershipTier, planId: string): string {
   const plan = getDurationOptions().find((p) => p.id === planId);
+  if (tier === 'eco-plus') {
+    return planId === 'two-year' ? '۲ ساله' : '۱ ساله';
+  }
   if (!plan) return tier === 'vip' ? '۳۶ ماهه' : '۱۸ ماهه';
   return tier === 'vip' ? plan.vipValidity : plan.regularValidity;
 }
@@ -89,6 +99,7 @@ export function getLoanPlan(tier: MembershipTier, plans?: Membership[]): Members
 }
 
 export function getDownPaymentPercent(tier: MembershipTier, plans?: Membership[]): number {
+  if (tier === 'eco-plus') return 0;
   const plan = getLoanPlan(tier, plans);
   return Number(plan?.downPaymentPercent ?? (tier === 'vip' ? 20 : 30));
 }
@@ -119,14 +130,30 @@ export const LOAN_REQUEST_TERM_OPTIONS: Array<{ months: number; interestRate: nu
 ];
 
 export function parseMembershipTier(value: unknown): MembershipTier {
-  return value === 'vip' ? 'vip' : 'regular';
+  const raw = String(value || '').toLowerCase();
+  if (raw === 'vip') return 'vip';
+  if (raw === 'eco-plus' || raw === 'ecoplus' || raw === 'eco_plus') return 'eco-plus';
+  return 'regular';
+}
+
+export function membershipTierLabel(tier: MembershipTier): string {
+  if (tier === 'vip') return 'VIP';
+  if (tier === 'eco-plus') return 'اکوپلاس';
+  return 'عادی';
 }
 
 export function getMaxLoanMonths(tier: MembershipTier, plans?: Membership[]): number {
+  if (tier === 'eco-plus') return 18;
   const plan = getLoanPlan(tier, plans);
   const parsed = Number(plan?.loanTermLabel?.replace(/[^\d]/g, '') || 0);
   if (parsed > 0) return Math.min(36, parsed);
   return tier === 'vip' ? 36 : 18;
+}
+
+function annualInterestRateForTier(tier: MembershipTier, months: number): number {
+  if (isZeroInterestLoanTerm(months)) return 0;
+  if (tier === 'eco-plus') return ECO_PLUS_ANNUAL_INTEREST;
+  return STANDARD_LOAN_INTEREST_RATE;
 }
 
 export function getLoanRequestTermOptionsForTier(
@@ -134,7 +161,13 @@ export function getLoanRequestTermOptionsForTier(
   plans?: Membership[],
 ): Array<{ months: number; interestRate: number }> {
   const max = getMaxLoanMonths(tier, plans);
-  return LOAN_REQUEST_TERM_OPTIONS.filter((option) => option.months <= max);
+  const options = LOAN_REQUEST_TERM_OPTIONS.filter((option) => option.months <= max);
+  if (tier === 'eco-plus') {
+    return options
+      .filter((o) => o.months === 18)
+      .map((o) => ({ months: o.months, interestRate: ECO_PLUS_ANNUAL_INTEREST }));
+  }
+  return options;
 }
 
 export function isAllowedLoanRequestTerm(
@@ -160,12 +193,17 @@ export function clampLoanMonths(months: number | string | undefined, fallback = 
 }
 
 /** Total repayment: 1–3 months 0%; otherwise simple 12% per year × (months/12). */
-export function computeLoanRepaymentTotal(principal: number, months: number): number {
+export function computeLoanRepaymentTotal(
+  principal: number,
+  months: number,
+  tier: MembershipTier = 'regular',
+): number {
   const amount = Math.max(0, Number(principal || 0));
   const term = clampLoanMonths(months, 12);
-  if (isZeroInterestLoanTerm(term)) return Math.round(amount);
+  const rate = annualInterestRateForTier(tier, term);
+  if (rate <= 0) return Math.round(amount);
   const years = term / 12;
-  return Math.round(amount * (1 + STANDARD_LOAN_INTEREST_RATE * years));
+  return Math.round(amount * (1 + rate * years));
 }
 
 export function loanTermInterestLabel(months: number, interestRate?: number): string {
@@ -211,7 +249,7 @@ export function calculateLoan({
   const downPaymentPercent = getDownPaymentPercent(tier, plans);
   const downPaymentAmount = computeDownPayment(validAmount, downPaymentPercent);
   const remaining = computeFinancedAmount(validAmount, downPaymentAmount);
-  const totalRepayment = computeLoanRepaymentTotal(remaining, term);
+  const totalRepayment = computeLoanRepaymentTotal(remaining, term, tier);
   const installment = Math.ceil(totalRepayment / term);
   return {
     plan,

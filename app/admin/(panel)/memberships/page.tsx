@@ -318,6 +318,12 @@ export default function AdminMembershipsPage() {
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold">فرم‌های پیشنهاد صدور عضویت (وام درمانی)</h2>
+          <a
+            href={ROUTES.admin.membershipsInPerson}
+            className="text-xs font-bold text-violet-800 underline"
+          >
+            پرداخت حضوری حق عضویت →
+          </a>
           <p className="text-xs text-slate-500">
             تسهیلات تجهیزات →{" "}
             <a href={ROUTES.admin.facilities} className="font-bold text-cyan-800 underline">

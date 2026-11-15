@@ -134,6 +134,7 @@ export const ROUTES = {
     homeVisits: '/admin/home-visits',
     staffCommissions: '/admin/staff-commissions',
     memberships: '/admin/memberships',
+    membershipsInPerson: '/admin/memberships/in-person',
     organizations: '/admin/organizations',
     laserServices: '/admin/laser-services',
     nursingServices: '/admin/nursing-services',

@@ -14,11 +14,11 @@ export const LOAN_DOC_KINDS = [
 
 export type LoanDocKind = (typeof LOAN_DOC_KINDS)[number];
 
+/** بسته 35/06 — اعتبارسنجی بانکی الزام کاربر نیست */
 export const LOAN_DOC_REQUIRED_KINDS: LoanDocKind[] = [
   'birth-certificate',
   'national-id',
   'pay-stub',
-  'credit-report',
 ];
 
 export const LOAN_DOC_KIND_LABELS: Record<LoanDocKind, string> = {

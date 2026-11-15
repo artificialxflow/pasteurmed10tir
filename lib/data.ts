@@ -864,6 +864,23 @@ export const PASTEUR_DATA = {
       terms: 'پرداخت هزینه VIP برای فعال‌سازی مزایای ویژه. مدت ۳۶ ماهه مربوط به بازپرداخت وام درمانی VIP است، نه مدت حق عضویت.',
       highlighted: true,
     },
+    {
+      id: 'eco-plus',
+      name: 'اکوپلاس',
+      price: '۵,۰۰۰,۰۰۰',
+      priceNum: 5000000,
+      loanTermLabel: '۱۸ ماهه',
+      loanLimit: 303000000,
+      downPaymentPercent: 0,
+      features: [
+        'بدون پیش‌پرداخت وام',
+        'سقف وام ۳۰۳ میلیون تومان · بازپرداخت ۱۸ ماهه',
+        'سود بانکی ۲۰٪ سالانه',
+        'حق عضویت سال اول ۵ میلیون · دوساله ۷٫۵ میلیون',
+      ],
+      terms: 'طرح اکوپلاس (Eco Plus) مطابق قرارداد کارفرما — فقط مدت ۱۸ ماه برای وام.',
+      highlighted: false,
+    },
   ],
 
   membershipPricing: {

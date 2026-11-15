@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { DocumentUploadField } from "@/components/account/DocumentUploadField";
+import { MembershipPaySection } from "@/components/dental/MembershipPaySection";
 import {
   createLoanApplicationApi,
   getMyLoanDocumentsApi,
@@ -22,8 +23,17 @@ import {
   getMembershipPlansAsync,
   isAllowedLoanRequestTerm,
   loanTermInterestLabel,
+  membershipTierLabel,
+  parseMembershipTier,
   type MembershipTier,
 } from "@/lib/membership";
+import {
+  clearLoanPanelDraft,
+  readLoanPanelDraft,
+  writeLoanPanelDraft,
+} from "@/lib/membership/loan-panel-draft";
+import { resolveAllowedTiersForLoan } from "@/lib/membership/loan-tier-rules";
+import { hasPaidMembershipInItems } from "@/lib/membership/membership-paid-client";
 import { ROUTES } from "@/lib/routes";
 import { formatPrice } from "@/lib/utils";
 import { isValidNationalId, normalizeNationalId } from "@/lib/validation/national-id";
@@ -38,6 +48,8 @@ type LoanApp = {
   createdAt?: string;
   source?: string | null;
   reviewNote?: string | null;
+  tier?: string | null;
+  planId?: string | null;
 };
 
 function statusLabel(status?: string) {
@@ -45,6 +57,15 @@ function statusLabel(status?: string) {
   if (status === "rejected") return "رد شده";
   return "در انتظار بررسی";
 }
+
+const LOAN_DOC_KINDS_UI: LoanDocKind[] = [
+  "birth-certificate",
+  "national-id",
+  "pay-stub",
+  "credit-report",
+  "guarantee-check",
+  "other",
+];
 
 export function LoanRequestCard({
   phone,
@@ -65,17 +86,22 @@ export function LoanRequestCard({
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<LoanApp[]>([]);
+  const [membershipRows, setMembershipRows] = useState<Array<Record<string, unknown>>>([]);
   const [docs, setDocs] = useState<Record<string, unknown>[]>([]);
 
   const reload = useCallback(() => {
     void getMyMembershipApplicationsApi()
       .then((data) => {
         const list = (data.items || []) as LoanApp[];
+        setMembershipRows((data.items || []) as Array<Record<string, unknown>>);
         setItems(
           list.filter((item) => Number(item.loanAmount || 0) > 0 || item.source === "loan-request"),
         );
       })
-      .catch(() => setItems([]));
+      .catch(() => {
+        setItems([]);
+        setMembershipRows([]);
+      });
     void getMyLoanDocumentsApi()
       .then((data) => setDocs(data.items || []))
       .catch(() => setDocs([]));
@@ -86,6 +112,38 @@ export function LoanRequestCard({
   useEffect(() => {
     void getMembershipPlansAsync().then(setMembershipPlans);
   }, []);
+
+  useEffect(() => {
+    const draft = readLoanPanelDraft();
+    if (!draft) return;
+    if (draft.amount) setAmount(draft.amount);
+    if (draft.months) setMonths(draft.months);
+    if (draft.tier) setTier(parseMembershipTier(draft.tier));
+    if (draft.nationalId) setNationalId(draft.nationalId);
+    clearLoanPanelDraft();
+  }, []);
+
+  const allowedTiers = useMemo(
+    () =>
+      resolveAllowedTiersForLoan({
+        amount: Number(amount || 0),
+        months: Number(months || 0),
+        plans: membershipPlans,
+      }),
+    [amount, months, membershipPlans],
+  );
+
+  useEffect(() => {
+    if (!allowedTiers.includes(tier)) {
+      setTier(allowedTiers[allowedTiers.length - 1] || "vip");
+    }
+  }, [allowedTiers, tier]);
+
+  const paidForTier = useMemo(
+    () => hasPaidMembershipInItems(membershipRows, tier),
+    [membershipRows, tier],
+  );
+
   const termOptions = useMemo(
     () => getLoanRequestTermOptionsForTier(tier, membershipPlans),
     [tier, membershipPlans],
@@ -115,10 +173,27 @@ export function LoanRequestCard({
     if (profileNationalId) setNationalId(profileNationalId);
   }, [profileNationalId]);
 
+  useEffect(() => {
+    writeLoanPanelDraft({
+      amount,
+      months,
+      tier,
+      nationalId,
+    });
+  }, [amount, months, tier, nationalId]);
+
+  const docsReady = LOAN_DOC_REQUIRED_KINDS.every((k) =>
+    docs.some((d) => !d.applicationId && d.kind === k),
+  );
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setOk("");
+    if (!paidForTier) {
+      setError("ابتدا حق عضویت طرح انتخابی را پرداخت کنید.");
+      return;
+    }
     const loanAmount = Number(amount);
     const loanMonths = Number(months);
     const nid = normalizeNationalId(nationalId);
@@ -137,7 +212,7 @@ export function LoanRequestCard({
     const draftDocs = docs.filter((d) => !d.applicationId);
     const kinds = new Set(draftDocs.map((d) => String(d.kind)));
     if (LOAN_DOC_REQUIRED_KINDS.some((k) => !kinds.has(k))) {
-      setError("چهار مدرک الزامی را آپلود کنید.");
+      setError("مدارک الزامی را آپلود کنید.");
       return;
     }
     setBusy(true);
@@ -159,6 +234,7 @@ export function LoanRequestCard({
       });
       setOk("درخواست وام ثبت شد. پس از تأیید ادمین، طرح اقساط در صفحه اقساط دیده می‌شود.");
       setAmount("50000000");
+      clearLoanPanelDraft();
       reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "ثبت ناموفق بود.");
@@ -171,19 +247,14 @@ export function LoanRequestCard({
     variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
   const facilityHref =
     variant === "app" ? ROUTES.app.shopFacility : ROUTES.web.shopFacility;
-  const membershipHref =
-    variant === "app" ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership;
 
   return (
     <Card hover={false} className="space-y-4 border-cyan-100 bg-cyan-50/40 p-4">
       <div>
         <p className="font-extrabold text-slate-900">درخواست وام درمانی</p>
         <p className="mt-2 text-sm leading-7 text-slate-700">
-          این وام جدا از <strong>سقف اعتبار عضویت</strong> در کیف پول است. برای عضویت به{" "}
-          <Link href={membershipHref} className="font-bold text-teal-700 underline">
-            فرم عضویت
-          </Link>{" "}
-          و برای <strong>تسهیلات تجهیزات</strong> به{" "}
+          این وام جدا از <strong>سقف اعتبار عضویت</strong> در کیف پول است. برای{" "}
+          <strong>تسهیلات تجهیزات</strong> به{" "}
           <Link href={facilityHref} className="font-bold text-teal-700 underline">
             درخواست تسهیلات
           </Link>{" "}
@@ -196,11 +267,23 @@ export function LoanRequestCard({
           <FormLabel>نوع طرح وام</FormLabel>
           <FormSelect
             value={tier}
-            onChange={(e) => setTier(e.target.value as MembershipTier)}
+            onChange={(e) => setTier(parseMembershipTier(e.target.value))}
           >
-            <option value="regular">عادی (حداکثر ۱۸ ماه)</option>
-            <option value="vip">VIP (حداکثر ۳۶ ماه)</option>
+            {allowedTiers.includes("regular") ? (
+              <option value="regular">عادی (حداکثر ۱۸ ماه)</option>
+            ) : null}
+            {allowedTiers.includes("vip") ? (
+              <option value="vip">VIP (حداکثر ۳۶ ماه)</option>
+            ) : null}
+            {allowedTiers.includes("eco-plus") ? (
+              <option value="eco-plus">اکوپلاس (۱۸ ماه · سود ۲۰٪)</option>
+            ) : null}
           </FormSelect>
+          {!allowedTiers.includes("regular") ? (
+            <p className="mt-1 text-[11px] text-amber-800">
+              برای این مبلغ/مدت فقط VIP مجاز است.
+            </p>
+          ) : null}
         </div>
         <div>
           <FormLabel>مبلغ وام (تومان)</FormLabel>
@@ -228,10 +311,21 @@ export function LoanRequestCard({
         </div>
         <div className="sm:col-span-2 rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2 text-xs leading-6 text-amber-950">
           پیش‌نمایش: پیش‌پرداخت {loanPreview.downPaymentPercent.toLocaleString("fa-IR")}٪ ={" "}
-          {formatToman(loanPreview.downPaymentAmount)} · مانده {formatToman(loanPreview.remaining)} ·
-          جمع بازپرداخت {formatToman(loanPreview.totalRepayment)} (
+          {formatToman(loanPreview.downPaymentAmount)} · مانده {formatToman(loanPreview.remaining)}{" "}
+          · جمع بازپرداخت {formatToman(loanPreview.totalRepayment)} (
           {loanPreview.months.toLocaleString("fa-IR")} قسط)
         </div>
+
+        <div className="sm:col-span-2">
+          <MembershipPaySection
+            variant={variant}
+            patientName={name}
+            patientPhone={phone}
+            tier={tier}
+            paidForTier={paidForTier}
+          />
+        </div>
+
         <div className="sm:col-span-2">
           <FormLabel>کد ملی (الزامی)</FormLabel>
           <FormInput
@@ -244,23 +338,21 @@ export function LoanRequestCard({
         </div>
         <div className="sm:col-span-2 space-y-2">
           <p className="text-sm font-extrabold text-slate-900">مدارک</p>
-          {(
-            [
-              "birth-certificate",
-              "national-id",
-              "pay-stub",
-              "credit-report",
-              "guarantee-check",
-              "other",
-            ] as LoanDocKind[]
-          ).map((kind) => (
+          {LOAN_DOC_KINDS_UI.map((kind) => (
             <DocumentUploadField
               key={kind}
               kind={kind}
               label={LOAN_DOC_KIND_LABELS[kind]}
               required={LOAN_DOC_REQUIRED_KINDS.includes(kind)}
               hint={kind === "guarantee-check" ? LOAN_CHECK_GUIDE.hint : undefined}
-              items={docs.filter((d) => !d.applicationId) as { id?: string; kind?: string; filename?: string; mime?: string }[]}
+              items={
+                docs.filter((d) => !d.applicationId) as {
+                  id?: string;
+                  kind?: string;
+                  filename?: string;
+                  mime?: string;
+                }[]
+              }
               onChange={reload}
             />
           ))}
@@ -269,12 +361,7 @@ export function LoanRequestCard({
         {ok ? <p className="sm:col-span-2 text-sm font-bold text-teal-700">{ok}</p> : null}
         <Button
           type="submit"
-          disabled={
-            busy ||
-            LOAN_DOC_REQUIRED_KINDS.some(
-              (k) => !docs.some((d) => !d.applicationId && d.kind === k),
-            )
-          }
+          disabled={busy || !paidForTier || !docsReady}
           className="sm:col-span-2"
         >
           {busy ? "در حال ثبت…" : "ثبت درخواست وام"}
@@ -290,9 +377,7 @@ export function LoanRequestCard({
               className="rounded-xl border border-white bg-white/80 px-3 py-2 text-sm"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-bold">
-                  {formatPrice(Number(item.loanAmount || 0))}
-                </span>
+                <span className="font-bold">{formatPrice(Number(item.loanAmount || 0))}</span>
                 <span
                   className={`text-xs font-bold ${
                     item.status === "rejected"
@@ -308,11 +393,6 @@ export function LoanRequestCard({
               {item.status === "rejected" && item.reviewNote ? (
                 <p className="mt-2 rounded-lg border border-rose-100 bg-rose-50/80 px-2 py-1.5 text-xs leading-6 text-rose-900">
                   توضیح کارشناس: {item.reviewNote}
-                </p>
-              ) : null}
-              {item.status === "rejected" && !item.reviewNote ? (
-                <p className="mt-2 text-xs leading-6 text-slate-500">
-                  درخواست رد شده است. برای جزئیات با پشتیبانی تماس بگیرید.
                 </p>
               ) : null}
             </div>

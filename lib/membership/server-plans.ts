@@ -4,7 +4,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function loadMembershipPlansFromDb(): Promise<Membership[]> {
   const rows = await prisma.membershipPlan.findMany({ orderBy: { sortOrder: 'asc' } });
-  const filtered = rows.filter((m) => m.id === 'regular' || m.id === 'vip');
+  const filtered = rows.filter((m) =>
+    ['regular', 'vip', 'eco-plus'].includes(m.id),
+  );
   if (filtered.length) {
     return filtered.map((row) => {
       const mapped = mapMembershipPlan(row);
@@ -12,6 +14,6 @@ export async function loadMembershipPlansFromDb(): Promise<Membership[]> {
     });
   }
   return PASTEUR_DATA.memberships
-    .filter((m) => m.id === 'regular' || m.id === 'vip')
+    .filter((m) => ['regular', 'vip', 'eco-plus'].includes(m.id))
     .map((m) => ({ ...m, features: [...m.features] }));
 }

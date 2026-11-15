@@ -120,7 +120,12 @@ export async function completeMembershipPayment(input: {
       phone,
       planTitle: input.planName || null,
       tier: input.planId || null,
-      tierLabel: input.planId === 'vip' ? 'VIP' : input.planId || null,
+      tierLabel:
+        input.planId === 'vip'
+          ? 'VIP'
+          : input.planId === 'eco-plus'
+            ? 'اکوپلاس'
+            : input.planId || null,
       amountToman: recordedAmount || null,
       referralCode: input.referralCode || null,
       validityLabel: input.validityLabel || null,

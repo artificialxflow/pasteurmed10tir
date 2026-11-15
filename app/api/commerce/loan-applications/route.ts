@@ -5,8 +5,11 @@ import { mapLoanDocumentPublic } from '@/lib/loan-documents/storage';
 import {
   getMaxLoanMonths,
   isAllowedLoanRequestTerm,
+  membershipTierLabel,
   parseMembershipTier,
 } from '@/lib/membership';
+import { isTierAllowedForLoan } from '@/lib/membership/loan-tier-rules';
+import { requirePaidMembershipForLoan } from '@/lib/membership/membership-loan-gate';
 import { loadMembershipPlansFromDb } from '@/lib/membership/server-plans';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
 import { requirePatient } from '@/lib/operations/require-patient';
@@ -33,6 +36,19 @@ export async function POST(request: Request) {
   const plans = await loadMembershipPlansFromDb();
   const tier = parseMembershipTier(body.tier ?? body.loanTier);
   const loanMonths = Number(body.loanMonths ?? body.months);
+
+  const membershipGate = await requirePaidMembershipForLoan(phone, tier);
+  if (!membershipGate.ok) {
+    return jsonError(membershipGate.message, 400);
+  }
+
+  if (!isTierAllowedForLoan(tier, loanAmount, loanMonths, plans)) {
+    return jsonError(
+      'برای این مبلغ یا مدت وام فقط طرح VIP مجاز است. طرح وام را به VIP تغییر دهید.',
+      400,
+    );
+  }
+
   if (!isAllowedLoanRequestTerm(loanMonths, tier, plans)) {
     const max = getMaxLoanMonths(tier, plans);
     return jsonError(`مدت بازپرداخت معتبر نیست (حداکثر ${max.toLocaleString('fa-IR')} ماه برای طرح ${tier === 'vip' ? 'VIP' : 'عادی'}).`);
@@ -57,7 +73,7 @@ export async function POST(request: Request) {
   const kinds = new Set(docs.map((d) => d.kind));
   const missing = LOAN_DOC_REQUIRED_KINDS.filter((k) => !kinds.has(k));
   if (missing.length) {
-    return jsonError('چهار مدرک الزامی را آپلود کنید.');
+    return jsonError('مدارک الزامی (شناسنامه، کارت ملی، فیش حقوقی) را آپلود کنید.');
   }
 
   const extra = { ...body };
@@ -71,7 +87,7 @@ export async function POST(request: Request) {
       nationalId,
       loanAmount,
       tier,
-      tierLabel: tier === 'vip' ? 'VIP' : 'عادی',
+      tierLabel: membershipTierLabel(tier),
       source: 'loan-request',
       planTitle: body.planTitle ? String(body.planTitle) : 'درخواست وام درمانی',
       status: 'pending',

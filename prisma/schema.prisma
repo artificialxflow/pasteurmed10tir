@@ -946,6 +946,10 @@ model MembershipApplication {
   reviewedAt               DateTime?
   reviewNote               String?
   source                   String?
+  /** self | in_person | operator */
+  channel                  String?
+  onBehalfUserId           String?
+  createdByAdminId         String?
   date                     String?
   extra                    Json?
   createdAt                DateTime @default(now())
