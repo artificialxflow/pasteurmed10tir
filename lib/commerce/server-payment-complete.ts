@@ -80,6 +80,9 @@ export async function completePendingPaymentOnServer(pending: PendingPayment) {
         pending.membershipInstallmentCount === null
           ? undefined
           : Number(pending.membershipInstallmentCount),
+      membershipApplicationId: pending.membershipApplicationId
+        ? String(pending.membershipApplicationId)
+        : undefined,
       zibalTrackId: pending.zibalTrackId ? String(pending.zibalTrackId) : undefined,
     });
     return result;

@@ -34,7 +34,8 @@ function normalizeNursingItem(item: NursingItem): NursingItem {
     priceNum = parsePriceFromLabel(label);
   }
   const price = label || (priceNum > 0 ? `${priceNum.toLocaleString("fa-IR")} تومان` : "");
-  return { ...item, priceNum, price: price || undefined };
+  const emoji = String(item.emoji || "🩺").trim() || "🩺";
+  return { ...item, emoji, priceNum, price: price || undefined };
 }
 
 export default function AdminNursingServicesPage() {
@@ -115,6 +116,7 @@ export default function AdminNursingServicesPage() {
         items.push({
           id: makeItemId("new"),
           title: "خدمت جدید",
+          emoji: "🩺",
           priceNum: 0,
           price: "",
           unit: "",
@@ -318,11 +320,21 @@ export default function AdminNursingServicesPage() {
               </div>
 
               <AdminTable
-                headers={["عنوان", "قیمت (عدد)", "برچسب قیمت", "واحد", "فعال", "عملیات"]}
+                headers={["آیکن", "عنوان", "قیمت (عدد)", "برچسب قیمت", "واحد", "فعال", "عملیات"]}
                 empty="آیتمی ثبت نشده — برچسب پیش‌فرض نمایش داده می‌شود."
               >
                 {(service.items || []).map((item, itemIndex) => (
                   <tr key={item.id} className="border-t border-slate-100">
+                    <td className="px-4 py-3">
+                      <FormInput
+                        className="max-w-[72px] text-center text-xs"
+                        value={item.emoji || ""}
+                        onChange={(e) =>
+                          updateItem(categoryIndex, itemIndex, { emoji: e.target.value })
+                        }
+                        placeholder="🩺"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <FormInput
                         className="text-xs"

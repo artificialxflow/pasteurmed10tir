@@ -147,6 +147,7 @@ export const ROUTES = {
     access: '/admin/access',
     patients: '/admin/patients',
     healthRecords: '/admin/health-records',
+    warrantyCards: '/admin/warranty-cards',
     insurances: '/admin/insurances',
     reviews: '/admin/reviews',
     complaints: '/admin/complaints',

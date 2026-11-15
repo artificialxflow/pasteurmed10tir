@@ -120,6 +120,7 @@ export interface Physician {
 export interface NursingItem {
   id: string;
   title: string;
+  emoji?: string;
   priceNum: number;
   price?: string;
   unit?: string;
@@ -385,11 +386,16 @@ export const PASTEUR_DATA = {
     mapEmbedUrl:
       'https://maps.google.com/maps?q=38.066516,46.269864&z=16&hl=fa&output=embed',
     serviceArea: 'تبریز و حومه',
-    phone: '۰۴۱۳۴۴۴۹۳۱۳',
-    phoneDigits: '04134449313',
-    phoneAlt: '۰۴۱۳۴۴۱۴۲۳۵',
-    phoneAltDigits: '04134414235',
+    phone: '۰۴۱۹۱۰۱۰۰۳۴',
+    phoneDigits: '04191010034',
+    phoneAlt: '۰۴۱۳۴۴۴۹۳۱۳',
+    phoneAltDigits: '04134449313',
     phoneGroups: [
+      {
+        label: 'مرکز / پذیرش',
+        numbers: ['۰۴۱۹۱۰۱۰۰۳۴'],
+        digits: ['04191010034'],
+      },
       {
         label: 'دندانپزشکی',
         numbers: ['۰۴۱۳۴۴۴۹۳۱۳', '۰۴۱۳۴۴۴۹۳۰۰', '۰۴۱۳۴۴۱۴۲۳۵'],

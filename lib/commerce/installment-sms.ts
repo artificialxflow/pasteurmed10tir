@@ -1,8 +1,9 @@
 /**
- * Installment SMS reminders (updates/10/07):
- * - 1 day before due date
- * - daily while overdue
+ * Installment SMS reminders (updates/35/05):
+ * - 5 and 2 days before due
+ * - 2 and 5 days after due (with 1% daily penalty in amount text)
  */
+import { installmentPayableWithPenaltyToman } from '@/lib/commerce/installment-daily-penalty';
 import { iranDayBounds } from '@/lib/operations/booking-dates';
 import { prisma } from '@/lib/prisma';
 import {
@@ -45,12 +46,22 @@ export type InstallmentSmsCronResult = {
   skippedOverduePattern: boolean;
 };
 
+type DueSlot = { offsetDays: number; flag: 'dueSms5dSent' | 'dueSms2dSent' };
+type OverdueSlot = { overdueDays: number; flag: 'overdueSms2dSent' | 'overdueSms5dSent' };
+
+const DUE_SLOTS: DueSlot[] = [
+  { offsetDays: 5, flag: 'dueSms5dSent' },
+  { offsetDays: 2, flag: 'dueSms2dSent' },
+];
+
+const OVERDUE_SLOTS: OverdueSlot[] = [
+  { overdueDays: 2, flag: 'overdueSms2dSent' },
+  { overdueDays: 5, flag: 'overdueSms5dSent' },
+];
+
 export async function processInstallmentSmsReminders(): Promise<InstallmentSmsCronResult> {
   const ids = smsBodyIds();
-  const tomorrowIso = iranIsoDate(1);
-  const { start: tomorrowStart, end: tomorrowEnd } = iranDayBounds(tomorrowIso);
   const todayStart = iranDayBounds(iranIsoDate(0)).start;
-
   let dueSent = 0;
   let overdueSent = 0;
   let scannedDue = 0;
@@ -59,40 +70,44 @@ export async function processInstallmentSmsReminders(): Promise<InstallmentSmsCr
   const skippedOverduePattern = !ids.installmentOverdue;
 
   if (ids.installmentDue) {
-    const dueTomorrow = await prisma.installmentScheduleItem.findMany({
-      where: {
-        dueReminderSent: false,
-        status: { not: 'paid' },
-        dueDate: { gte: tomorrowStart, lte: tomorrowEnd },
-        plan: { status: { in: ['active', 'overdue'] }, deletedAt: null },
-      },
-      include: { plan: true },
-      take: 80,
-      orderBy: { dueDate: 'asc' },
-    });
-    scannedDue = dueTomorrow.length;
+    for (const slot of DUE_SLOTS) {
+      const targetIso = iranIsoDate(slot.offsetDays);
+      const { start, end } = iranDayBounds(targetIso);
+      const items = await prisma.installmentScheduleItem.findMany({
+        where: {
+          [slot.flag]: false,
+          status: { not: 'paid' },
+          dueDate: { gte: start, lte: end },
+          plan: { status: { in: ['active', 'overdue'] }, deletedAt: null },
+        },
+        include: { plan: true },
+        take: 80,
+        orderBy: { dueDate: 'asc' },
+      });
+      scannedDue += items.length;
 
-    for (const item of dueTomorrow) {
-      const remaining = Math.max(0, item.amount - item.paidAmount);
-      if (remaining <= 0) {
-        await prisma.installmentScheduleItem.update({
-          where: { id: item.id },
-          data: { dueReminderSent: true },
-        });
-        continue;
-      }
-      const r = await sendInstallmentDueSms(
-        item.plan.phone,
-        item.plan.title,
-        formatAmountFa(remaining),
-        formatDueDateFa(item.dueDate),
-      );
-      if (r.ok) {
-        await prisma.installmentScheduleItem.update({
-          where: { id: item.id },
-          data: { dueReminderSent: true },
-        });
-        dueSent += 1;
+      for (const item of items) {
+        const remaining = Math.max(0, item.amount - item.paidAmount);
+        if (remaining <= 0) {
+          await prisma.installmentScheduleItem.update({
+            where: { id: item.id },
+            data: { [slot.flag]: true, dueReminderSent: true },
+          });
+          continue;
+        }
+        const r = await sendInstallmentDueSms(
+          item.plan.phone,
+          item.plan.title,
+          formatAmountFa(remaining),
+          formatDueDateFa(item.dueDate),
+        );
+        if (r.ok) {
+          await prisma.installmentScheduleItem.update({
+            where: { id: item.id },
+            data: { [slot.flag]: true, dueReminderSent: true },
+          });
+          dueSent += 1;
+        }
       }
     }
   }
@@ -102,34 +117,52 @@ export async function processInstallmentSmsReminders(): Promise<InstallmentSmsCr
       where: {
         status: { not: 'paid' },
         dueDate: { lt: todayStart },
-        OR: [{ lastOverdueSmsAt: null }, { lastOverdueSmsAt: { lt: todayStart } }],
         plan: { status: { in: ['active', 'overdue'] }, deletedAt: null },
       },
       include: { plan: true },
-      take: 80,
+      take: 120,
       orderBy: { dueDate: 'asc' },
     });
-    scannedOverdue = overdueItems.length;
 
-    for (const item of overdueItems) {
-      const remaining = Math.max(0, item.amount - item.paidAmount);
-      if (remaining <= 0) continue;
+    for (const slot of OVERDUE_SLOTS) {
+      const matching = overdueItems.filter((item) => {
+        const remaining = Math.max(0, item.amount - item.paidAmount);
+        if (remaining <= 0) return false;
+        if (item[slot.flag]) return false;
+        const { overdueDays } = installmentPayableWithPenaltyToman(
+          remaining,
+          item.dueDate,
+          todayStart,
+        );
+        return overdueDays === slot.overdueDays;
+      });
+      scannedOverdue += matching.length;
 
-      const r = await sendInstallmentOverdueSms(
-        item.plan.phone,
-        item.plan.title,
-        `قسط ${item.index.toLocaleString('fa-IR')}`,
-        formatAmountFa(remaining),
-      );
-      if (r.ok) {
-        await prisma.installmentScheduleItem.update({
-          where: { id: item.id },
-          data: {
-            lastOverdueSmsAt: new Date(),
-            status: item.status === 'paid' ? item.status : 'overdue',
-          },
-        });
-        overdueSent += 1;
+      for (const item of matching) {
+        const remaining = Math.max(0, item.amount - item.paidAmount);
+        const pay = installmentPayableWithPenaltyToman(remaining, item.dueDate, todayStart);
+        const amountLabel =
+          pay.penalty > 0
+            ? `${formatAmountFa(pay.payable)} (شامل ${pay.overdueDays.toLocaleString('fa-IR')} روز تأخیر)`
+            : formatAmountFa(pay.payable);
+
+        const r = await sendInstallmentOverdueSms(
+          item.plan.phone,
+          item.plan.title,
+          `قسط ${item.index.toLocaleString('fa-IR')}`,
+          amountLabel,
+        );
+        if (r.ok) {
+          await prisma.installmentScheduleItem.update({
+            where: { id: item.id },
+            data: {
+              [slot.flag]: true,
+              lastOverdueSmsAt: new Date(),
+              status: item.status === 'paid' ? item.status : 'overdue',
+            },
+          });
+          overdueSent += 1;
+        }
       }
     }
   }

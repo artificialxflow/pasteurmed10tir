@@ -255,7 +255,10 @@ export function NursingCatalog({ variant = "site" }: NursingCatalogProps) {
                         : "border-slate-200 bg-slate-50 hover:bg-white",
                     )}
                   >
-                    <span className="font-bold text-slate-800">{item.title}</span>
+                    <span className="font-bold text-slate-800">
+                      {item.emoji ? `${item.emoji} ` : ""}
+                      {item.title}
+                    </span>
                     <span className="text-teal-700">
                       {formatItemPrice(item)}
                       {item.unit ? ` / ${item.unit}` : ""}

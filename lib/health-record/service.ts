@@ -165,6 +165,39 @@ export async function createHealthEntryForPhone(input: {
   });
 }
 
+export async function updateHealthEntryForAdmin(input: {
+  entryId: string;
+  payload?: Record<string, unknown>;
+  date?: string;
+  editorAdminId?: string | null;
+}) {
+  const entry = await prisma.healthRecordEntry.findUnique({
+    where: { id: input.entryId },
+    include: { record: true },
+  });
+  if (!entry) throw new Error('ردیف پرونده یافت نشد.');
+
+  let entryDate = entry.entryDate;
+  if (input.date) {
+    const next = new Date(`${input.date}T12:00:00.000Z`);
+    if (Number.isNaN(next.getTime())) throw new Error('تاریخ نامعتبر است.');
+    entryDate = next;
+  }
+
+  const row = await prisma.healthRecordEntry.update({
+    where: { id: input.entryId },
+    data: {
+      ...(input.payload
+        ? { payload: input.payload as Prisma.InputJsonValue }
+        : {}),
+      entryDate,
+      createdByUserId: input.editorAdminId || entry.createdByUserId,
+    },
+    include: { attachments: true },
+  });
+  return mapEntry(row);
+}
+
 export async function listHealthEntries(
   userId: string,
   section?: string,

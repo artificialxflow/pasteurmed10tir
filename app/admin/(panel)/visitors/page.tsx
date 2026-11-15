@@ -5,7 +5,7 @@ import { QrCodePanel } from "@/components/admin/QrCodePanel";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel } from "@/components/ui/Card";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
-import { fetchAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
+import { fetchAdminCommerce, postAdminCommerce, putAdminCommerce } from "@/lib/commerce/client";
 import { visitorRefPath } from "@/lib/commerce/referral-ref";
 import { type Visitor, type VisitorRoleKind } from "@/lib/data";
 import { confirmAction } from "@/lib/ui/confirm-action";
@@ -155,6 +155,30 @@ export default function AdminVisitorsPage() {
     const next = visitors.map((v) => ({ ...v }));
     next[index].status = next[index].status === "active" ? "inactive" : "active";
     persist(next);
+  }
+
+  function archiveVisitor(index: number) {
+    const v = visitors[index];
+    if (!v) return;
+    const label = v.role === "referrer" ? "معرف" : "ویزیتور";
+    if (
+      !confirmAction(
+        `${label} «${v.name.trim()}» آرشیو شود؟ (غیرفعال — رکورد حذف نمی‌شود؛ پورسانت باز مانع آرشیو است.)`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    void postAdminCommerce<{ item: Visitor }>(
+      `/api/admin/commerce/visitors/${encodeURIComponent(String(v.id))}/archive`,
+    )
+      .then(() => {
+        setSuccess(`${label} ${v.name.trim()} آرشیو شد.`);
+        reload();
+        if (qrVisitorId === Number(v.id)) setQrVisitorId(null);
+      })
+      .catch((e: Error) => setError(e.message));
   }
 
   function deleteVisitor(index: number) {
@@ -375,6 +399,15 @@ export default function AdminVisitorsPage() {
               >
                 {v.status === "active" ? "غیرفعال" : "فعال"}
               </button>
+              {v.status === "active" ? (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-amber-800"
+                  onClick={() => archiveVisitor(i)}
+                >
+                  آرشیو
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="text-xs font-semibold text-rose-700"

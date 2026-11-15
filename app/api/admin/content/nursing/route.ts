@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 type NursingItemBody = {
   id: string;
   title: string;
+  emoji?: string;
   priceNum: number;
   price?: string;
   unit?: string;
@@ -60,6 +61,7 @@ export async function PUT(request: Request) {
           create: (s.items || []).map((item, ii) => ({
             id: String(item.id || `ni-${si}-${ii}`),
             title: String(item.title || '').trim(),
+            emoji: String(item.emoji || '🩺').trim() || '🩺',
             priceNum: Number(item.priceNum || 0),
             price: item.price?.trim() || null,
             unit: item.unit?.trim() || null,

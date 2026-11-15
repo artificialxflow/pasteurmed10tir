@@ -46,6 +46,7 @@ model User {
   homeVisitRequests  HomeVisitRequest[]
   healthRecord       HealthRecord?
   organization       Organization?
+  serviceWarrantyCards ServiceWarrantyCard[]
 }
 
 model Organization {
@@ -215,6 +216,7 @@ model NursingItem {
   id        String         @id
   serviceId String
   service   NursingService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  emoji     String         @default("🩺")
   title     String
   priceNum  Int
   price     String?
@@ -1261,8 +1263,13 @@ model InstallmentScheduleItem {
   amount           Int
   paidAmount       Int                   @default(0)
   status           InstallmentItemStatus @default(pending)
-  /** SMS «یک روز قبل سررسید» ارسال شده */
+  /** SMS «یک روز قبل سررسید» ارسال شده (legacy) */
   dueReminderSent  Boolean               @default(false)
+  /** یادآور ۵ روز قبل سررسید — بسته 35/05 */
+  dueSms5dSent     Boolean               @default(false)
+  dueSms2dSent     Boolean               @default(false)
+  overdueSms2dSent Boolean               @default(false)
+  overdueSms5dSent Boolean               @default(false)
   /** آخرین SMS معوقه روزانه */
   lastOverdueSmsAt DateTime?
   payments         InstallmentPayment[]
@@ -1521,6 +1528,32 @@ model HealthRecordAttachment {
   createdAt    DateTime          @default(now())
 
   @@index([entryId])
+}
+
+enum ServiceWarrantyType {
+  root_canal
+  crown
+  implant
+  laminate_composite
+  denture
+  orthodontics
+}
+
+model ServiceWarrantyCard {
+  id               String              @id @default(cuid())
+  userId           String
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceType      ServiceWarrantyType
+  serviceLabel     String
+  imageUrl         String
+  startedAt        DateTime            @default(now())
+  expiresAt        DateTime
+  createdByAdminId String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 /// گزارش کار پاستور پلاس (بسته ۲۷/۰۹) — جدا از فالوآپ ادمین

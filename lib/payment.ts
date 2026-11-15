@@ -65,6 +65,10 @@ export type PendingMembershipPayment = PendingPaymentBase & {
   membershipTotalAmount?: number;
   /** ۱ = یک‌جا، ۲ یا ۳ = اقساط */
   membershipInstallmentCount?: number;
+  /** پرداخت حضوری اپراتور — بروزرسانی application موجود */
+  membershipApplicationId?: string;
+  onBehalfUserId?: string;
+  createdByAdminId?: string;
 };
 
 export type PendingShopVipPayment = PendingPaymentBase & {

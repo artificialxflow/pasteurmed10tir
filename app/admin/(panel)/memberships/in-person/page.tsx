@@ -19,6 +19,7 @@ export default function MembershipInPersonPage() {
   const [planId, setPlanId] = useState("one-year");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [lastApplicationId, setLastApplicationId] = useState("");
   const durationOptions = getDurationOptions();
 
   const search = useCallback(() => {
@@ -45,7 +46,7 @@ export default function MembershipInPersonPage() {
     setMessage("");
     try {
       const data = await postAdminCommerce<{
-        application?: Record<string, unknown>;
+        application?: { id?: string };
         payment?: { amountToman?: number };
       }>("/api/admin/commerce/membership-applications/on-behalf", {
         patientPhone: selected.phone,
@@ -55,9 +56,11 @@ export default function MembershipInPersonPage() {
         membershipPlanId: planId,
         memberCount: 1,
       });
+      const appId = String(data.application?.id || "");
+      setLastApplicationId(appId);
       const amount = Number(data.payment?.amountToman || 0);
       setMessage(
-        `درخواست عضویت ثبت شد (${String(data.application?.id || "").slice(0, 8)}…). مبلغ ${formatToman(amount)} — پرداخت درگاه را از فرم عضویت با شماره بیمار تکمیل کنید یا درگاه سازمانی متصل کنید.`,
+        `درخواست ثبت شد. مبلغ ${formatToman(amount)} — برای پرداخت درگاه روی دکمه زیر بزنید.`,
       );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "ثبت ناموفق بود.");
@@ -134,6 +137,28 @@ export default function MembershipInPersonPage() {
         <Button type="button" disabled={busy || !selected} onClick={() => void startOnBehalf()}>
           {busy ? "در حال ثبت…" : "ثبت درخواست عضویت برای بیمار"}
         </Button>
+        {lastApplicationId ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void postAdminCommerce<{ redirectUrl?: string }>(
+                "/api/admin/commerce/membership-applications/on-behalf/payment",
+                { applicationId: lastApplicationId },
+              )
+                .then((pay) => {
+                  if (pay.redirectUrl) window.location.href = pay.redirectUrl;
+                  else setMessage("آدرس درگاه دریافت نشد.");
+                })
+                .catch((e: Error) => setMessage(e.message))
+                .finally(() => setBusy(false));
+            }}
+          >
+            پرداخت درگاه (به نام بیمار)
+          </Button>
+        ) : null}
         {message ? <p className="text-sm font-bold text-slate-800">{message}</p> : null}
       </Card>
     </div>

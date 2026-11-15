@@ -1,6 +1,7 @@
 "use client";
 
 import { HealthRecordAttachmentFormField } from "@/components/health-record/HealthRecordAttachmentFormField";
+import { HealthRecordEntryEditor } from "@/components/health-record/HealthRecordEntryEditor";
 import { HealthRecordEntryView } from "@/components/health-record/HealthRecordEntryView";
 import { HealthRecordFormFields } from "@/components/health-record/HealthRecordFormFields";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,7 @@ export default function AdminHealthRecordsPage() {
   const [values, setValues] = useState<Record<string, string>>(() => emptyValues(fieldsForSection("vitals")));
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [registrarOptions, setRegistrarOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchAdminOps<{ items: Array<{ id: string; name: string }> }>(
@@ -264,15 +266,41 @@ export default function AdminHealthRecordsPage() {
           <p className="text-xs text-slate-500">موردی نیست.</p>
         ) : (
           <ul className="space-y-3">
-            {items.map((item) => (
-              <HealthRecordEntryView
-                key={item.id}
-                item={item}
-                section={isKnownSection(item.section) ? item.section : writeSection}
-                title={HEALTH_SECTIONS.find((s) => s.id === item.section)?.label}
-                onUpload={uploadFor}
-              />
-            ))}
+            {items.map((item) => {
+              const sectionId = isKnownSection(item.section) ? item.section : writeSection;
+              const title = HEALTH_SECTIONS.find((s) => s.id === item.section)?.label;
+              if (editingEntryId === item.id && isKnownSection(item.section)) {
+                return (
+                  <li key={item.id}>
+                    <HealthRecordEntryEditor
+                      item={item}
+                      section={sectionId}
+                      registrarOptions={registrarOptions}
+                      onCancel={() => setEditingEntryId(null)}
+                      onSaved={() => {
+                        setEditingEntryId(null);
+                        setMessage("ویرایش ذخیره شد.");
+                        if (user) void loadUser(user.id);
+                      }}
+                    />
+                  </li>
+                );
+              }
+              return (
+                <HealthRecordEntryView
+                  key={item.id}
+                  item={item}
+                  section={sectionId}
+                  title={title}
+                  onUpload={uploadFor}
+                  onEdit={
+                    isKnownSection(item.section)
+                      ? () => setEditingEntryId(item.id)
+                      : undefined
+                  }
+                />
+              );
+            })}
           </ul>
         )}
       </Card>

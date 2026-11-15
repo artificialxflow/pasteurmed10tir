@@ -34,6 +34,7 @@ const navGroups: NavGroup[] = [
       { href: ROUTES.admin.staffCommissions, label: "پورسانت نیرو", permission: "fieldStaff" },
       { href: ROUTES.admin.patients, label: "تأیید کاربری", permission: "patients" },
       { href: ROUTES.admin.healthRecords, label: "پرونده سلامت", permission: "patients" },
+      { href: ROUTES.admin.warrantyCards, label: "کارت گارانتی", permission: "patients" },
       { href: ROUTES.admin.reminders, label: "یادآورها", permission: "reminders" },
     ],
   },
@@ -133,6 +134,7 @@ const titles: Record<string, string> = {
   [ROUTES.admin.installments]: "اقساط کاربران",
   [ROUTES.admin.patients]: "تأیید کاربری و فرانشیز",
   [ROUTES.admin.healthRecords]: "پرونده سلامت بیماران",
+  [ROUTES.admin.warrantyCards]: "ثبت کارت گارانتی خدمات",
 };
 
 function titleFromPath(pathname: string) {

@@ -12,6 +12,7 @@ import { MarketingPanel } from "@/components/account/MarketingPanel";
 import { AccountCreditSummaryBanner } from "@/components/account/AccountCreditSummaryBanner";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
 import { MembershipTierBadge } from "@/components/account/MembershipTierBadge";
+import { ServiceWarrantySection } from "@/components/account/ServiceWarrantySection";
 import { ClubBrushWidget } from "@/components/club/ClubBrushWidget";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
@@ -446,6 +447,7 @@ export function AccountDashboard({
           </p>
         </Card>
         <ClubBrushWidget phone={profile.phone} variant={variant} layout="card" />
+        <ServiceWarrantySection />
         <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
           <StatusBadge label="کاربری" value={patientStatusLabel(profile.status)} tone={userTone} />
           <StatusBadge

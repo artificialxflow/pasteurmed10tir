@@ -77,6 +77,7 @@ export async function completeMembershipPayment(input: {
   orgMemberIds?: string[];
   membershipTotalAmount?: number;
   membershipInstallmentCount?: number;
+  membershipApplicationId?: string | null;
   zibalTrackId?: string | null;
 }) {
   const phone = normalizePhoneDigits(input.patientPhone || '');
@@ -113,41 +114,55 @@ export async function completeMembershipPayment(input: {
     },
   });
 
-  const application = await prisma.membershipApplication.create({
-    data: {
-      id: generateCommerceId(),
-      patientName: input.patientName || null,
-      phone,
-      planTitle: input.planName || null,
-      tier: input.planId || null,
-      tierLabel:
-        input.planId === 'vip'
-          ? 'VIP'
-          : input.planId === 'eco-plus'
-            ? 'اکوپلاس'
-            : input.planId || null,
-      amountToman: recordedAmount || null,
-      referralCode: input.referralCode || null,
-      validityLabel: input.validityLabel || null,
-      membershipDurationLabel: input.membershipDurationLabel || null,
-      discountPercent:
-        input.discountPercent === undefined || input.discountPercent === null
-          ? null
-          : Number(input.discountPercent),
-      extra: {
-        groupDiscountPercent:
-          input.groupDiscountPercent === undefined || input.groupDiscountPercent === null
-            ? undefined
-            : clampGroupDiscountPercent(input.groupDiscountPercent),
-        organizationId: input.organizationId || undefined,
-        orgMemberIds: Array.isArray(input.orgMemberIds) ? input.orgMemberIds : undefined,
-        membershipInstallmentCount: isOrgInstallment ? installmentCount : undefined,
-        membershipTotalAmount: isOrgInstallment ? totalMembershipAmount : undefined,
-      },
-      status: 'paid',
-      source: 'payment-complete',
-    },
-  });
+  const tierLabel =
+    input.planId === 'vip'
+      ? 'VIP'
+      : input.planId === 'eco-plus'
+        ? 'اکوپلاس'
+        : input.planId || null;
+
+  const application = input.membershipApplicationId
+    ? await prisma.membershipApplication.update({
+        where: { id: input.membershipApplicationId },
+        data: {
+          status: 'paid',
+          amountToman: recordedAmount || null,
+          tier: input.planId || undefined,
+          tierLabel,
+          validityLabel: input.validityLabel || undefined,
+          membershipDurationLabel: input.membershipDurationLabel || undefined,
+        },
+      })
+    : await prisma.membershipApplication.create({
+        data: {
+          id: generateCommerceId(),
+          patientName: input.patientName || null,
+          phone,
+          planTitle: input.planName || null,
+          tier: input.planId || null,
+          tierLabel,
+          amountToman: recordedAmount || null,
+          referralCode: input.referralCode || null,
+          validityLabel: input.validityLabel || null,
+          membershipDurationLabel: input.membershipDurationLabel || null,
+          discountPercent:
+            input.discountPercent === undefined || input.discountPercent === null
+              ? null
+              : Number(input.discountPercent),
+          extra: {
+            groupDiscountPercent:
+              input.groupDiscountPercent === undefined || input.groupDiscountPercent === null
+                ? undefined
+                : clampGroupDiscountPercent(input.groupDiscountPercent),
+            organizationId: input.organizationId || undefined,
+            orgMemberIds: Array.isArray(input.orgMemberIds) ? input.orgMemberIds : undefined,
+            membershipInstallmentCount: isOrgInstallment ? installmentCount : undefined,
+            membershipTotalAmount: isOrgInstallment ? totalMembershipAmount : undefined,
+          },
+          status: 'paid',
+          source: 'payment-complete',
+        },
+      });
 
   const wallet = await upgradeWalletForUser(
     phone,

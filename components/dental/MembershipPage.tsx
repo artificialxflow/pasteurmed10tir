@@ -467,7 +467,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       </div>
 
       {/* Plan cards */}
-      <div className={cn("grid gap-5", app ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2")}>
+      <div
+        className={cn(
+          "grid gap-5",
+          app ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2",
+          !app && plans.length >= 3 && "xl:grid-cols-3",
+        )}
+      >
         {plans.map((m) => (
           <Card
             key={m.id}
@@ -480,7 +486,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               </span>
             ) : null}
             <div className={cn("mb-4 text-center", app && "text-right")}>
-              <span className="text-4xl">{m.id === "vip" ? "💎" : "🦷"}</span>
+              <span className="text-4xl">
+                {m.id === "vip" ? "💎" : m.id === "eco-plus" ? "🌿" : "🦷"}
+              </span>
               <h2 className="mt-2 text-xl font-bold">{m.name}</h2>
             </div>
             <p
