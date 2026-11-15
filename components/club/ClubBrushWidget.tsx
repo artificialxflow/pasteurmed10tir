@@ -64,10 +64,11 @@ export function ClubBrushWidget({
       ? `امروز: ${brushStatus.brushesToday.toLocaleString("fa-IR")} از ${brushStatus.maxPerDay.toLocaleString("fa-IR")}`
       : null;
 
+  /** Web: stack above SupportWidget (h-14) at same left anchor so both stay visible. */
   const floatingPos =
     variant === "app"
       ? "bottom-[calc(0.75rem+var(--app-nav-height,3.5rem))] left-3"
-      : "bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] left-3 md:bottom-6 md:left-6";
+      : "bottom-[calc(4.5rem+3.5rem+0.75rem+env(safe-area-inset-bottom,0px))] left-3 md:bottom-[calc(1.5rem+3.5rem+0.75rem)] md:left-6";
 
   if (layout === "floating") {
     return (
