@@ -131,7 +131,8 @@ type PanelSection =
   | "organization"
   | "marketing"
   | "competitor-analysis"
-  | "referrer";
+  | "referrer"
+  | "warranty";
 
 function MenuRow({
   label,
@@ -183,6 +184,7 @@ const PANEL_QUERY_VALUES: PanelSection[] = [
   "physician-stats",
   "physician-commissions",
   "physician-referrals",
+  "warranty",
 ];
 
 export function AccountDashboard({
@@ -385,6 +387,7 @@ export function AccountDashboard({
           label: string;
         }[])
       : []),
+    { id: "warranty", label: "گارانتی خدمات" },
     { id: "loan", label: "درخواست وام / اعتبار" },
     { id: "installments", label: "اقساط" },
     { id: "insurance", label: "بیمه" },
@@ -447,7 +450,7 @@ export function AccountDashboard({
           </p>
         </Card>
         <ClubBrushWidget phone={profile.phone} variant={variant} layout="card" />
-        <ServiceWarrantySection />
+        <ServiceWarrantySection variant="teaser" onOpenPanel={() => openPanel("warranty")} />
         <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
           <StatusBadge label="کاربری" value={patientStatusLabel(profile.status)} tone={userTone} />
           <StatusBadge
@@ -542,8 +545,14 @@ export function AccountDashboard({
           </div>
         </Card>
         <DependentsCard />
+        <ServiceWarrantySection
+          variant="embedded"
+          onOpenPanel={() => openPanel("warranty")}
+        />
       </div>
     );
+  } else if (panel === "warranty") {
+    panelBody = <ServiceWarrantySection variant="panel" />;
   } else if (panel === "organization") {
     panelBody = (
       <OrganizationPanel

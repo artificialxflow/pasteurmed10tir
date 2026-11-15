@@ -1099,7 +1099,7 @@ export const PasteurStorage = {
     const stored = this.get(this.KEYS.membershipPlans) as Membership[] | null;
     const source = stored || PASTEUR_DATA.memberships.map((m) => ({ ...m, features: [...m.features] }));
     return source
-      .filter((m) => m.id === 'regular' || m.id === 'vip')
+      .filter((m) => m.id === 'regular' || m.id === 'vip' || m.id === 'eco-plus')
       .map((m) => ({
         ...m,
         features: [...(m.features || [])],

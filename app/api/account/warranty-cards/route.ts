@@ -1,6 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { requirePatient } from '@/lib/operations/require-patient';
-import { WARRANTY_TYPE_LABELS } from '@/lib/warranty/constants';
+import { mapPublicWarrantyCard } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
@@ -20,14 +20,6 @@ export async function GET() {
   });
 
   return NextResponse.json({
-    items: rows.map((r) => ({
-      id: r.id,
-      serviceType: r.serviceType,
-      serviceLabel: r.serviceLabel,
-      typeLabel: WARRANTY_TYPE_LABELS[r.serviceType],
-      imageUrl: r.imageUrl,
-      startedAt: r.startedAt.toISOString(),
-      expiresAt: r.expiresAt.toISOString(),
-    })),
+    items: rows.map(mapPublicWarrantyCard),
   });
 }

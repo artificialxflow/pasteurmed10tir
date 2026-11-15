@@ -1,22 +1,35 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
-import {
-  WARRANTY_TYPE_LABELS,
-  warrantyExpiresAt,
-} from '@/lib/warranty/constants';
+import { WARRANTY_TYPE_LABELS, warrantyExpiresAt } from '@/lib/warranty/constants';
+import { warrantyCardArtUrl } from '@/lib/warranty/art';
+import { mapPublicWarrantyCard, WARRANTY_SERVICE_TYPES } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import type { ServiceWarrantyType } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
-const TYPES = new Set<string>([
-  'root_canal',
-  'crown',
-  'implant',
-  'laminate_composite',
-  'denture',
-  'orthodontics',
-]);
+export async function GET(request: Request) {
+  const auth = await requireAdmin('patients');
+  if (auth.error) return auth.error;
+
+  const phone = normalizePhoneDigits(
+    new URL(request.url).searchParams.get('phone') || '',
+  );
+  if (!phone) return jsonError('موبایل بیمار الزامی است.');
+
+  const user = await prisma.user.findUnique({ where: { phone } });
+  if (!user) return jsonError('بیمار یافت نشد.', 404);
+
+  const rows = await prisma.serviceWarrantyCard.findMany({
+    where: { userId: user.id },
+    orderBy: { expiresAt: 'desc' },
+  });
+
+  return NextResponse.json({
+    items: rows.map(mapPublicWarrantyCard),
+    patient: { userId: user.id, phone: user.phone },
+  });
+}
 
 export async function POST(request: Request) {
   const auth = await requireAdmin('patients');
@@ -27,11 +40,10 @@ export async function POST(request: Request) {
 
   const phone = normalizePhoneDigits(String(body.patientPhone || ''));
   const serviceType = String(body.serviceType || '');
-  const imageUrl = String(body.imageUrl || '').trim();
   const serviceLabel = String(body.serviceLabel || '').trim();
 
-  if (!phone || !TYPES.has(serviceType) || !imageUrl) {
-    return jsonError('موبایل بیمار، نوع خدمت و آدرس تصویر الزامی است.');
+  if (!phone || !WARRANTY_SERVICE_TYPES.has(serviceType)) {
+    return jsonError('موبایل بیمار و نوع خدمت الزامی است.');
   }
 
   const user = await prisma.user.findUnique({ where: { phone } });
@@ -40,6 +52,7 @@ export async function POST(request: Request) {
   const startedAt = body.startedAt ? new Date(String(body.startedAt)) : new Date();
   const type = serviceType as ServiceWarrantyType;
   const expiresAt = warrantyExpiresAt(startedAt, type);
+  const imageUrl = warrantyCardArtUrl(type);
 
   const row = await prisma.serviceWarrantyCard.create({
     data: {
@@ -53,5 +66,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ item: row }, { status: 201 });
+  return NextResponse.json({ item: mapPublicWarrantyCard(row) }, { status: 201 });
 }

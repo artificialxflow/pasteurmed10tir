@@ -32,7 +32,7 @@ export function membershipDurationDiscountForPayment(
   return plan.discountPercent || 0;
 }
 
-const ACTIVE_MEMBERSHIP_PLAN_IDS = ['regular', 'vip', 'eco-plus'] as const;
+export const ACTIVE_MEMBERSHIP_PLAN_IDS = ['regular', 'vip', 'eco-plus'] as const;
 
 function defaultMembershipPlans(): Membership[] {
   return PASTEUR_DATA.memberships

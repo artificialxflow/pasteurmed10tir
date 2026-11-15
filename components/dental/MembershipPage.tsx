@@ -20,12 +20,15 @@ import {
   getMembershipPlansAsync,
   getUnitPrice,
   getValidityLabel,
+  ECO_PLUS_ANNUAL_INTEREST,
   isZeroInterestLoanTerm,
   membershipDurationDiscountForPayment,
   membershipDurationDiscountLabel,
+  membershipTierLabel,
   normalizeMemberCount,
   type MembershipTier,
 } from "@/lib/membership";
+import { resolveAllowedTiersForLoan } from "@/lib/membership/loan-tier-rules";
 import {
   applyMembershipDiscounts,
   clampGroupDiscountPercent,
@@ -149,6 +152,30 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     [loanTier, loanAmount, loanMonths, membershipPlans],
   );
 
+  const allowedLoanTiers = useMemo(
+    () =>
+      resolveAllowedTiersForLoan({
+        amount: Number(loanAmount || 0),
+        months: loanMonths,
+        plans: membershipPlans,
+      }),
+    [loanAmount, loanMonths, membershipPlans],
+  );
+
+  const loanInterestBadge = useMemo(() => {
+    if (isZeroInterestLoanTerm(loanMonths)) return "سود ۰٪ (کوتاه‌مدت)";
+    if (loanTier === "eco-plus") return "سود ۲۰٪ سالانه (اکوپلاس)";
+    return "سود ۱۲٪ سالانه";
+  }, [loanMonths, loanTier]);
+
+  const loanInterestDisplay = useMemo(() => {
+    if (isZeroInterestLoanTerm(loanMonths)) return "۰٪";
+    if (loanTier === "eco-plus") {
+      return `${Math.round(ECO_PLUS_ANNUAL_INTEREST * 100).toLocaleString("fa-IR")}٪ سالانه`;
+    }
+    return "۱۲٪ سالانه";
+  }, [loanMonths, loanTier]);
+
   useEffect(() => {
     void getMembershipPlansAsync().then(setMembershipPlans);
   }, []);
@@ -172,6 +199,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       setLoanMonths(monthOptions[monthOptions.length - 1] || 15);
     }
   }, [monthOptions, loanMonths]);
+
+  useEffect(() => {
+    if (allowedLoanTiers.length && !allowedLoanTiers.includes(loanTier)) {
+      setLoanTier(allowedLoanTiers[0]);
+    }
+  }, [allowedLoanTiers, loanTier]);
 
   useEffect(() => {
     if (Number(loanAmount) > loanResult.limit) {
@@ -280,7 +313,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       discountPercent: durationDisc,
       groupDiscountPercent: groupDisc,
       tier: form.tier,
-      tierLabel: form.tier === "vip" ? "VIP" : "عادی",
+      tierLabel: membershipTierLabel(form.tier),
       memberCount: count,
       unitPriceToman: unit,
       subtotalToman: subtotal,
@@ -327,7 +360,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       discountPercent: durationDisc,
       groupDiscountPercent: groupDisc,
       tier: form.tier,
-      tierLabel: form.tier === "vip" ? "VIP" : "عادی",
+      tierLabel: membershipTierLabel(form.tier),
       memberCount: count,
       unitPriceToman: unit,
       subtotalToman: subtotal,
@@ -454,14 +487,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               💎 عضویت دندانپزشکی پاستور پلاس
             </h1>
             <p className="mx-auto max-w-xl text-slate-600">
-              برای بیماران دندان فقط دو مسیر ساده داریم: عادی یا VIP. شرایط VIP را ببینید و بعد
-              انتخاب کنید.
+              سه طرح عضویت: عادی، VIP و اکوپلاس. شرایط هر کدام را ببینید و طرح مناسب را انتخاب کنید.
             </p>
           </>
         ) : (
           <>
             <p className="text-base font-extrabold text-slate-900">عضویت دندانپزشکی</p>
-            <p className="mt-1 text-sm text-slate-600">عادی یا VIP — یک‌ساله / دوساله</p>
+            <p className="mt-1 text-sm text-slate-600">عادی · VIP · اکوپلاس</p>
           </>
         )}
       </div>
@@ -494,7 +526,11 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             <p
               className={cn(
                 "my-4 text-center text-2xl font-bold",
-                m.id === "vip" ? "text-amber-700" : "text-teal-700",
+                m.id === "vip"
+                  ? "text-amber-700"
+                  : m.id === "eco-plus"
+                    ? "text-emerald-700"
+                    : "text-teal-700",
                 app && "my-2 text-right text-lg",
               )}
             >
@@ -506,7 +542,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 "mb-4 rounded-xl border px-3 py-2 text-center text-xs font-bold",
                 m.id === "vip"
                   ? "border-amber-100 bg-amber-50 text-amber-700"
-                  : "border-cyan-100 bg-cyan-50 text-cyan-700",
+                  : m.id === "eco-plus"
+                    ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                    : "border-cyan-100 bg-cyan-50 text-cyan-700",
               )}
             >
               بازپرداخت وام درمانی: {m.loanTermLabel} — سقف {formatToman(m.loanLimit)}
@@ -516,7 +554,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 "mb-4 rounded-xl border px-3 py-2 text-center text-xs font-bold",
                 m.id === "vip"
                   ? "border-amber-200 bg-amber-100/60 text-amber-800"
-                  : "border-cyan-200 bg-cyan-100/60 text-cyan-800",
+                  : m.id === "eco-plus"
+                    ? "border-emerald-200 bg-emerald-100/60 text-emerald-900"
+                    : "border-cyan-200 bg-cyan-100/60 text-cyan-800",
               )}
             >
               پیش‌پرداخت {m.downPaymentPercent.toLocaleString("fa-IR")}٪ — مثال برای ۵۰
@@ -610,13 +650,12 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               محاسبه‌گر اقساط وام درمانی
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              مدت‌های ۱ تا ۳ ماهه بدون سود؛ از ماه چهارم سود ۱۲٪ <strong>سالانه</strong> به‌نسبت مدت
-              (مثلاً ۲۴ ماه = ۲۴٪ ساده). درخواست رسمی وام از پنل کاربری ثبت می‌شود — اینجا فقط
-              محاسبه‌گر است.
+              مدت‌های ۱ تا ۳ ماهه بدون سود؛ عادی/VIP از ماه چهارم سود ۱۲٪ سالانه؛ اکوپلاس تا ۱۸ ماه
+              با سود ۲۰٪ سالانه. درخواست رسمی وام از پنل کاربری ثبت می‌شود — اینجا فقط محاسبه‌گر است.
             </p>
           </div>
           <span className="inline-flex rounded-full border border-cyan-300 bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">
-            {isZeroInterestLoanTerm(loanMonths) ? "سود ۰٪ (کوتاه‌مدت)" : "سود ۱۲٪ سالانه"}
+            {loanInterestBadge}
           </span>
         </div>
         <div
@@ -631,8 +670,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               value={loanTier}
               onChange={(e) => setLoanTier(e.target.value as MembershipTier)}
             >
-              <option value="regular">عادی</option>
-              <option value="vip">VIP</option>
+              {allowedLoanTiers.includes("regular") ? (
+                <option value="regular">عادی</option>
+              ) : null}
+              {allowedLoanTiers.includes("vip") ? <option value="vip">VIP</option> : null}
+              {allowedLoanTiers.includes("eco-plus") ? (
+                <option value="eco-plus">اکوپلاس (۱۸ ماه · سود ۲۰٪)</option>
+              ) : null}
             </FormSelect>
           </div>
           <div>
@@ -661,7 +705,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
           <div>
             <FormLabel>سود سالانه</FormLabel>
             <div className="rounded-xl border border-sky-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
-              {isZeroInterestLoanTerm(loanMonths) ? "۰٪" : "۱۲٪ سالانه"}
+              {loanInterestDisplay}
             </div>
           </div>
         </div>
@@ -691,7 +735,9 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
             <p className="text-xs text-slate-500">
               {isZeroInterestLoanTerm(loanMonths)
                 ? "جمع بازپرداخت (بدون سود)"
-                : "جمع بازپرداخت با سود ۱۲٪ سالانه"}
+                : loanTier === "eco-plus"
+                  ? "جمع بازپرداخت با سود ۲۰٪ سالانه (اکوپلاس)"
+                  : "جمع بازپرداخت با سود ۱۲٪ سالانه"}
             </p>
             <p className="mt-1 font-extrabold text-amber-800">
               {formatToman(loanResult.totalRepayment)}
@@ -907,6 +953,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               >
                 <option value="regular">عادی</option>
                 <option value="vip">VIP</option>
+                <option value="eco-plus">اکوپلاس</option>
               </FormSelect>
             </div>
             <div>
