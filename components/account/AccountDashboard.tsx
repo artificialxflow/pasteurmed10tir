@@ -9,7 +9,10 @@ import { FieldStaffCommissionsCard } from "@/components/account/FieldStaffCommis
 import { FieldStaffJobsCard } from "@/components/account/FieldStaffJobsCard";
 import { CompetitorAnalysisPanel } from "@/components/account/CompetitorAnalysisPanel";
 import { MarketingPanel } from "@/components/account/MarketingPanel";
+import { AccountCreditSummaryBanner } from "@/components/account/AccountCreditSummaryBanner";
 import { LoanRequestCard } from "@/components/account/LoanRequestCard";
+import { MembershipTierBadge } from "@/components/account/MembershipTierBadge";
+import { ClubBrushWidget } from "@/components/club/ClubBrushWidget";
 import { OrganizationPanel } from "@/components/account/OrganizationPanel";
 import { PhysicianPanel } from "@/components/account/PhysicianPanel";
 import { fetchPublic } from "@/lib/content/client";
@@ -157,16 +160,42 @@ function MenuRow({
   );
 }
 
+const PANEL_QUERY_VALUES: PanelSection[] = [
+  "overview",
+  "profile",
+  "health",
+  "loan",
+  "installments",
+  "insurance",
+  "bookings",
+  "home-visits",
+  "consultations",
+  "orders",
+  "organization",
+  "marketing",
+  "competitor-analysis",
+  "referrer",
+  "staff-availability",
+  "commissions",
+  "jobs",
+  "physician-visits",
+  "physician-stats",
+  "physician-commissions",
+  "physician-referrals",
+];
+
 export function AccountDashboard({
   profile,
   variant,
   onEditProfile,
   message,
+  initialPanel,
 }: {
   profile: PatientProfile;
   variant: "web" | "app";
   onEditProfile: () => void;
   message?: string;
+  initialPanel?: string | null;
 }) {
   const [baseList, setBaseList] = useState<InsuranceCompany[]>([]);
   const [compList, setCompList] = useState<InsuranceCompany[]>([]);
@@ -188,9 +217,20 @@ export function AccountDashboard({
   const consultationHref = variant === "app" ? ROUTES.app.consultation : ROUTES.web.consultation;
   const shopHref = variant === "app" ? ROUTES.app.shop : ROUTES.web.shop;
   const clubHref = variant === "app" ? ROUTES.app.club : ROUTES.web.club;
+  const membershipHref =
+    variant === "app" ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership;
   const installmentsHref =
     variant === "app" ? ROUTES.app.installments : ROUTES.web.installments;
   const healthHref = variant === "app" ? ROUTES.app.healthRecord : ROUTES.web.healthRecord;
+
+  useEffect(() => {
+    const raw = initialPanel?.trim();
+    if (!raw) return;
+    if (PANEL_QUERY_VALUES.includes(raw as PanelSection)) {
+      setPanel(raw as PanelSection);
+      setMobileMenu(false);
+    }
+  }, [initialPanel]);
 
   useEffect(() => {
     void fetchPublic<{ base: InsuranceCompany[]; complementary: InsuranceCompany[] }>(
@@ -386,15 +426,26 @@ export function AccountDashboard({
 
   let panelBody = null;
   if (panel === "overview") {
+    const firstName = profile.name.split(/\s+/)[0] || "بیمار";
     panelBody = (
       <div className="space-y-4">
+        <AccountCreditSummaryBanner phone={profile.phone} />
         <Card hover={false} className="border-teal-200 bg-teal-50/50 p-4 text-sm text-teal-900">
-          سلام {profile.name.split(/\s+/)[0] || "بیمار"} — پنل شما فعال است.
+          <MembershipTierBadge
+            phone={profile.phone}
+            showName
+            name={firstName}
+            className="mb-1"
+          />
+          <p>
+          سلام {firstName} — پنل شما فعال است.
           {profile.organizationName ? (
             <> سازمان: <strong>{profile.organizationName}</strong>.</>
           ) : null}{" "}
           برای رزرو دیگر نیازی به وارد کردن دوباره نام و موبایل نیست.
+          </p>
         </Card>
+        <ClubBrushWidget phone={profile.phone} variant={variant} layout="card" />
         <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
           <StatusBadge label="کاربری" value={patientStatusLabel(profile.status)} tone={userTone} />
           <StatusBadge
@@ -429,6 +480,17 @@ export function AccountDashboard({
             <Link href={clubHref}>
               <Button type="button" variant="outline" className="text-sm">باشگاه</Button>
             </Link>
+            <Link href={membershipHref}>
+              <Button type="button" variant="outline" className="text-sm">حق عضویت</Button>
+            </Link>
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              onClick={() => openPanel("loan")}
+            >
+              درخواست وام
+            </Button>
             <Link href={installmentsHref}>
               <Button type="button" variant="outline" className="text-sm">اقساط</Button>
             </Link>

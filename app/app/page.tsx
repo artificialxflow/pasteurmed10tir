@@ -1,12 +1,20 @@
 "use client";
 
+import { ClubBrushWidget } from "@/components/club/ClubBrushWidget";
 import { AppShell } from "@/components/app/AppShell";
+import { usePatientProfile } from "@/lib/auth/use-patient-profile";
 import { CoveredInsurancesSection } from "@/components/home/CoveredInsurancesSection";
 import { Card } from "@/components/ui/Card";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import Link from "next/link";
 import { useEffect } from "react";
+
+function AppHomeBrushStrip() {
+  const { profile, loading } = usePatientProfile();
+  if (loading || !profile?.phone) return null;
+  return <ClubBrushWidget phone={profile.phone} variant="app" layout="compact" />;
+}
 
 const services = [
   { emoji: "👤", title: "پنل کاربری", desc: "بیمه، فرانشیز و وضعیت", href: ROUTES.app.account },
@@ -57,18 +65,27 @@ export default function AppHomePage() {
 
   return (
     <AppShell title="پاستور پلاس" showNav>
+      <AppHomeBrushStrip />
       <section className="mb-4 rounded-2xl border border-cyan-200 bg-gradient-to-bl from-cyan-50 to-amber-50 p-4">
         <p className="text-xs font-bold text-cyan-800">خوش آمدید</p>
         <p className="mt-1 text-lg font-extrabold text-slate-950">پاستور پلاس</p>
         <p className="mt-1 text-xs leading-6 text-slate-600">
           دندانپزشکی، پزشکی، پرستاری و تجهیزات در یک اپ
         </p>
-        <Link
-          href={ROUTES.app.account}
-          className="mt-3 inline-flex rounded-xl bg-cyan-700 px-3 py-2 text-xs font-extrabold text-white"
-        >
-          ورود به پنل کاربری
-        </Link>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href={ROUTES.app.account}
+            className="inline-flex rounded-xl bg-cyan-700 px-3 py-2 text-xs font-extrabold text-white"
+          >
+            ورود به پنل کاربری
+          </Link>
+          <Link
+            href={ROUTES.app.dentalMembership}
+            className="inline-flex rounded-xl border border-amber-400 bg-amber-50 px-3 py-2 text-xs font-extrabold text-amber-900"
+          >
+            حق عضویت
+          </Link>
+        </div>
       </section>
 
       <p className="mb-3 text-sm font-extrabold text-slate-900">خدمات اصلی</p>

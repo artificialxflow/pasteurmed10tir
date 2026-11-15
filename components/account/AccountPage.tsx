@@ -28,9 +28,12 @@ import {
 import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
+  const searchParams = useSearchParams();
+  const initialPanel = searchParams.get("panel");
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -560,6 +563,7 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
           profile={profile}
           variant={variant}
           message={message}
+          initialPanel={initialPanel}
           onEditProfile={() => {
             setEditing(true);
             setMessage("");

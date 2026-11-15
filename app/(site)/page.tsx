@@ -2,6 +2,7 @@
 
 import { HeroSlider } from "@/components/home/HeroSlider";
 import { HomeShopBanner } from "@/components/home/HomeShopBanner";
+import { HomeClubBrushFab } from "@/components/home/HomeClubBrushFab";
 import { CoveredInsurancesSection } from "@/components/home/CoveredInsurancesSection";
 import { Button } from "@/components/ui/Button";
 import { Card, Logo } from "@/components/ui/Card";
@@ -80,6 +81,13 @@ export default function HomePage() {
               </Button>
               <Button href={ROUTES.web.medical} variant="outline" className="border-cyan-700 px-7 text-base text-cyan-900">
                 مشاوره و ویزیت پزشکی
+              </Button>
+              <Button
+                href={ROUTES.web.dentalMembership}
+                variant="outline"
+                className="border-amber-500 px-7 text-base text-amber-900"
+              >
+                حق عضویت و تسهیلات
               </Button>
             </div>
           </div>
@@ -257,6 +265,8 @@ export default function HomePage() {
       <HomeShopBanner />
 
       <CoveredInsurancesSection />
+
+      <HomeClubBrushFab />
     </main>
   );
 }

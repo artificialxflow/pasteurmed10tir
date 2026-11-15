@@ -4,7 +4,7 @@ import { SupportWidget } from "@/components/support/SupportWidget";
 import { AssistantWidget } from "@/components/ai/AssistantWidget";
 import { Logo } from "@/components/ui/Card";
 import { usePatientProfile } from "@/lib/auth/use-patient-profile";
-import { PASTEUR_DATA } from "@/lib/data";
+import { instagramProfileUrl, PASTEUR_DATA } from "@/lib/data";
 import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -214,6 +214,8 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const { institute } = PASTEUR_DATA;
+  const instagramUrl = instagramProfileUrl(institute.instagramUsername);
+  const instagramHandle = `@${institute.instagramUsername.replace(/^@/, "")}`;
   return (
     <footer data-site-chrome="footer" className="mt-auto border-t-2 border-slate-200 bg-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
@@ -255,6 +257,17 @@ export function SiteFooter() {
           <p className="mt-2 text-sm font-bold text-primary-dark">
             <a href={`tel:${institute.phoneDigits}`}>{institute.phone}</a>
           </p>
+          <a
+            href={instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-pink-700 underline-offset-2 hover:underline"
+          >
+            اینستاگرام
+            <span dir="ltr" className="font-mono text-xs">
+              {instagramHandle}
+            </span>
+          </a>
           <Link href={ROUTES.web.privacy} className="mt-3 inline-block text-xs text-slate-500 underline">
             حریم خصوصی
           </Link>

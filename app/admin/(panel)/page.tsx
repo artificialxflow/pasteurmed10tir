@@ -523,6 +523,16 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
+      <Link href={ROUTES.admin.memberships} className="block">
+        <Card hover className="border-violet-200 bg-gradient-to-l from-violet-50 to-white p-5">
+          <p className="text-lg font-extrabold text-violet-900">پرداخت / مدیریت حق عضویت</p>
+          <p className="mt-1 text-sm text-slate-600">
+            گزارش اعضا، درخواست‌های عضویت و وام — {queue.paidMembers.toLocaleString("fa-IR")} عضو
+            پرداخت‌شده
+          </p>
+        </Card>
+      </Link>
+
       <div>
         <h2 className="mb-3 text-lg font-bold">صف‌های نیازمند توجه</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

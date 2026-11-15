@@ -295,6 +295,7 @@ export type AdminMarketingListQuery = {
   blockedOnly?: boolean;
   from?: string | null;
   to?: string | null;
+  q?: string | null;
 };
 
 export function buildAdminMarketingWhere(query: AdminMarketingListQuery): Prisma.MarketingReportWhereInput {
@@ -322,6 +323,19 @@ export function buildAdminMarketingWhere(query: AdminMarketingListQuery): Prisma
         ...(from ? { gte: new Date(`${from.toISOString().slice(0, 10)}T00:00:00.000Z`) } : {}),
         ...(to ? { lte: new Date(`${to.toISOString().slice(0, 10)}T23:59:59.999Z`) } : {}),
       },
+    });
+  }
+
+  const q = String(query.q || "").trim();
+  if (q) {
+    and.push({
+      OR: [
+        { companyName: { contains: q, mode: "insensitive" } },
+        { visitorPhone: { contains: q } },
+        { contactsJson: { contains: q } },
+        { successNotes: { contains: q, mode: "insensitive" } },
+        { unsuccessfulNotes: { contains: q, mode: "insensitive" } },
+      ],
     });
   }
 

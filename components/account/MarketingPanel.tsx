@@ -29,6 +29,7 @@ export function MarketingPanel() {
   const [items, setItems] = useState<MarketingReportPublic[]>([]);
   const [view, setView] = useState<"list" | "form" | "detail" | "followups">("list");
   const [listKind, setListKind] = useState<string>("all");
+  const [listSearch, setListSearch] = useState("");
   const [detail, setDetail] = useState<MarketingReportPublic | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -199,6 +200,21 @@ export function MarketingPanel() {
     }
   }
 
+  function rowMatchesSearch(row: MarketingReportPublic, raw: string): boolean {
+    const q = raw.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [
+      row.companyName || "",
+      row.visitorPhone || "",
+      row.successNotes || "",
+      row.unsuccessfulNotes || "",
+      ...(row.contacts || []).flatMap((c) => [c.name, c.phone, c.role]),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  }
+
   const followUpItems = items.filter(
     (row) =>
       row.kind === "follow_up" ||
@@ -255,6 +271,12 @@ export function MarketingPanel() {
 
       {view === "list" ? (
         <div className="space-y-3">
+          <FormInput
+            value={listSearch}
+            onChange={(e) => setListSearch(e.target.value)}
+            placeholder="جستجو در گزارش‌ها (شرکت، موبایل، مخاطب…)"
+            className="text-sm"
+          />
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -287,7 +309,10 @@ export function MarketingPanel() {
               </tr>
             </thead>
             <tbody>
-              {items.filter((row) => listKind === "all" || row.kind === listKind).length === 0 ? (
+              {items.filter(
+                (row) =>
+                  (listKind === "all" || row.kind === listKind) && rowMatchesSearch(row, listSearch),
+              ).length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-3 py-6 text-center text-slate-500">
                     هنوز گزارشی ثبت نکرده‌اید.
@@ -295,7 +320,11 @@ export function MarketingPanel() {
                 </tr>
               ) : (
                 items
-                  .filter((row) => listKind === "all" || row.kind === listKind)
+                  .filter(
+                    (row) =>
+                      (listKind === "all" || row.kind === listKind) &&
+                      rowMatchesSearch(row, listSearch),
+                  )
                   .map((row) => (
                   <tr key={row.id} className="border-t border-slate-100">
                     <td className="px-3 py-2 text-xs">{formatJalaliDate(row.createdAt.slice(0, 10))}</td>

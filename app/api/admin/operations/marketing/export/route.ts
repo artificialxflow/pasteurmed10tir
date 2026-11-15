@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     blockedOnly: searchParams.get('blocked') === '1',
     from: searchParams.get('from'),
     to: searchParams.get('to'),
+    q: searchParams.get('q'),
   });
 
   const rows = await prisma.marketingReport.findMany({

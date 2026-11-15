@@ -33,6 +33,8 @@ export default function AdminMarketingReportsPage() {
   const [detail, setDetail] = useState<MarketingReportPublic | null>(null);
   const [reports, setReports] = useState<MarketingReportPublic[]>([]);
   const [visitorFilter, setVisitorFilter] = useState("");
+  const [searchQ, setSearchQ] = useState("");
+  const [kindFilter, setKindFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [blockedOnly, setBlockedOnly] = useState(false);
@@ -52,15 +54,22 @@ export default function AdminMarketingReportsPage() {
   const loadReports = useCallback(() => {
     const q = new URLSearchParams();
     if (visitorFilter) q.set("visitorId", visitorFilter);
+    if (searchQ.trim()) q.set("q", searchQ.trim());
+    if (kindFilter) q.set("kind", kindFilter);
     if (from) q.set("from", from);
     if (to) q.set("to", to);
     if (blockedOnly) q.set("blocked", "1");
+    if (typeof window !== "undefined") {
+      const next = q.toString();
+      const path = `${ROUTES.admin.marketingReports}${next ? `?${next}` : ""}`;
+      window.history.replaceState(null, "", path);
+    }
     void fetchAdminOps<{ items: MarketingReportPublic[] }>(
       `/api/admin/operations/marketing/reports?${q.toString()}`,
     )
       .then((data) => setReports(data.items))
       .catch((e: Error) => setError(e.message));
-  }, [visitorFilter, from, to, blockedOnly]);
+  }, [visitorFilter, searchQ, kindFilter, from, to, blockedOnly]);
 
   useEffect(() => {
     loadStats();
@@ -78,6 +87,8 @@ export default function AdminMarketingReportsPage() {
   async function exportReports(format: "xlsx" | "csv") {
     const q = new URLSearchParams();
     if (visitorFilter) q.set("visitorId", visitorFilter);
+    if (searchQ.trim()) q.set("q", searchQ.trim());
+    if (kindFilter) q.set("kind", kindFilter);
     if (from) q.set("from", from);
     if (to) q.set("to", to);
     if (blockedOnly) q.set("blocked", "1");
@@ -157,6 +168,30 @@ export default function AdminMarketingReportsPage() {
       </AdminTable>
 
       <Card hover={false} className="grid gap-3 p-4 sm:grid-cols-3">
+        <div className="sm:col-span-3">
+          <FormLabel>جستجو (شرکت، موبایل، مخاطب، یادداشت)</FormLabel>
+          <input
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            placeholder="نام شرکت یا شماره…"
+          />
+        </div>
+        <div>
+          <FormLabel>نوع گزارش</FormLabel>
+          <select
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            value={kindFilter}
+            onChange={(e) => setKindFilter(e.target.value)}
+          >
+            <option value="">همه</option>
+            {MARKETING_KIND_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <FormLabel>فیلتر ویزیتور (ID)</FormLabel>
           <input
