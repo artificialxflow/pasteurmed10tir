@@ -29,9 +29,11 @@ import { WEB_PAGE_CONTAINER } from "@/lib/layout";
 import { formatPrice, normalizePhone } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 
-export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
+type AccountPageProps = { variant?: "web" | "app" };
+
+function AccountPageContent({ variant = "web" }: AccountPageProps) {
   const searchParams = useSearchParams();
   const initialPanel = searchParams.get("panel");
   const [profile, setProfile] = useState<PatientProfile | null>(null);
@@ -685,5 +687,17 @@ export function AccountPage({ variant = "web" }: { variant?: "web" | "app" }) {
         </>
       )}
     </div>
+  );
+}
+
+export function AccountPage(props: AccountPageProps) {
+  return (
+    <Suspense
+      fallback={
+        <p className="px-4 py-10 text-center text-sm text-slate-500">در حال بارگذاری…</p>
+      }
+    >
+      <AccountPageContent {...props} />
+    </Suspense>
   );
 }
