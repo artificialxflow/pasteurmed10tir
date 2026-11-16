@@ -635,6 +635,12 @@ export default function AdminMembershipsPage() {
             بازنشانی به پیش‌فرض
           </button>
         </div>
+        {plans.length < 3 ? (
+          <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            طرح «اکوپلاس» در دیتابیس دیده نمی‌شود. برای بارگذاری سه طرح (عادی، VIP، اکوپلاس) یک‌بار
+            «بازنشانی به پیش‌فرض» را بزنید یا migration اکوپلاس (۰۶۳) را روی سرور اجرا کنید.
+          </p>
+        ) : null}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {plans.map((plan, index) => (
             <Card key={plan.id} hover={false} className="p-4">

@@ -1,7 +1,13 @@
 "use client";
 
 import { FormLabel } from "@/components/ui/Card";
-import { JALALI_MONTHS, isoToJalali, jalaliToIso, jalaliYearRangeNearTerm } from "@/lib/date/jalali";
+import {
+  JALALI_MONTHS,
+  isoToJalali,
+  jalaliToIso,
+  jalaliWarrantyStartYearRange,
+  jalaliYearRangeNearTerm,
+} from "@/lib/date/jalali";
 
 const DEFAULT_YEARS = Array.from({ length: 90 }, (_, i) => 1410 - i);
 
@@ -18,11 +24,17 @@ export function JalaliBirthDateField({
   label?: string;
   minJalaliYear?: number;
   maxJalaliYear?: number;
-  yearRange?: "birth" | "nearTerm";
+  yearRange?: "birth" | "nearTerm" | "warrantyStart";
 }) {
   const nearTerm = yearRange === "nearTerm" ? jalaliYearRangeNearTerm() : null;
+  const warrantyYears = yearRange === "warrantyStart" ? jalaliWarrantyStartYearRange() : null;
   const years =
-    nearTerm != null
+    warrantyYears != null
+      ? Array.from(
+          { length: warrantyYears.maxJalaliYear - warrantyYears.minJalaliYear + 1 },
+          (_, i) => warrantyYears.maxJalaliYear - i,
+        )
+      : nearTerm != null
       ? Array.from(
           { length: nearTerm.maxJalaliYear - nearTerm.minJalaliYear + 1 },
           (_, i) => nearTerm.maxJalaliYear - i,

@@ -81,6 +81,14 @@ export function jalaliYearRangeNearTerm(): { minJalaliYear: number; maxJalaliYea
   return { minJalaliYear: y, maxJalaliYear: y + 1 };
 }
 
+/** شروع گارانتی — از ۱۴۰۵، حداکثر ۶ سال جلو (۱۴۰۵–۱۴۱۰) */
+export function jalaliWarrantyStartYearRange(): {
+  minJalaliYear: number;
+  maxJalaliYear: number;
+} {
+  return { minJalaliYear: 1405, maxJalaliYear: 1410 };
+}
+
 export function isoToJalali(iso?: string | null): { jy: number; jm: number; jd: number } | null {
   if (!iso) return null;
   const raw = iso.length === 10 ? `${iso}T12:00:00` : iso;

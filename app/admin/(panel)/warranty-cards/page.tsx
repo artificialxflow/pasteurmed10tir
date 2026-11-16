@@ -101,6 +101,10 @@ export default function AdminWarrantyCardsPage() {
       setError("ابتدا بیمار را انتخاب کنید.");
       return;
     }
+    if (!startedAt) {
+      setError("تاریخ شروع گارانتی را کامل انتخاب کنید.");
+      return;
+    }
     setBusy(true);
     setError("");
     setMessage("");
@@ -181,6 +185,17 @@ export default function AdminWarrantyCardsPage() {
             ))}
           </ul>
         ) : null}
+        {!selected?.phone ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+            پس از جستجو، حتماً روی نام بیمار در لیست بزنید تا انتخاب شود؛ بدون انتخاب، دکمهٔ
+            ثبت کارت فعال نمی‌شود.
+          </p>
+        ) : (
+          <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-900">
+            بیمار انتخاب‌شده: <span className="font-bold">{selected.name || "—"}</span> ·{" "}
+            {selected.phone}
+          </p>
+        )}
       </Card>
 
       {selected?.phone ? (
@@ -220,10 +235,16 @@ export default function AdminWarrantyCardsPage() {
         </Card>
       ) : null}
 
-      <Card hover={false} className="p-4">
+      <Card
+        hover={false}
+        className={`p-4 ${!selected?.phone ? "border-dashed border-slate-200 opacity-90" : ""}`}
+      >
         <p className="mb-3 font-bold text-slate-900">
           {editingId ? "ویرایش کارت گارانتی" : "ثبت کارت جدید"}
         </p>
+        {!selected?.phone ? (
+          <p className="mb-3 text-sm text-slate-500">ابتدا بیمار را از لیست بالا انتخاب کنید.</p>
+        ) : null}
         <form onSubmit={submit} className="space-y-4">
           <div>
             <FormLabel>نوع خدمت</FormLabel>
@@ -239,18 +260,14 @@ export default function AdminWarrantyCardsPage() {
               ))}
             </FormSelect>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="mb-2 text-xs font-bold text-slate-600">پیش‌نمایش ظاهر کارت در پنل بیمار</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewArt}
               alt=""
-              className="h-16 w-16 rounded-lg border object-cover"
-              width={64}
-              height={64}
+              className="aspect-[1.58/1] w-full max-w-xs rounded-xl border border-white object-cover shadow-sm"
             />
-            <p className="text-xs leading-6 text-slate-600">
-              پیش‌نمایش آیکن کارت در پنل بیمار (حدود ۵۶×۵۶ پیکسل)
-            </p>
           </div>
           <div>
             <FormLabel>برچسب نمایشی (اختیاری)</FormLabel>
@@ -264,11 +281,17 @@ export default function AdminWarrantyCardsPage() {
             label="تاریخ شروع گارانتی"
             value={startedAt}
             onChange={setStartedAt}
+            yearRange="warrantyStart"
           />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={busy || !selected?.phone}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="submit" disabled={busy || !selected?.phone || !startedAt}>
               {busy ? "در حال ذخیره…" : editingId ? "ذخیره ویرایش" : "ثبت کارت گارانتی"}
             </Button>
+            {!selected?.phone ? (
+              <span className="text-xs text-amber-800">انتخاب بیمار الزامی است</span>
+            ) : !startedAt ? (
+              <span className="text-xs text-amber-800">تاریخ شروع را کامل انتخاب کنید</span>
+            ) : null}
             {editingId ? (
               <button
                 type="button"

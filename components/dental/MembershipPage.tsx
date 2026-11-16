@@ -1,5 +1,6 @@
 "use client";
 
+import { EcoPlusIcon } from "@/components/membership/EcoPlusIcon";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -518,9 +519,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               </span>
             ) : null}
             <div className={cn("mb-4 text-center", app && "text-right")}>
-              <span className="text-4xl">
-                {m.id === "vip" ? "💎" : m.id === "eco-plus" ? "🌿" : "🦷"}
-              </span>
+              {m.id === "eco-plus" ? (
+                <EcoPlusIcon className="mx-auto h-14 w-14" />
+              ) : (
+                <span className="text-4xl">
+                  {m.id === "vip" ? "💎" : "🦷"}
+                </span>
+              )}
               <h2 className="mt-2 text-xl font-bold">{m.name}</h2>
             </div>
             <p
