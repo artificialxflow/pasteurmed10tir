@@ -109,7 +109,7 @@ function WarrantyCard({
           className={`aspect-[1.58/1] w-full object-cover transition group-hover:brightness-95 ${
             compact ? "max-h-28" : ""
           }`}
-          onError={() => setImgSrc(warrantyCardArtUrl("crown"))}
+          onError={() => setImgSrc(warrantyCardArtUrl(item.serviceType || "crown"))}
         />
         <p className="px-3 py-1 text-center text-[10px] font-bold text-slate-500 opacity-80 group-hover:text-teal-800">
           برای بزرگ‌نمایی بزنید
