@@ -5,7 +5,11 @@ import { Card } from "@/components/ui/Card";
 import { fetchPatientCommerce } from "@/lib/commerce/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { WARRANTY_CARD_THEME } from "@/lib/warranty/constants";
-import { warrantyCardArtUrl } from "@/lib/warranty/art";
+import {
+  WARRANTY_CARD_LIGHTBOX_CLASS,
+  WarrantyCardArtImage,
+} from "@/components/warranty/WarrantyCardArtImage";
+import { WARRANTY_CARD_ART_DEFAULT, warrantyCardArtUrl } from "@/lib/warranty/art";
 import { formatWarrantyRemaining } from "@/lib/warranty/time-remaining";
 import type { ServiceWarrantyType } from "@prisma/client";
 import { useCallback, useEffect, useState, type MouseEvent, type ReactNode } from "react";
@@ -52,11 +56,13 @@ function WarrantyArtLightbox({
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative max-h-[90vh] w-full max-w-sm overflow-hidden rounded-2xl bg-slate-100 shadow-2xl"
         onClick={(e: MouseEvent) => e.stopPropagation()}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={title} className="aspect-[1.58/1] w-full object-cover" />
+        <div className="flex justify-center bg-white p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={title} className={WARRANTY_CARD_LIGHTBOX_CLASS} />
+        </div>
         <p className="px-4 py-3 text-center text-sm font-bold text-slate-800">{title}</p>
         <button
           type="button"
@@ -92,9 +98,7 @@ function WarrantyCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl border shadow-md ${theme.border} ${theme.bg} ${
-        compact ? "" : "max-w-sm"
-      }`}
+      className={`mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border shadow-md ${theme.border} ${theme.bg}`}
     >
       <button
         type="button"
@@ -102,15 +106,21 @@ function WarrantyCard({
         onClick={() => onPreview(imgSrc, title)}
         title="نمایش بزرگ کارت"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imgSrc}
-          alt={title}
-          className={`aspect-[1.58/1] w-full object-cover transition group-hover:brightness-95 ${
-            compact ? "max-h-28" : ""
-          }`}
-          onError={() => setImgSrc(warrantyCardArtUrl(item.serviceType || "crown"))}
-        />
+        <div className="flex justify-center bg-white/90 px-2 pt-3">
+          <WarrantyCardArtImage
+            src={imgSrc}
+            alt={title}
+            compact={compact}
+            className="transition group-hover:brightness-95"
+            onError={() =>
+              setImgSrc(
+                item.serviceType
+                  ? warrantyCardArtUrl(item.serviceType)
+                  : WARRANTY_CARD_ART_DEFAULT,
+              )
+            }
+          />
+        </div>
         <p className="px-3 py-1 text-center text-[10px] font-bold text-slate-500 opacity-80 group-hover:text-teal-800">
           برای بزرگ‌نمایی بزنید
         </p>
@@ -153,7 +163,11 @@ function WarrantyGrid({
 }) {
   return (
     <>
-      <div className={`grid gap-4 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-2"}`}>
+      <div
+        className={`grid justify-items-center gap-6 ${
+          compact ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-2"
+        }`}
+      >
         {items.map((item) => (
           <WarrantyCard key={item.id} item={item} onPreview={onPreview} compact={compact} />
         ))}

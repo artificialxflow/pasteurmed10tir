@@ -4,11 +4,14 @@ import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { JalaliBirthDateField } from "@/components/ui/JalaliBirthDateField";
+import { WarrantyCardArtImage } from "@/components/warranty/WarrantyCardArtImage";
 import {
+  deleteAdminCommerce,
   fetchAdminCommerce,
   patchAdminCommerce,
   postAdminCommerce,
 } from "@/lib/commerce/client";
+import { confirmAction } from "@/lib/ui/confirm-action";
 import { fetchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { warrantyCardArtUrl } from "@/lib/warranty/art";
@@ -93,6 +96,23 @@ export default function AdminWarrantyCardsPage() {
     setStartedAt(row.startedAt.slice(0, 10));
     setError("");
     setMessage("");
+  }
+
+  function removeCard(row: WarrantyRow) {
+    if (!confirmAction(`کارت «${row.serviceLabel}» حذف شود؟ این کار قابل بازگشت نیست.`)) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    void deleteAdminCommerce(`/api/admin/commerce/warranty-cards/${encodeURIComponent(row.id)}`)
+      .then((data) => {
+        setMessage(data.message || "کارت گارانتی حذف شد.");
+        if (editingId === row.id) resetForm();
+        loadCards(selected?.phone);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setBusy(false));
   }
 
   function submit(e: FormEvent) {
@@ -221,13 +241,24 @@ export default function AdminWarrantyCardsPage() {
                 <td className="px-3 py-2 text-xs">{formatJalaliDate(row.expiresAt)}</td>
                 <td className="px-3 py-2 text-xs">{formatWarrantyRemaining(row.expiresAt)}</td>
                 <td className="px-3 py-2">
-                  <button
-                    type="button"
-                    className="text-xs font-bold text-teal-800 underline"
-                    onClick={() => startEdit(row)}
-                  >
-                    ویرایش
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-teal-800 underline"
+                      onClick={() => startEdit(row)}
+                      disabled={busy}
+                    >
+                      ویرایش
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-rose-700 underline"
+                      onClick={() => removeCard(row)}
+                      disabled={busy}
+                    >
+                      حذف
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -260,14 +291,16 @@ export default function AdminWarrantyCardsPage() {
               ))}
             </FormSelect>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-            <p className="mb-2 text-xs font-bold text-slate-600">پیش‌نمایش ظاهر کارت در پنل بیمار</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewArt}
-              alt=""
-              className="aspect-[1.58/1] w-full max-w-xs rounded-xl border border-white object-cover shadow-sm"
-            />
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <p className="mb-3 text-center text-xs font-bold text-slate-600">
+              پیش‌نمایش ظاهر کارت در پنل بیمار
+            </p>
+            <div className="flex justify-center">
+              <WarrantyCardArtImage src={previewArt} alt="پیش‌نمایش کارت گارانتی" />
+            </div>
+            <p className="mt-2 text-center text-[11px] text-slate-500">
+              با تغییر «نوع خدمت»، قالب تصویر به‌روز می‌شود. ویرایش متن روی کارت از همین فرم است.
+            </p>
           </div>
           <div>
             <FormLabel>برچسب نمایشی (اختیاری)</FormLabel>

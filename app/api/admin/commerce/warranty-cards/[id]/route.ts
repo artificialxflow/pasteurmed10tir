@@ -59,3 +59,19 @@ export async function PATCH(
 
   return NextResponse.json({ item: mapPublicWarrantyCard(row) });
 }
+
+export async function DELETE(
+  _request: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin('patients');
+  if (auth.error) return auth.error;
+
+  const { id } = await ctx.params;
+  const existing = await prisma.serviceWarrantyCard.findUnique({ where: { id } });
+  if (!existing) return jsonError('کارت گارانتی یافت نشد.', 404);
+
+  await prisma.serviceWarrantyCard.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true, message: 'کارت گارانتی حذف شد.' });
+}
