@@ -1539,21 +1539,29 @@ enum ServiceWarrantyType {
   orthodontics
 }
 
+enum ServiceWarrantyStatus {
+  pending
+  active
+}
+
 model ServiceWarrantyCard {
-  id               String              @id @default(cuid())
+  id               String                @id @default(cuid())
   userId           String
-  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   serviceType      ServiceWarrantyType
   serviceLabel     String
   imageUrl         String
-  startedAt        DateTime            @default(now())
+  startedAt        DateTime              @default(now())
   expiresAt        DateTime
+  status           ServiceWarrantyStatus @default(pending)
+  activatedAt      DateTime?
   createdByAdminId String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([status])
 }
 
 /// گزارش کار پاستور پلاس (بسته ۲۷/۰۹) — جدا از فالوآپ ادمین

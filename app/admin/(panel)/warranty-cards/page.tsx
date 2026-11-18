@@ -36,6 +36,8 @@ type WarrantyRow = {
   imageUrl?: string;
   startedAt: string;
   expiresAt: string;
+  status?: string;
+  needsActivation?: boolean;
 };
 
 function defaultExpiresIso(startedAt: string, serviceType: string): string {
@@ -57,6 +59,7 @@ export default function AdminWarrantyCardsPage() {
     defaultExpiresIso(new Date().toISOString().slice(0, 10), "crown"),
   );
   const [imageUrl, setImageUrl] = useState(() => warrantyCardArtUrl("crown"));
+  const [requirePatientActivation, setRequirePatientActivation] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -111,6 +114,7 @@ export default function AdminWarrantyCardsPage() {
     setStartedAt(start);
     setExpiresAt(defaultExpiresIso(start, "crown"));
     setImageUrl(warrantyCardArtUrl("crown"));
+    setRequirePatientActivation(true);
   }
 
   function startEdit(row: WarrantyRow) {
@@ -186,6 +190,7 @@ export default function AdminWarrantyCardsPage() {
         )
       : postAdminCommerce<{ item?: { id: string } }>("/api/admin/commerce/warranty-cards", {
           patientPhone: selected.phone,
+          requirePatientActivation,
           ...payload,
         });
 
@@ -194,7 +199,9 @@ export default function AdminWarrantyCardsPage() {
         setMessage(
           editingId
             ? "کارت گارانتی به‌روز شد."
-            : `کارت گارانتی ثبت شد${data.item?.id ? ` (${data.item.id})` : ""}.`,
+            : requirePatientActivation
+              ? `کارت ثبت شد؛ به بیمار بگویید در پنل پاستور پلاس «فعال‌سازی کارت گارانتی» را بزند.`
+              : `کارت گارانتی ثبت و فعال شد${data.item?.id ? ` (${data.item.id})` : ""}.`,
         );
         resetForm();
         loadCards(selected.phone);
@@ -210,6 +217,8 @@ export default function AdminWarrantyCardsPage() {
         بیمار، نوع خدمت، تاریخ شروع و پایان، و تصویر کارت را می‌توانید ویرایش یا حذف کنید. برای
         هم‌خوانی زمان با متن روی کارت، تاریخ پایان را مطابق عکس تنظیم کنید یا از «مدت پیش‌فرض
         نوع خدمت» ({defaultMonths.toLocaleString("fa-IR")} ماه برای نوع انتخاب‌شده) استفاده کنید.
+        پیش‌فرض: بیمار از پنل کاربری کارت را خودش فعال می‌کند؛ مدت گارانتی از زمان فعال‌سازی
+        شروع می‌شود.
       </p>
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
@@ -284,7 +293,13 @@ export default function AdminWarrantyCardsPage() {
                   <p className="text-xs text-slate-500">{row.typeLabel || row.serviceType}</p>
                 </td>
                 <td className="px-3 py-2 text-xs">{formatJalaliDate(row.expiresAt)}</td>
-                <td className="px-3 py-2 text-xs">{formatWarrantyRemaining(row.expiresAt)}</td>
+                <td className="px-3 py-2 text-xs">
+                  {row.needsActivation || row.status === "pending" ? (
+                    <span className="font-bold text-amber-800">منتظر فعال‌سازی بیمار</span>
+                  ) : (
+                    formatWarrantyRemaining(row.expiresAt)
+                  )}
+                </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -392,6 +407,23 @@ export default function AdminWarrantyCardsPage() {
               محاسبهٔ پایان از مدت پیش‌فرض ({defaultMonths.toLocaleString("fa-IR")} ماه پس از شروع)
             </button>
           </div>
+          {!editingId ? (
+            <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-teal-100 bg-teal-50/60 p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={requirePatientActivation}
+                onChange={(e) => setRequirePatientActivation(e.target.checked)}
+              />
+              <span>
+                <strong>بیمار در پنل پاستور پلاس فعال کند</strong>
+                <span className="mt-1 block text-xs font-normal text-slate-600">
+                  تاریخ‌های بالا مدت برنامه‌ریزی‌شده‌اند؛ پس از فعال‌سازی، همان مدت از همان لحظه
+                  محاسبه می‌شود.
+                </span>
+              </span>
+            </label>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2">
             <Button type="submit" disabled={busy || !selected?.phone || !startedAt || !expiresAt}>
               {busy ? "در حال ذخیره…" : editingId ? "ذخیره ویرایش" : "ثبت کارت گارانتی"}

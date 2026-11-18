@@ -76,6 +76,13 @@ export async function POST(request: Request) {
     useTemplateImage,
   });
 
+  const activateImmediately =
+    body.activateImmediately === true || body.activateImmediately === 'true';
+  const requirePatientActivation =
+    !activateImmediately && body.requirePatientActivation !== false;
+  const status = requirePatientActivation ? 'pending' : 'active';
+  const activatedAt = status === 'active' ? new Date() : null;
+
   const row = await prisma.serviceWarrantyCard.create({
     data: {
       userId: user.id,
@@ -84,6 +91,8 @@ export async function POST(request: Request) {
       imageUrl,
       startedAt,
       expiresAt,
+      status,
+      activatedAt,
       createdByAdminId: auth.session.userId,
     },
   });

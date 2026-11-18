@@ -1,6 +1,10 @@
 import { WARRANTY_TYPE_LABELS } from '@/lib/warranty/constants';
 import { warrantyCardArtUrl, warrantyCardDisplayImage } from '@/lib/warranty/art';
-import type { ServiceWarrantyCard, ServiceWarrantyType } from '@prisma/client';
+import type {
+  ServiceWarrantyCard,
+  ServiceWarrantyStatus,
+  ServiceWarrantyType,
+} from '@prisma/client';
 
 export type PublicWarrantyCard = {
   id: string;
@@ -13,10 +17,14 @@ export type PublicWarrantyCard = {
   displayImageUrl: string;
   startedAt: string;
   expiresAt: string;
+  status: ServiceWarrantyStatus;
+  needsActivation: boolean;
+  activatedAt: string | null;
   updatedAt: string;
 };
 
 export function mapPublicWarrantyCard(row: ServiceWarrantyCard): PublicWarrantyCard {
+  const status = row.status;
   return {
     id: row.id,
     serviceType: row.serviceType,
@@ -26,6 +34,9 @@ export function mapPublicWarrantyCard(row: ServiceWarrantyCard): PublicWarrantyC
     displayImageUrl: warrantyCardDisplayImage(row.serviceType, row.imageUrl),
     startedAt: row.startedAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),
+    status,
+    needsActivation: status === 'pending',
+    activatedAt: row.activatedAt?.toISOString() ?? null,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

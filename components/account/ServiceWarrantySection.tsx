@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { fetchPatientCommerce } from "@/lib/commerce/client";
+import { fetchPatientCommerce, postPatientCommerce } from "@/lib/commerce/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { WARRANTY_CARD_THEME } from "@/lib/warranty/constants";
 import {
@@ -23,6 +23,8 @@ type WarrantyItem = {
   imageUrl: string;
   startedAt?: string;
   expiresAt: string;
+  status?: "pending" | "active";
+  needsActivation?: boolean;
 };
 
 function WarrantyArtLightbox({
@@ -71,6 +73,52 @@ function WarrantyArtLightbox({
         >
           بستن
         </button>
+      </div>
+    </div>
+  );
+}
+
+function PendingWarrantyCard({
+  item,
+  onActivate,
+  activating,
+}: {
+  item: WarrantyItem;
+  onActivate: (id: string) => void;
+  activating: boolean;
+}) {
+  const theme = item.serviceType
+    ? WARRANTY_CARD_THEME[item.serviceType]
+    : WARRANTY_CARD_THEME.crown;
+  const thumb =
+    item.displayImageUrl ||
+    (item.serviceType ? warrantyCardArtUrl(item.serviceType) : item.imageUrl);
+  const title = item.serviceLabel || item.typeLabel || "کارت گارانتی";
+
+  return (
+    <div
+      className={`mx-auto w-full max-w-[320px] overflow-hidden rounded-2xl border-2 border-dashed border-amber-300 bg-gradient-to-b from-amber-50 to-white shadow-md ${theme.border}`}
+    >
+      <div className="flex justify-center bg-white/90 px-2 pt-3 opacity-95">
+        <WarrantyCardArtImage src={thumb} alt={title} compact className="grayscale-[0.15]" />
+      </div>
+      <div className="space-y-2 p-4 text-sm">
+        <p className="text-center text-xs font-bold text-amber-800">آماده فعال‌سازی در پاستور پلاس</p>
+        <p className={`text-center font-extrabold leading-snug ${theme.accent}`}>{title}</p>
+        {item.typeLabel && item.serviceLabel !== item.typeLabel ? (
+          <p className="text-center text-xs text-slate-500">{item.typeLabel}</p>
+        ) : null}
+        <p className="text-center text-[11px] leading-5 text-slate-600">
+          درمانگاه کارت را ثبت کرده است. با یک لمس، گارانتی شما از همین لحظه فعال می‌شود.
+        </p>
+        <Button
+          type="button"
+          className="w-full text-sm shadow-md"
+          disabled={activating}
+          onClick={() => onActivate(item.id)}
+        >
+          {activating ? "در حال فعال‌سازی…" : "فعال‌سازی کارت گارانتی"}
+        </Button>
       </div>
     </div>
   );
@@ -188,6 +236,11 @@ export function ServiceWarrantySection({
   const [loadError, setLoadError] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [activateMessage, setActivateMessage] = useState("");
+
+  const pendingItems = items.filter((i) => i.needsActivation || i.status === "pending");
+  const activeItems = items.filter((i) => !i.needsActivation && i.status !== "pending");
 
   const reload = useCallback(() => {
     void fetchPatientCommerce<{ items: WarrantyItem[] }>("/api/account/warranty-cards")
@@ -204,6 +257,24 @@ export function ServiceWarrantySection({
     setPreview({ src, title });
   }, []);
 
+  const activateCard = useCallback(
+    (id: string) => {
+      setActivateMessage("");
+      setActivatingId(id);
+      void postPatientCommerce<{ message?: string }>(
+        `/api/account/warranty-cards/${encodeURIComponent(id)}/activate`,
+        {},
+      )
+        .then((data) => {
+          setActivateMessage(data.message || "کارت گارانتی فعال شد.");
+          reload();
+        })
+        .catch((e: Error) => setLoadError(e.message))
+        .finally(() => setActivatingId(null));
+    },
+    [reload],
+  );
+
   const previewModal =
     preview != null ? (
       <WarrantyArtLightbox
@@ -217,17 +288,30 @@ export function ServiceWarrantySection({
 
   if (variant === "teaser") {
     if (!loaded || !items.length) return null;
-    const active = items.filter((i) => formatWarrantyRemaining(i.expiresAt) !== "منقضی شده");
+    const active = activeItems.filter((i) => formatWarrantyRemaining(i.expiresAt) !== "منقضی شده");
     return (
-      <Card hover={false} className="border-emerald-200 bg-emerald-50/40 p-4">
+      <Card
+        hover={false}
+        className={
+          pendingItems.length
+            ? "border-amber-300 bg-gradient-to-br from-amber-50 to-emerald-50/40 p-4"
+            : "border-emerald-200 bg-emerald-50/40 p-4"
+        }
+      >
         <p className="text-sm font-extrabold text-slate-900">کارت گارانتی خدمات</p>
-        <p className="mt-1 text-xs text-slate-600">
-          {active.length.toLocaleString("fa-IR")} کارت فعال از{" "}
-          {items.length.toLocaleString("fa-IR")} کارت ثبت‌شده
-        </p>
+        {pendingItems.length ? (
+          <p className="mt-1 text-xs font-bold text-amber-900">
+            {pendingItems.length.toLocaleString("fa-IR")} کارت آماده فعال‌سازی در پنل شماست
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-slate-600">
+            {active.length.toLocaleString("fa-IR")} کارت فعال از{" "}
+            {items.length.toLocaleString("fa-IR")} کارت ثبت‌شده
+          </p>
+        )}
         {onOpenPanel ? (
           <Button type="button" className="mt-3 text-xs" onClick={onOpenPanel}>
-            مشاهده کارت‌های گارانتی
+            {pendingItems.length ? "فعال‌سازی کارت گارانتی" : "مشاهده کارت‌های گارانتی"}
           </Button>
         ) : null}
       </Card>
@@ -256,6 +340,9 @@ export function ServiceWarrantySection({
         </Card>
       );
     }
+    const previewItems = activeItems.length
+      ? activeItems.slice(0, 2)
+      : pendingItems.slice(0, 1);
     return (
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -266,13 +353,20 @@ export function ServiceWarrantySection({
               className="text-xs font-bold text-teal-800 underline"
               onClick={onOpenPanel}
             >
-              همه کارت‌ها
+              {pendingItems.length ? "فعال‌سازی در پنل" : "همه کارت‌ها"}
             </button>
           ) : null}
         </div>
-        <WarrantyGrid items={items.slice(0, 2)} onPreview={openPreview} compact>
-          {previewModal}
-        </WarrantyGrid>
+        {activeItems.length > 0 ? (
+          <WarrantyGrid items={previewItems} onPreview={openPreview} compact>
+            {previewModal}
+          </WarrantyGrid>
+        ) : null}
+        {pendingItems.length ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+            {pendingItems.length.toLocaleString("fa-IR")} کارت گارانتی منتظر فعال‌سازی شماست
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -283,18 +377,43 @@ export function ServiceWarrantySection({
         <div>
           <p className="font-extrabold text-slate-900">کارت گارانتی خدمات</p>
           <p className="mt-1 text-xs leading-6 text-slate-600">
-            کارت‌های ثبت‌شده توسط درمانگاه برای خدمات دندانپزشکی شما. برای دیدن تصویر در
-            اندازه کارت ویزیت، روی تصویر هر کارت بزنید.
+            پس از ثبت درمانگاه، کارت را در همین پنل فعال کنید تا مدت گارانتی از همان لحظه آغاز
+            شود. روی تصویر هر کارت فعال برای بزرگ‌نمایی بزنید.
           </p>
         </div>
         {loadError ? <p className="text-sm text-rose-600">{loadError}</p> : null}
+        {activateMessage ? (
+          <p className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-sm text-teal-900">
+            {activateMessage}
+          </p>
+        ) : null}
         {loaded && !items.length && !loadError ? (
           <p className="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
             هنوز کارت گارانتی ثبت نشده است.
           </p>
         ) : null}
-        {items.length > 0 ? (
-          <WarrantyGrid items={items} onPreview={openPreview} />
+        {pendingItems.length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-sm font-extrabold text-amber-900">فعال‌سازی کارت گارانتی</p>
+            <div className="grid justify-items-center gap-6 sm:grid-cols-2">
+              {pendingItems.map((item) => (
+                <PendingWarrantyCard
+                  key={item.id}
+                  item={item}
+                  onActivate={activateCard}
+                  activating={activatingId === item.id}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {activeItems.length > 0 ? (
+          <>
+            {pendingItems.length > 0 ? (
+              <p className="text-sm font-extrabold text-slate-900">کارت‌های فعال</p>
+            ) : null}
+            <WarrantyGrid items={activeItems} onPreview={openPreview} />
+          </>
         ) : null}
       </Card>
       {previewModal}
