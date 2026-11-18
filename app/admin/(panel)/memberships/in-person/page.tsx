@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
 import { postAdminCommerce } from "@/lib/commerce/client";
 import { fetchAdminOps } from "@/lib/operations/client";
-import { formatToman, getDurationOptions, parseMembershipTier, type MembershipTier } from "@/lib/membership";
+import {
+  formatToman,
+  getDurationOptionsForTier,
+  isMembershipDurationAllowed,
+  parseMembershipTier,
+  type MembershipTier,
+} from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import Link from "next/link";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 type PatientRow = { phone?: string; name?: string; userId?: string };
 
@@ -20,7 +26,12 @@ export default function MembershipInPersonPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [lastApplicationId, setLastApplicationId] = useState("");
-  const durationOptions = getDurationOptions();
+  const durationOptions = useMemo(() => getDurationOptionsForTier(tier), [tier]);
+
+  useEffect(() => {
+    if (isMembershipDurationAllowed(tier, planId)) return;
+    setPlanId("two-year");
+  }, [tier, planId]);
 
   const search = useCallback(() => {
     const query = q.trim();

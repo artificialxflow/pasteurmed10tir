@@ -7,9 +7,9 @@ export type PublicWarrantyCard = {
   serviceType: ServiceWarrantyType;
   serviceLabel: string;
   typeLabel: string;
-  /** قالب ثابت — مسیر ذخیره‌شده در DB */
+  /** مسیر تصویر ذخیره‌شده در DB (قالب یا آپلود ادمین) */
   imageUrl: string;
-  /** تصویر کوچک برای UI بیمار */
+  /** تصویر نمایشی پنل بیمار */
   displayImageUrl: string;
   startedAt: string;
   expiresAt: string;

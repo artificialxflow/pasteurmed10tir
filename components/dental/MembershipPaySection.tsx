@@ -8,7 +8,8 @@ import {
 } from "@/lib/membership/group-discount";
 import {
   formatToman,
-  getDurationOptions,
+  getDurationOptionsForTier,
+  isMembershipDurationAllowed,
   getMembershipPlans,
   getMembershipPlansAsync,
   getUnitPrice,
@@ -50,7 +51,7 @@ export function MembershipPaySection({
   const [error, setError] = useState("");
   const [plans, setPlans] = useState(() => getMembershipPlans());
 
-  const durationOptions = useMemo(() => getDurationOptions(), []);
+  const durationOptions = useMemo(() => getDurationOptionsForTier(tier), [tier]);
   const confirmHref = app ? ROUTES.app.dentalConfirm : ROUTES.web.dentalConfirm;
   const accountReturn = app
     ? `${ROUTES.app.account}?panel=loan`
@@ -59,6 +60,11 @@ export function MembershipPaySection({
   useEffect(() => {
     void getMembershipPlansAsync().then(setPlans);
   }, []);
+
+  useEffect(() => {
+    if (isMembershipDurationAllowed(tier, planId)) return;
+    setPlanId("two-year");
+  }, [tier, planId]);
 
   const amountToman = useMemo(() => {
     const plan = durationOptions.find((p) => p.id === planId);
@@ -82,6 +88,10 @@ export function MembershipPaySection({
     const phone = normalizePhone(patientPhone);
     if (name.length < 2 || phone.length < 10) {
       setError("پروفایل نام و موبایل معتبر ندارد.");
+      return;
+    }
+    if (!isMembershipDurationAllowed(tier, planId) || !amountToman) {
+      setError("این ترکیب طرح و مدت عضویت موجود نیست.");
       return;
     }
     const plan = durationOptions.find((p) => p.id === planId);

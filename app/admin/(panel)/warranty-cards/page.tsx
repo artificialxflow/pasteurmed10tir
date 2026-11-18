@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Button } from "@/components/ui/Button";
 import { Card, FormInput, FormLabel, FormSelect } from "@/components/ui/Card";
@@ -15,10 +16,14 @@ import { confirmAction } from "@/lib/ui/confirm-action";
 import { fetchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
 import { warrantyCardArtUrl } from "@/lib/warranty/art";
-import { WARRANTY_TYPE_OPTIONS } from "@/lib/warranty/constants";
+import {
+  WARRANTY_DURATION_MONTHS,
+  WARRANTY_TYPE_OPTIONS,
+  warrantyExpiresAt,
+} from "@/lib/warranty/constants";
 import { formatWarrantyRemaining } from "@/lib/warranty/time-remaining";
 import type { ServiceWarrantyType } from "@prisma/client";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type PatientRow = { phone?: string; name?: string; userId?: string };
 
@@ -28,9 +33,16 @@ type WarrantyRow = {
   serviceLabel: string;
   typeLabel?: string;
   displayImageUrl?: string;
+  imageUrl?: string;
   startedAt: string;
   expiresAt: string;
 };
+
+function defaultExpiresIso(startedAt: string, serviceType: string): string {
+  const start = new Date(startedAt);
+  if (Number.isNaN(start.getTime())) return startedAt;
+  return warrantyExpiresAt(start, serviceType as ServiceWarrantyType).toISOString().slice(0, 10);
+}
 
 export default function AdminWarrantyCardsPage() {
   const [q, setQ] = useState("");
@@ -41,14 +53,23 @@ export default function AdminWarrantyCardsPage() {
   const [serviceType, setServiceType] = useState("crown");
   const [serviceLabel, setServiceLabel] = useState("");
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [expiresAt, setExpiresAt] = useState(() =>
+    defaultExpiresIso(new Date().toISOString().slice(0, 10), "crown"),
+  );
+  const [imageUrl, setImageUrl] = useState(() => warrantyCardArtUrl("crown"));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const previewArt = useMemo(
-    () => warrantyCardArtUrl(serviceType as ServiceWarrantyType),
-    [serviceType],
-  );
+  const previewArt = imageUrl.trim() || warrantyCardArtUrl(serviceType as ServiceWarrantyType);
+
+  const defaultMonths = WARRANTY_DURATION_MONTHS[serviceType as ServiceWarrantyType];
+
+  useEffect(() => {
+    if (editingId) return;
+    setExpiresAt(defaultExpiresIso(startedAt, serviceType));
+    setImageUrl(warrantyCardArtUrl(serviceType as ServiceWarrantyType));
+  }, [serviceType, startedAt, editingId]);
 
   const loadCards = useCallback((phone?: string) => {
     const p = phone || selected?.phone;
@@ -83,10 +104,13 @@ export default function AdminWarrantyCardsPage() {
   }, [q]);
 
   function resetForm() {
+    const start = new Date().toISOString().slice(0, 10);
     setEditingId(null);
     setServiceType("crown");
     setServiceLabel("");
-    setStartedAt(new Date().toISOString().slice(0, 10));
+    setStartedAt(start);
+    setExpiresAt(defaultExpiresIso(start, "crown"));
+    setImageUrl(warrantyCardArtUrl("crown"));
   }
 
   function startEdit(row: WarrantyRow) {
@@ -94,8 +118,18 @@ export default function AdminWarrantyCardsPage() {
     setServiceType(row.serviceType);
     setServiceLabel(row.serviceLabel);
     setStartedAt(row.startedAt.slice(0, 10));
+    setExpiresAt(row.expiresAt.slice(0, 10));
+    setImageUrl(row.displayImageUrl || row.imageUrl || warrantyCardArtUrl(row.serviceType as ServiceWarrantyType));
     setError("");
     setMessage("");
+  }
+
+  function applyDefaultDuration() {
+    setExpiresAt(defaultExpiresIso(startedAt, serviceType));
+  }
+
+  function applyTemplateImage() {
+    setImageUrl(warrantyCardArtUrl(serviceType as ServiceWarrantyType));
   }
 
   function removeCard(row: WarrantyRow) {
@@ -125,6 +159,14 @@ export default function AdminWarrantyCardsPage() {
       setError("تاریخ شروع گارانتی را کامل انتخاب کنید.");
       return;
     }
+    if (!expiresAt) {
+      setError("تاریخ پایان گارانتی را کامل انتخاب کنید.");
+      return;
+    }
+    if (new Date(expiresAt).getTime() < new Date(startedAt).getTime()) {
+      setError("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
+      return;
+    }
     setBusy(true);
     setError("");
     setMessage("");
@@ -133,6 +175,8 @@ export default function AdminWarrantyCardsPage() {
       serviceType,
       serviceLabel: serviceLabel.trim(),
       startedAt,
+      expiresAt,
+      imageUrl: imageUrl.trim(),
     };
 
     const req = editingId
@@ -163,8 +207,9 @@ export default function AdminWarrantyCardsPage() {
     <div className="mx-auto max-w-4xl space-y-4">
       <h1 className="text-xl font-extrabold text-slate-900">ثبت و ویرایش کارت گارانتی</h1>
       <p className="text-sm text-slate-600">
-        فقط بیمار، نوع خدمت و تاریخ را ثبت کنید. ظاهر کارت در پنل بیمار به‌صورت خودکار از قالب
-        همان نوع خدمت نمایش داده می‌شود (بدون آپلود عکس).
+        بیمار، نوع خدمت، تاریخ شروع و پایان، و تصویر کارت را می‌توانید ویرایش یا حذف کنید. برای
+        هم‌خوانی زمان با متن روی کارت، تاریخ پایان را مطابق عکس تنظیم کنید یا از «مدت پیش‌فرض
+        نوع خدمت» ({defaultMonths.toLocaleString("fa-IR")} ماه برای نوع انتخاب‌شده) استفاده کنید.
       </p>
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
@@ -299,8 +344,24 @@ export default function AdminWarrantyCardsPage() {
               <WarrantyCardArtImage src={previewArt} alt="پیش‌نمایش کارت گارانتی" />
             </div>
             <p className="mt-2 text-center text-[11px] text-slate-500">
-              با تغییر «نوع خدمت»، قالب تصویر به‌روز می‌شود. ویرایش متن روی کارت از همین فرم است.
+              تصویر قابل آپلود است یا با دکمهٔ زیر به قالب نوع خدمت برمی‌گردد.
             </p>
+          </div>
+          <div>
+            <FormLabel>تصویر کارت گارانتی</FormLabel>
+            <ImageUploadField
+              value={imageUrl}
+              onChange={setImageUrl}
+              className="mt-1"
+              placeholder="/warranty-art/... یا /uploads/..."
+            />
+            <button
+              type="button"
+              className="mt-2 text-xs font-bold text-teal-800 underline"
+              onClick={applyTemplateImage}
+            >
+              بازگشت به تصویر قالب این نوع خدمت
+            </button>
           </div>
           <div>
             <FormLabel>برچسب نمایشی (اختیاری)</FormLabel>
@@ -316,8 +377,23 @@ export default function AdminWarrantyCardsPage() {
             onChange={setStartedAt}
             yearRange="warrantyStart"
           />
+          <div>
+            <JalaliBirthDateField
+              label="تاریخ پایان گارانتی"
+              value={expiresAt}
+              onChange={setExpiresAt}
+              yearRange="nearTerm"
+            />
+            <button
+              type="button"
+              className="mt-2 text-xs font-bold text-teal-800 underline"
+              onClick={applyDefaultDuration}
+            >
+              محاسبهٔ پایان از مدت پیش‌فرض ({defaultMonths.toLocaleString("fa-IR")} ماه پس از شروع)
+            </button>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" disabled={busy || !selected?.phone || !startedAt}>
+            <Button type="submit" disabled={busy || !selected?.phone || !startedAt || !expiresAt}>
               {busy ? "در حال ذخیره…" : editingId ? "ذخیره ویرایش" : "ثبت کارت گارانتی"}
             </Button>
             {!selected?.phone ? (

@@ -7,7 +7,14 @@ import {
   applyMembershipDiscounts,
 } from "@/lib/membership/group-discount";
 import { splitInstallmentAmounts } from "@/lib/membership/installment-split";
-import { getDurationOptions, getUnitPrice, getValidityLabel, membershipDurationDiscountForPayment, type MembershipTier } from "@/lib/membership";
+import {
+  getDurationOptionsForTier,
+  getUnitPrice,
+  getValidityLabel,
+  isMembershipDurationAllowed,
+  membershipDurationDiscountForPayment,
+  type MembershipTier,
+} from "@/lib/membership";
 import { ROUTES } from "@/lib/routes";
 import { PasteurStorage } from "@/lib/storage";
 import { formatPrice, normalizePhone } from "@/lib/utils";
@@ -49,7 +56,6 @@ export function OrganizationPanel({
   const confirmHref = variant === "app" ? ROUTES.app.dentalConfirm : ROUTES.web.dentalConfirm;
   const returnHref = variant === "app" ? ROUTES.app.account : ROUTES.web.account;
   const successHref = variant === "app" ? ROUTES.app.dentalSuccess : ROUTES.web.dentalSuccess;
-  const durationOptions = useMemo(() => getDurationOptions(), []);
 
   const [data, setData] = useState<OrgPayload | null>(null);
   const [error, setError] = useState("");
@@ -61,6 +67,7 @@ export function OrganizationPanel({
   const [tier, setTier] = useState<MembershipTier>("regular");
   const [planId, setPlanId] = useState("one-year");
   const [paymentInstallments, setPaymentInstallments] = useState<"1" | "2" | "3">("1");
+  const durationOptions = useMemo(() => getDurationOptionsForTier(tier), [tier]);
 
   const reload = useCallback(async () => {
     const next = await fetchPatientOps<OrgPayload>("/api/operations/organization");
@@ -70,6 +77,11 @@ export function OrganizationPanel({
   useEffect(() => {
     void reload().catch((e: Error) => setError(e.message));
   }, [reload]);
+
+  useEffect(() => {
+    if (isMembershipDurationAllowed(tier, planId)) return;
+    setPlanId("two-year");
+  }, [tier, planId]);
 
   const org = data?.organization;
   const members = data?.members || [];
@@ -122,6 +134,10 @@ export function OrganizationPanel({
   function paySelected() {
     if (!org || !selectedMembers.length) {
       setError("حداقل یک عضو را برای پرداخت انتخاب کنید.");
+      return;
+    }
+    if (!isMembershipDurationAllowed(tier, planId) || !payable) {
+      setError("این ترکیب طرح و مدت عضویت موجود نیست.");
       return;
     }
     const installmentCount = Number(paymentInstallments) as 1 | 2 | 3;

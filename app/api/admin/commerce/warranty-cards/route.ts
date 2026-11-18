@@ -1,8 +1,11 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
 import { normalizePhoneDigits } from '@/lib/operations/phone';
-import { WARRANTY_TYPE_LABELS, warrantyExpiresAt } from '@/lib/warranty/constants';
-import { warrantyCardArtUrl } from '@/lib/warranty/art';
+import { WARRANTY_TYPE_LABELS } from '@/lib/warranty/constants';
+import {
+  resolveWarrantyExpiresAt,
+  resolveWarrantyImageUrl,
+} from '@/lib/warranty/resolve';
 import { mapPublicWarrantyCard, WARRANTY_SERVICE_TYPES } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import type { ServiceWarrantyType } from '@prisma/client';
@@ -50,9 +53,28 @@ export async function POST(request: Request) {
   if (!user) return jsonError('بیمار یافت نشد.');
 
   const startedAt = body.startedAt ? new Date(String(body.startedAt)) : new Date();
+  if (Number.isNaN(startedAt.getTime())) {
+    return jsonError('تاریخ شروع نامعتبر است.');
+  }
   const type = serviceType as ServiceWarrantyType;
-  const expiresAt = warrantyExpiresAt(startedAt, type);
-  const imageUrl = warrantyCardArtUrl(type);
+  const useDefaultDuration =
+    body.useDefaultDuration === true || body.useDefaultDuration === 'true';
+  const expiresAt = resolveWarrantyExpiresAt({
+    startedAt,
+    serviceType: type,
+    bodyExpiresAt: body.expiresAt,
+    useDefaultDuration,
+  });
+  if (expiresAt.getTime() < startedAt.getTime()) {
+    return jsonError('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.');
+  }
+  const useTemplateImage =
+    body.useTemplateImage === true || body.useTemplateImage === 'true';
+  const imageUrl = resolveWarrantyImageUrl({
+    serviceType: type,
+    bodyImageUrl: body.imageUrl,
+    useTemplateImage,
+  });
 
   const row = await prisma.serviceWarrantyCard.create({
     data: {

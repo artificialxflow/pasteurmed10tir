@@ -214,7 +214,8 @@ export interface MembershipCoveragePlan {
   id: string;
   title: string;
   duration: string;
-  regularPerPerson: number;
+  /** null = این مدت برای عادی ارائه نمی‌شود */
+  regularPerPerson: number | null;
   vipPerPerson: number;
   regularValidity: string;
   vipValidity: string;
@@ -919,7 +920,7 @@ export const PASTEUR_DATA = {
     'بدون دوره انتظار و امکان استفاده از خدمات پس از ثبت‌نام',
     'لیست قیمت خدمات دندانپزشکی در صفحه تعرفه‌ها — طبق ثبت مرکز',
     'ارائه خدمات به بیماران فاقد بیمه پایه و تکمیلی',
-    'امکان انتخاب عضویت یک‌ساله، دوساله یا سه‌ساله هنگام پرداخت',
+    'عضویت عادی: یک‌ساله و دوساله — عضویت سه‌ساله فقط VIP',
     'حضور متخصصان متعهد و مجرب در خدمات دندانپزشکی',
     'قرعه‌کشی هفتگی و ارائه جوایز به مشترکین تحت درمان',
     'تخفیف فلورایدتراپی تا سقف ۱۰٪',
@@ -950,7 +951,7 @@ export const PASTEUR_DATA = {
       id: 'three-year',
       title: 'عضویت سه‌ساله',
       duration: '۳ ساله',
-      regularPerPerson: 2400000,
+      regularPerPerson: null,
       vipPerPerson: 4800000,
       regularValidity: '۳ ساله',
       vipValidity: '۳ ساله',

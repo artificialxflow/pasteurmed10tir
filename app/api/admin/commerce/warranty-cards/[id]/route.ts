@@ -1,10 +1,10 @@
 import { jsonError, parseJson } from '@/lib/auth/api-utils';
 import { requireAdmin } from '@/lib/content/require-admin';
+import { WARRANTY_TYPE_LABELS } from '@/lib/warranty/constants';
 import {
-  WARRANTY_TYPE_LABELS,
-  warrantyExpiresAt,
-} from '@/lib/warranty/constants';
-import { warrantyCardArtUrl } from '@/lib/warranty/art';
+  resolveWarrantyExpiresAt,
+  resolveWarrantyImageUrl,
+} from '@/lib/warranty/resolve';
 import { mapPublicWarrantyCard, WARRANTY_SERVICE_TYPES } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import type { ServiceWarrantyType } from '@prisma/client';
@@ -43,8 +43,26 @@ export async function PATCH(
     startedAt = next;
   }
 
-  const expiresAt = warrantyExpiresAt(startedAt, serviceType);
-  const imageUrl = warrantyCardArtUrl(serviceType);
+  const useDefaultDuration =
+    body.useDefaultDuration === true || body.useDefaultDuration === 'true';
+  const expiresAt = resolveWarrantyExpiresAt({
+    startedAt,
+    serviceType,
+    bodyExpiresAt: body.expiresAt,
+    useDefaultDuration,
+    existingExpiresAt: existing.expiresAt,
+  });
+  if (expiresAt.getTime() < startedAt.getTime()) {
+    return jsonError('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.');
+  }
+  const useTemplateImage =
+    body.useTemplateImage === true || body.useTemplateImage === 'true';
+  const imageUrl = resolveWarrantyImageUrl({
+    serviceType,
+    bodyImageUrl: body.imageUrl,
+    useTemplateImage,
+    existingImageUrl: existing.imageUrl,
+  });
 
   const row = await prisma.serviceWarrantyCard.update({
     where: { id },

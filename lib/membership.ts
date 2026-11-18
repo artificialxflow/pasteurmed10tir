@@ -12,6 +12,24 @@ export function getDurationOptions(): MembershipCoveragePlan[] {
   return PASTEUR_DATA.membershipCoveragePlans.map((plan) => ({ ...plan }));
 }
 
+export const REGULAR_EXCLUDED_DURATION_IDS = ['three-year'] as const;
+
+export function isMembershipDurationAllowed(tier: MembershipTier, planId: string): boolean {
+  if (tier === 'regular' && (REGULAR_EXCLUDED_DURATION_IDS as readonly string[]).includes(planId)) {
+    return false;
+  }
+  return true;
+}
+
+export function getDurationOptionsForTier(tier: MembershipTier): MembershipCoveragePlan[] {
+  return getDurationOptions().filter((p) => isMembershipDurationAllowed(tier, p.id));
+}
+
+export function formatMembershipRegularPerPerson(plan: MembershipCoveragePlan): string {
+  if (plan.regularPerPerson == null) return 'نداریم';
+  return formatToman(plan.regularPerPerson);
+}
+
 /** نمایش تخفیف مدت در جدول — قیمت دوساله/سه‌ساله از قبل شامل ۲۰٪ است. */
 export function membershipDurationDiscountLabel(
   plan: Pick<MembershipCoveragePlan, 'id' | 'discountPercent'>,
@@ -73,7 +91,9 @@ export function getUnitPrice(tier: MembershipTier, planId: string): number {
   }
   const plan = getDurationOptions().find((p) => p.id === planId);
   if (!plan) return 0;
-  return tier === 'vip' ? plan.vipPerPerson : plan.regularPerPerson;
+  if (tier === 'vip') return plan.vipPerPerson;
+  if (!isMembershipDurationAllowed(tier, planId) || plan.regularPerPerson == null) return 0;
+  return plan.regularPerPerson;
 }
 
 export function getValidityLabel(tier: MembershipTier, planId: string): string {

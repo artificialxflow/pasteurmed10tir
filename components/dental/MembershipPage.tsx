@@ -15,8 +15,11 @@ import {
   calculateLoan,
   formatRial,
   formatToman,
+  formatMembershipRegularPerPerson,
   getDurationOptions,
+  getDurationOptionsForTier,
   getLoanMonthOptions,
+  isMembershipDurationAllowed,
   getMembershipPlans,
   getMembershipPlansAsync,
   getUnitPrice,
@@ -115,6 +118,10 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     getMembershipPlans(),
   );
   const durationOptions = useMemo(() => getDurationOptions(), []);
+  const formDurationOptions = useMemo(
+    () => getDurationOptionsForTier(form.tier),
+    [form.tier],
+  );
   const confirmHref = app ? ROUTES.app.dentalConfirm : ROUTES.web.dentalConfirm;
   const returnHref = app ? ROUTES.app.dentalMembership : ROUTES.web.dentalMembership;
   const successHref = app ? ROUTES.app.dentalSuccess : ROUTES.web.dentalSuccess;
@@ -212,6 +219,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
       setLoanAmount(String(loanResult.limit));
     }
   }, [loanAmount, loanResult.limit]);
+
+  useEffect(() => {
+    setForm((prev) => {
+      if (isMembershipDurationAllowed(prev.tier, prev.planId)) return prev;
+      return { ...prev, planId: "two-year" };
+    });
+  }, [form.tier]);
 
   const unitPrice = getUnitPrice(form.tier, form.planId);
   const memberCount = normalizeMemberCount(form.memberCount);
@@ -387,6 +401,14 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
     }
     if (data.patientName.length < 2 || normalizePhone(data.phone).length < 10) {
       setError("نام و شماره تماس را کامل وارد کنید.");
+      return;
+    }
+    if (!isMembershipDurationAllowed(form.tier, form.planId)) {
+      setError("عضویت عادی سه‌ساله ارائه نمی‌شود. نوع پوشش یا مدت را تغییر دهید.");
+      return;
+    }
+    if (form.tier === "eco-plus") {
+      setError("اکوپلاس از این فرم ثبت نمی‌شود؛ از کارت طرح اکوپلاس در بالای صفحه استفاده کنید.");
       return;
     }
     const loanNum = Number(data.loanAmount || 0);
@@ -772,7 +794,8 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
           فرم پیشنهاد صدور عضویت
         </h2>
         <p className="mb-5 text-sm text-slate-600">
-          بر اساس فرم ارسالی، پوشش عادی یا VIP را برای مجموعه انتخاب کنید.
+          پوشش عادی یا VIP — عادی فقط یک‌ساله و دوساله؛ سه‌ساله VIP. طرح اکوپلاس جداست و در این
+          فرم ثبت نمی‌شود.
         </p>
         <Card className="mb-5 overflow-x-auto p-5" hover={false}>
           {app ? (
@@ -795,7 +818,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   <span className="text-center">
                     عادی
                     <br />
-                    <strong>{formatToman(plan.regularPerPerson)}</strong>
+                    <strong
+                      className={
+                        plan.regularPerPerson == null ? "font-normal text-slate-400" : undefined
+                      }
+                    >
+                      {formatMembershipRegularPerPerson(plan)}
+                    </strong>
                   </span>
                   <span className="text-center">
                     VIP
@@ -822,7 +851,13 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                       {plan.title} — {plan.duration}
                     </td>
                     <td className="p-3">{membershipDurationDiscountLabel(plan)}</td>
-                    <td className="p-3">{formatToman(plan.regularPerPerson)}</td>
+                    <td className="p-3">
+                      {plan.regularPerPerson == null ? (
+                        <span className="text-slate-400">نداریم</span>
+                      ) : (
+                        formatToman(plan.regularPerPerson)
+                      )}
+                    </td>
                     <td className="p-3 font-bold text-amber-700">
                       {formatToman(plan.vipPerPerson)}
                     </td>
@@ -942,7 +977,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                 value={form.planId}
                 onChange={(e) => updateForm("planId", e.target.value)}
               >
-                {durationOptions.map((plan) => (
+                {formDurationOptions.map((plan) => (
                   <option key={plan.id} value={plan.id}>
                     {plan.title} — {plan.duration}
                   </option>
@@ -958,7 +993,6 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
               >
                 <option value="regular">عادی</option>
                 <option value="vip">VIP</option>
-                <option value="eco-plus">اکوپلاس</option>
               </FormSelect>
             </div>
             <div>
@@ -1209,7 +1243,7 @@ export function MembershipPage({ basePath }: { basePath: DentalBasePath }) {
                   value={quick.planId}
                   onChange={(e) => setQuick((q) => ({ ...q, planId: e.target.value }))}
                 >
-                  {durationOptions.map((plan) => (
+                  {getDurationOptionsForTier(quick.tier || "regular").map((plan) => (
                     <option key={plan.id} value={plan.id}>
                       {plan.title} — {plan.duration}
                     </option>

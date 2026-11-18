@@ -19,10 +19,12 @@ export function warrantyCardArtUrl(type: ServiceWarrantyType): string {
   return WARRANTY_CARD_ART[type] || WARRANTY_CARD_ART_DEFAULT;
 }
 
-/** تصویر نمایشی پنل بیمار همیشه از قالب نوع خدمت */
+/** تصویر نمایشی: مسیر ذخیره‌شده در DB، در غیر این صورت قالب نوع خدمت */
 export function warrantyCardDisplayImage(
   type: ServiceWarrantyType,
-  _storedUrl?: string | null,
+  storedUrl?: string | null,
 ): string {
+  const trimmed = storedUrl?.trim();
+  if (trimmed) return trimmed;
   return warrantyCardArtUrl(type);
 }

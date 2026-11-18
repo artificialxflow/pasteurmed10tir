@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/content/require-admin';
 import {
   getDurationOptions,
   getUnitPrice,
+  isMembershipDurationAllowed,
   getValidityLabel,
   membershipDurationDiscountForPayment,
   membershipTierLabel,
@@ -46,7 +47,11 @@ export async function POST(request: Request) {
   );
   const durationOptions = getDurationOptions();
   const durationPlan = durationOptions.find((p) => p.id === planId);
+  if (!isMembershipDurationAllowed(tier, planId)) {
+    return jsonError('عضویت عادی سه‌ساله ارائه نمی‌شود.');
+  }
   const unit = getUnitPrice(tier, planId);
+  if (!unit) return jsonError('ترکیب طرح و مدت عضویت نامعتبر است.');
   const subtotal = unit * memberCount;
   const durationDisc = membershipDurationDiscountForPayment(durationPlan);
   const groupDisc = clampGroupDiscountPercent(
