@@ -81,7 +81,7 @@ export function jalaliYearRangeNearTerm(): { minJalaliYear: number; maxJalaliYea
   return { minJalaliYear: y, maxJalaliYear: y + 1 };
 }
 
-/** شروع گارانتی — از ۱۴۰۵، حداکثر ۶ سال جلو (۱۴۰۵–۱۴۱۰) */
+/** پایان گارانتی — تا حدود ۵ سال جلو از سال پایه (۱۴۰۵–۱۴۱۰) */
 export function jalaliWarrantyStartYearRange(): {
   minJalaliYear: number;
   maxJalaliYear: number;

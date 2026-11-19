@@ -390,14 +390,14 @@ export default function AdminWarrantyCardsPage() {
             label="تاریخ شروع گارانتی"
             value={startedAt}
             onChange={setStartedAt}
-            yearRange="warrantyStart"
+            yearRange="nearTerm"
           />
           <div>
             <JalaliBirthDateField
               label="تاریخ پایان گارانتی"
               value={expiresAt}
               onChange={setExpiresAt}
-              yearRange="nearTerm"
+              yearRange="warrantyStart"
             />
             <button
               type="button"
