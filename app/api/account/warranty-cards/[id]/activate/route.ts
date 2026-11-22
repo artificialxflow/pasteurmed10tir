@@ -1,6 +1,7 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { requirePatient } from '@/lib/operations/require-patient';
 import { applyPatientWarrantyActivation } from '@/lib/warranty/activate';
+import { loadWarrantyCardArtOverrides } from '@/lib/warranty/load-card-art';
 import { mapPublicWarrantyCard } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -25,9 +26,11 @@ export async function POST(
   });
   if (!existing) return jsonError('کارت گارانتی یافت نشد.', 404);
 
+  const artOverrides = await loadWarrantyCardArtOverrides();
+
   if (existing.status === 'active') {
     return NextResponse.json({
-      item: mapPublicWarrantyCard(existing),
+      item: mapPublicWarrantyCard(existing, artOverrides),
       message: 'کارت گارانتی قبلاً فعال شده است.',
     });
   }
@@ -48,7 +51,7 @@ export async function POST(
   });
 
   return NextResponse.json({
-    item: mapPublicWarrantyCard(row),
+    item: mapPublicWarrantyCard(row, artOverrides),
     message: 'کارت گارانتی فعال شد.',
   });
 }

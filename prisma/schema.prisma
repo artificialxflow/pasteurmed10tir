@@ -369,6 +369,8 @@ model SiteSettings {
   heroSlides Json @default("[]")
   /** شناسه محصولات پرفروش صفحه اصلی — ترتیب آرایه = ترتیب نمایش */
   shopFeaturedProductIds Json @default("[]")
+  /** قالب تصویر کارت گارانتی به‌ازای نوع خدمت — مثلاً { "crown": "/uploads/..." } */
+  warrantyCardArt Json @default("{}")
 }
 
 model SpecialtyTariff {

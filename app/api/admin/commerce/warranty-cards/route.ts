@@ -6,6 +6,7 @@ import {
   resolveWarrantyExpiresAt,
   resolveWarrantyImageUrl,
 } from '@/lib/warranty/resolve';
+import { loadWarrantyCardArtOverrides } from '@/lib/warranty/load-card-art';
 import { mapPublicWarrantyCard, WARRANTY_SERVICE_TYPES } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import type { ServiceWarrantyType } from '@prisma/client';
@@ -27,9 +28,10 @@ export async function GET(request: Request) {
     where: { userId: user.id },
     orderBy: { expiresAt: 'desc' },
   });
+  const artOverrides = await loadWarrantyCardArtOverrides();
 
   return NextResponse.json({
-    items: rows.map(mapPublicWarrantyCard),
+    items: rows.map((row) => mapPublicWarrantyCard(row, artOverrides)),
     patient: { userId: user.id, phone: user.phone },
   });
 }
@@ -68,12 +70,14 @@ export async function POST(request: Request) {
   if (expiresAt.getTime() < startedAt.getTime()) {
     return jsonError('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.');
   }
+  const artOverrides = await loadWarrantyCardArtOverrides();
   const useTemplateImage =
     body.useTemplateImage === true || body.useTemplateImage === 'true';
   const imageUrl = resolveWarrantyImageUrl({
     serviceType: type,
     bodyImageUrl: body.imageUrl,
     useTemplateImage,
+    artOverrides,
   });
 
   const activateImmediately =
@@ -97,5 +101,8 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ item: mapPublicWarrantyCard(row) }, { status: 201 });
+  return NextResponse.json(
+    { item: mapPublicWarrantyCard(row, artOverrides) },
+    { status: 201 },
+  );
 }

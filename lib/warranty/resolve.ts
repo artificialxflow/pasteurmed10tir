@@ -1,5 +1,6 @@
 import type { ServiceWarrantyType } from '@prisma/client';
 import { warrantyCardArtUrl } from '@/lib/warranty/art';
+import type { WarrantyCardArtOverrides } from '@/lib/warranty/card-art-settings';
 import { warrantyExpiresAt } from '@/lib/warranty/constants';
 
 export function parseWarrantyDate(value: unknown): Date | null {
@@ -27,12 +28,14 @@ export function resolveWarrantyImageUrl(input: {
   bodyImageUrl?: unknown;
   useTemplateImage?: boolean;
   existingImageUrl?: string;
+  artOverrides?: WarrantyCardArtOverrides;
 }): string {
-  if (input.useTemplateImage) return warrantyCardArtUrl(input.serviceType);
+  const template = () => warrantyCardArtUrl(input.serviceType, input.artOverrides);
+  if (input.useTemplateImage) return template();
   if (input.bodyImageUrl !== undefined) {
     const url = String(input.bodyImageUrl || '').trim();
-    return url || warrantyCardArtUrl(input.serviceType);
+    return url || template();
   }
   if (input.existingImageUrl?.trim()) return input.existingImageUrl.trim();
-  return warrantyCardArtUrl(input.serviceType);
+  return template();
 }

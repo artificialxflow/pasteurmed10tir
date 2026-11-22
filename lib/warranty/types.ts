@@ -1,5 +1,6 @@
 import { WARRANTY_TYPE_LABELS } from '@/lib/warranty/constants';
 import { warrantyCardArtUrl, warrantyCardDisplayImage } from '@/lib/warranty/art';
+import type { WarrantyCardArtOverrides } from '@/lib/warranty/card-art-settings';
 import type {
   ServiceWarrantyCard,
   ServiceWarrantyStatus,
@@ -23,7 +24,10 @@ export type PublicWarrantyCard = {
   updatedAt: string;
 };
 
-export function mapPublicWarrantyCard(row: ServiceWarrantyCard): PublicWarrantyCard {
+export function mapPublicWarrantyCard(
+  row: ServiceWarrantyCard,
+  artOverrides?: WarrantyCardArtOverrides,
+): PublicWarrantyCard {
   const status = row.status;
   return {
     id: row.id,
@@ -31,7 +35,7 @@ export function mapPublicWarrantyCard(row: ServiceWarrantyCard): PublicWarrantyC
     serviceLabel: row.serviceLabel,
     typeLabel: WARRANTY_TYPE_LABELS[row.serviceType],
     imageUrl: row.imageUrl,
-    displayImageUrl: warrantyCardDisplayImage(row.serviceType, row.imageUrl),
+    displayImageUrl: warrantyCardDisplayImage(row.serviceType, row.imageUrl, artOverrides),
     startedAt: row.startedAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),
     status,

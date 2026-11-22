@@ -1,30 +1,29 @@
 import type { ServiceWarrantyType } from '@prisma/client';
+import {
+  WARRANTY_CARD_ART,
+  WARRANTY_CARD_ART_DEFAULT,
+} from '@/lib/warranty/card-art-defaults';
+import {
+  warrantyCardArtUrlWithOverrides,
+  type WarrantyCardArtOverrides,
+} from '@/lib/warranty/card-art-settings';
 
-/**
- * قالب ثابت کارت گارانتی (mock کارفرما — updates/35/10/گارانتی)
- * root_canal←07, crown←02, implant←01, laminate←10, denture←04, orthodontics←05
- */
-export const WARRANTY_CARD_ART: Record<ServiceWarrantyType, string> = {
-  root_canal: '/warranty-art/root-canal.jpg',
-  crown: '/warranty-art/crown.jpg',
-  implant: '/warranty-art/implant.jpg',
-  laminate_composite: '/warranty-art/laminate-composite.jpg',
-  denture: '/warranty-art/denture.jpg',
-  orthodontics: '/warranty-art/orthodontics.jpg',
-};
+export { WARRANTY_CARD_ART, WARRANTY_CARD_ART_DEFAULT };
 
-export const WARRANTY_CARD_ART_DEFAULT = '/warranty-art/default.jpg';
-
-export function warrantyCardArtUrl(type: ServiceWarrantyType): string {
-  return WARRANTY_CARD_ART[type] || WARRANTY_CARD_ART_DEFAULT;
+export function warrantyCardArtUrl(
+  type: ServiceWarrantyType,
+  overrides?: WarrantyCardArtOverrides,
+): string {
+  return warrantyCardArtUrlWithOverrides(type, overrides);
 }
 
 /** تصویر نمایشی: مسیر ذخیره‌شده در DB، در غیر این صورت قالب نوع خدمت */
 export function warrantyCardDisplayImage(
   type: ServiceWarrantyType,
   storedUrl?: string | null,
+  overrides?: WarrantyCardArtOverrides,
 ): string {
   const trimmed = storedUrl?.trim();
   if (trimmed) return trimmed;
-  return warrantyCardArtUrl(type);
+  return warrantyCardArtUrl(type, overrides);
 }

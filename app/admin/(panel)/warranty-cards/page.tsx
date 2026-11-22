@@ -11,10 +11,12 @@ import {
   fetchAdminCommerce,
   patchAdminCommerce,
   postAdminCommerce,
+  putAdminCommerce,
 } from "@/lib/commerce/client";
 import { confirmAction } from "@/lib/ui/confirm-action";
 import { fetchAdminOps } from "@/lib/operations/client";
 import { formatJalaliDate } from "@/lib/patient";
+import { WARRANTY_CARD_ART } from "@/lib/warranty/card-art-defaults";
 import { warrantyCardArtUrl } from "@/lib/warranty/art";
 import {
   WARRANTY_DURATION_MONTHS,
@@ -26,6 +28,13 @@ import type { ServiceWarrantyType } from "@prisma/client";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type PatientRow = { phone?: string; name?: string; userId?: string };
+
+type WarrantyTemplateItem = {
+  id: string;
+  label: string;
+  imageUrl: string;
+  overrideUrl?: string;
+};
 
 type WarrantyRow = {
   id: string;
@@ -63,16 +72,49 @@ export default function AdminWarrantyCardsPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [templateItems, setTemplateItems] = useState<WarrantyTemplateItem[]>([]);
+  const [templateDraft, setTemplateDraft] = useState<Record<string, string>>({});
+  const [templateSaving, setTemplateSaving] = useState(false);
+  const [templateMessage, setTemplateMessage] = useState("");
 
-  const previewArt = imageUrl.trim() || warrantyCardArtUrl(serviceType as ServiceWarrantyType);
+  const templateUrl = useCallback(
+    (type: ServiceWarrantyType) =>
+      templateDraft[type]?.trim() ||
+      templateItems.find((t) => t.id === type)?.imageUrl ||
+      warrantyCardArtUrl(type),
+    [templateDraft, templateItems],
+  );
+
+  const previewArt = imageUrl.trim() || templateUrl(serviceType as ServiceWarrantyType);
 
   const defaultMonths = WARRANTY_DURATION_MONTHS[serviceType as ServiceWarrantyType];
+
+  const reloadTemplates = useCallback(() => {
+    return fetchAdminCommerce<{
+      items?: WarrantyTemplateItem[];
+      resolved?: Record<string, string>;
+    }>("/api/admin/commerce/warranty-card-art")
+      .then((data) => {
+        const items = data.items || [];
+        setTemplateItems(items);
+        const draft: Record<string, string> = {};
+        for (const item of items) {
+          draft[item.id] = item.imageUrl;
+        }
+        setTemplateDraft(draft);
+      })
+      .catch(() => setTemplateItems([]));
+  }, []);
+
+  useEffect(() => {
+    void reloadTemplates();
+  }, [reloadTemplates]);
 
   useEffect(() => {
     if (editingId) return;
     setExpiresAt(defaultExpiresIso(startedAt, serviceType));
-    setImageUrl(warrantyCardArtUrl(serviceType as ServiceWarrantyType));
-  }, [serviceType, startedAt, editingId]);
+    setImageUrl(templateUrl(serviceType as ServiceWarrantyType));
+  }, [serviceType, startedAt, editingId, templateUrl]);
 
   const loadCards = useCallback((phone?: string) => {
     const p = phone || selected?.phone;
@@ -113,7 +155,7 @@ export default function AdminWarrantyCardsPage() {
     setServiceLabel("");
     setStartedAt(start);
     setExpiresAt(defaultExpiresIso(start, "crown"));
-    setImageUrl(warrantyCardArtUrl("crown"));
+    setImageUrl(templateUrl("crown"));
     setRequirePatientActivation(true);
   }
 
@@ -123,7 +165,11 @@ export default function AdminWarrantyCardsPage() {
     setServiceLabel(row.serviceLabel);
     setStartedAt(row.startedAt.slice(0, 10));
     setExpiresAt(row.expiresAt.slice(0, 10));
-    setImageUrl(row.displayImageUrl || row.imageUrl || warrantyCardArtUrl(row.serviceType as ServiceWarrantyType));
+    setImageUrl(
+      row.displayImageUrl ||
+        row.imageUrl ||
+        templateUrl(row.serviceType as ServiceWarrantyType),
+    );
     setError("");
     setMessage("");
   }
@@ -133,7 +179,33 @@ export default function AdminWarrantyCardsPage() {
   }
 
   function applyTemplateImage() {
-    setImageUrl(warrantyCardArtUrl(serviceType as ServiceWarrantyType));
+    setImageUrl(templateUrl(serviceType as ServiceWarrantyType));
+  }
+
+  function saveTemplateArt() {
+    setTemplateSaving(true);
+    setTemplateMessage("");
+    const warrantyCardArt: Record<string, string> = {};
+    for (const opt of WARRANTY_TYPE_OPTIONS) {
+      const type = opt.id as ServiceWarrantyType;
+      const url = templateDraft[type]?.trim() || "";
+      const factory = WARRANTY_CARD_ART[type];
+      warrantyCardArt[type] = !url || url === factory ? "" : url;
+    }
+    void putAdminCommerce<{ message?: string }>("/api/admin/commerce/warranty-card-art", {
+      warrantyCardArt,
+    })
+      .then((data) => {
+        setTemplateMessage(data.message || "قالب‌های تصویر ذخیره شد.");
+        return reloadTemplates();
+      })
+      .then(() => {
+        if (!editingId) {
+          setImageUrl(templateUrl(serviceType as ServiceWarrantyType));
+        }
+      })
+      .catch((err: Error) => setTemplateMessage(err.message))
+      .finally(() => setTemplateSaving(false));
   }
 
   function removeCard(row: WarrantyRow) {
@@ -223,6 +295,56 @@ export default function AdminWarrantyCardsPage() {
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {message ? <p className="text-sm text-teal-800">{message}</p> : null}
+
+      <Card hover={false} className="space-y-4 p-4">
+        <div className="space-y-1">
+          <h2 className="font-bold text-slate-900">قالب‌های تصویر کارت گارانتی</h2>
+          <p className="text-xs text-slate-500">
+            پیش‌فرض هر نوع خدمت برای کارت‌های جدید و دکمهٔ «بازگشت به قالب». روکش و ترمیم ریشه
+            با طرح کارفرما (updates/35/14) در فایل‌های کارخانه به‌روز شده‌اند؛ از اینجا می‌توانید
+            آپلود، حذف (بازگشت به کارخانه) و به‌روزرسانی کنید.
+          </p>
+        </div>
+        {templateMessage ? (
+          <p className="text-sm font-bold text-teal-800">{templateMessage}</p>
+        ) : null}
+        <div className="grid gap-4 md:grid-cols-2">
+          {WARRANTY_TYPE_OPTIONS.map((opt) => {
+            const type = opt.id as ServiceWarrantyType;
+            const src = templateDraft[type] || templateUrl(type);
+            return (
+              <div key={opt.id} className="space-y-2 rounded-xl border border-slate-200 p-3">
+                <p className="text-sm font-bold text-slate-800">{opt.label}</p>
+                <div className="flex justify-center">
+                  <WarrantyCardArtImage src={src} alt={opt.label} compact />
+                </div>
+                <ImageUploadField
+                  value={src}
+                  onChange={(path) =>
+                    setTemplateDraft((prev) => ({ ...prev, [type]: path }))
+                  }
+                  placeholder="تصویر قالب"
+                />
+                <button
+                  type="button"
+                  className="text-xs font-bold text-teal-800 underline"
+                  onClick={() =>
+                    setTemplateDraft((prev) => ({
+                      ...prev,
+                      [type]: WARRANTY_CARD_ART[type],
+                    }))
+                  }
+                >
+                  بازگشت به پیش‌فرض کارخانه
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        <Button type="button" disabled={templateSaving} onClick={saveTemplateArt}>
+          {templateSaving ? "در حال ذخیره قالب‌ها…" : "ذخیره قالب‌های تصویر"}
+        </Button>
+      </Card>
 
       <Card hover={false} className="space-y-3 p-4">
         <FormLabel>جستجوی بیمار (نام یا موبایل)</FormLabel>

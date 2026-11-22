@@ -5,6 +5,7 @@ import {
   resolveWarrantyExpiresAt,
   resolveWarrantyImageUrl,
 } from '@/lib/warranty/resolve';
+import { loadWarrantyCardArtOverrides } from '@/lib/warranty/load-card-art';
 import { mapPublicWarrantyCard, WARRANTY_SERVICE_TYPES } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import type { ServiceWarrantyType } from '@prisma/client';
@@ -55,6 +56,7 @@ export async function PATCH(
   if (expiresAt.getTime() < startedAt.getTime()) {
     return jsonError('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.');
   }
+  const artOverrides = await loadWarrantyCardArtOverrides();
   const useTemplateImage =
     body.useTemplateImage === true || body.useTemplateImage === 'true';
   const imageUrl = resolveWarrantyImageUrl({
@@ -62,6 +64,7 @@ export async function PATCH(
     bodyImageUrl: body.imageUrl,
     useTemplateImage,
     existingImageUrl: existing.imageUrl,
+    artOverrides,
   });
 
   const row = await prisma.serviceWarrantyCard.update({
@@ -75,7 +78,7 @@ export async function PATCH(
     },
   });
 
-  return NextResponse.json({ item: mapPublicWarrantyCard(row) });
+  return NextResponse.json({ item: mapPublicWarrantyCard(row, artOverrides) });
 }
 
 export async function DELETE(

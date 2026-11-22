@@ -1,5 +1,6 @@
 import { jsonError } from '@/lib/auth/api-utils';
 import { requirePatient } from '@/lib/operations/require-patient';
+import { loadWarrantyCardArtOverrides } from '@/lib/warranty/load-card-art';
 import { mapPublicWarrantyCard } from '@/lib/warranty/types';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
@@ -18,8 +19,9 @@ export async function GET() {
     where: { userId: user.id },
     orderBy: { expiresAt: 'desc' },
   });
+  const artOverrides = await loadWarrantyCardArtOverrides();
 
   return NextResponse.json({
-    items: rows.map(mapPublicWarrantyCard),
+    items: rows.map((row) => mapPublicWarrantyCard(row, artOverrides)),
   });
 }
